@@ -1,6 +1,5 @@
 use anyhow::Result;
 use serde_json;
-use std::path::PathBuf;
 use std::process::Stdio;
 use tauri::{AppHandle, Emitter};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -8,7 +7,8 @@ use tokio::process::{Child, Command};
 use tokio::sync::mpsc;
 use uuid::Uuid;
 
-use crate::{CodexConfig, Event, EventMsg, InputItem, ModelProvider, Op, SandboxPolicy, Submission};
+use crate::{CodexConfig, Event, InputItem, ModelProvider, Op, SandboxPolicy, Submission};
+use std::path::PathBuf;
 
 pub struct CodexClient {
     app: AppHandle,
@@ -20,46 +20,73 @@ pub struct CodexClient {
 
 impl CodexClient {
     pub async fn new(app: &AppHandle, session_id: String, config: CodexConfig) -> Result<Self> {
-        // 根据配置构建 codex 命令
-        let mut cmd = Command::new("codex");
-        cmd.arg("proto");
+        // Build codex command based on configuration
+        let codex_path = if let Some(configured_path) = &config.codex_path {
+            // Use user-configured path
+            std::path::PathBuf::from(configured_path)
+        } else {
+            // Try to find codex in common locations or use from PATH
+            which::which("codex")
+                .or_else(|_| {
+                    // Try common installation paths
+                    let common_paths = vec![
+                        std::path::PathBuf::from("/usr/local/bin/codex"),
+                        std::path::PathBuf::from("/opt/homebrew/bin/codex"),
+                        std::path::PathBuf::from(format!("{}/.cargo/bin/codex", std::env::var("HOME").unwrap_or_default())),
+                        // Note: Avoid .bun/bin/codex as it may not be the correct version
+                    ];
+                    
+                    for path in common_paths {
+                        if path.exists() {
+                            return Ok(path);
+                        }
+                    }
+                    
+                    Err(std::io::Error::from(std::io::ErrorKind::NotFound))
+                })
+                .unwrap_or_else(|_| std::path::PathBuf::from("codex"))
+        };
         
-        // 使用 -c 配置参数格式 (codex proto 只支持 -c 配置)
+        // Validate that the codex executable exists
+        if !codex_path.exists() {
+            return Err(anyhow::anyhow!(
+                "Codex executable not found at path: {}. Please configure the correct path in settings.", 
+                codex_path.display()
+            ));
+        }
+            
+        let mut cmd = Command::new(codex_path);
+        
+        // Use interactive mode instead of proto for streaming support
         if config.use_oss {
-            cmd.arg("-c").arg("model_provider=oss");
+            cmd.arg("--oss");
         }
         
         if !config.model.is_empty() {
-            cmd.arg("-c").arg(format!("model=\"{}\"", config.model));
+            cmd.arg("-m").arg(&config.model);
         }
         
         if !config.approval_policy.is_empty() {
-            cmd.arg("-c").arg(format!("approval_policy=\"{}\"", config.approval_policy));
+            cmd.arg("-a").arg(&config.approval_policy);
         }
         
         if !config.sandbox_mode.is_empty() {
-            let sandbox_config = match config.sandbox_mode.as_str() {
-                "read-only" => "sandbox_policy=\"read-only\"".to_string(),
-                "workspace-write" => "sandbox_policy=\"workspace-write\"".to_string(), 
-                "danger-full-access" => "sandbox_policy=\"danger-full-access\"".to_string(),
-                _ => "sandbox_policy=\"workspace-write\"".to_string(),
-            };
-            cmd.arg("-c").arg(sandbox_config);
+            cmd.arg("-s").arg(&config.sandbox_mode);
         }
         
-        // 设置工作目录
+        // Set working directory
         if !config.working_directory.is_empty() {
-            cmd.arg("-c").arg(format!("cwd=\"{}\"", config.working_directory));
+            cmd.arg("-C").arg(&config.working_directory);
         }
         
-        // 添加自定义参数
+        // Add custom arguments
         if let Some(custom_args) = &config.custom_args {
             for arg in custom_args {
                 cmd.arg(arg);
             }
         }
         
-        // 打印要执行的命令用于调试
+        // Print command to execute for debugging
         tracing::info!("Starting codex with command: {:?}", cmd);
         
         let mut process = cmd
@@ -73,7 +100,7 @@ impl CodexClient {
 
         let (stdin_tx, mut stdin_rx) = mpsc::unbounded_channel::<String>();
 
-        // 处理 stdin 写入
+        // Handle stdin writing
         let mut stdin_writer = stdin;
         tokio::spawn(async move {
             while let Some(line) = stdin_rx.recv().await {
@@ -93,7 +120,7 @@ impl CodexClient {
             tracing::info!("Stdin writer task terminated");
         });
 
-        // 处理 stdout 读取
+        // Handle stdout reading
         let app_clone = app.clone();
         let session_id_clone = session_id.clone();
         tokio::spawn(async move {
@@ -102,22 +129,52 @@ impl CodexClient {
             
             tracing::info!("Starting stdout reader for session: {}", session_id_clone);
             
+            let mut response_buffer = String::new();
+            let mut in_response = false;
+            
             while let Ok(Some(line)) = lines.next_line().await {
                 tracing::debug!("Received line from codex: {}", line);
-                if let Ok(event) = serde_json::from_str::<Event>(&line) {
-                    tracing::debug!("Parsed event: {:?}", event);
-                    // 发送事件到前端
-                    if let Err(e) = app_clone.emit(&format!("codex-event-{}", session_id_clone), &event) {
-                        tracing::error!("Failed to emit event: {}", e);
+                
+                // Skip terminal control sequences
+                if line.starts_with("\x1b[") || line == "[?2004h" || line == "[?2004l" {
+                    continue;
+                }
+                
+                // Check if this line indicates the start of a response
+                if !in_response && !line.trim().is_empty() {
+                    in_response = true;
+                    response_buffer.clear();
+                    
+                    // Create task_started event
+                    let task_started_event = Event {
+                        id: "task_started".to_string(),
+                        msg: crate::EventMsg::TaskStarted,
+                    };
+                    if let Err(e) = app_clone.emit(&format!("codex-event-{}", session_id_clone), &task_started_event) {
+                        tracing::error!("Failed to emit task_started event: {}", e);
                     }
-                } else {
-                    tracing::warn!("Failed to parse codex event: {}", line);
+                }
+                
+                if in_response {
+                    if !line.trim().is_empty() {
+                        // Send streaming delta
+                        let delta_event = Event {
+                            id: "stream_delta".to_string(),
+                            msg: crate::EventMsg::AgentMessageDelta { delta: line.clone() + "\n" },
+                        };
+                        if let Err(e) = app_clone.emit(&format!("codex-event-{}", session_id_clone), &delta_event) {
+                            tracing::error!("Failed to emit delta event: {}", e);
+                        }
+                        
+                        response_buffer.push_str(&line);
+                        response_buffer.push('\n');
+                    }
                 }
             }
             tracing::info!("Stdout reader terminated for session: {}", session_id_clone);
         });
 
-        let client = Self {
+        let mut client = Self {
             app: app.clone(),
             session_id,
             process,
@@ -125,9 +182,8 @@ impl CodexClient {
             config: config.clone(),
         };
 
-        // 配置会话 - 暂时注释掉，使用 -c 参数预配置
-        // client.configure_session().await?;
-
+        // Interactive mode doesn't need configuration - it's ready to receive messages
+        
         Ok(client)
     }
 
@@ -183,14 +239,9 @@ impl CodexClient {
     }
 
     pub async fn send_user_input(&self, message: String) -> Result<()> {
-        let submission = Submission {
-            id: Uuid::new_v4().to_string(),
-            op: Op::UserInput {
-                items: vec![InputItem::Text { text: message }],
-            },
-        };
-
-        self.send_submission(submission).await
+        // In interactive mode, we send text directly
+        self.stdin_tx.send(message)?;
+        Ok(())
     }
 
     pub async fn send_exec_approval(&self, approval_id: String, approved: bool) -> Result<()> {
@@ -231,7 +282,7 @@ impl CodexClient {
     }
 
     pub async fn shutdown(&mut self) -> Result<()> {
-        // 发送 shutdown 命令
+        // Send shutdown command
         let submission = Submission {
             id: Uuid::new_v4().to_string(),
             op: Op::Shutdown,
@@ -241,7 +292,7 @@ impl CodexClient {
             tracing::warn!("Failed to send shutdown command: {}", e);
         }
 
-        // 终止进程
+        // Terminate process
         if let Err(e) = self.process.kill().await {
             tracing::warn!("Failed to kill codex process: {}", e);
         }

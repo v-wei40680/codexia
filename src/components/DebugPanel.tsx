@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { ChevronDown, ChevronUp, Terminal, Server } from 'lucide-react';
+import { ChevronDown, Terminal, Server } from 'lucide-react';
 import { sessionManager } from '../services/sessionManager';
 import { useChatStore } from '../store/chatStore';
 
@@ -100,7 +100,7 @@ export const DebugPanel: React.FC = () => {
             {backendSessions.length === 0 ? (
               <div className="text-xs text-gray-500 italic">No backend sessions</div>
             ) : (
-              backendSessions.map((sessionId, index) => (
+              backendSessions.map((sessionId) => (
                 <div key={sessionId} className="flex items-center gap-2 text-xs">
                   <Server className="w-3 h-3 text-green-500" />
                   <span className="font-mono text-gray-600">

@@ -45,6 +45,28 @@ class SessionManager {
     }
   }
 
+  async restartSession(sessionId: string, config: CodexConfig): Promise<void> {
+    try {
+      console.log('Restarting session:', sessionId, 'with config:', config);
+      
+      // Stop the existing session
+      if (this.runningSessions.has(sessionId)) {
+        await this.stopSession(sessionId);
+      }
+      
+      // Add a small delay to ensure cleanup is complete
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Start with new config
+      await this.ensureSessionRunning(sessionId, config);
+      
+      console.log('Session restarted successfully:', sessionId);
+    } catch (error) {
+      console.error('Failed to restart session:', error);
+      throw error;
+    }
+  }
+
   isSessionRunning(sessionId: string): boolean {
     return this.runningSessions.has(sessionId);
   }

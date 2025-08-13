@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { ChatSession, ChatMessage, CodexConfig, DEFAULT_CONFIG } from '../types/codex';
+import { sessionManager } from '../services/sessionManager';
 
 interface ChatStore {
   // Configuration
@@ -45,7 +46,7 @@ export const useChatStore = create<ChatStore>()(
       setConfig: (config) => {
         set({ config });
         
-        // Update active session config if any
+        // Update active session config if any and restart the session
         const { activeSessionId, sessions } = get();
         if (activeSessionId) {
           const updatedSessions = sessions.map(session =>
@@ -54,6 +55,11 @@ export const useChatStore = create<ChatStore>()(
               : session
           );
           set({ sessions: updatedSessions });
+          
+          // Restart the active session with new config
+          sessionManager.restartSession(activeSessionId, config).catch(error => {
+            console.error('Failed to restart session with new config:', error);
+          });
         }
       },
 

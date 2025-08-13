@@ -1,9 +1,16 @@
 import React, { useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import { open } from '@tauri-apps/plugin-dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
-import { Settings, Folder, X } from 'lucide-react';
+import { Settings, Folder, FileText } from 'lucide-react';
 import { CodexConfig, DEFAULT_CONFIG } from '../types/codex';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 interface ConfigDialogProps {
   isOpen: boolean;
@@ -20,16 +27,40 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
 }) => {
   const [localConfig, setLocalConfig] = useState<CodexConfig>(config);
 
-  if (!isOpen) return null;
-
   const handleSelectDirectory = async () => {
     try {
-      const result = await invoke<string | null>('select_directory');
+      const result = await open({
+        directory: true,
+        multiple: false,
+      });
       if (result) {
         setLocalConfig(prev => ({ ...prev, workingDirectory: result }));
       }
     } catch (error) {
       console.error('Failed to select directory:', error);
+    }
+  };
+
+  const handleSelectCodexExecutable = async () => {
+    try {
+      const result = await open({
+        multiple: false,
+        filters: [{
+          name: 'Codex Executable',
+          extensions: ['*']
+        }]
+      });
+      if (result) {
+        // Validate that the selected file is executable
+        if (result.includes('codex')) {
+          setLocalConfig(prev => ({ ...prev, codexPath: result }));
+        } else {
+          alert('Selected file does not appear to be a codex executable');
+        }
+      }
+    } catch (error) {
+      console.error('Failed to select codex executable:', error);
+      alert('Failed to select codex executable: ' + error);
     }
   };
 
@@ -47,26 +78,44 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <div className="flex items-center gap-2">
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className="!max-w-4xl w-[90vw] max-h-[90vh] overflow-y-auto sm:!max-w-4xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
             <Settings className="w-5 h-5" />
-            <h2 className="text-xl font-semibold">Codex Configuration</h2>
-          </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="h-8 w-8 p-0"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
+            Codex Configuration
+          </DialogTitle>
+          <DialogDescription>
+            Configure your Codex settings and preferences
+          </DialogDescription>
+        </DialogHeader>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="space-y-6">
+          {/* Codex Executable Path */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Codex Executable Path</label>
+            <div className="flex gap-2">
+              <Input
+                value={localConfig.codexPath || ''}
+                onChange={(e) => updateConfig('codexPath', e.target.value || undefined)}
+                placeholder="Auto-detect or specify path to codex"
+                className="flex-1"
+              />
+              <Button
+                variant="outline"
+                onClick={handleSelectCodexExecutable}
+                className="flex items-center gap-2"
+              >
+                <FileText className="w-4 h-4" />
+                Browse
+              </Button>
+            </div>
+            <p className="text-xs text-gray-500">
+              Path to codex executable. Leave empty for auto-detection in common locations like ~/.bun/bin/codex
+            </p>
+          </div>
+
           {/* Working Directory */}
           <div className="space-y-2">
             <label className="text-sm font-medium">Working Directory</label>
@@ -132,8 +181,20 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
               <Input
                 value={localConfig.model}
                 onChange={(e) => updateConfig('model', e.target.value)}
-                placeholder="llama3.2, gpt-4, etc."
+                placeholder="llama3.2, gpt-5, etc."
               />
+              <div className="flex gap-2 mt-2">
+                {['gpt-5', 'llama3.2', 'gpt-oss:20b', 'gpt-oss:120b', 'gpt-4o', 'mistral'].map((m) => (
+                  <Button
+                    key={m}
+                    variant="outline"
+                    size="sm"
+                    onClick={() => updateConfig('model', m)}
+                  >
+                    {m}
+                  </Button>
+                ))}
+              </div>
               <p className="text-xs text-gray-500">
                 Model name (e.g., llama3.2 for OSS, gpt-4 for OpenAI)
               </p>
@@ -205,7 +266,7 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
           <div className="space-y-2">
             <label className="text-sm font-medium">Command Preview</label>
             <div className="bg-gray-100 p-3 rounded text-sm font-mono">
-              codex proto
+              {localConfig.codexPath || 'codex'} proto
               {localConfig.useOss && ' --oss'}
               {localConfig.model && ` -m ${localConfig.model}`}
               {localConfig.approvalPolicy && ` -a ${localConfig.approvalPolicy}`}
@@ -217,7 +278,7 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between p-6 border-t bg-gray-50">
+        <div className="flex items-center justify-between pt-6 border-t">
           <Button variant="outline" onClick={handleReset}>
             Reset to Defaults
           </Button>
@@ -230,7 +291,7 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
             </Button>
           </div>
         </div>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   );
 };

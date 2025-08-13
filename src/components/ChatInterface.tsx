@@ -77,6 +77,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId, config 
     const unlisten = listen<CodexEvent>(`codex-event-${sessionId}`, (event) => {
       const { msg } = event.payload;
       
+      console.log('Received codex event:', event.payload); // Debug log
+      
       switch (msg.type) {
         case 'session_configured':
           console.log('Codex session configured');
@@ -91,10 +93,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId, config 
           break;
           
         case 'agent_message':
+          // Handle complete agent message (non-streaming mode)
           const agentMessage: ChatMessage = {
             id: Date.now().toString(),
             type: 'agent',
-            content: msg.message || msg.content || '',
+            content: msg.message || '',
             timestamp: new Date(),
           };
           addMessage(sessionId, agentMessage);
@@ -106,13 +109,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId, config 
           const currentMessages = sessions.find(s => s.id === sessionId)?.messages || [];
           const lastMessage = currentMessages[currentMessages.length - 1];
           
+          console.log('Received agent_message_delta:', msg); // Debug log
+          
+          const deltaContent = msg.delta || '';
           if (lastMessage && lastMessage.type === 'agent' && lastMessage.isStreaming) {
             // Append to existing streaming message
-            appendToStreamingMessage(sessionId, lastMessage.id, msg.delta);
+            appendToStreamingMessage(sessionId, lastMessage.id, deltaContent);
           } else {
             // Start new streaming message
             const messageId = Date.now().toString();
-            startStreamingMessage(sessionId, messageId, msg.delta);
+            startStreamingMessage(sessionId, messageId, deltaContent);
           }
           break;
           

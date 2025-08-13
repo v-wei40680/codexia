@@ -1,14 +1,9 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::process::Stdio;
 use std::sync::Arc;
-use tauri::{AppHandle, Emitter, Manager, State};
-use tauri_plugin_shell::{process::CommandChild, ShellExt};
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
-use tokio::process::{Child, Command};
-use tokio::sync::{mpsc, Mutex};
-use uuid::Uuid;
+use tauri::{AppHandle, State};
+use tokio::sync::Mutex;
 
 mod codex_client;
 use codex_client::*;
@@ -87,10 +82,21 @@ pub struct Event {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum EventMsg {
-    SessionConfigured,
+    SessionConfigured {
+        session_id: String,
+        model: String,
+        history_log_id: Option<u32>,
+        history_entry_count: Option<u32>,
+    },
     TaskStarted,
-    TaskComplete { response_id: Option<String> },
-    AgentMessage { message: String },
+    TaskComplete { 
+        response_id: Option<String>,
+        last_agent_message: Option<String>,
+    },
+    AgentMessage { 
+        message: Option<String>,
+        last_agent_message: Option<String>,
+    },
     AgentMessageDelta { delta: String },
     ExecApprovalRequest {
         command: String,
@@ -102,7 +108,7 @@ pub enum EventMsg {
     },
     Error { message: String },
     TurnComplete { response_id: Option<String> },
-    // 新增的事件类型
+    // New event types
     ExecCommandBegin {
         call_id: String,
         command: Vec<String>,
@@ -119,6 +125,7 @@ pub enum EventMsg {
         stderr: String,
         exit_code: i32,
     },
+    ShutdownComplete,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -130,6 +137,7 @@ pub struct CodexConfig {
     pub custom_args: Option<Vec<String>>,
     pub approval_policy: String,
     pub sandbox_mode: String,
+    pub codex_path: Option<String>,
 }
 
 // Tauri commands
@@ -149,17 +157,12 @@ async fn start_codex_session(
     }
     
     let codex_client = CodexClient::new(&app, session_id.clone(), config).await
-        .map_err(|e| format!("Failed to start codex: {}", e))?;
+        .map_err(|e| format!("Failed to start Codex session: {}", e))?;
     
     state.sessions.lock().await.insert(session_id, codex_client);
     Ok(())
 }
 
-#[tauri::command]
-async fn select_directory() -> Result<Option<String>, String> {
-    // 简化版本，先返回当前目录
-    Ok(Some("/Users/gpt/projects/rustapp/codexia".to_string()))
-}
 
 #[tauri::command]
 async fn send_message(
@@ -244,7 +247,6 @@ pub fn run() {
             send_message,
             approve_execution,
             stop_session,
-            select_directory,
             get_running_sessions
         ])
         .run(tauri::generate_context!())
