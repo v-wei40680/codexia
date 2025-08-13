@@ -1,10 +1,11 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { ChatInterface } from "@/components/ChatInterface";
 import { ConfigDialog } from "@/components/ConfigDialog";
 import { ConfigIndicator } from "@/components/ConfigIndicator";
 import { DebugPanel } from "@/components/DebugPanel";
 import { useChatStore } from "@/store/chatStore";
 import { useLayoutStore } from "@/store/layoutStore";
+import { useLayoutStore as useLayoutStoreHook } from "@/hooks/useLayoutStore";
 import { useFolderStore } from "@/hooks/useFolderStore";
 import { AppHeader } from "@/components/AppHeader";
 import { FileTree } from "@/components/FileTree";
@@ -13,7 +14,10 @@ import { sessionManager } from '../services/sessionManager';
 
 export function Layout() {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [chatPaneWidth, setChatPaneWidth] = useState(400);
+  const [isResizing, setIsResizing] = useState(false);
   const initialSessionCreated = useRef(false);
+  const resizeRef = useRef<HTMLDivElement>(null);
 
   // Zustand stores
   const {
@@ -34,6 +38,9 @@ export function Layout() {
     openFile,
     closeFile,
   } = useLayoutStore();
+
+  // Import the other layout store for chat/file tree toggles
+  const { showChatPane, showFileTree } = useLayoutStoreHook();
 
   const { currentFolder } = useFolderStore();
 
@@ -60,8 +67,41 @@ export function Layout() {
   const activeSession = sessions.find(s => s.id === activeSessionId);
   const currentConfig = activeSession?.config || config;
 
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  }, []);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isResizing) return;
+    
+    const containerRect = resizeRef.current?.parentElement?.getBoundingClientRect();
+    if (!containerRect) return;
+    
+    const newWidth = containerRect.right - e.clientX;
+    const minWidth = 300;
+    const maxWidth = containerRect.width - 200;
+    
+    setChatPaneWidth(Math.max(minWidth, Math.min(maxWidth, newWidth)));
+  }, [isResizing]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isResizing, handleMouseMove, handleMouseUp]);
+
   return (
-    <main className="h-screen flex flex-col">
+    <main className={`h-screen flex flex-col ${isResizing ? 'cursor-col-resize' : ''}`}>
       {/* App Header */}
       <div className="flex-shrink-0">
         <AppHeader />
@@ -70,19 +110,36 @@ export function Layout() {
       {/* Main Content Area */}
       <div className="flex-1 flex overflow-hidden">
         {/* Left Panel - File Tree */}
-        <div className="w-64 border-r h-full flex-shrink-0">
-          <FileTree currentFolder={currentFolder || undefined} onFileClick={openFile} />
-        </div>
+        {showFileTree && (
+          <div className="w-64 border-r h-full flex-shrink-0">
+            <FileTree currentFolder={currentFolder || undefined} onFileClick={openFile} />
+          </div>
+        )}
 
         {/* Middle Panel - File Content (conditionally visible) */}
         {isFilePanelVisible && selectedFile && (
-          <div className="w-96 border-r h-full flex-shrink-0">
+          <div className="flex-1 min-w-0 border-r h-full flex-shrink-0">
             <FileViewer filePath={selectedFile} onClose={closeFile} />
           </div>
         )}
 
         {/* Right Panel - Chat with Sessions */}
-        <div className="flex-1 flex flex-col min-h-0">
+        {showChatPane && (
+          <>
+            {/* Resize Handle */}
+            <div 
+              className="w-1 bg-gray-200 hover:bg-gray-300 cursor-col-resize flex-shrink-0 relative group"
+              onMouseDown={handleMouseDown}
+            >
+              <div className="absolute inset-0 w-2 -translate-x-0.5 group-hover:bg-blue-200/50" />
+            </div>
+            
+            {/* Chat Panel */}
+            <div 
+              ref={resizeRef}
+              className="flex flex-col min-h-0"
+              style={{ width: chatPaneWidth }}
+            >
           {/* Configuration Indicator at top of entire right panel */}
           <div className="flex-shrink-0 border-b bg-white z-20">
             <ConfigIndicator
@@ -116,7 +173,9 @@ export function Layout() {
             )}
           </div>
           
-        </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Configuration Dialog */}
