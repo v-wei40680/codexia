@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Button } from "@/components/ui/button";
-import { X, Copy, Check, Sun, Moon, Send, FileText } from "lucide-react";
+import { X, Copy, Check, Sun, Moon, Send, FileText, GitBranch, Code } from "lucide-react";
 import { CodeEditor } from "./CodeEditor";
+import { DiffViewer } from "./DiffViewer";
 import { useEditorStore } from "@/hooks/useEditorStore";
 import { useChatStore } from "@/hooks/useChatStore";
 
@@ -10,6 +11,12 @@ interface FileViewerProps {
   filePath: string | null;
   onClose: () => void;
   addToNotepad?: (text: string, source?: string) => void;
+}
+
+interface GitDiff {
+  original_content: string;
+  current_content: string;
+  has_changes: boolean;
 }
 
 export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps) {
@@ -20,6 +27,9 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
   const [showFullContent, setShowFullContent] = useState(false);
   const [selectedText, setSelectedText] = useState<string>("");
   const [currentContent, setCurrentContent] = useState<string>("");
+  const [viewMode, setViewMode] = useState<'code' | 'diff'>('code');
+  const [gitDiff, setGitDiff] = useState<GitDiff | null>(null);
+  const [diffLoading, setDiffLoading] = useState(false);
   const { isDarkTheme, setIsDarkTheme } = useEditorStore();
   const { addFileContent } = useChatStore();
 
@@ -39,12 +49,16 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
     if (!filePath) {
       setContent("");
       setError(null);
+      setGitDiff(null);
+      setViewMode('code');
       return;
     }
 
     const loadFile = async () => {
       setLoading(true);
       setError(null);
+      setGitDiff(null);
+      setViewMode('code');
 
       try {
         const extension = getFileExtension();
@@ -86,6 +100,30 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
   useEffect(() => {
     setCurrentContent(content);
   }, [content]);
+
+  const loadGitDiff = async () => {
+    if (!filePath) return;
+    
+    setDiffLoading(true);
+    try {
+      const diff = await invoke<GitDiff>("get_git_file_diff", { filePath });
+      setGitDiff(diff);
+    } catch (err) {
+      console.error("Failed to load git diff:", err);
+      setGitDiff(null);
+    } finally {
+      setDiffLoading(false);
+    }
+  };
+
+  const handleToggleViewMode = async () => {
+    if (viewMode === 'code') {
+      await loadGitDiff();
+      setViewMode('diff');
+    } else {
+      setViewMode('code');
+    }
+  };
 
   const handleCopy = async () => {
     const textToCopy = selectedText || currentContent;
@@ -182,6 +220,22 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
           <Button
             variant="ghost"
             size="sm"
+            onClick={handleToggleViewMode}
+            disabled={diffLoading}
+            className="p-1 h-auto"
+            title={viewMode === 'code' ? "Show git diff" : "Show code view"}
+          >
+            {diffLoading ? (
+              <div className="w-4 h-4 animate-spin border-2 border-gray-300 border-t-gray-600 rounded-full"></div>
+            ) : viewMode === 'code' ? (
+              <GitBranch className="w-4 h-4" />
+            ) : (
+              <Code className="w-4 h-4" />
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={() => setIsDarkTheme(!isDarkTheme)}
             className="p-1 h-auto"
             title={
@@ -256,28 +310,48 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
           <div className="p-4 text-center text-red-500">{error}</div>
         ) : (
           <div className="h-full flex flex-col">
-            <CodeEditor
-              content={displayContent}
-              filePath={filePath}
-              onContentChange={handleContentChange}
-              onSave={handleSave}
-              onSelectionChange={handleSelectionChange}
-              className="flex-1"
-            />
-            {isLargeFile && !showFullContent && (
-              <div className="p-4 text-center border-t border-gray-200 bg-gray-50">
-                <p className="text-sm text-gray-600 mb-2">
-                  Showing first {MAX_LINES} lines of{" "}
-                  {content.split("\n").length} total lines
-                </p>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleToggleContent}
-                >
-                  Show All Lines
-                </Button>
-              </div>
+            {viewMode === 'diff' && gitDiff ? (
+              gitDiff.has_changes ? (
+                <div className="flex-1 min-h-0">
+                  <DiffViewer
+                    original={gitDiff.original_content}
+                    current={gitDiff.current_content}
+                    fileName={getFileName()}
+                  />
+                </div>
+              ) : (
+                <div className="p-8 text-center text-gray-500">
+                  <GitBranch className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                  <p className="text-lg font-medium mb-2">No changes detected</p>
+                  <p className="text-sm">This file is identical to the version in git HEAD</p>
+                </div>
+              )
+            ) : (
+              <>
+                <CodeEditor
+                  content={displayContent}
+                  filePath={filePath}
+                  onContentChange={handleContentChange}
+                  onSave={handleSave}
+                  onSelectionChange={handleSelectionChange}
+                  className="flex-1"
+                />
+                {isLargeFile && !showFullContent && (
+                  <div className="p-4 text-center border-t border-gray-200 bg-gray-50">
+                    <p className="text-sm text-gray-600 mb-2">
+                      Showing first {MAX_LINES} lines of{" "}
+                      {content.split("\n").length} total lines
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleToggleContent}
+                    >
+                      Show All Lines
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
           </div>
         )}

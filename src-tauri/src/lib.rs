@@ -9,7 +9,7 @@ mod codex_client;
 use codex_client::*;
 
 mod filesystem;
-use filesystem::{read_directory, get_default_directories, calculate_file_tokens, read_file, write_file, read_pdf_content, read_csv_content, read_xlsx_content};
+use filesystem::{read_directory, get_default_directories, calculate_file_tokens, read_file, write_file, read_pdf_content, read_csv_content, read_xlsx_content, get_git_file_diff};
 
 
 // Codex protocol types
@@ -260,6 +260,7 @@ pub fn run() {
             read_pdf_content,
             read_csv_content,
             read_xlsx_content,
+            get_git_file_diff,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

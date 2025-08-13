@@ -7,15 +7,11 @@ use tokio::process::{Child, Command};
 use tokio::sync::mpsc;
 use uuid::Uuid;
 
-use crate::{CodexConfig, Event, InputItem, ModelProvider, Op, SandboxPolicy, Submission};
-use std::path::PathBuf;
+use crate::{CodexConfig, Event, Op, Submission};
 
 pub struct CodexClient {
-    app: AppHandle,
-    session_id: String,
     process: Child,
     stdin_tx: mpsc::UnboundedSender<String>,
-    config: CodexConfig,
 }
 
 impl CodexClient {
@@ -174,62 +170,14 @@ impl CodexClient {
             tracing::info!("Stdout reader terminated for session: {}", session_id_clone);
         });
 
-        let mut client = Self {
-            app: app.clone(),
-            session_id,
+        let client = Self {
             process,
             stdin_tx,
-            config: config.clone(),
         };
 
         // Interactive mode doesn't need configuration - it's ready to receive messages
         
         Ok(client)
-    }
-
-    async fn configure_session(&mut self) -> Result<()> {
-        let sandbox_policy = match self.config.sandbox_mode.as_str() {
-            "read-only" => SandboxPolicy::ReadOnly,
-            "workspace-write" => SandboxPolicy::WorkspaceWrite {
-                writable_roots: vec![],
-                network_access: false,
-            },
-            _ => SandboxPolicy::WorkspaceWrite {
-                writable_roots: vec![],
-                network_access: false,
-            },
-        };
-        
-        let provider = if self.config.use_oss {
-            ModelProvider {
-                name: "oss".to_string(),
-                base_url: Some("http://localhost:11434/v1".to_string()),
-            }
-        } else {
-            ModelProvider {
-                name: self.config.provider.clone(),
-                base_url: None,
-            }
-        };
-
-        let submission = Submission {
-            id: Uuid::new_v4().to_string(),
-            op: Op::ConfigureSession {
-                provider,
-                model: self.config.model.clone(),
-                model_reasoning_effort: "medium".to_string(),
-                model_reasoning_summary: "concise".to_string(),
-                user_instructions: None,
-                base_instructions: None,
-                approval_policy: self.config.approval_policy.clone(),
-                sandbox_policy,
-                disable_response_storage: false,
-                cwd: PathBuf::from(&self.config.working_directory),
-                resume_path: None,
-            },
-        };
-
-        self.send_submission(submission).await
     }
 
     async fn send_submission(&self, submission: Submission) -> Result<()> {
@@ -253,29 +201,6 @@ impl CodexClient {
                 id: approval_id,
                 decision,
             },
-        };
-
-        self.send_submission(submission).await
-    }
-
-    pub async fn send_patch_approval(&self, approval_id: String, approved: bool) -> Result<()> {
-        let decision = if approved { "allow" } else { "deny" }.to_string();
-        
-        let submission = Submission {
-            id: Uuid::new_v4().to_string(),
-            op: Op::PatchApproval {
-                id: approval_id,
-                decision,
-            },
-        };
-
-        self.send_submission(submission).await
-    }
-
-    pub async fn interrupt(&self) -> Result<()> {
-        let submission = Submission {
-            id: Uuid::new_v4().to_string(),
-            op: Op::Interrupt,
         };
 
         self.send_submission(submission).await
