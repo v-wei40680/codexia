@@ -8,6 +8,10 @@ use tokio::sync::Mutex;
 mod codex_client;
 use codex_client::*;
 
+mod filesystem;
+use filesystem::{read_directory, get_default_directories, calculate_file_tokens, read_file, write_file, read_pdf_content, read_csv_content, read_xlsx_content};
+
+
 // Codex protocol types
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Submission {
@@ -247,7 +251,15 @@ pub fn run() {
             send_message,
             approve_execution,
             stop_session,
-            get_running_sessions
+            get_running_sessions,
+            read_directory,
+            get_default_directories,
+            calculate_file_tokens,
+            read_file,
+            write_file,
+            read_pdf_content,
+            read_csv_content,
+            read_xlsx_content,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

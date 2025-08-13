@@ -8,13 +8,29 @@ import { Send, Bot, User, AlertTriangle } from 'lucide-react';
 import { ChatMessage, CodexEvent, ApprovalRequest, CodexConfig } from '../types/codex';
 import { useChatStore } from '../store/chatStore';
 import { sessionManager } from '../services/sessionManager';
+import { SessionManager } from './SessionManager';
 
 interface ChatInterfaceProps {
   sessionId: string;
   config: CodexConfig;
+  sessions?: any[];
+  activeSessionId?: string;
+  onCreateSession?: () => void;
+  onSelectSession?: (sessionId: string) => void;
+  onCloseSession?: (sessionId: string) => void;
+  isSessionListVisible?: boolean;
 }
 
-export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId, config }) => {
+export const ChatInterface: React.FC<ChatInterfaceProps> = ({ 
+  sessionId, 
+  config, 
+  sessions: propSessions = [],
+  activeSessionId: propActiveSessionId = '',
+  onCreateSession,
+  onSelectSession,
+  onCloseSession,
+  isSessionListVisible = false,
+}) => {
   const [inputValue, setInputValue] = useState('');
   const [pendingApproval, setPendingApproval] = useState<ApprovalRequest | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -45,35 +61,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId, config 
 
   useEffect(() => {
     if (sessionId) {
-      // Ensure this session is running (allows multiple concurrent sessions)
-      sessionManager.ensureSessionRunning(sessionId, config)
-        .then(() => {
-          setIsConnected(true);
-          
-          // Only add welcome message for new sessions
-          if (messages.length === 0) {
-            const welcomeMessage: ChatMessage = {
-              id: Date.now().toString(),
-              type: 'system',
-              content: 'Codex session started. You can now chat with the AI assistant.',
-              timestamp: new Date(),
-            };
-            addMessage(sessionId, welcomeMessage);
-          }
-        })
-        .catch((error) => {
-          console.error('Failed to start session:', error);
-          const errorMessage: ChatMessage = {
-            id: Date.now().toString(),
-            type: 'system',
-            content: `Failed to start Codex session: ${error}`,
-            timestamp: new Date(),
-          };
-          addMessage(sessionId, errorMessage);
-        });
+      // Check if session is already running
+      const isRunning = sessionManager.isSessionRunning(sessionId);
+      setIsConnected(isRunning);
     }
 
-    // 监听 codex 事件
+    // watch codex event
     const unlisten = listen<CodexEvent>(`codex-event-${sessionId}`, (event) => {
       const { msg } = event.payload;
       
@@ -173,6 +166,35 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId, config 
   const handleSendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
 
+    // Ensure session is running before sending message
+    try {
+      if (!sessionManager.isSessionRunning(sessionId)) {
+        await sessionManager.ensureSessionRunning(sessionId, config);
+        setIsConnected(true);
+        
+        // Add welcome message for newly started sessions
+        if (messages.length === 0) {
+          const welcomeMessage: ChatMessage = {
+            id: Date.now().toString(),
+            type: 'system',
+            content: 'Codex session started. You can now chat with the AI assistant.',
+            timestamp: new Date(),
+          };
+          addMessage(sessionId, welcomeMessage);
+        }
+      }
+    } catch (error) {
+      console.error('Failed to start session:', error);
+      const errorMessage: ChatMessage = {
+        id: Date.now().toString(),
+        type: 'system',
+        content: `Failed to start Codex session: ${error}`,
+        timestamp: new Date(),
+      };
+      addMessage(sessionId, errorMessage);
+      return;
+    }
+
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       type: 'user',
@@ -226,10 +248,25 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId, config 
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex h-full min-h-0">
+      {/* Session Manager - conditionally visible */}
+      {isSessionListVisible && onCreateSession && onSelectSession && onCloseSession && (
+        <div className="w-64 flex-shrink-0 border-r bg-white">
+          <SessionManager
+            sessions={propSessions}
+            activeSessionId={propActiveSessionId}
+            onCreateSession={onCreateSession}
+            onSelectSession={onSelectSession}
+            onCloseSession={onCloseSession}
+          />
+        </div>
+      )}
+      
+      {/* Chat Interface */}
+      <div className="flex flex-col flex-1 min-h-0">
       {/* Header */}
-      <div className="border-b p-4 flex items-center justify-between">
-        <h2 className="text-lg font-semibold">Codex Chat</h2>
+      <div className="flex-shrink-0 border-b p-2 flex items-center justify-between bg-white z-10">
+        <span className="text-lg font-semibold">Codex Chat</span>
         <div className="flex items-center gap-2">
           <Badge variant={isConnected ? "default" : "destructive"}>
             {isConnected ? "Connected" : "Disconnected"}
@@ -238,7 +275,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId, config 
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 min-h-0">
         {messages.map((message) => (
           <div
             key={message.id}
@@ -298,7 +335,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId, config 
 
       {/* Approval Request */}
       {pendingApproval && (
-        <div className="border-t bg-yellow-50 p-4">
+        <div className="flex-shrink-0 border-t bg-yellow-50 p-4">
           <div className="flex items-start gap-3">
             <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
             <div className="flex-1">
@@ -346,7 +383,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId, config 
       )}
 
       {/* Input */}
-      <div className="border-t p-4">
+      <div className="flex-shrink-0 border-t p-4 bg-white">
         <div className="flex gap-2">
           <Textarea
             value={inputValue}
@@ -354,17 +391,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({ sessionId, config 
             onKeyDown={handleKeyPress}
             placeholder="Type your message..."
             className="flex-1 min-h-[40px] max-h-[120px]"
-            disabled={!isConnected || isLoading}
+            disabled={isLoading}
           />
           <Button
             onClick={handleSendMessage}
-            disabled={!inputValue.trim() || !isConnected || isLoading}
+            disabled={!inputValue.trim() || isLoading}
             size="sm"
             className="self-end"
           >
             <Send className="w-4 h-4" />
           </Button>
         </div>
+      </div>
       </div>
     </div>
   );

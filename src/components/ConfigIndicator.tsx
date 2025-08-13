@@ -1,33 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Settings, Folder, Bot, Server } from 'lucide-react';
+import { Settings, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { CodexConfig } from '../types/codex';
-import { sessionManager } from '../services/sessionManager';
 
 interface ConfigIndicatorProps {
   config: CodexConfig;
   onOpenConfig: () => void;
+  isSessionListVisible: boolean;
+  onToggleSessionList: () => void;
 }
 
 export const ConfigIndicator: React.FC<ConfigIndicatorProps> = ({
   config,
   onOpenConfig,
+  isSessionListVisible,
+  onToggleSessionList,
 }) => {
-  const [runningSessionsCount, setRunningSessionsCount] = useState(0);
-
-  useEffect(() => {
-    const updateCount = () => {
-      setRunningSessionsCount(sessionManager.getRunningSessions().length);
-    };
-
-    // Update immediately
-    updateCount();
-
-    // Update every 2 seconds
-    const interval = setInterval(updateCount, 2000);
-    return () => clearInterval(interval);
-  }, []);
   const getProviderColor = (provider: string) => {
     switch (provider) {
       case 'openai': return 'bg-green-100 text-green-800';
@@ -47,51 +36,39 @@ export const ConfigIndicator: React.FC<ConfigIndicatorProps> = ({
   };
 
   return (
-    <div className="border-b bg-gray-50 px-4 py-2">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3 text-sm">
-          {/* Working Directory */}
-          <div className="flex items-center gap-1">
-            <Folder className="w-4 h-4 text-gray-500" />
-            <span className="text-gray-600 font-mono text-xs">
-              {config.workingDirectory.split('/').slice(-2).join('/')}
-            </span>
-          </div>
+    <div className="flex items-center justify-between">
+      {/* Toggle button */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onToggleSessionList}
+        className="h-7 px-2"
+      >
+        {isSessionListVisible ? (
+          <PanelLeftClose className="w-4 h-4" />
+        ) : (
+          <PanelLeftOpen className="w-4 h-4" />
+        )}
+      </Button>
 
-          {/* Model */}
-          <div className="flex items-center gap-1">
-            <Bot className="w-4 h-4 text-gray-500" />
-            <Badge variant="secondary" className="text-xs">
-              {config.model}
-            </Badge>
-          </div>
-
-          {/* Provider */}
-          <Badge className={`text-xs ${getProviderColor(config.provider)}`}>
-            {config.provider.toUpperCase()}
-            {config.useOss && ' (OSS)'}
+      <div className="flex items-center gap-2">
+        {/* Model */}
+        <div className="flex items-center gap-1">
+          <Badge variant="secondary" className="text-xs">
+            {config.model}
           </Badge>
-
-          {/* Sandbox */}
-          <Badge className={`text-xs ${getSandboxColor(config.sandboxMode)}`}>
-            {config.sandboxMode.replace('-', ' ').toUpperCase()}
-          </Badge>
-
-          {/* Approval */}
-          <Badge variant="outline" className="text-xs">
-            {config.approvalPolicy.replace('-', ' ').toUpperCase()}
-          </Badge>
-
-          {/* Running Sessions Count */}
-          {runningSessionsCount > 0 && (
-            <div className="flex items-center gap-1">
-              <Server className="w-4 h-4 text-gray-500" />
-              <Badge variant="default" className="text-xs">
-                {runningSessionsCount} Running
-              </Badge>
-            </div>
-          )}
         </div>
+
+        {/* Provider */}
+        <Badge className={`text-xs ${getProviderColor(config.provider)}`}>
+          {config.provider.toUpperCase()}
+          {config.useOss}
+        </Badge>
+
+        {/* Sandbox */}
+        <Badge className={`text-xs ${getSandboxColor(config.sandboxMode)}`}>
+          {config.sandboxMode.replace('-', ' ').toUpperCase()}
+        </Badge>
 
         {/* Settings Button */}
         <Button

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from './ui/button';
 import { Badge } from './ui/badge';
-import { Plus, MessageSquare, X } from 'lucide-react';
+import { MessageSquare, X, SquarePen } from 'lucide-react';
 import { ChatSession } from '../types/codex';
 import { sessionManager } from '../services/sessionManager';
 
@@ -34,16 +34,15 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
   return (
     <div className="w-64 border-r bg-gray-50 h-full flex flex-col">
       {/* Header */}
-      <div className="p-4 border-b">
+      <div className="p-2 border-b">
         <div className="flex items-center justify-between">
           <h2 className="font-semibold text-lg">Chat Sessions</h2>
-          <Button
-            size="sm"
+          <button
             onClick={onCreateSession}
-            className="h-8 w-8 p-0"
+            className="h-6 w-6"
           >
-            <Plus className="h-4 w-4" />
-          </Button>
+            <SquarePen className="h-4 w-4" />
+          </button>
         </div>
       </div>
 
@@ -89,10 +88,16 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
                         Active
                       </Badge>
                     )}
-                    {sessionManager.isSessionRunning(session.id) && (
+                    {sessionManager.isSessionRunning(session.id) ? (
                       <Badge variant="secondary" className="text-xs py-0">
                         Running
                       </Badge>
+                    ) : (
+                      session.messages.length > 0 && (
+                        <Badge variant="outline" className="text-xs py-0 text-gray-500">
+                          View Only
+                        </Badge>
+                      )
                     )}
                     {session.isLoading && (
                       <Badge variant="outline" className="text-xs py-0">
