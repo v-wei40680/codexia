@@ -2,6 +2,11 @@
 
 A modern, multi-session GUI application for the [Codex CLI](https://github.com/openai/codex) built with Tauri v2, React, and TypeScript.
 
+[![Stars](https://img.shields.io/github/stars/milisp/codexia?style=social)](https://github.com/milisp/codexia/stargazers)
+
+> [!TIP]
+> **⭐ Star the repo and follow [milisp](https://x.com/lisp_mi) on X for more ideas**.
+
 ## ✨ Features
 
 ### 🔄 **Multi-Session Support**
@@ -43,13 +48,13 @@ A modern, multi-session GUI application for the [Codex CLI](https://github.com/o
 - [Rust](https://rustup.rs/) (latest stable)
 - [Node.js](https://nodejs.org/) (v18+)
 - [Bun](https://bun.sh/) (recommended) or npm/yarn
-- [Codex CLI](https://github.com/anthropics/codex) installed and configured
+- [Codex CLI](https://github.com/openai/codex) installed and configured
 
 ### Installation
 
 1. **Clone the repository:**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/milisp/codexia
    cd codexia
    ```
 
@@ -179,7 +184,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
-- [Anthropic](https://anthropic.com) for the Codex CLI
+- [Claude code](https://www.anthropic.com/claude-code) Build by Claude code
+- [codex](https://chatgpt.com/codex) for the Codex CLI
 - [Tauri](https://tauri.app/) for the excellent desktop app framework
 - [shadcn/ui](https://ui.shadcn.com/) for the beautiful UI components
 - The open source community for the amazing tools and libraries
