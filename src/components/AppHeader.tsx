@@ -7,7 +7,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
-import { useLayoutStore } from "@/hooks/useLayoutStore";
+import { useLayoutStore } from "@/stores/layoutStore";
+import { useFolderStore } from "@/stores/FolderStore";
 
 const routeLinks = [
   { to: "/", icon: <PartyPopper /> },
@@ -18,6 +19,8 @@ const routeLinks = [
 export function AppHeader() {
   const { showChatPane, showFileTree, toggleChatPane, toggleFileTree } =
     useLayoutStore();
+  const { currentFolder } = useFolderStore();
+
   return (
     <div data-tauri-drag-region className="flex pl-20 mt-2 justify-between px-2">
       <span className="flex gap-1">
@@ -36,6 +39,8 @@ export function AppHeader() {
         </Button>
         
       </span>
+
+      {currentFolder}
       
       <span className="flex gap-2">
         {/* Route links for settings and dxt */}

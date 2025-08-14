@@ -4,9 +4,9 @@ import { listen } from '@tauri-apps/api/event';
 import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { Badge } from './ui/badge';
-import { Send, Bot, User, AlertTriangle } from 'lucide-react';
+import { Send, Bot, User, AlertTriangle, X, History } from 'lucide-react';
 import { ChatMessage, CodexEvent, ApprovalRequest, CodexConfig } from '../types/codex';
-import { useChatStore } from '../store/chatStore';
+import { useChatStore } from '../stores/chatStore';
 import { sessionManager } from '../services/sessionManager';
 import { SessionManager } from './SessionManager';
 
@@ -19,6 +19,8 @@ interface ChatInterfaceProps {
   onSelectSession?: (sessionId: string) => void;
   onCloseSession?: (sessionId: string) => void;
   isSessionListVisible?: boolean;
+  historyMessages?: any[];
+  onClearHistory?: () => void;
 }
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({ 
@@ -30,6 +32,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onSelectSession,
   onCloseSession,
   isSessionListVisible = false,
+  historyMessages = [],
+  onClearHistory,
 }) => {
   const [inputValue, setInputValue] = useState('');
   const [pendingApproval, setPendingApproval] = useState<ApprovalRequest | null>(null);
@@ -48,7 +52,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   // Get current session data from store
   const currentSession = sessions.find(s => s.id === sessionId);
-  const messages = currentSession?.messages || [];
+  const sessionMessages = currentSession?.messages || [];
+  
+  // Convert history messages to ChatInterface format
+  const convertedHistoryMessages = historyMessages.map((msg, index) => ({
+    id: `history-${index}`,
+    type: msg.role === 'user' ? 'user' : 'agent',
+    content: msg.content,
+    timestamp: new Date(msg.timestamp),
+    isStreaming: false,
+  }));
+  
+  // Combine history messages with current session messages
+  const messages = [...convertedHistoryMessages, ...sessionMessages];
   const isLoading = currentSession?.isLoading || false;
 
   const scrollToBottom = () => {
@@ -266,8 +282,28 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       <div className="flex flex-col flex-1 min-h-0">
       {/* Header */}
       <div className="flex-shrink-0 border-b p-2 flex items-center justify-between bg-white z-10">
-        <span className="text-lg font-semibold">Codex Chat</span>
         <div className="flex items-center gap-2">
+          {historyMessages.length > 0 ? (
+            <>
+              <History className="w-5 h-5 text-blue-600" />
+              <span className="text-lg font-semibold">History View ({historyMessages.length} messages)</span>
+            </>
+          ) : (
+            <span className="text-lg font-semibold">Codex Chat</span>
+          )}
+        </div>
+        <div className="flex items-center gap-2">
+          {historyMessages.length > 0 && onClearHistory && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={onClearHistory}
+              className="h-8 px-2"
+            >
+              <X className="w-4 h-4 mr-1" />
+              Clear History
+            </Button>
+          )}
           <Badge variant={isConnected ? "default" : "destructive"}>
             {isConnected ? "Connected" : "Disconnected"}
           </Badge>

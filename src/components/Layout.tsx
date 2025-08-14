@@ -1,13 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Outlet } from "react-router-dom";
-import { ChatInterface } from "@/components/ChatInterface";
+import { ChatNotes } from "@/components/ChatNotes";
 import { ConfigDialog } from "@/components/ConfigDialog";
 import { ConfigIndicator } from "@/components/ConfigIndicator";
 import { DebugPanel } from "@/components/DebugPanel";
-import { useChatStore } from "@/store/chatStore";
-import { useLayoutStore } from "@/store/layoutStore";
-import { useLayoutStore as useLayoutStoreHook } from "@/hooks/useLayoutStore";
-import { useFolderStore } from "@/hooks/useFolderStore";
+import { useChatStore } from "@/stores/chatStore";
+import { useLayoutStore } from "@/stores/layoutStore";
+import { useLayoutStore as useLayoutStoreHook } from "@/stores/layoutStore";
+import { useFolderStore } from "@/stores/FolderStore";
 import { AppHeader } from "@/components/AppHeader";
 import { FileTree } from "@/components/FileTree";
 import { FileViewer } from "@/components/FileTree/FileViewer";
@@ -15,8 +15,10 @@ import { sessionManager } from '../services/sessionManager';
 
 export function Layout() {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
-  const [chatPaneWidth, setChatPaneWidth] = useState(400);
+  const [chatPaneWidth, setChatPaneWidth] = useState(640);
   const [isResizing, setIsResizing] = useState(false);
+  const [activeTab, setActiveTab] = useState("chat");
+  const [isNotesListVisible, setIsNotesListVisible] = useState(true);
   const initialSessionCreated = useRef(false);
   const resizeRef = useRef<HTMLDivElement>(null);
 
@@ -64,6 +66,7 @@ export function Layout() {
 
     return () => clearInterval(syncInterval);
   }, []);
+
 
   const activeSession = sessions.find(s => s.id === activeSessionId);
   const currentConfig = activeSession?.config || config;
@@ -152,13 +155,18 @@ export function Layout() {
                 onOpenConfig={() => setIsConfigOpen(true)}
                 isSessionListVisible={isSessionListVisible}
                 onToggleSessionList={toggleSessionList}
+                isNotesListVisible={isNotesListVisible}
+                onToggleNotesList={() => setIsNotesListVisible(!isNotesListVisible)}
+                activeTab={activeTab}
+                onTabChange={setActiveTab}
               />
             </div>
             
-            {/* Chat Interface with embedded session manager */}
+            {/* Chat/Notes Interface */}
             <div className="flex-1 min-h-0">
               {activeSessionId ? (
-                <ChatInterface
+                <ChatNotes
+                  activeTab={activeTab}
                   sessionId={activeSessionId}
                   config={currentConfig}
                   sessions={sessions}
@@ -167,6 +175,7 @@ export function Layout() {
                   onSelectSession={selectSession}
                   onCloseSession={closeSession}
                   isSessionListVisible={isSessionListVisible}
+                  isNotesListVisible={isNotesListVisible}
                 />
               ) : (
                 <div className="flex items-center justify-center text-gray-500 h-full">

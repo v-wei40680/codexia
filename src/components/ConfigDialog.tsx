@@ -11,7 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { useFolderStore } from "@/hooks/useFolderStore";
+import { useFolderStore } from "@/stores/FolderStore";
 
 interface ConfigDialogProps {
   isOpen: boolean;

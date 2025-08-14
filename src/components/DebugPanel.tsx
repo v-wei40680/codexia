@@ -4,7 +4,7 @@ import { Button } from './ui/button';
 import { Badge } from './ui/badge';
 import { ChevronDown, Terminal, Server } from 'lucide-react';
 import { sessionManager } from '../services/sessionManager';
-import { useChatStore } from '../store/chatStore';
+import { useChatStore } from '../stores/chatStore';
 
 export const DebugPanel: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);

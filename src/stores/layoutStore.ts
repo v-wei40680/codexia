@@ -5,6 +5,8 @@ interface LayoutState {
   // Panel visibility
   isFilePanelVisible: boolean;
   isSessionListVisible: boolean;
+  showChatPane: boolean;
+  showFileTree: boolean;
   
   // Selected file
   selectedFile: string | null;
@@ -16,6 +18,8 @@ interface LayoutState {
   toggleSessionList: () => void;
   openFile: (filePath: string) => void;
   closeFile: () => void;
+  toggleChatPane: () => void;
+  toggleFileTree: () => void;
 }
 
 export const useLayoutStore = create<LayoutState>()(
@@ -25,6 +29,8 @@ export const useLayoutStore = create<LayoutState>()(
       isFilePanelVisible: false,
       isSessionListVisible: true,
       selectedFile: null,
+      showChatPane: true,
+      showFileTree: false,
       
       // Actions
       setFilePanelVisible: (visible) => set({ isFilePanelVisible: visible }),
@@ -44,6 +50,9 @@ export const useLayoutStore = create<LayoutState>()(
         selectedFile: null, 
         isFilePanelVisible: false 
       }),
+
+      toggleChatPane: () => set((state) => ({ showChatPane: !state.showChatPane })),
+      toggleFileTree: () => set((state) => ({ showFileTree: !state.showFileTree })),
     }),
     {
       name: 'layout-store',

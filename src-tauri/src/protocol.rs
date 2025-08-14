@@ -81,15 +81,17 @@ pub enum EventMsg {
         history_entry_count: Option<u32>,
     },
     TaskStarted,
-    TaskComplete { 
+    TaskComplete {
         response_id: Option<String>,
         last_agent_message: Option<String>,
     },
-    AgentMessage { 
+    AgentMessage {
         message: Option<String>,
         last_agent_message: Option<String>,
     },
-    AgentMessageDelta { delta: String },
+    AgentMessageDelta {
+        delta: String,
+    },
     ExecApprovalRequest {
         command: String,
         cwd: String,
@@ -98,8 +100,12 @@ pub enum EventMsg {
         patch: String,
         files: Vec<String>,
     },
-    Error { message: String },
-    TurnComplete { response_id: Option<String> },
+    Error {
+        message: String,
+    },
+    TurnComplete {
+        response_id: Option<String>,
+    },
     ExecCommandBegin {
         call_id: String,
         command: Vec<String>,

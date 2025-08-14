@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { X, Copy, Check, Sun, Moon, Send, FileText, GitBranch, Code } from "lucide-react";
 import { CodeEditor } from "./CodeEditor";
 import { DiffViewer } from "./DiffViewer";
-import { useEditorStore } from "@/hooks/useEditorStore";
-import { useChatStore } from "@/hooks/useChatStore";
+import { useEditorStore } from "@/stores/EditorStore";
+import { useChatStore } from "@/stores/useChatStore";
 
 interface FileViewerProps {
   filePath: string | null;

@@ -28,7 +28,7 @@ fn get_config_path() -> Result<PathBuf, String> {
 #[command]
 pub async fn read_codex_config() -> Result<Vec<Project>, String> {
     let config_path = get_config_path()?;
-    
+
     if !config_path.exists() {
         return Ok(Vec::new());
     }
@@ -36,8 +36,8 @@ pub async fn read_codex_config() -> Result<Vec<Project>, String> {
     let content = fs::read_to_string(&config_path)
         .map_err(|e| format!("Failed to read config file: {}", e))?;
 
-    let config: CodexConfig = toml::from_str(&content)
-        .map_err(|e| format!("Failed to parse config file: {}", e))?;
+    let config: CodexConfig =
+        toml::from_str(&content).map_err(|e| format!("Failed to parse config file: {}", e))?;
 
     let projects: Vec<Project> = config
         .projects
@@ -59,6 +59,6 @@ pub async fn get_project_name(path: String) -> Result<String, String> {
         .and_then(|n| n.to_str())
         .unwrap_or(&path)
         .to_string();
-    
+
     Ok(name)
 }

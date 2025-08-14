@@ -24,4 +24,7 @@ dist-ssr
 *.sw?
 
 CLAUDE.md
-.claude
+.claude/
+.gemini/
+
+.env*

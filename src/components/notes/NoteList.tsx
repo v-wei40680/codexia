@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { useNoteStore } from "@/hooks/useNoteStore";
+import { useNoteStore } from "@/stores/NoteStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, MoreHorizontal, Trash2, Search, Star, StarOff } from "lucide-react";
@@ -23,7 +23,7 @@ export function NoteList() {
   } = useNoteStore();
   
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState("history");
+  const [activeTab, setActiveTab] = useState("all");
 
   const handleCreateNote = () => {
     const newNote = createNote();
@@ -174,12 +174,12 @@ export function NoteList() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1">
-        <TabsList className="grid w-full grid-cols-2 mx-3 mt-2">
-          <TabsTrigger value="history">History</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 mt-2">
+          <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="favorites">Favorites</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="history" className="flex-1 overflow-y-auto mt-0">
+        <TabsContent value="all" className="flex-1 overflow-y-auto mt-0">
           {filteredNotes.length === 0 ? (
             <div className="p-4 text-center text-gray-500 text-sm">
               {searchQuery ? (

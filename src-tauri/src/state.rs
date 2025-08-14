@@ -1,7 +1,7 @@
+use crate::codex_client::CodexClient;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
-use crate::codex_client::CodexClient;
 
 pub struct CodexState {
     pub sessions: Arc<Mutex<HashMap<String, CodexClient>>>,

@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { ChatSession, ChatMessage, CodexConfig, DEFAULT_CONFIG } from '../types/codex';
-import { sessionManager } from '../services/sessionManager';
+import { ChatSession, ChatMessage, CodexConfig, DEFAULT_CONFIG } from '@/types/codex';
+import { sessionManager } from '@/services/sessionManager';
 
 interface ChatStore {
   // Configuration
@@ -112,13 +112,34 @@ export const useChatStore = create<ChatStore>()(
 
       // Message management
       addMessage: (sessionId, message) => {
-        set((state) => ({
-          sessions: state.sessions.map(session =>
-            session.id === sessionId
-              ? { ...session, messages: [...session.messages, message] }
-              : session
-          )
-        }));
+        set((state) => {
+          // Check if session exists
+          const sessionExists = state.sessions.some(s => s.id === sessionId);
+          
+          if (!sessionExists) {
+            // Create new session if it doesn't exist
+            const newSession: ChatSession = {
+              id: sessionId,
+              name: sessionId.startsWith('history-') ? 'History Chat' : `Chat ${state.sessions.length + 1}`,
+              messages: [message],
+              isActive: sessionId === state.activeSessionId,
+              config: state.config,
+            };
+            
+            return {
+              sessions: [...state.sessions, newSession],
+            };
+          } else {
+            // Update existing session
+            return {
+              sessions: state.sessions.map(session =>
+                session.id === sessionId
+                  ? { ...session, messages: [...session.messages, message] }
+                  : session
+              )
+            };
+          }
+        });
       },
 
       updateMessage: (sessionId, messageId, content) => {

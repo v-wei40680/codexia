@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Save, Search, ChevronUp, ChevronDown, X } from "lucide-react";
 import AceEditor from "react-ace";
-import { useEditorStore } from "@/hooks/useEditorStore";
+import { useEditorStore } from "@/stores/EditorStore";
 // Import Ace Editor modes
 import "ace-builds/src-noconflict/mode-javascript";
 import "ace-builds/src-noconflict/mode-typescript";

@@ -3,12 +3,17 @@ import { Badge } from './ui/badge';
 import { Button } from './ui/button';
 import { Settings, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import { CodexConfig } from '../types/codex';
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface ConfigIndicatorProps {
   config: CodexConfig;
   onOpenConfig: () => void;
   isSessionListVisible: boolean;
   onToggleSessionList: () => void;
+  isNotesListVisible: boolean;
+  onToggleNotesList: () => void;
+  activeTab: string;
+  onTabChange: (tab: string) => void;
 }
 
 export const ConfigIndicator: React.FC<ConfigIndicatorProps> = ({
@@ -16,6 +21,10 @@ export const ConfigIndicator: React.FC<ConfigIndicatorProps> = ({
   onOpenConfig,
   isSessionListVisible,
   onToggleSessionList,
+  isNotesListVisible,
+  onToggleNotesList,
+  activeTab,
+  onTabChange,
 }) => {
   const getProviderColor = (provider: string) => {
     switch (provider) {
@@ -35,21 +44,38 @@ export const ConfigIndicator: React.FC<ConfigIndicatorProps> = ({
     }
   };
 
+  const handleToggleLeftPanel = () => {
+    if (activeTab === 'chat') {
+      onToggleSessionList();
+    } else if (activeTab === 'notes') {
+      onToggleNotesList();
+    }
+  };
+
+  const isLeftPanelVisible = activeTab === 'chat' ? isSessionListVisible : isNotesListVisible;
+
   return (
     <div className="flex items-center justify-between">
       {/* Toggle button */}
       <Button
         variant="ghost"
         size="sm"
-        onClick={onToggleSessionList}
+        onClick={handleToggleLeftPanel}
         className="h-7 px-2"
       >
-        {isSessionListVisible ? (
+        {isLeftPanelVisible ? (
           <PanelLeftClose className="w-4 h-4" />
         ) : (
           <PanelLeftOpen className="w-4 h-4" />
         )}
       </Button>
+      
+      <Tabs value={activeTab} onValueChange={onTabChange} className="w-[400px]">
+        <TabsList>
+          <TabsTrigger value="chat">chat</TabsTrigger>
+          <TabsTrigger value="notes">notes</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       <div className="flex items-center gap-2">
         {/* Model */}

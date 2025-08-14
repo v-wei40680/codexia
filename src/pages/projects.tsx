@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FolderOpen } from 'lucide-react';
-import { useFolderStore } from '@/hooks/useFolderStore';
+import { useFolderStore } from '@/stores/FolderStore';
 import { Button } from '@/components/ui/button';
+import { useLayoutStore } from '@/stores/layoutStore';
 
 interface Project {
   path: string;
@@ -14,6 +15,7 @@ export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const { setCurrentFolder } = useFolderStore();
+  const { toggleFileTree } = useLayoutStore()
 
   useEffect(() => {
     loadProjects();
@@ -72,7 +74,10 @@ export default function ProjectsPage() {
               <Card 
                 key={index} 
                 className="hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => openProjectInFileTree(project.path)}
+                onClick={() => {
+                  toggleFileTree()
+                  openProjectInFileTree(project.path)
+                }}
               >
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">

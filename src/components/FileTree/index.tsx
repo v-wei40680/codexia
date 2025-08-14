@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { useSettingsStore } from "@/hooks/useSettingsStore";
-import { useFolderStore } from "@/hooks/useFolderStore";
-import { useContextFilesStore } from "@/hooks/useContextFilesStore";
+import { useSettingsStore } from "@/stores/SettingsStore";
+import { useFolderStore } from "@/stores/FolderStore";
+import { useContextFilesStore } from "@/stores/ContextFilesStore";
 import { useFileTokens } from "@/hooks/useFileTokens";
 import { FileTreeHeader } from "./FileTreeHeader";
 import { FileTreeItem } from "./FileTreeItem";

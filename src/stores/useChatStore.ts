@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import type { ChatMessage } from "@/types/chat";
-import { useConversationStore } from "./useConversationStore";
+import { useConversationStore } from "./ConversationStore";
 
 interface ChatStore {
   inputMessage: string;
