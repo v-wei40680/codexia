@@ -261,3 +261,23 @@ pub async fn get_running_sessions(state: State<'_, CodexState>) -> Result<Vec<St
     let sessions = state.sessions.lock().await;
     Ok(sessions.keys().cloned().collect())
 }
+
+#[tauri::command]
+pub async fn check_codex_version() -> Result<String, String> {
+    use std::process::Command;
+    
+    match Command::new("codex")
+        .arg("-V")
+        .output()
+    {
+        Ok(output) => {
+            if output.status.success() {
+                let version = String::from_utf8_lossy(&output.stdout);
+                Ok(version.trim().to_string())
+            } else {
+                Err("Codex command failed".to_string())
+            }
+        }
+        Err(_) => Err("Codex command not found".to_string())
+    }
+}

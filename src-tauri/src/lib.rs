@@ -6,7 +6,7 @@ mod protocol;
 mod state;
 
 use commands::{
-    approve_execution, get_running_sessions, load_sessions_from_disk, send_message, start_codex_session, stop_session,
+    approve_execution, check_codex_version, get_running_sessions, load_sessions_from_disk, send_message, start_codex_session, stop_session,
 };
 use config::{get_project_name, read_codex_config};
 use filesystem::{
@@ -32,6 +32,7 @@ pub fn run() {
             stop_session,
             get_running_sessions,
             load_sessions_from_disk,
+            check_codex_version,
             read_directory,
             get_default_directories,
             calculate_file_tokens,

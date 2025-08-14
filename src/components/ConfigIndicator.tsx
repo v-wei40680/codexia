@@ -1,7 +1,7 @@
 import React from 'react';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Settings, PanelLeftClose, PanelLeftOpen, Activity } from 'lucide-react';
+import { Settings, PanelLeftClose, PanelLeftOpen, Activity, FolderTree } from 'lucide-react';
 import { CodexConfig } from '../types/codex';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
@@ -16,6 +16,8 @@ interface ConfigIndicatorProps {
   onTabChange: (tab: string) => void;
   showSessionManager?: boolean;
   onToggleSessionManager?: () => void;
+  isFileTreeVisible?: boolean;
+  onToggleFileTree?: () => void;
 }
 
 export const ConfigIndicator: React.FC<ConfigIndicatorProps> = ({
@@ -28,6 +30,8 @@ export const ConfigIndicator: React.FC<ConfigIndicatorProps> = ({
   activeTab,
   onTabChange,
   onToggleSessionManager,
+  isFileTreeVisible,
+  onToggleFileTree,
 }) => {
   const getProviderColor = (provider: string) => {
     switch (provider) {
@@ -60,7 +64,20 @@ export const ConfigIndicator: React.FC<ConfigIndicatorProps> = ({
   return (
     <div className="flex items-center justify-between">
       <span className="flex">
-        {/* Toggle button */}
+        {/* File Tree Toggle button */}
+        {onToggleFileTree && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggleFileTree}
+            className="h-7 px-2"
+            title="Toggle File Tree"
+          >
+            <FolderTree className={`w-4 h-4 ${isFileTreeVisible ? 'text-blue-600' : ''}`} />
+          </Button>
+        )}
+
+        {/* Panel Toggle button */}
         <Button
           variant="ghost"
           size="sm"

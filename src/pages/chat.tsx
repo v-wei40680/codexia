@@ -13,6 +13,7 @@ import { sessionManager } from '../services/sessionManager';
 import type { Conversation } from '@/types/chat';
 
 export default function ChatPage() {
+  const { showFileTree } = useLayoutStore();
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("chat");
   const [chatMode, setChatMode] = useState<'conversation' | 'readonly'>('conversation');
@@ -116,9 +117,11 @@ export default function ChatPage() {
   return (
     <div className="h-full flex overflow-hidden">
       {/* Left Panel - File Tree */}
-      <div className="w-64 border-r h-full flex-shrink-0">
-        <FileTree currentFolder={currentFolder || undefined} onFileClick={openFile} />
-      </div>
+      {showFileTree && (
+        <div className="w-64 border-r h-full flex-shrink-0">
+          <FileTree currentFolder={currentFolder || undefined} onFileClick={openFile} />
+        </div>
+      )}
 
       {/* Right Panel - Main Content Area */}
       <div className="flex-1 min-h-0 h-full flex flex-col">
