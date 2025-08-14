@@ -7,7 +7,7 @@ use tokio::process::{Child, Command};
 use tokio::sync::mpsc;
 use uuid::Uuid;
 
-use crate::{CodexConfig, Event, Op, Submission};
+use crate::protocol::{CodexConfig, Event, EventMsg, Op, Submission};
 
 pub struct CodexClient {
     process: Child,
@@ -144,7 +144,7 @@ impl CodexClient {
                     // Create task_started event
                     let task_started_event = Event {
                         id: "task_started".to_string(),
-                        msg: crate::EventMsg::TaskStarted,
+                        msg: EventMsg::TaskStarted,
                     };
                     if let Err(e) = app_clone.emit(&format!("codex-event-{}", session_id_clone), &task_started_event) {
                         tracing::error!("Failed to emit task_started event: {}", e);
@@ -156,7 +156,7 @@ impl CodexClient {
                         // Send streaming delta
                         let delta_event = Event {
                             id: "stream_delta".to_string(),
-                            msg: crate::EventMsg::AgentMessageDelta { delta: line.clone() + "\n" },
+                            msg: EventMsg::AgentMessageDelta { delta: line.clone() + "\n" },
                         };
                         if let Err(e) = app_clone.emit(&format!("codex-event-{}", session_id_clone), &delta_event) {
                             tracing::error!("Failed to emit delta event: {}", e);

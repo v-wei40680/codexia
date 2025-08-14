@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
+import { Outlet } from "react-router-dom";
 import { ChatInterface } from "@/components/ChatInterface";
 import { ConfigDialog } from "@/components/ConfigDialog";
 import { ConfigIndicator } from "@/components/ConfigIndicator";
@@ -116,66 +117,71 @@ export function Layout() {
           </div>
         )}
 
-        {/* Middle Panel - File Content (conditionally visible) */}
-        {isFilePanelVisible && selectedFile && (
-          <div className="flex-1 min-w-0 border-r h-full flex-shrink-0">
-            <FileViewer filePath={selectedFile} onClose={closeFile} />
-          </div>
-        )}
-
-        {/* Right Panel - Chat with Sessions */}
-        {showChatPane && (
-          <>
-            {/* Resize Handle */}
-            <div 
-              className="w-1 bg-gray-200 hover:bg-gray-300 cursor-col-resize flex-shrink-0 relative group"
-              onMouseDown={handleMouseDown}
-            >
-              <div className="absolute inset-0 w-2 -translate-x-0.5 group-hover:bg-blue-200/50" />
-            </div>
-            
-            {/* Chat Panel */}
-            <div 
-              ref={resizeRef}
-              className="flex flex-col min-h-0"
-              style={{ width: chatPaneWidth }}
-            >
-          {/* Configuration Indicator at top of entire right panel */}
-          <div className="flex-shrink-0 border-b bg-white z-20">
-            <ConfigIndicator
-              config={currentConfig}
-              onOpenConfig={() => setIsConfigOpen(true)}
-              isSessionListVisible={isSessionListVisible}
-              onToggleSessionList={toggleSessionList}
-            />
-          </div>
-          
-          {/* Chat Interface with embedded session manager */}
-          <div className="flex-1 min-h-0">
-            {activeSessionId ? (
-              <ChatInterface
-                sessionId={activeSessionId}
-                config={currentConfig}
-                sessions={sessions}
-                activeSessionId={activeSessionId}
-                onCreateSession={createSession}
-                onSelectSession={selectSession}
-                onCloseSession={closeSession}
-                isSessionListVisible={isSessionListVisible}
-              />
+        {/* Middle Panel - Main Content */}
+        <div className="flex-1 min-w-0 h-full flex">
+          {/* Content Area */}
+          <div className="flex-1">
+            {isFilePanelVisible && selectedFile ? (
+              <FileViewer filePath={selectedFile} onClose={closeFile} />
             ) : (
-              <div className="flex items-center justify-center text-gray-500 h-full">
-                <div className="text-center">
-                  <h2 className="text-xl font-semibold mb-2">Welcome to Codexia</h2>
-                  <p>Create a new chat session to get started</p>
-                </div>
-              </div>
+              <Outlet />
             )}
           </div>
-          
+
+          {/* Right Panel - Chat with Sessions */}
+          {showChatPane && (
+            <>
+              {/* Resize Handle */}
+              <div 
+                className="w-1 bg-gray-200 hover:bg-gray-300 cursor-col-resize flex-shrink-0 relative group"
+                onMouseDown={handleMouseDown}
+              >
+                <div className="absolute inset-0 w-2 -translate-x-0.5 group-hover:bg-blue-200/50" />
+              </div>
+              
+              {/* Chat Panel */}
+              <div 
+                ref={resizeRef}
+                className="flex flex-col min-h-0"
+                style={{ width: chatPaneWidth }}
+              >
+            {/* Configuration Indicator at top of entire right panel */}
+            <div className="flex-shrink-0 border-b bg-white z-20">
+              <ConfigIndicator
+                config={currentConfig}
+                onOpenConfig={() => setIsConfigOpen(true)}
+                isSessionListVisible={isSessionListVisible}
+                onToggleSessionList={toggleSessionList}
+              />
             </div>
-          </>
-        )}
+            
+            {/* Chat Interface with embedded session manager */}
+            <div className="flex-1 min-h-0">
+              {activeSessionId ? (
+                <ChatInterface
+                  sessionId={activeSessionId}
+                  config={currentConfig}
+                  sessions={sessions}
+                  activeSessionId={activeSessionId}
+                  onCreateSession={createSession}
+                  onSelectSession={selectSession}
+                  onCloseSession={closeSession}
+                  isSessionListVisible={isSessionListVisible}
+                />
+              ) : (
+                <div className="flex items-center justify-center text-gray-500 h-full">
+                  <div className="text-center">
+                    <h2 className="text-xl font-semibold mb-2">Welcome to Codexia</h2>
+                    <p>Create a new chat session to get started</p>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Configuration Dialog */}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
@@ -11,6 +11,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import { useFolderStore } from "@/hooks/useFolderStore";
 
 interface ConfigDialogProps {
   isOpen: boolean;
@@ -25,7 +26,21 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
   onClose,
   onSave,
 }) => {
-  const [localConfig, setLocalConfig] = useState<CodexConfig>(config);
+  const { currentFolder, setCurrentFolder } = useFolderStore();
+  const [localConfig, setLocalConfig] = useState<CodexConfig>({
+    ...config,
+    workingDirectory: currentFolder || config.workingDirectory
+  });
+
+  // Update localConfig when currentFolder changes
+  useEffect(() => {
+    if (currentFolder) {
+      setLocalConfig(prev => ({
+        ...prev,
+        workingDirectory: currentFolder
+      }));
+    }
+  }, [currentFolder]);
 
   const handleSelectDirectory = async () => {
     try {
@@ -34,6 +49,7 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
         multiple: false,
       });
       if (result) {
+        setCurrentFolder(result)
         setLocalConfig(prev => ({ ...prev, workingDirectory: result }));
       }
     } catch (error) {
