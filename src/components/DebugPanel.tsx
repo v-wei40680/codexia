@@ -32,7 +32,7 @@ export const DebugPanel: React.FC = () => {
 
   if (!isOpen) {
     return (
-      <div className="fixed bottom-4 right-4 z-50">
+      <div className="fixed bottom-16 right-4 z-50">
         <Button
           onClick={() => setIsOpen(true)}
           variant="outline"
@@ -40,7 +40,6 @@ export const DebugPanel: React.FC = () => {
           className="bg-white shadow-lg"
         >
           <Terminal className="w-4 h-4" />
-          Debug
         </Button>
       </div>
     );

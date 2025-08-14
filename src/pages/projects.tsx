@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { invoke } from '@tauri-apps/api/core';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { FolderOpen } from 'lucide-react';
@@ -14,8 +15,9 @@ interface Project {
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
   const { setCurrentFolder } = useFolderStore();
-  const { toggleFileTree } = useLayoutStore()
+  const { setFileTreeVisible, setChatPaneVisible } = useLayoutStore();
 
   useEffect(() => {
     loadProjects();
@@ -32,8 +34,13 @@ export default function ProjectsPage() {
     }
   };
 
-  const openProjectInFileTree = (projectPath: string) => {
+  const openProject = (projectPath: string) => {
     setCurrentFolder(projectPath);
+    // Enable both panels when opening a project
+    setFileTreeVisible(true);
+    setChatPaneVisible(true);
+    // Navigate to chat page
+    navigate('/chat');
   };
 
   if (loading) {
@@ -74,10 +81,7 @@ export default function ProjectsPage() {
               <Card 
                 key={index} 
                 className="hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => {
-                  toggleFileTree()
-                  openProjectInFileTree(project.path)
-                }}
+                onClick={() => openProject(project.path)}
               >
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">

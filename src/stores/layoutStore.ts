@@ -20,6 +20,8 @@ interface LayoutState {
   closeFile: () => void;
   toggleChatPane: () => void;
   toggleFileTree: () => void;
+  setChatPaneVisible: (visible: boolean) => void;
+  setFileTreeVisible: (visible: boolean) => void;
 }
 
 export const useLayoutStore = create<LayoutState>()(
@@ -53,6 +55,8 @@ export const useLayoutStore = create<LayoutState>()(
 
       toggleChatPane: () => set((state) => ({ showChatPane: !state.showChatPane })),
       toggleFileTree: () => set((state) => ({ showFileTree: !state.showFileTree })),
+      setChatPaneVisible: (visible) => set({ showChatPane: visible }),
+      setFileTreeVisible: (visible) => set({ showFileTree: visible }),
     }),
     {
       name: 'layout-store',

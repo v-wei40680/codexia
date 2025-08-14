@@ -1,5 +1,197 @@
+import { useState, useEffect, useRef, useCallback } from "react";
+import { ChatNotes } from "@/components/ChatNotes";
+import { ConfigDialog } from "@/components/ConfigDialog";
+import { ConfigIndicator } from "@/components/ConfigIndicator";
+import { useChatStore } from "@/stores/chatStore";
+import { useLayoutStore } from "@/stores/layoutStore";
+import { useFolderStore } from "@/stores/FolderStore";
+import { FileTree } from "@/components/FileTree";
+import { FileViewer } from "@/components/FileTree/FileViewer";
+import { sessionManager } from '../services/sessionManager';
+
 export default function ChatPage() {
-    return (
-        <div>Hi Chat</div>
-    )
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
+  const [chatPaneWidth, setChatPaneWidth] = useState(640);
+  const [isResizing, setIsResizing] = useState(false);
+  const [activeTab, setActiveTab] = useState("chat");
+  const [isNotesListVisible, setIsNotesListVisible] = useState(true);
+  const initialSessionCreated = useRef(false);
+  const resizeRef = useRef<HTMLDivElement>(null);
+
+  // Zustand stores
+  const {
+    config,
+    sessions,
+    activeSessionId,
+    setConfig,
+    createSession,
+    selectSession,
+    closeSession,
+  } = useChatStore();
+
+  const {
+    isFilePanelVisible,
+    isSessionListVisible,
+    selectedFile,
+    showChatPane,
+    showFileTree,
+    toggleSessionList,
+    openFile,
+    closeFile,
+  } = useLayoutStore();
+
+  const { currentFolder } = useFolderStore();
+
+  // Create initial session if none exists
+  useEffect(() => {
+    if (sessions.length === 0 && !initialSessionCreated.current) {
+      initialSessionCreated.current = true;
+      createSession();
+    }
+  }, [sessions.length, createSession]);
+
+  // Sync session manager with backend periodically
+  useEffect(() => {
+    const syncInterval = setInterval(() => {
+      sessionManager.syncWithBackend();
+    }, 2000); // Sync every 2 seconds
+
+    // Initial sync
+    sessionManager.syncWithBackend();
+
+    return () => clearInterval(syncInterval);
+  }, []);
+
+  const activeSession = sessions.find(s => s.id === activeSessionId);
+  const currentConfig = activeSession?.config || config;
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  }, []);
+
+  const handleMouseMove = useCallback((e: MouseEvent) => {
+    if (!isResizing) return;
+    
+    const containerRect = resizeRef.current?.parentElement?.getBoundingClientRect();
+    if (!containerRect) return;
+    
+    const newWidth = containerRect.right - e.clientX;
+    const minWidth = 300;
+    const maxWidth = containerRect.width - 200;
+    
+    setChatPaneWidth(Math.max(minWidth, Math.min(maxWidth, newWidth)));
+  }, [isResizing]);
+
+  const handleMouseUp = useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+      return () => {
+        document.removeEventListener('mousemove', handleMouseMove);
+        document.removeEventListener('mouseup', handleMouseUp);
+      };
+    }
+  }, [isResizing, handleMouseMove, handleMouseUp]);
+
+  return (
+    <div className={`h-full flex overflow-hidden ${isResizing ? 'cursor-col-resize' : ''}`}>
+      {/* Left Panel - File Tree */}
+      {showFileTree && (
+        <div className="w-64 border-r h-full flex-shrink-0">
+          <FileTree currentFolder={currentFolder || undefined} onFileClick={openFile} />
+        </div>
+      )}
+
+      {/* Middle Panel - Main Content */}
+      <div className="flex-1 min-w-0 h-full flex">
+        {/* Content Area */}
+        <div className="flex-1">
+          {isFilePanelVisible && selectedFile ? (
+            <FileViewer filePath={selectedFile} onClose={closeFile} />
+          ) : (
+            <div className="flex items-center justify-center text-gray-500 h-full">
+              <div className="text-center">
+                <h2 className="text-xl font-semibold mb-2">Welcome to Chat</h2>
+                <p>Select a file or start chatting</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Right Panel - Chat with Sessions */}
+        {showChatPane && (
+          <>
+            {/* Resize Handle */}
+            <div 
+              className="w-1 bg-gray-200 hover:bg-gray-300 cursor-col-resize flex-shrink-0 relative group"
+              onMouseDown={handleMouseDown}
+            >
+              <div className="absolute inset-0 w-2 -translate-x-0.5 group-hover:bg-blue-200/50" />
+            </div>
+            
+            {/* Chat Panel */}
+            <div 
+              ref={resizeRef}
+              className="flex flex-col min-h-0"
+              style={{ width: chatPaneWidth }}
+            >
+              {/* Configuration Indicator at top of entire right panel */}
+              <div className="flex-shrink-0 border-b bg-white z-20">
+                <ConfigIndicator
+                  config={currentConfig}
+                  onOpenConfig={() => setIsConfigOpen(true)}
+                  isSessionListVisible={isSessionListVisible}
+                  onToggleSessionList={toggleSessionList}
+                  isNotesListVisible={isNotesListVisible}
+                  onToggleNotesList={() => setIsNotesListVisible(!isNotesListVisible)}
+                  activeTab={activeTab}
+                  onTabChange={setActiveTab}
+                />
+              </div>
+              
+              {/* Chat/Notes Interface */}
+              <div className="flex-1 min-h-0">
+                {activeSessionId ? (
+                  <ChatNotes
+                    activeTab={activeTab}
+                    sessionId={activeSessionId}
+                    config={currentConfig}
+                    sessions={sessions}
+                    activeSessionId={activeSessionId}
+                    onCreateSession={createSession}
+                    onSelectSession={selectSession}
+                    onCloseSession={closeSession}
+                    isSessionListVisible={isSessionListVisible}
+                    isNotesListVisible={isNotesListVisible}
+                  />
+                ) : (
+                  <div className="flex items-center justify-center text-gray-500 h-full">
+                    <div className="text-center">
+                      <h2 className="text-xl font-semibold mb-2">Welcome to Codexia</h2>
+                      <p>Create a new chat session to get started</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Configuration Dialog */}
+      <ConfigDialog
+        isOpen={isConfigOpen}
+        config={config}
+        onClose={() => setIsConfigOpen(false)}
+        onSave={(newConfig) => {
+          setConfig(newConfig);
+        }}
+      />
+    </div>
+  );
 }
