@@ -74,11 +74,38 @@ class SessionManager {
   getRunningSessions(): string[] {
     return Array.from(this.runningSessions);
   }
+  
+  async stopAllSessions(): Promise<void> {
+    const sessions = Array.from(this.runningSessions);
+    const promises = sessions.map(sessionId => 
+      this.stopSession(sessionId).catch(error => {
+        console.error(`Failed to stop session ${sessionId}:`, error);
+        return null; // Don't let one failure stop the others
+      })
+    );
+    
+    await Promise.all(promises);
+    console.log(`Stopped ${sessions.length} sessions`);
+  }
 
   async syncWithBackend(): Promise<void> {
     try {
       const runningSessions = await invoke<string[]>('get_running_sessions');
+      const previousCount = this.runningSessions.size;
       this.runningSessions = new Set(runningSessions);
+      
+      // Log if session count changed significantly
+      const currentCount = this.runningSessions.size;
+      if (Math.abs(currentCount - previousCount) >= 2) {
+        console.log(`Session count changed: ${previousCount} -> ${currentCount}`);
+      }
+      
+      // Clean up stale session configs for sessions that are no longer running
+      for (const sessionId of this.sessionConfigs.keys()) {
+        if (!this.runningSessions.has(sessionId)) {
+          this.sessionConfigs.delete(sessionId);
+        }
+      }
     } catch (error) {
       console.error('Failed to sync with backend:', error);
     }

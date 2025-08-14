@@ -32,7 +32,6 @@ pub struct Conversation {
 struct SessionRecord {
     id: Option<String>,
     timestamp: Option<String>,
-    record_type: Option<String>,
     #[serde(rename = "type")]
     message_type: Option<String>,
     role: Option<String>,
@@ -152,16 +151,22 @@ pub async fn load_sessions_from_disk() -> Result<Vec<Conversation>, String> {
 
     let mut conversations = Vec::new();
     
+    println!("Scanning sessions directory: {:?}", sessions_path);
+    
     for entry in WalkDir::new(&sessions_path)
         .into_iter()
         .filter_map(|e| e.ok())
         .filter(|e| e.file_type().is_file())
         .filter(|e| e.path().extension().and_then(|s| s.to_str()) == Some("jsonl"))
     {
+        println!("Processing file: {:?}", entry.path());
         match fs::read_to_string(entry.path()) {
             Ok(content) => {
                 if let Some(conversation) = parse_session_file(&content, entry.path()) {
+                    println!("Successfully parsed conversation: {}", conversation.id);
                     conversations.push(conversation);
+                } else {
+                    println!("Failed to parse conversation from file: {:?}", entry.path());
                 }
             }
             Err(e) => {
@@ -172,6 +177,8 @@ pub async fn load_sessions_from_disk() -> Result<Vec<Conversation>, String> {
     
     // Sort by updated_at (newest first)
     conversations.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
+    
+    println!("Total conversations loaded: {}", conversations.len());
     
     Ok(conversations)
 }

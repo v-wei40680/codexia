@@ -35,4 +35,34 @@ export default defineConfig(async () => ({
       ignored: ["**/src-tauri/**"],
     },
   },
+  build: {
+    chunkSizeWarningLimit: 1500, // kB
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes("node_modules")) {
+            if (id.includes("react") || id.includes("react-dom")) {
+              return "vendor-react";
+            }
+            if (id.includes("lucide-react")) {
+              return "vendor-icons";
+            }
+            if (id.includes("ace-builds") || id.includes("react-ace")) {
+              return "vendor-ace";
+            }
+            if (id.includes("react-markdown") || id.includes("react-syntax-highlighter")) {
+              return "vendor-markdown";
+            }
+            if (id.includes("zustand")) {
+              return "vendor-store";
+            }
+            if (id.includes("@tauri-apps/api")) {
+              return "vendor-tauri";
+            }
+            return "vendor";
+          }
+        },
+      },
+    },
+  }
 }));

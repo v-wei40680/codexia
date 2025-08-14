@@ -1,7 +1,7 @@
 import React from 'react';
 import { Badge } from './ui/badge';
 import { Button } from './ui/button';
-import { Settings, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
+import { Settings, PanelLeftClose, PanelLeftOpen, Activity } from 'lucide-react';
 import { CodexConfig } from '../types/codex';
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
@@ -14,6 +14,8 @@ interface ConfigIndicatorProps {
   onToggleNotesList: () => void;
   activeTab: string;
   onTabChange: (tab: string) => void;
+  showSessionManager?: boolean;
+  onToggleSessionManager?: () => void;
 }
 
 export const ConfigIndicator: React.FC<ConfigIndicatorProps> = ({
@@ -25,6 +27,7 @@ export const ConfigIndicator: React.FC<ConfigIndicatorProps> = ({
   onToggleNotesList,
   activeTab,
   onTabChange,
+  onToggleSessionManager,
 }) => {
   const getProviderColor = (provider: string) => {
     switch (provider) {
@@ -56,26 +59,28 @@ export const ConfigIndicator: React.FC<ConfigIndicatorProps> = ({
 
   return (
     <div className="flex items-center justify-between">
-      {/* Toggle button */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={handleToggleLeftPanel}
-        className="h-7 px-2"
-      >
-        {isLeftPanelVisible ? (
-          <PanelLeftClose className="w-4 h-4" />
-        ) : (
-          <PanelLeftOpen className="w-4 h-4" />
-        )}
-      </Button>
+      <span className="flex">
+        {/* Toggle button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleToggleLeftPanel}
+          className="h-7 px-2"
+        >
+          {isLeftPanelVisible ? (
+            <PanelLeftClose className="w-4 h-4" />
+          ) : (
+            <PanelLeftOpen className="w-4 h-4" />
+          )}
+        </Button>
       
-      <Tabs value={activeTab} onValueChange={onTabChange} className="w-[400px]">
-        <TabsList>
-          <TabsTrigger value="chat">chat</TabsTrigger>
-          <TabsTrigger value="notes">notes</TabsTrigger>
-        </TabsList>
-      </Tabs>
+        <Tabs value={activeTab} onValueChange={onTabChange} className="w-[400px]">
+          <TabsList>
+            <TabsTrigger value="chat">chat</TabsTrigger>
+            <TabsTrigger value="notes">notes</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </span>
 
       <div className="flex items-center gap-2">
         {/* Model */}
@@ -96,12 +101,26 @@ export const ConfigIndicator: React.FC<ConfigIndicatorProps> = ({
           {config.sandboxMode.replace('-', ' ').toUpperCase()}
         </Badge>
 
+        {/* Session Manager Button */}
+        {onToggleSessionManager && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onToggleSessionManager}
+            className="h-7 px-2"
+            title="Active Sessions - Kill active sessions"
+          >
+            <Activity className="w-4 h-4" />
+          </Button>
+        )}
+        
         {/* Settings Button */}
         <Button
           variant="ghost"
           size="sm"
           onClick={onOpenConfig}
           className="h-7 px-2"
+          title="Configuration Settings"
         >
           <Settings className="w-4 h-4" />
         </Button>

@@ -7,7 +7,7 @@ import { CodexConfig } from '../types/codex';
 import type { Conversation } from '../types/chat';
 import { useFolderStore } from '../stores/FolderStore';
 
-interface ChatNotesProps {
+interface MainContentAreaProps {
   activeTab: string;
   sessionId: string;
   config: CodexConfig;
@@ -18,9 +18,10 @@ interface ChatNotesProps {
   onCloseSession?: (sessionId: string) => void;
   isSessionListVisible?: boolean;
   isNotesListVisible?: boolean;
+  onConversationSelect?: (conversation: Conversation) => void;
 }
 
-export const ChatNotes: React.FC<ChatNotesProps> = ({
+export const MainContentArea: React.FC<MainContentAreaProps> = ({
   activeTab,
   sessionId,
   config,
@@ -31,6 +32,7 @@ export const ChatNotes: React.FC<ChatNotesProps> = ({
   onCloseSession,
   isSessionListVisible,
   isNotesListVisible,
+  onConversationSelect,
 }) => {
   const [isContinuing, setIsContinuing] = useState(false);
   const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
@@ -83,11 +85,14 @@ export const ChatNotes: React.FC<ChatNotesProps> = ({
     return (
       <div className="flex h-full min-h-0">
         {isSessionListVisible && (
-          <div className="w-80 border-r h-full overflow-y-auto">
-            <ConversationList onSelectConversation={handleSelectConversation} />
+          <div className="w-64 border-r h-full overflow-y-auto flex-shrink-0">
+            <ConversationList 
+              onSelectConversation={onConversationSelect || handleSelectConversation} 
+              onCreateNewSession={onCreateSession}
+            />
           </div>
         )}
-        <div className="flex-1 min-h-0 h-full">
+        <div className="flex-1 min-h-0 h-full min-w-0">
           <ChatInterface
             sessionId={sessionId}
             config={config}
@@ -107,13 +112,13 @@ export const ChatNotes: React.FC<ChatNotesProps> = ({
 
   if (activeTab === 'notes') {
     return (
-      <div className="flex h-full">
+      <div className="flex h-full min-h-0">
         {isNotesListVisible && (
-          <div className="w-80 border-r">
+          <div className="w-64 border-r h-full flex-shrink-0">
             <NoteList />
           </div>
         )}
-        <div className="flex-1 min-h-0 h-full">
+        <div className="flex-1 min-h-0 h-full min-w-0">
           <NoteEditor />
         </div>
       </div>

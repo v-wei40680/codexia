@@ -17,7 +17,7 @@ export default function ProjectsPage() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const { setCurrentFolder } = useFolderStore();
-  const { setFileTreeVisible, setChatPaneVisible } = useLayoutStore();
+  const { setFileTree, setChatPane } = useLayoutStore();
 
   useEffect(() => {
     loadProjects();
@@ -37,8 +37,8 @@ export default function ProjectsPage() {
   const openProject = (projectPath: string) => {
     setCurrentFolder(projectPath);
     // Enable both panels when opening a project
-    setFileTreeVisible(true);
-    setChatPaneVisible(true);
+    setFileTree(true);
+    setChatPane(true);
     // Navigate to chat page
     navigate('/chat');
   };

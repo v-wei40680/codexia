@@ -16,7 +16,8 @@ export type EventMsg =
   | { type: 'exec_command_begin'; call_id: string; command: string[]; cwd: string }
   | { type: 'exec_command_output_delta'; call_id: string; stream: string; chunk: number[] }
   | { type: 'exec_command_end'; call_id: string; stdout: string; stderr: string; exit_code: number }
-  | { type: 'shutdown_complete' };
+  | { type: 'shutdown_complete' }
+  | { type: 'background_event'; message: string };
 
 export interface ChatMessage {
   id: string;
@@ -58,7 +59,7 @@ export interface CodexConfig {
 
 export const DEFAULT_CONFIG: CodexConfig = {
   workingDirectory: '/Users/gpt/projects/rustapp/codexia',
-  model: 'llama3.2',
+  model: 'hf.co/Menlo/Jan-nano-gguf:Q4_K_S',
   provider: 'oss',
   useOss: true,
   approvalPolicy: 'on-request',

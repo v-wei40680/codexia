@@ -123,6 +123,9 @@ pub enum EventMsg {
         exit_code: i32,
     },
     ShutdownComplete,
+    BackgroundEvent {
+        message: String,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

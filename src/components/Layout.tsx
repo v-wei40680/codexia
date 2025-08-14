@@ -1,5 +1,4 @@
 import { Outlet } from "react-router-dom";
-import { DebugPanel } from "@/components/DebugPanel";
 import { AppHeader } from "@/components/AppHeader";
 
 export function Layout() {
@@ -15,8 +14,6 @@ export function Layout() {
         <Outlet />
       </div>
 
-      {/* Debug Panel */}
-      <DebugPanel />
     </main>
   );
 }

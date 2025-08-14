@@ -7,7 +7,7 @@ use tokio::process::{Child, Command};
 use tokio::sync::mpsc;
 use uuid::Uuid;
 
-use crate::protocol::{CodexConfig, Event, EventMsg, Op, Submission};
+use crate::protocol::{CodexConfig, Event, EventMsg, InputItem, ModelProvider, Op, SandboxPolicy, Submission};
 
 pub struct CodexClient {
     process: Child,
@@ -32,7 +32,10 @@ impl CodexClient {
                             "{}/.cargo/bin/codex",
                             std::env::var("HOME").unwrap_or_default()
                         )),
-                        // Note: Avoid .bun/bin/codex as it may not be the correct version
+                        std::path::PathBuf::from(format!(
+                            "{}/.bun/bin/codex",
+                            std::env::var("HOME").unwrap_or_default()
+                        )),
                     ];
 
                     for path in common_paths {
@@ -56,33 +59,18 @@ impl CodexClient {
 
         let mut cmd = Command::new(codex_path);
 
-        // Use interactive mode instead of proto for streaming support
+        // Use proto subcommand for stdin/stdout protocol
+        cmd.arg("proto");
+        
+        // For OSS mode, set the model provider and model via config override
         if config.use_oss {
-            cmd.arg("--oss");
+            cmd.arg("-c").arg("model_provider=oss");
+            cmd.arg("-c").arg(format!("model={}", config.model));
         }
-
-        if !config.model.is_empty() {
-            cmd.arg("-m").arg(&config.model);
-        }
-
-        if !config.approval_policy.is_empty() {
-            cmd.arg("-a").arg(&config.approval_policy);
-        }
-
-        if !config.sandbox_mode.is_empty() {
-            cmd.arg("-s").arg(&config.sandbox_mode);
-        }
-
+        
         // Set working directory
         if !config.working_directory.is_empty() {
-            cmd.arg("-C").arg(&config.working_directory);
-        }
-
-        // Add custom arguments
-        if let Some(custom_args) = &config.custom_args {
-            for arg in custom_args {
-                cmd.arg(arg);
-            }
+            cmd.current_dir(&config.working_directory);
         }
 
         // Print command to execute for debugging
@@ -96,6 +84,7 @@ impl CodexClient {
 
         let stdin = process.stdin.take().expect("Failed to open stdin");
         let stdout = process.stdout.take().expect("Failed to open stdout");
+        let stderr = process.stderr.take().expect("Failed to open stderr");
 
         let (stdin_tx, mut stdin_rx) = mpsc::unbounded_channel::<String>();
 
@@ -128,62 +117,104 @@ impl CodexClient {
 
             tracing::info!("Starting stdout reader for session: {}", session_id_clone);
 
-            let mut response_buffer = String::new();
-            let mut in_response = false;
-
             while let Ok(Some(line)) = lines.next_line().await {
                 tracing::debug!("Received line from codex: {}", line);
 
-                // Skip terminal control sequences
-                if line.starts_with("\x1b[") || line == "[?2004h" || line == "[?2004l" {
+                // Skip empty lines
+                if line.trim().is_empty() {
                     continue;
                 }
 
-                // Check if this line indicates the start of a response
-                if !in_response && !line.trim().is_empty() {
-                    in_response = true;
-                    response_buffer.clear();
-
-                    // Create task_started event
-                    let task_started_event = Event {
-                        id: "task_started".to_string(),
-                        msg: EventMsg::TaskStarted,
-                    };
-                    if let Err(e) = app_clone.emit(
-                        &format!("codex-event-{}", session_id_clone),
-                        &task_started_event,
-                    ) {
-                        tracing::error!("Failed to emit task_started event: {}", e);
+                // Try to parse as JSON event
+                match serde_json::from_str::<Event>(&line) {
+                    Ok(event) => {
+                        // Forward the event to frontend
+                        if let Err(e) = app_clone.emit(
+                            &format!("codex-event-{}", session_id_clone),
+                            &event,
+                        ) {
+                            tracing::error!("Failed to emit event: {}", e);
+                        }
                     }
-                }
-
-                if in_response {
-                    if !line.trim().is_empty() {
-                        // Send streaming delta
-                        let delta_event = Event {
-                            id: "stream_delta".to_string(),
+                    Err(e) => {
+                        tracing::warn!("Failed to parse event JSON: {} - Line: {}", e, line);
+                        // If it's not valid JSON, treat as raw output
+                        let raw_event = Event {
+                            id: "raw_output".to_string(),
                             msg: EventMsg::AgentMessageDelta {
-                                delta: line.clone() + "\n",
+                                delta: line + "\n",
                             },
                         };
-                        if let Err(e) = app_clone
-                            .emit(&format!("codex-event-{}", session_id_clone), &delta_event)
-                        {
-                            tracing::error!("Failed to emit delta event: {}", e);
+                        if let Err(e) = app_clone.emit(
+                            &format!("codex-event-{}", session_id_clone),
+                            &raw_event,
+                        ) {
+                            tracing::error!("Failed to emit raw event: {}", e);
                         }
-
-                        response_buffer.push_str(&line);
-                        response_buffer.push('\n');
                     }
                 }
             }
             tracing::info!("Stdout reader terminated for session: {}", session_id_clone);
         });
+        
+        // Handle stderr reading
+        let session_id_clone2 = session_id.clone();
+        tokio::spawn(async move {
+            let reader = BufReader::new(stderr);
+            let mut lines = reader.lines();
+            
+            tracing::info!("Starting stderr reader for session: {}", session_id_clone2);
+            
+            while let Ok(Some(line)) = lines.next_line().await {
+                tracing::warn!("Codex stderr: {}", line);
+            }
+            
+            tracing::info!("Stderr reader terminated for session: {}", session_id_clone2);
+        });
 
         let client = Self { process, stdin_tx };
 
-        // Interactive mode doesn't need configuration - it's ready to receive messages
-
+        // Send configuration to initialize the session using proto subcommand
+        let provider = ModelProvider {
+            name: if config.use_oss { "oss".to_string() } else { config.provider.clone() },
+            base_url: None,
+        };
+        
+        tracing::info!("Config - use_oss: {}, provider: {}, model: {}", 
+                      config.use_oss, config.provider, config.model);
+        tracing::info!("Final provider config: {:?}", provider);
+        
+        let sandbox_policy = match config.sandbox_mode.as_str() {
+            "read-only" => SandboxPolicy::ReadOnly,
+            "workspace-write" => SandboxPolicy::WorkspaceWrite {
+                writable_roots: vec![std::path::PathBuf::from(&config.working_directory)],
+                network_access: false,
+            },
+            _ => SandboxPolicy::WorkspaceWrite {
+                writable_roots: vec![std::path::PathBuf::from(&config.working_directory)],
+                network_access: false,
+            },
+        };
+        
+        let config_submission = Submission {
+            id: Uuid::new_v4().to_string(),
+            op: Op::ConfigureSession {
+                provider,
+                model: config.model.clone(),
+                model_reasoning_effort: "auto".to_string(),
+                model_reasoning_summary: "auto".to_string(),
+                user_instructions: None,
+                base_instructions: None,
+                approval_policy: config.approval_policy.clone(),
+                sandbox_policy,
+                disable_response_storage: false,
+                cwd: std::path::PathBuf::from(&config.working_directory),
+                resume_path: None,
+            },
+        };
+        
+        client.send_submission(config_submission).await?;
+        
         Ok(client)
     }
 
@@ -194,9 +225,15 @@ impl CodexClient {
     }
 
     pub async fn send_user_input(&self, message: String) -> Result<()> {
-        // In interactive mode, we send text directly
-        self.stdin_tx.send(message)?;
-        Ok(())
+        // Send user input using the protocol
+        let submission = Submission {
+            id: Uuid::new_v4().to_string(),
+            op: Op::UserInput {
+                items: vec![InputItem::Text { text: message }],
+            },
+        };
+        
+        self.send_submission(submission).await
     }
 
     pub async fn send_exec_approval(&self, approval_id: String, approved: bool) -> Result<()> {

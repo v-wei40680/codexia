@@ -3,65 +3,75 @@ import { persist } from 'zustand/middleware';
 
 interface LayoutState {
   // Panel visibility
-  isFilePanelVisible: boolean;
-  isSessionListVisible: boolean;
+  showFilePanel: boolean;
+  showSessionList: boolean;
   showChatPane: boolean;
   showFileTree: boolean;
+  showNotesList: boolean;
   
   // Selected file
   selectedFile: string | null;
   
   // Actions
-  setFilePanelVisible: (visible: boolean) => void;
-  setSessionListVisible: (visible: boolean) => void;
-  setSelectedFile: (file: string | null) => void;
+  setFilePanel: (visible: boolean) => void;
+  setSessionList: (visible: boolean) => void;
+  setNotesList: (visible: boolean) => void;
+  setChatPane: (visible: boolean) => void;
+  setFileTree: (visible: boolean) => void;
   toggleSessionList: () => void;
-  openFile: (filePath: string) => void;
-  closeFile: () => void;
+  toggleNotesList: () => void;
   toggleChatPane: () => void;
   toggleFileTree: () => void;
-  setChatPaneVisible: (visible: boolean) => void;
-  setFileTreeVisible: (visible: boolean) => void;
+  openFile: (filePath: string) => void;
+  closeFile: () => void;
 }
 
 export const useLayoutStore = create<LayoutState>()(
   persist(
     (set, _get) => ({
       // Initial state
-      isFilePanelVisible: false,
-      isSessionListVisible: true,
-      selectedFile: null,
+      showFilePanel: false,
+      showSessionList: true,
       showChatPane: true,
-      showFileTree: false,
+      showFileTree: true,
+      showNotesList: true,
+      selectedFile: null,
       
       // Actions
-      setFilePanelVisible: (visible) => set({ isFilePanelVisible: visible }),
-      setSessionListVisible: (visible) => set({ isSessionListVisible: visible }),
-      setSelectedFile: (file) => set({ selectedFile: file }),
+      setFilePanel: (visible) => set({ showFilePanel: visible }),
+      setSessionList: (visible) => set({ showSessionList: visible }),
+      setNotesList: (visible) => set({ showNotesList: visible }),
+      setChatPane: (visible) => set({ showChatPane: visible }),
+      setFileTree: (visible) => set({ showFileTree: visible }),
       
       toggleSessionList: () => set((state) => ({ 
-        isSessionListVisible: !state.isSessionListVisible 
+        showSessionList: !state.showSessionList 
       })),
+      
+      toggleNotesList: () => set((state) => ({ 
+        showNotesList: !state.showNotesList 
+      })),
+      
+      toggleChatPane: () => set((state) => ({ showChatPane: !state.showChatPane })),
+      toggleFileTree: () => set((state) => ({ showFileTree: !state.showFileTree })),
       
       openFile: (filePath) => set({ 
         selectedFile: filePath, 
-        isFilePanelVisible: true 
+        showFilePanel: true 
       }),
       
       closeFile: () => set({ 
         selectedFile: null, 
-        isFilePanelVisible: false 
+        showFilePanel: false 
       }),
-
-      toggleChatPane: () => set((state) => ({ showChatPane: !state.showChatPane })),
-      toggleFileTree: () => set((state) => ({ showFileTree: !state.showFileTree })),
-      setChatPaneVisible: (visible) => set({ showChatPane: visible }),
-      setFileTreeVisible: (visible) => set({ showFileTree: visible }),
     }),
     {
       name: 'layout-store',
       partialize: (state) => ({
-        isSessionListVisible: state.isSessionListVisible,
+        showSessionList: state.showSessionList,
+        showChatPane: state.showChatPane,
+        showFileTree: state.showFileTree,
+        showNotesList: state.showNotesList,
       }),
     }
   )

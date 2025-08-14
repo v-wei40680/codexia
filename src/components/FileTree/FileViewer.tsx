@@ -5,7 +5,7 @@ import { X, Copy, Check, Sun, Moon, Send, FileText, GitBranch, Code } from "luci
 import { CodeEditor } from "./CodeEditor";
 import { DiffViewer } from "./DiffViewer";
 import { useEditorStore } from "@/stores/EditorStore";
-import { useChatStore } from "@/stores/useChatStore";
+import { useConversationStore } from "@/stores/ConversationStore";
 
 interface FileViewerProps {
   filePath: string | null;
@@ -31,7 +31,7 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
   const [gitDiff, setGitDiff] = useState<GitDiff | null>(null);
   const [diffLoading, setDiffLoading] = useState(false);
   const { isDarkTheme, setIsDarkTheme } = useEditorStore();
-  const { addFileContent } = useChatStore();
+  const { createConversation, addMessage, currentConversationId } = useConversationStore();
 
   const getFileName = () => {
     if (!filePath) return "";
@@ -157,7 +157,23 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
   const handleSendToAI = () => {
     if (currentContent) {
       const fileName = getFileName();
-      addFileContent(fileName, currentContent, selectedText || undefined);
+      const textToAdd = selectedText || currentContent;
+      const prefix = selectedText
+        ? `Selected content from ${fileName}:`
+        : `File content from ${fileName}:`;
+      const message = `${prefix}\n\n${textToAdd}`;
+      
+      let conversationId = currentConversationId;
+      if (!conversationId) {
+        conversationId = createConversation();
+      }
+      
+      addMessage(conversationId, {
+        id: Date.now().toString(),
+        role: 'user',
+        content: message,
+        timestamp: Date.now(),
+      });
     }
   };
 

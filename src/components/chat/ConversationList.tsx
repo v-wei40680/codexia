@@ -16,9 +16,10 @@ import type { Conversation } from "@/types/chat";
 
 interface ConversationListProps {
   onSelectConversation?: (conversation: Conversation) => void;
+  onCreateNewSession?: () => void;
 }
 
-export function ConversationList({ onSelectConversation }: ConversationListProps) {
+export function ConversationList({ onSelectConversation, onCreateNewSession }: ConversationListProps) {
   const {
     conversations: favoriteConversations,
     currentConversationId,
@@ -36,7 +37,10 @@ export function ConversationList({ onSelectConversation }: ConversationListProps
   useEffect(() => {
     const loadHistory = async () => {
       try {
+        console.log('Starting to load sessions from disk...');
         const history = await sessionLoader.loadSessionsFromDisk();
+        console.log('Loaded conversations:', history.length, 'conversations');
+        console.log('Conversation dates:', history.map(c => new Date(c.updatedAt).toDateString()));
         setHistoryConversations(history);
         
         // Check favorite status for each conversation
@@ -55,8 +59,14 @@ export function ConversationList({ onSelectConversation }: ConversationListProps
 
 
   const handleCreateConversation = () => {
-    const newId = createConversation();
-    setCurrentConversation(newId);
+    if (onCreateNewSession) {
+      // Create a real chat session instead of just a conversation in store
+      onCreateNewSession();
+    } else {
+      // Fallback to creating only in store (for when used in other contexts)
+      const newId = createConversation();
+      setCurrentConversation(newId);
+    }
   };
 
   const handleDeleteConversation = (conversationId: string, e: React.MouseEvent) => {
@@ -134,7 +144,7 @@ export function ConversationList({ onSelectConversation }: ConversationListProps
     return "No messages yet";
   };
 
-  const renderConversationItem = (conversation: Conversation) => {
+  const renderConversationItem = (conversation: Conversation, index: number, tabPrefix: string) => {
     const isCurrentlySelected = currentConversationId === conversation.id;
     const isFavorited = activeTab === "favorites" 
       ? conversation.isFavorite 
@@ -142,7 +152,7 @@ export function ConversationList({ onSelectConversation }: ConversationListProps
 
     return (
       <div
-        key={conversation.id}
+        key={`${tabPrefix}-${conversation.id}-${index}`}
         className={cn(
           "group relative p-3 rounded-lg cursor-pointer border transition-all hover:bg-white hover:shadow-sm",
           isCurrentlySelected
@@ -273,7 +283,9 @@ export function ConversationList({ onSelectConversation }: ConversationListProps
             </div>
           ) : (
             <div className="space-y-1 p-2 overflow-y-auto">
-              {filteredConversations.map(renderConversationItem)}
+              {filteredConversations.map((conversation, index) => 
+                renderConversationItem(conversation, index, 'all')
+              )}
             </div>
           )}
         </TabsContent>
@@ -292,7 +304,9 @@ export function ConversationList({ onSelectConversation }: ConversationListProps
             </div>
           ) : (
             <div className="space-y-1 p-2">
-              {filteredConversations.map(renderConversationItem)}
+              {filteredConversations.map((conversation, index) => 
+                renderConversationItem(conversation, index, 'favorites')
+              )}
             </div>
           )}
         </TabsContent>
