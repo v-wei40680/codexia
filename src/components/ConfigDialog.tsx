@@ -61,18 +61,10 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
     try {
       const result = await open({
         multiple: false,
-        filters: [{
-          name: 'Codex Executable',
-          extensions: ['*']
-        }]
+        directory: false
       });
       if (result) {
-        // Validate that the selected file is executable
-        if (result.includes('codex')) {
-          setLocalConfig(prev => ({ ...prev, codexPath: result }));
-        } else {
-          alert('Selected file does not appear to be a codex executable');
-        }
+        setLocalConfig(prev => ({ ...prev, codexPath: result }));
       }
     } catch (error) {
       console.error('Failed to select codex executable:', error);

@@ -4,9 +4,11 @@ mod config;
 mod filesystem;
 mod protocol;
 mod state;
+mod utils;
 
 use commands::{
-    approve_execution, check_codex_version, get_running_sessions, load_sessions_from_disk, send_message, start_codex_session, stop_session,
+    approve_execution, check_codex_version, get_running_sessions,
+    load_sessions_from_disk, send_message, start_codex_session, stop_session,
 };
 use config::{get_project_name, read_codex_config};
 use filesystem::{
@@ -17,7 +19,12 @@ use state::CodexState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tracing_subscriber::fmt::init();
+    // Initialize logging with better configuration for both dev and prod
+    tracing_subscriber::fmt()
+        .with_target(false)
+        .with_thread_ids(false)
+        .with_level(true)
+        .init();
 
     tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())

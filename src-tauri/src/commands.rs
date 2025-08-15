@@ -1,10 +1,11 @@
 use crate::codex_client::CodexClient;
 use crate::protocol::CodexConfig;
 use crate::state::CodexState;
-use tauri::{AppHandle, State};
+use crate::utils::codex_discovery::discover_codex_command;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::Path;
+use tauri::{AppHandle, State};
 use walkdir::WalkDir;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -57,13 +58,13 @@ fn parse_session_file(content: &str, _file_path: &Path) -> Option<Conversation> 
             }
 
             // Parse messages (check for "type": "message")
-            if record.message_type.as_deref() == Some("message") 
-                && record.role.is_some() 
-                && record.content.is_some() {
-                
+            if record.message_type.as_deref() == Some("message")
+                && record.role.is_some()
+                && record.content.is_some()
+            {
                 let role = record.role.unwrap();
                 let content_value = record.content.unwrap();
-                
+
                 let content_text = if let Some(array) = content_value.as_array() {
                     array
                         .iter()
@@ -144,15 +145,15 @@ fn parse_session_file(content: &str, _file_path: &Path) -> Option<Conversation> 
 pub async fn load_sessions_from_disk() -> Result<Vec<Conversation>, String> {
     let home_dir = dirs::home_dir().ok_or("Could not find home directory")?;
     let sessions_path = home_dir.join(".codex").join("sessions");
-    
+
     if !sessions_path.exists() {
         return Ok(Vec::new());
     }
 
     let mut conversations = Vec::new();
-    
+
     println!("Scanning sessions directory: {:?}", sessions_path);
-    
+
     for entry in WalkDir::new(&sessions_path)
         .into_iter()
         .filter_map(|e| e.ok())
@@ -174,12 +175,12 @@ pub async fn load_sessions_from_disk() -> Result<Vec<Conversation>, String> {
             }
         }
     }
-    
+
     // Sort by updated_at (newest first)
     conversations.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
-    
+
     println!("Total conversations loaded: {}", conversations.len());
-    
+
     Ok(conversations)
 }
 
@@ -265,19 +266,22 @@ pub async fn get_running_sessions(state: State<'_, CodexState>) -> Result<Vec<St
 #[tauri::command]
 pub async fn check_codex_version() -> Result<String, String> {
     use std::process::Command;
-    
-    match Command::new("codex")
+
+    let path = match discover_codex_command() {
+        Some(p) => p.to_string_lossy().to_string(),
+        None => "codex".to_string(),
+    };
+
+    let output = Command::new(&path)
         .arg("-V")
         .output()
-    {
-        Ok(output) => {
-            if output.status.success() {
-                let version = String::from_utf8_lossy(&output.stdout);
-                Ok(version.trim().to_string())
-            } else {
-                Err("Codex command failed".to_string())
-            }
-        }
-        Err(_) => Err("Codex command not found".to_string())
+        .map_err(|e| format!("Failed to execute codex binary: {}", e))?;
+
+    if output.status.success() {
+        let version = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        Ok(version)
+    } else {
+        let err_msg = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        Err(format!("Codex binary returned error: {}", err_msg))
     }
 }

@@ -5,7 +5,7 @@ import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { Badge } from './ui/badge';
 import { Send, Bot, User, AlertTriangle, X, History } from 'lucide-react';
-import { ChatMessage, CodexEvent, ApprovalRequest, CodexConfig } from '../types/codex';
+import { ChatMessage, ApprovalRequest, CodexConfig } from '@/types/codex';
 import { useChatStore } from '../stores/chatStore';
 import { sessionManager } from '../services/sessionManager';
 import { SessionManager } from './SessionManager';
@@ -45,9 +45,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     sessions,
     addMessage,
     setSessionLoading,
-    startStreamingMessage,
-    appendToStreamingMessage,
-    finishStreamingMessage,
   } = useChatStore();
 
   // Get current session data from store
@@ -82,100 +79,54 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       setIsConnected(isRunning);
     }
 
-    // watch codex event
-    const unlisten = listen<CodexEvent>(`codex-event-${sessionId}`, (event) => {
-      const { msg } = event.payload;
+    // Listen for simple codex response
+    const responseUnlisten = listen<string>(`codex-response:${sessionId}`, (event) => {
+      const response = event.payload;
+      console.log('Received codex response:', response); // Debug log
       
-      console.log('Received codex event:', event.payload); // Debug log
+      // Create agent message with the response
+      const agentMessage: ChatMessage = {
+        id: `${sessionId}-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+        type: 'agent',
+        content: response,
+        timestamp: new Date(),
+      };
+      addMessage(sessionId, agentMessage);
+      setSessionLoading(sessionId, false);
+    });
+    
+    // watch codex error events
+    const errorUnlisten = listen<string>(`codex-error:${sessionId}`, (event) => {
+      let errorLine = event.payload;
+      console.log('Received codex error:', errorLine); // Debug log
       
-      switch (msg.type) {
-        case 'session_configured':
-          console.log('Codex session configured');
-          break;
-          
-        case 'task_started':
-          setSessionLoading(sessionId, true);
-          break;
-          
-        case 'task_complete':
-          setSessionLoading(sessionId, false);
-          break;
-          
-        case 'agent_message':
-          // Handle complete agent message (non-streaming mode)
-          const agentMessage: ChatMessage = {
-            id: Date.now().toString(),
-            type: 'agent',
-            content: msg.message || '',
-            timestamp: new Date(),
-          };
-          addMessage(sessionId, agentMessage);
-          setSessionLoading(sessionId, false);
-          break;
-          
-        case 'agent_message_delta':
-          // For streaming responses, check if we have a streaming message to append to
-          const currentMessages = sessions.find(s => s.id === sessionId)?.messages || [];
-          const lastMessage = currentMessages[currentMessages.length - 1];
-          
-          console.log('Received agent_message_delta:', msg); // Debug log
-          
-          const deltaContent = msg.delta || '';
-          if (lastMessage && lastMessage.type === 'agent' && lastMessage.isStreaming) {
-            // Append to existing streaming message
-            appendToStreamingMessage(sessionId, lastMessage.id, deltaContent);
-          } else {
-            // Start new streaming message
-            const messageId = Date.now().toString();
-            startStreamingMessage(sessionId, messageId, deltaContent);
-          }
-          break;
-          
-        case 'exec_approval_request':
-          const execApproval: ApprovalRequest = {
-            id: event.payload.id,
-            type: 'exec',
-            command: msg.command,
-            cwd: msg.cwd,
-          };
-          setPendingApproval(execApproval);
-          break;
-          
-        case 'patch_approval_request':
-          const patchApproval: ApprovalRequest = {
-            id: event.payload.id,
-            type: 'patch',
-            patch: msg.patch,
-            files: msg.files,
-          };
-          setPendingApproval(patchApproval);
-          break;
-          
-        case 'error':
-          const errorMessage: ChatMessage = {
-            id: Date.now().toString(),
-            type: 'system',
-            content: `Error: ${msg.message}`,
-            timestamp: new Date(),
-          };
-          addMessage(sessionId, errorMessage);
-          setSessionLoading(sessionId, false);
-          break;
-          
-        case 'turn_complete':
-          // 标记当前流式消息为完成
-          const sessMessages = sessions.find(s => s.id === sessionId)?.messages || [];
-          const lastStreamingMessage = sessMessages[sessMessages.length - 1];
-          if (lastStreamingMessage && lastStreamingMessage.isStreaming) {
-            finishStreamingMessage(sessionId, lastStreamingMessage.id);
-          }
-          setSessionLoading(sessionId, false);
-          break;
+      // Remove ANSI escape sequences from error messages
+      errorLine = errorLine.replace(/\u001b\[[0-9;]*m/g, '');
+      
+      // Filter out non-critical log messages and only show actual errors
+      if (errorLine.trim() && 
+          !errorLine.includes('INFO') && 
+          !errorLine.includes('WARN') &&
+          !errorLine.includes('cwd not set') &&
+          !errorLine.includes('resume_path: None') &&
+          !errorLine.includes('Aborting existing session') &&
+          !errorLine.includes('stream disconnected') &&
+          !errorLine.includes('retrying turn')) {
+        
+        const errorMessage: ChatMessage = {
+          id: `${sessionId}-error-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+          type: 'system',
+          content: `Error: ${errorLine}`,
+          timestamp: new Date(),
+        };
+        addMessage(sessionId, errorMessage);
+        setSessionLoading(sessionId, false);
       }
     });
 
     return () => {
-      unlisten.then(fn => fn());
+      responseUnlisten.then(fn => fn());
+      errorUnlisten.then(fn => fn());
     };
   }, [sessionId]);
 
@@ -191,7 +142,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         // Add welcome message for newly started sessions
         if (messages.length === 0) {
           const welcomeMessage: ChatMessage = {
-            id: Date.now().toString(),
+            id: `${sessionId}-welcome-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
             type: 'system',
             content: 'Codex session started. You can now chat with the AI assistant.',
             timestamp: new Date(),
@@ -202,7 +153,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     } catch (error) {
       console.error('Failed to start session:', error);
       const errorMessage: ChatMessage = {
-        id: Date.now().toString(),
+        id: `${sessionId}-startup-error-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
         type: 'system',
         content: `Failed to start Codex session: ${error}`,
         timestamp: new Date(),
@@ -212,7 +163,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
 
     const userMessage: ChatMessage = {
-      id: Date.now().toString(),
+      id: `${sessionId}-user-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       type: 'user',
       content: inputValue,
       timestamp: new Date(),
@@ -231,7 +182,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     } catch (error) {
       console.error('Failed to send message:', error);
       const errorMessage: ChatMessage = {
-        id: Date.now().toString(),
+        id: `${sessionId}-send-error-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
         type: 'system',
         content: `Failed to send message: ${error}`,
         timestamp: new Date(),
@@ -336,10 +287,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   : 'bg-yellow-50 text-yellow-800 border border-yellow-200'
               }`}
             >
-              <div className="whitespace-pre-wrap">{message.content}</div>
-              {message.isStreaming && (
-                <div className="inline-block w-2 h-4 bg-current opacity-75 animate-pulse ml-1" />
-              )}
+              <div className="whitespace-pre-wrap">
+                {message.content}
+                {message.isStreaming && (
+                  <span className="inline-block w-2 h-5 bg-current opacity-75 animate-pulse ml-1 align-text-bottom">|</span>
+                )}
+              </div>
               <div className="text-xs opacity-70 mt-1">
                 {new Date(message.timestamp).toLocaleTimeString()}
               </div>
