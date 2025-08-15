@@ -73,6 +73,8 @@ export const useConversationStore = create<ConversationStore>()(
                 ? updatedConversations[0].id
                 : null
               : state.currentConversationId;
+          
+          console.log("deleteConversation", id)
 
           return {
             conversations: updatedConversations,

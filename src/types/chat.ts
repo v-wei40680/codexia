@@ -16,6 +16,7 @@ export interface Conversation {
   createdAt: number;
   updatedAt: number;
   isFavorite?: boolean;
+  filePath?: string;
 }
 
 export interface ChatRequest {

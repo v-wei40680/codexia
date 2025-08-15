@@ -13,6 +13,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useState, useMemo, useEffect } from "react";
 import type { Conversation } from "@/types/chat";
+import { invoke } from "@tauri-apps/api/core";
 
 interface ConversationListProps {
   onSelectConversation?: (conversation: Conversation) => void;
@@ -69,9 +70,23 @@ export function ConversationList({ onSelectConversation, onCreateNewSession }: C
     }
   };
 
-  const handleDeleteConversation = (conversationId: string, e: React.MouseEvent) => {
+  const handleDeleteConversation = async (conversationId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    deleteConversation(conversationId);
+    try {
+      const conversation = historyConversations.find(c => c.id === conversationId);
+      if (conversation && conversation.filePath) {
+        await invoke('delete_session_file', { filePath: conversation.filePath });
+      }
+      deleteConversation(conversationId);
+      setHistoryConversations(prev => prev.filter(c => c.id !== conversationId));
+      setFavoriteStatuses(prev => {
+        const newStatus = { ...prev };
+        delete newStatus[conversationId];
+        return newStatus;
+      });
+    } catch (error) {
+      console.error('Failed to delete conversation and session file:', error);
+    }
   };
   
   const handleToggleFavorite = async (conversationId: string, e: React.MouseEvent) => {

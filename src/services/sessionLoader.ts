@@ -7,7 +7,7 @@ class SessionLoaderService {
     try {
       console.log('Loading sessions from disk using Rust backend...');
       const conversations = await invoke<Conversation[]>('load_sessions_from_disk');
-      console.log(`Loaded ${conversations.length} conversations from disk`);
+      console.log(`Loaded ${conversations.length} conversations from disk`, conversations);
       return conversations;
     } catch (error) {
       console.error('Error loading sessions from disk:', error);

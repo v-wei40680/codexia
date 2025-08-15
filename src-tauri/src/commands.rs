@@ -27,6 +27,8 @@ pub struct Conversation {
     pub updated_at: i64,
     #[serde(rename = "isFavorite")]
     pub is_favorite: bool,
+    #[serde(rename = "filePath")]
+    pub file_path: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -126,6 +128,8 @@ fn parse_session_file(content: &str, _file_path: &Path) -> Option<Conversation> 
                 })
                 .unwrap_or_else(|| "Imported Session".to_string());
 
+            let file_path = _file_path.canonicalize().ok().and_then(|p| p.to_str().map(|s| s.to_string()));
+
             return Some(Conversation {
                 id,
                 title,
@@ -134,6 +138,7 @@ fn parse_session_file(content: &str, _file_path: &Path) -> Option<Conversation> 
                 created_at: timestamp,
                 updated_at: timestamp,
                 is_favorite: false,
+                file_path,
             });
         }
     }
@@ -258,6 +263,20 @@ pub async fn stop_session(state: State<'_, CodexState>, session_id: String) -> R
 }
 
 #[tauri::command]
+pub async fn close_session(state: State<'_, CodexState>, session_id: String) -> Result<(), String> {
+    let mut sessions = state.sessions.lock().await;
+    if let Some(mut client) = sessions.remove(&session_id) {
+        client
+            .close_session()
+            .await
+            .map_err(|e| format!("Failed to close session: {}", e))?;
+        Ok(())
+    } else {
+        Err("Session not found".to_string())
+    }
+}
+
+#[tauri::command]
 pub async fn get_running_sessions(state: State<'_, CodexState>) -> Result<Vec<String>, String> {
     let sessions = state.sessions.lock().await;
     Ok(sessions.keys().cloned().collect())
@@ -284,4 +303,10 @@ pub async fn check_codex_version() -> Result<String, String> {
         let err_msg = String::from_utf8_lossy(&output.stderr).trim().to_string();
         Err(format!("Codex binary returned error: {}", err_msg))
     }
+}
+
+#[tauri::command]
+pub async fn delete_session_file(file_path: String) -> Result<(), String> {
+    fs::remove_file(&file_path)
+        .map_err(|e| format!("Failed to delete file '{}': {}", file_path, e))
 }

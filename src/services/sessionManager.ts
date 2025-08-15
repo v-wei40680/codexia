@@ -45,6 +45,18 @@ class SessionManager {
     }
   }
 
+  async closeSession(sessionId: string): Promise<void> {
+    try {
+      // Use the new close_session command which properly shuts down the protocol connection
+      await invoke('close_session', { sessionId });
+      this.sessionConfigs.delete(sessionId);
+      this.runningSessions.delete(sessionId);
+    } catch (error) {
+      console.error('Failed to close session:', error);
+      throw error;
+    }
+  }
+
   async restartSession(sessionId: string, config: CodexConfig): Promise<void> {
     try {
       console.log('Restarting session:', sessionId, 'with config:', config);

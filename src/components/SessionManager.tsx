@@ -23,7 +23,8 @@ export const SessionManager: React.FC<SessionManagerProps> = ({
   
   const handleCloseSession = async (sessionId: string) => {
     try {
-      await sessionManager.stopSession(sessionId);
+      // Use the new close_session method which properly shuts down the protocol connection
+      await sessionManager.closeSession(sessionId);
       onCloseSession(sessionId);
     } catch (error) {
       console.error('Failed to close session:', error);

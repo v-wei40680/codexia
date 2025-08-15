@@ -7,8 +7,8 @@ mod state;
 mod utils;
 
 use commands::{
-    approve_execution, check_codex_version, get_running_sessions,
-    load_sessions_from_disk, send_message, start_codex_session, stop_session,
+    approve_execution, check_codex_version, close_session, get_running_sessions,
+    load_sessions_from_disk, send_message, start_codex_session, stop_session, delete_session_file,
 };
 use config::{get_project_name, read_codex_config};
 use filesystem::{
@@ -42,8 +42,10 @@ pub fn run() {
             send_message,
             approve_execution,
             stop_session,
+            close_session,
             get_running_sessions,
             load_sessions_from_disk,
+            delete_session_file,
             check_codex_version,
             read_directory,
             get_default_directories,
