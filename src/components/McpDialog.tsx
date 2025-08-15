@@ -13,7 +13,7 @@ import { Textarea } from './ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { Trash2, Plus, Edit, Save, X } from 'lucide-react';
-import { McpServerConfigForFrontend } from '../types/codex';
+import { McpServerConfig } from '../types/codex';
 
 interface McpDialogProps {
   children: React.ReactNode;
@@ -21,7 +21,7 @@ interface McpDialogProps {
 
 export function McpDialog({ children }: McpDialogProps) {
   const [open, setOpen] = useState(false);
-  const [servers, setServers] = useState<Record<string, McpServerConfigForFrontend>>({});
+  const [servers, setServers] = useState<Record<string, McpServerConfig>>({});
   const [newServerName, setNewServerName] = useState('');
   const [newServerProtocol, setNewServerProtocol] = useState<'stdio' | 'http'>('stdio');
   const [commandConfig, setCommandConfig] = useState({
@@ -42,7 +42,7 @@ export function McpDialog({ children }: McpDialogProps) {
 
   const loadServers = async () => {
     try {
-      const mcpServers = await invoke<Record<string, McpServerConfigForFrontend>>('read_mcp_servers');
+      const mcpServers = await invoke<Record<string, McpServerConfig>>('read_mcp_servers');
       setServers(mcpServers);
     } catch (error) {
       console.error('Failed to load MCP servers:', error);
@@ -59,11 +59,11 @@ export function McpDialog({ children }: McpDialogProps) {
     if (!newServerName) return;
 
     try {
-      let config: McpServerConfigForFrontend;
+      let config: McpServerConfig;
       
       if (newServerProtocol === 'stdio') {
         config = {
-          type: 'Stdio',
+          type: 'stdio',
           command: commandConfig.command,
           args: commandConfig.args.split(' ').filter(arg => arg.trim()),
         };
@@ -78,8 +78,8 @@ export function McpDialog({ children }: McpDialogProps) {
         }
       } else {
         config = {
-          type: 'Http',
-          url: httpConfig.url.split('\n').filter(url => url.trim()),
+          type: 'http',
+          url: httpConfig.url,
         };
       }
 
@@ -105,18 +105,18 @@ export function McpDialog({ children }: McpDialogProps) {
     }
   };
 
-  const handleEditServer = (name: string, config: McpServerConfigForFrontend) => {
+  const handleEditServer = (name: string, config: McpServerConfig) => {
     setEditingServer(name);
     setEditConfig({
       name,
-      protocol: config.type === 'Stdio' ? 'stdio' : 'http',
+      protocol: config.type === 'stdio' ? 'stdio' : 'http',
       command: {
-        command: config.type === 'Stdio' ? (config.command || '') : '',
-        args: config.type === 'Stdio' ? (config.args || []).join(' ') : '',
-        env: config.type === 'Stdio' && config.env ? JSON.stringify(config.env, null, 2) : '',
+        command: config.type === 'stdio' ? ('command' in config ? config.command : '') : '',
+        args: config.type === 'stdio' ? ('args' in config ? config.args.join(' ') : '') : '',
+        env: config.type === 'stdio' && 'env' in config && config.env ? JSON.stringify(config.env, null, 2) : '',
       },
       http: {
-        url: config.type === 'Http' ? (config.url || []).join('\n') : '',
+        url: config.type === 'http' ? ('url' in config ? config.url : '') : '',
       },
     });
   };
@@ -125,11 +125,11 @@ export function McpDialog({ children }: McpDialogProps) {
     if (!editConfig || !editingServer) return;
 
     try {
-      let config: McpServerConfigForFrontend;
+      let config: McpServerConfig;
       
       if (editConfig.protocol === 'stdio') {
         config = {
-          type: 'Stdio',
+          type: 'stdio',
           command: editConfig.command.command,
           args: editConfig.command.args.split(' ').filter(arg => arg.trim()),
         };
@@ -144,8 +144,8 @@ export function McpDialog({ children }: McpDialogProps) {
         }
       } else {
         config = {
-          type: 'Http',
-          url: editConfig.http.url.split('\n').filter(url => url.trim()),
+          type: 'http',
+          url: editConfig.http.url,
         };
       }
 
@@ -166,6 +166,36 @@ export function McpDialog({ children }: McpDialogProps) {
     setEditConfig(null);
   };
 
+  const defaultServers = [
+    {
+      name: 'fetch',
+      description: 'Web scraping and fetching',
+      config: {
+        type: 'stdio' as const,
+        command: 'uvx',
+        args: ['-y', 'mcp-server-fetch'],
+      }
+    },
+    {
+      name: 'deepwiki',
+      description: 'DeepWiki automatically generates architecture diagrams, documentation, and links to source code to help you understand unfamiliar codebases quickly.',
+      config: {
+        type: 'http' as const,
+        url: 'https://mcp.deepwiki.com/mcp'
+      }
+    }
+  ];
+
+  const handleAddDefaultServer = async (defaultServer: typeof defaultServers[0]) => {
+    try {
+      await invoke('add_mcp_server', { name: defaultServer.name, config: defaultServer.config });
+      loadServers();
+    } catch (error) {
+      console.error('Failed to add default MCP server:', error);
+      alert('Failed to add MCP server: ' + error);
+    }
+  };
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -177,6 +207,35 @@ export function McpDialog({ children }: McpDialogProps) {
         </DialogHeader>
         
         <div className="space-y-6">
+          {/* Default Servers Section */}
+          <div>
+            <h3 className="text-lg font-semibold mb-3">Quick Add Servers</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {defaultServers.map((defaultServer) => {
+                const isAlreadyAdded = Object.hasOwnProperty.call(servers, defaultServer.name);
+                return (
+                  <Card key={defaultServer.name} className={isAlreadyAdded ? 'opacity-50' : ''}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium text-sm">{defaultServer.name}</div>
+                          <div className="text-xs text-gray-500">{defaultServer.description}</div>
+                        </div>
+                        <Button 
+                          size="sm" 
+                          onClick={() => handleAddDefaultServer(defaultServer)}
+                          disabled={isAlreadyAdded}
+                        >
+                          <Plus className="h-4 w-4 mr-1" />
+                          {isAlreadyAdded ? 'Added' : 'Add'}
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div>
               <h3 className="text-lg font-semibold mb-4">Configured Servers</h3>
@@ -227,11 +286,11 @@ export function McpDialog({ children }: McpDialogProps) {
                             
                             <TabsContent value="http" className="space-y-4">
                               <div>
-                                <div className="text-sm font-medium mb-1">URLs (one per line)</div>
-                                <Textarea
+                                <div className="text-sm font-medium mb-1">URL</div>
+                                <Input
                                   value={editConfig?.http.url || ''}
                                   onChange={(e) => setEditConfig(prev => prev ? { ...prev, http: { ...prev.http, url: e.target.value } } : null)}
-                                  rows={3}
+                                  placeholder="https://mcp.example.com/mcp"
                                 />
                               </div>
                             </TabsContent>
@@ -274,20 +333,20 @@ export function McpDialog({ children }: McpDialogProps) {
                         </CardHeader>
                         <CardContent className="pt-0">
                           <div className="text-xs text-gray-600">
-                            {config.type === 'Stdio' && (
+                            {config.type === 'stdio' && (
                               <div>
-                                <strong>Command:</strong> {config.command}
-                                {config.args && config.args.length > 0 && (
+                                <strong>Command:</strong> {'command' in config ? config.command : ''}
+                                {'args' in config && config.args && config.args.length > 0 && (
                                   <div><strong>Args:</strong> {config.args.join(' ')}</div>
                                 )}
-                                {config.env && (
+                                {'env' in config && config.env && (
                                   <div><strong>Env:</strong> {Object.keys(config.env).join(', ')}</div>
                                 )}
                               </div>
                             )}
-                            {config.type === 'Http' && (
+                            {config.type === 'http' && (
                               <div>
-                                <strong>HTTP:</strong> {config.url?.join(', ')}
+                                <strong>HTTP:</strong> {'url' in config ? config.url : ''}
                               </div>
                             )}
                           </div>
@@ -352,12 +411,11 @@ export function McpDialog({ children }: McpDialogProps) {
                   
                   <TabsContent value="http" className="space-y-4">
                     <div>
-                      <div className="text-sm font-medium mb-1">URLs (one per line)</div>
-                      <Textarea
+                      <div className="text-sm font-medium mb-1">URL</div>
+                      <Input
                         value={httpConfig.url}
                         onChange={(e) => setHttpConfig(prev => ({ ...prev, url: e.target.value }))}
                         placeholder="https://mcp.deepwiki.com/mcp"
-                        rows={3}
                       />
                     </div>
                   </TabsContent>

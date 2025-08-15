@@ -66,10 +66,14 @@ export const DEFAULT_CONFIG: CodexConfig = {
   sandboxMode: 'workspace-write',
 };
 
-export interface McpServerConfigForFrontend {
-  type: 'Stdio' | 'Http';
-  command?: string;
-  args?: string[];
-  env?: Record<string, string>;
-  url?: string[];
-}
+export type McpServerConfig = 
+  | {
+      type: 'stdio';
+      command: string;
+      args: string[];
+      env?: Record<string, string>;
+    }
+  | {
+      type: 'http';
+      url: string;
+    };

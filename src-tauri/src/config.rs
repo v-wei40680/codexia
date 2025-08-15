@@ -10,28 +10,21 @@ pub struct ProjectConfig {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(untagged)]
+#[serde(tag = "type")]
 pub enum McpServerConfig {
+    #[serde(rename = "stdio")]
     Stdio {
         command: String,
         args: Vec<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         env: Option<HashMap<String, String>>,
     },
+    #[serde(rename = "http")]
     Http {
-        #[serde(rename = "type")]
-        server_type: String,
-        url: Vec<String>,
+        url: String,
     },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct McpServerConfigForFrontend {
-    #[serde(flatten)]
-    pub config: McpServerConfig,
-    #[serde(rename = "type")]
-    pub config_type: String,
-}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CodexConfig {
@@ -91,7 +84,7 @@ pub async fn get_project_name(path: String) -> Result<String, String> {
 }
 
 #[command]
-pub async fn read_mcp_servers() -> Result<HashMap<String, McpServerConfigForFrontend>, String> {
+pub async fn read_mcp_servers() -> Result<HashMap<String, McpServerConfig>, String> {
     let config_path = get_config_path()?;
 
     if !config_path.exists() {
@@ -104,24 +97,11 @@ pub async fn read_mcp_servers() -> Result<HashMap<String, McpServerConfigForFron
     let config: CodexConfig =
         toml::from_str(&content).map_err(|e| format!("Failed to parse config file: {}", e))?;
 
-    let mut frontend_servers = HashMap::new();
-    for (name, server_config) in config.mcp_servers {
-        let config_type = match &server_config {
-            McpServerConfig::Stdio { .. } => "Stdio".to_string(),
-            McpServerConfig::Http { .. } => "Http".to_string(),
-        };
-        
-        frontend_servers.insert(name, McpServerConfigForFrontend {
-            config: server_config,
-            config_type,
-        });
-    }
-
-    Ok(frontend_servers)
+    Ok(config.mcp_servers)
 }
 
 #[command]
-pub async fn add_mcp_server(name: String, config: McpServerConfigForFrontend) -> Result<(), String> {
+pub async fn add_mcp_server(name: String, config: McpServerConfig) -> Result<(), String> {
     let config_path = get_config_path()?;
     
     let mut codex_config = if config_path.exists() {
@@ -135,7 +115,7 @@ pub async fn add_mcp_server(name: String, config: McpServerConfigForFrontend) ->
         }
     };
 
-    codex_config.mcp_servers.insert(name, config.config);
+    codex_config.mcp_servers.insert(name, config);
 
     let toml_content = toml::to_string(&codex_config)
         .map_err(|e| format!("Failed to serialize config: {}", e))?;
