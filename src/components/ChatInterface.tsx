@@ -2,13 +2,13 @@ import React, { useState, useEffect, useRef } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { Button } from './ui/button';
-import { Textarea } from './ui/textarea';
 import { Badge } from './ui/badge';
-import { Send, Bot, User, AlertTriangle, X, History } from 'lucide-react';
+import { Bot, User, AlertTriangle, X, History } from 'lucide-react';
 import { ChatMessage, ApprovalRequest, CodexConfig, CodexEvent } from '@/types/codex';
 import { useChatStore } from '../stores/chatStore';
 import { sessionManager } from '../services/sessionManager';
 import { SessionManager } from './SessionManager';
+import { ChatInput } from './ChatInput';
 
 interface ChatInterfaceProps {
   sessionId: string;
@@ -41,7 +41,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [streamingMessage, setStreamingMessage] = useState<ChatMessage | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Zustand store
+  // Zustand stores
   const {
     sessions,
     addMessage,
@@ -82,6 +82,39 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       // Check if session is already running
       const isRunning = sessionManager.isSessionRunning(sessionId);
       setIsConnected(isRunning);
+      
+      // Auto-start session if it's not running and no messages exist yet
+      if (!isRunning && messages.length === 0) {
+        const startSession = async () => {
+          try {
+            setSessionLoading(sessionId, true);
+            await sessionManager.ensureSessionRunning(sessionId, config);
+            setIsConnected(true);
+            
+            // Add welcome message for newly started sessions
+            const welcomeMessage: ChatMessage = {
+              id: `${sessionId}-welcome-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+              type: 'system',
+              content: 'Codex session started. You can now chat with the AI assistant.',
+              timestamp: new Date(),
+            };
+            addMessage(sessionId, welcomeMessage);
+            setSessionLoading(sessionId, false);
+          } catch (error) {
+            console.error('Failed to auto-start session:', error);
+            const errorMessage: ChatMessage = {
+              id: `${sessionId}-auto-start-error-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+              type: 'system',
+              content: `Failed to start Codex session: ${error}`,
+              timestamp: new Date(),
+            };
+            addMessage(sessionId, errorMessage);
+            setSessionLoading(sessionId, false);
+          }
+        };
+        
+        startSession();
+      }
     }
 
     // Listen for protocol events
@@ -245,25 +278,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
-  const handleSendMessage = async () => {
-    if (!inputValue.trim() || isLoading) return;
+  const handleSendMessage = async (messageContent: string) => {
+    if (!messageContent.trim() || isLoading) return;
 
     // Ensure session is running before sending message
     try {
       if (!sessionManager.isSessionRunning(sessionId)) {
+        setSessionLoading(sessionId, true);
         await sessionManager.ensureSessionRunning(sessionId, config);
         setIsConnected(true);
-        
-        // Add welcome message for newly started sessions
-        if (messages.length === 0) {
-          const welcomeMessage: ChatMessage = {
-            id: `${sessionId}-welcome-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
-            type: 'system',
-            content: 'Codex session started. You can now chat with the AI assistant.',
-            timestamp: new Date(),
-          };
-          addMessage(sessionId, welcomeMessage);
-        }
+        setSessionLoading(sessionId, false);
       }
     } catch (error) {
       console.error('Failed to start session:', error);
@@ -274,19 +298,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         timestamp: new Date(),
       };
       addMessage(sessionId, errorMessage);
+      setSessionLoading(sessionId, false);
       return;
     }
 
     const userMessage: ChatMessage = {
       id: `${sessionId}-user-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
       type: 'user',
-      content: inputValue,
+      content: messageContent,
       timestamp: new Date(),
     };
 
     addMessage(sessionId, userMessage);
-    const messageContent = inputValue;
-    setInputValue('');
     setSessionLoading(sessionId, true);
 
     try {
@@ -322,12 +345,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
 
   return (
     <div className="flex h-full min-h-0">
@@ -487,26 +504,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       )}
 
       {/* Input */}
-      <div className="flex-shrink-0 border-t p-4 bg-white">
-        <div className="flex gap-2">
-          <Textarea
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyDown={handleKeyPress}
-            placeholder="Type your message..."
-            className="flex-1 min-h-[40px] max-h-[120px]"
-            disabled={isLoading}
-          />
-          <Button
-            onClick={handleSendMessage}
-            disabled={!inputValue.trim() || isLoading}
-            size="sm"
-            className="self-end"
-          >
-            <Send className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
+      <ChatInput
+        inputValue={inputValue}
+        onInputChange={setInputValue}
+        onSendMessage={handleSendMessage}
+        disabled={false}
+        isLoading={isLoading}
+      />
       </div>
     </div>
   );

@@ -15,6 +15,8 @@ import {
 } from "lucide-react";
 import { getFileIcon } from "./fileIcons";
 import { SubFolderContent } from "./SubFolderContent";
+import { useChatInputStore } from "@/stores/chatInputStore";
+import { useFolderStore } from "@/stores/FolderStore";
 
 interface FileEntry {
   name: string;
@@ -49,6 +51,45 @@ export function FileTreeItem({
 }: FileTreeItemProps) {
   const [tokens, setTokens] = useState<number | null>(null);
   const [loadingTokens, setLoadingTokens] = useState(false);
+  
+  const { addFileReference, replaceFileReferences } = useChatInputStore();
+  const { currentFolder } = useFolderStore();
+
+  const getRelativePath = (fullPath: string): string => {
+    if (!currentFolder) return fullPath;
+    
+    // Remove current folder path to get relative path
+    if (fullPath.startsWith(currentFolder)) {
+      const relativePath = fullPath.slice(currentFolder.length);
+      return relativePath.startsWith('/') ? relativePath.slice(1) : relativePath;
+    }
+    return fullPath;
+  };
+
+  const handleAddToChatInput = () => {
+    const relativePath = getRelativePath(entry.path);
+    addFileReference(entry.path, relativePath, entry.name, entry.is_directory);
+    if (onAddToChat) {
+      onAddToChat(entry.path);
+    }
+  };
+
+  const handleFileClickWithInput = () => {
+    if (entry.is_directory) {
+      onToggleFolder(entry.path);
+    } else {
+      // Replace current file references with this single file
+      const relativePath = getRelativePath(entry.path);
+      replaceFileReferences([{
+        path: entry.path,
+        relativePath,
+        name: entry.name,
+        isDirectory: entry.is_directory
+      }]);
+      
+      onFileClick(entry.path, entry.is_directory);
+    }
+  };
 
   const handleMouseEnter = async () => {
     if (!entry.is_directory && tokens === null && !loadingTokens) {
@@ -87,13 +128,7 @@ export function FileTreeItem({
 
         <span
           className="flex-1 text-sm cursor-pointer hover:text-blue-600"
-          onClick={() => {
-            if (entry.is_directory) {
-              onToggleFolder(entry.path);
-            } else {
-              onFileClick(entry.path, entry.is_directory);
-            }
-          }}
+          onClick={handleFileClickWithInput}
         >
           {entry.name}
         </span>
@@ -137,7 +172,7 @@ export function FileTreeItem({
           variant="ghost"
           size="sm"
           className="opacity-0 group-hover:opacity-100 p-1 h-auto"
-          onClick={() => onAddToChat(entry.path)}
+          onClick={handleAddToChatInput}
         >
           <Plus className="w-3 h-3" />
         </Button>
