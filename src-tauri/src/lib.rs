@@ -12,8 +12,13 @@ use commands::{
 };
 use config::{get_project_name, read_codex_config};
 use filesystem::{
-    calculate_file_tokens, get_default_directories, get_git_file_diff, read_csv_content,
-    read_directory, read_file, read_pdf_content, read_xlsx_content, write_file,
+    directory_ops::{get_default_directories, read_directory},
+    file_analysis::calculate_file_tokens,
+    file_io::{read_file, write_file},
+    file_parsers::{
+        csv::read_csv_content, pdf::read_pdf_content, xlsx::read_xlsx_content,
+    },
+    git_diff::get_git_file_diff,
 };
 use state::CodexState;
 
