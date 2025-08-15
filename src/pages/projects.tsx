@@ -1,11 +1,18 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { invoke } from '@tauri-apps/api/core';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { FolderOpen } from 'lucide-react';
-import { useFolderStore } from '@/stores/FolderStore';
-import { Button } from '@/components/ui/button';
-import { useLayoutStore } from '@/stores/layoutStore';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { invoke } from "@tauri-apps/api/core";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { FolderOpen, Plus } from "lucide-react";
+import { useFolderStore } from "@/stores/FolderStore";
+import { Button } from "@/components/ui/button";
+import { useLayoutStore } from "@/stores/layoutStore";
+import { open } from "@tauri-apps/plugin-dialog";
 
 interface Project {
   path: string;
@@ -25,10 +32,10 @@ export default function ProjectsPage() {
 
   const loadProjects = async () => {
     try {
-      const projectList = await invoke<Project[]>('read_codex_config');
+      const projectList = await invoke<Project[]>("read_codex_config");
       setProjects(projectList);
     } catch (error) {
-      console.error('Failed to load projects:', error);
+      console.error("Failed to load projects:", error);
     } finally {
       setLoading(false);
     }
@@ -40,7 +47,21 @@ export default function ProjectsPage() {
     setFileTree(true);
     setChatPane(true);
     // Navigate to chat page
-    navigate('/chat');
+    navigate("/chat");
+  };
+
+  const selectNewProject = async () => {
+    try {
+      const result = await open({
+        directory: true,
+        multiple: false,
+      });
+      if (result) {
+        openProject(result);
+      }
+    } catch (error) {
+      console.error("Failed to select directory:", error);
+    }
   };
 
   if (loading) {
@@ -57,7 +78,10 @@ export default function ProjectsPage() {
         <div className="w-full">
           <div className="flex items-center justify-between w-full">
             <h1 className="text-2xl font-bold">Projects</h1>
-            <Button>Add mcp server</Button>
+            <Button onClick={selectNewProject}>
+              <Plus className="w-3 h-3" />
+              Open Project
+            </Button>
           </div>
           <p className="text-muted-foreground">Manage your Codex projects</p>
         </div>
@@ -74,12 +98,13 @@ export default function ProjectsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-3">
+        <div className="space-y-3 grid grid-cols-1 md:grid-cols-2">
           {projects.map((project, index) => {
-            const projectName = project.path.split(/[/\\]/).pop() || project.path;
+            const projectName =
+              project.path.split(/[/\\]/).pop() || project.path;
             return (
-              <Card 
-                key={index} 
+              <Card
+                key={index}
                 className="hover:shadow-md transition-shadow cursor-pointer"
                 onClick={() => openProject(project.path)}
               >
@@ -89,11 +114,13 @@ export default function ProjectsPage() {
                       <FolderOpen className="w-5 h-5" />
                       {projectName}
                     </div>
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      project.trust_level === 'trusted' 
-                        ? 'bg-green-100 text-green-800' 
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}>
+                    <span
+                      className={`text-xs px-2 py-1 rounded-full ${
+                        project.trust_level === "trusted"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-yellow-100 text-yellow-800"
+                      }`}
+                    >
                       {project.trust_level}
                     </span>
                   </CardTitle>

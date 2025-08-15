@@ -157,7 +157,7 @@ pub async fn load_sessions_from_disk() -> Result<Vec<Conversation>, String> {
 
     let mut conversations = Vec::new();
 
-    println!("Scanning sessions directory: {:?}", sessions_path);
+    // println!("Scanning sessions directory: {:?}", sessions_path);
 
     for entry in WalkDir::new(&sessions_path)
         .into_iter()
@@ -165,11 +165,11 @@ pub async fn load_sessions_from_disk() -> Result<Vec<Conversation>, String> {
         .filter(|e| e.file_type().is_file())
         .filter(|e| e.path().extension().and_then(|s| s.to_str()) == Some("jsonl"))
     {
-        println!("Processing file: {:?}", entry.path());
+        // println!("Processing file: {:?}", entry.path());
         match fs::read_to_string(entry.path()) {
             Ok(content) => {
                 if let Some(conversation) = parse_session_file(&content, entry.path()) {
-                    println!("Successfully parsed conversation: {}", conversation.id);
+                    // println!("Successfully parsed conversation: {}", conversation.id);
                     conversations.push(conversation);
                 } else {
                     println!("Failed to parse conversation from file: {:?}", entry.path());

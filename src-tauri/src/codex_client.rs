@@ -1,6 +1,5 @@
 use anyhow::Result;
 use serde_json;
-use std::path::PathBuf;
 use std::process::Stdio;
 use tauri::{AppHandle, Emitter};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -27,7 +26,7 @@ impl CodexClient {
     pub async fn new(app: &AppHandle, session_id: String, config: CodexConfig) -> Result<Self> {
         log_to_file(&format!("Creating CodexClient for session: {}", session_id));
         
-        // 根据配置构建 codex 命令
+        // Build codex command based on configuration
         let (command, args): (String, Vec<String>) = if let Some(configured_path) = &config.codex_path {
             (configured_path.clone(), vec![])
         } else if let Some(path) = discover_codex_command() {
@@ -42,7 +41,7 @@ impl CodexClient {
         }
         cmd.arg("proto");
         
-        // 使用 -c 配置参数格式 (codex proto 只支持 -c 配置)
+        // Use -c configuration parameter format (codex proto only supports -c configuration)
         if config.use_oss {
             cmd.arg("-c").arg("model_provider=oss");
         }
@@ -65,19 +64,19 @@ impl CodexClient {
             cmd.arg("-c").arg(sandbox_config);
         }
         
-        // 设置工作目录
+        // Set working directory
         if !config.working_directory.is_empty() {
             cmd.arg("-c").arg(format!("cwd=\"{}\"", config.working_directory));
         }
         
-        // 添加自定义参数
+        // Add custom arguments
         if let Some(custom_args) = &config.custom_args {
             for arg in custom_args {
                 cmd.arg(arg);
             }
         }
         
-        // 打印要执行的命令用于调试
+        // Print the command to be executed for debugging
         log_to_file(&format!("Starting codex with command: {:?}", cmd));
         
         let mut process = cmd
@@ -91,7 +90,7 @@ impl CodexClient {
 
         let (stdin_tx, mut stdin_rx) = mpsc::unbounded_channel::<String>();
 
-        // 处理 stdin 写入
+        // Handle stdin writing
         let mut stdin_writer = stdin;
         tokio::spawn(async move {
             while let Some(line) = stdin_rx.recv().await {
@@ -111,7 +110,7 @@ impl CodexClient {
             log_to_file("Stdin writer task terminated");
         });
 
-        // 处理 stdout 读取
+        // Handle stdout reading
         let app_clone = app.clone();
         let session_id_clone = session_id.clone();
         tokio::spawn(async move {
@@ -124,7 +123,7 @@ impl CodexClient {
                 log_to_file(&format!("Received line from codex: {}", line));
                 if let Ok(event) = serde_json::from_str::<Event>(&line) {
                     log_to_file(&format!("Parsed event: {:?}", event));
-                    // 发送事件到前端
+                    // Send event to frontend
                     if let Err(e) = app_clone.emit(&format!("codex-event-{}", session_id_clone), &event) {
                         log_to_file(&format!("Failed to emit event: {}", e));
                     }
@@ -206,7 +205,7 @@ impl CodexClient {
     pub async fn close_session(&mut self) -> Result<()> {
         log_to_file(&format!("Closing session: {}", self.session_id));
         
-        // 发送 shutdown 命令
+        // Send shutdown command
         let submission = Submission {
             id: Uuid::new_v4().to_string(),
             op: Op::Shutdown,
@@ -216,12 +215,12 @@ impl CodexClient {
             log_to_file(&format!("Failed to send shutdown command: {}", e));
         }
 
-        // 关闭 stdin 通道
+        // Close stdin channel
         if let Some(stdin_tx) = self.stdin_tx.take() {
             drop(stdin_tx);
         }
 
-        // 终止进程
+        // Terminate process
         if let Some(mut process) = self.process.take() {
             if let Err(e) = process.kill().await {
                 log_to_file(&format!("Failed to kill codex process: {}", e));

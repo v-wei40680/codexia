@@ -3,7 +3,7 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Settings, Folder, FileText } from 'lucide-react';
-import { CodexConfig, DEFAULT_CONFIG } from '../types/codex';
+import { CodexConfig, DEFAULT_CONFIG } from '@/types/codex';
 import {
   Dialog,
   DialogContent,
@@ -192,7 +192,7 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
                 placeholder="llama3.2, gpt-5, etc."
               />
               <div className="flex gap-2 mt-2">
-                {['gpt-5', 'llama3.2', 'gpt-oss:20b', 'gpt-oss:120b', 'gpt-4o', 'mistral'].map((m) => (
+                {['gpt-oss:20b', 'gpt-5', 'gpt-4o', 'mistral', 'deepseek-r1', 'qwen3'].map((m) => (
                   <Button
                     key={m}
                     variant="outline"

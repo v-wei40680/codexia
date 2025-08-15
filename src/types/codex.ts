@@ -58,10 +58,18 @@ export interface CodexConfig {
 }
 
 export const DEFAULT_CONFIG: CodexConfig = {
-  workingDirectory: '/Users/gpt/projects/rustapp/codexia',
-  model: 'hf.co/Menlo/Jan-nano-gguf:Q4_K_S',
+  workingDirectory: '',
+  model: 'gpt-oss:20b',
   provider: 'oss',
   useOss: true,
   approvalPolicy: 'on-request',
   sandboxMode: 'workspace-write',
 };
+
+export interface McpServerConfigForFrontend {
+  type: 'Stdio' | 'Http';
+  command?: string;
+  args?: string[];
+  env?: Record<string, string>;
+  url?: string[];
+}

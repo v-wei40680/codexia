@@ -10,7 +10,7 @@ use commands::{
     approve_execution, check_codex_version, close_session, get_running_sessions,
     load_sessions_from_disk, send_message, start_codex_session, stop_session, delete_session_file,
 };
-use config::{get_project_name, read_codex_config};
+use config::{get_project_name, read_codex_config, read_mcp_servers, add_mcp_server, delete_mcp_server};
 use filesystem::{
     directory_ops::{get_default_directories, read_directory},
     file_analysis::calculate_file_tokens,
@@ -58,6 +58,9 @@ pub fn run() {
             get_git_file_diff,
             read_codex_config,
             get_project_name,
+            read_mcp_servers,
+            add_mcp_server,
+            delete_mcp_server,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

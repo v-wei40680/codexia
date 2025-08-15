@@ -1,0 +1,377 @@
+import { useState, useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/core';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from './ui/dialog';
+import { Button } from './ui/button';
+import { Input } from './ui/input';
+import { Textarea } from './ui/textarea';
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
+import { Trash2, Plus, Edit, Save, X } from 'lucide-react';
+import { McpServerConfigForFrontend } from '../types/codex';
+
+interface McpDialogProps {
+  children: React.ReactNode;
+}
+
+export function McpDialog({ children }: McpDialogProps) {
+  const [open, setOpen] = useState(false);
+  const [servers, setServers] = useState<Record<string, McpServerConfigForFrontend>>({});
+  const [newServerName, setNewServerName] = useState('');
+  const [newServerProtocol, setNewServerProtocol] = useState<'stdio' | 'http'>('stdio');
+  const [commandConfig, setCommandConfig] = useState({
+    command: '',
+    args: '',
+    env: '',
+  });
+  const [httpConfig, setHttpConfig] = useState({
+    url: '',
+  });
+  const [editingServer, setEditingServer] = useState<string | null>(null);
+  const [editConfig, setEditConfig] = useState<{
+    name: string;
+    protocol: 'stdio' | 'http';
+    command: { command: string; args: string; env: string };
+    http: { url: string };
+  } | null>(null);
+
+  const loadServers = async () => {
+    try {
+      const mcpServers = await invoke<Record<string, McpServerConfigForFrontend>>('read_mcp_servers');
+      setServers(mcpServers);
+    } catch (error) {
+      console.error('Failed to load MCP servers:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (open) {
+      loadServers();
+    }
+  }, [open]);
+
+  const handleAddServer = async () => {
+    if (!newServerName) return;
+
+    try {
+      let config: McpServerConfigForFrontend;
+      
+      if (newServerProtocol === 'stdio') {
+        config = {
+          type: 'Stdio',
+          command: commandConfig.command,
+          args: commandConfig.args.split(' ').filter(arg => arg.trim()),
+        };
+        
+        if (commandConfig.env && commandConfig.env.trim()) {
+          try {
+            config.env = JSON.parse(commandConfig.env);
+          } catch (e) {
+            alert('Invalid JSON format for environment variables');
+            return;
+          }
+        }
+      } else {
+        config = {
+          type: 'Http',
+          url: httpConfig.url.split('\n').filter(url => url.trim()),
+        };
+      }
+
+      await invoke('add_mcp_server', { name: newServerName, config });
+      
+      setNewServerName('');
+      setCommandConfig({ command: '', args: '', env: '' });
+      setHttpConfig({ url: '' });
+      loadServers();
+    } catch (error) {
+      console.error('Failed to add MCP server:', error);
+      alert('Failed to add MCP server: ' + error);
+    }
+  };
+
+  const handleDeleteServer = async (name: string) => {
+    try {
+      await invoke('delete_mcp_server', { name });
+      loadServers();
+    } catch (error) {
+      console.error('Failed to delete MCP server:', error);
+      alert('Failed to delete MCP server: ' + error);
+    }
+  };
+
+  const handleEditServer = (name: string, config: McpServerConfigForFrontend) => {
+    setEditingServer(name);
+    setEditConfig({
+      name,
+      protocol: config.type === 'Stdio' ? 'stdio' : 'http',
+      command: {
+        command: config.type === 'Stdio' ? (config.command || '') : '',
+        args: config.type === 'Stdio' ? (config.args || []).join(' ') : '',
+        env: config.type === 'Stdio' && config.env ? JSON.stringify(config.env, null, 2) : '',
+      },
+      http: {
+        url: config.type === 'Http' ? (config.url || []).join('\n') : '',
+      },
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editConfig || !editingServer) return;
+
+    try {
+      let config: McpServerConfigForFrontend;
+      
+      if (editConfig.protocol === 'stdio') {
+        config = {
+          type: 'Stdio',
+          command: editConfig.command.command,
+          args: editConfig.command.args.split(' ').filter(arg => arg.trim()),
+        };
+        
+        if (editConfig.command.env && editConfig.command.env.trim()) {
+          try {
+            config.env = JSON.parse(editConfig.command.env);
+          } catch (e) {
+            alert('Invalid JSON format for environment variables');
+            return;
+          }
+        }
+      } else {
+        config = {
+          type: 'Http',
+          url: editConfig.http.url.split('\n').filter(url => url.trim()),
+        };
+      }
+
+      await invoke('delete_mcp_server', { name: editingServer });
+      await invoke('add_mcp_server', { name: editConfig.name, config });
+      
+      setEditingServer(null);
+      setEditConfig(null);
+      loadServers();
+    } catch (error) {
+      console.error('Failed to update MCP server:', error);
+      alert('Failed to update MCP server: ' + error);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingServer(null);
+    setEditConfig(null);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        {children}
+      </DialogTrigger>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto sm:!max-w-4xl">
+        <DialogHeader>
+          <DialogTitle>MCP Server Management</DialogTitle>
+        </DialogHeader>
+        
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Configured Servers</h3>
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                {Object.entries(servers).map(([name, config]) => (
+                  <Card key={name}>
+                    {editingServer === name ? (
+                      <div className="p-4">
+                        <div className="space-y-4">
+                          <div>
+                            <div className="text-sm font-medium mb-1">Server Name</div>
+                            <Input
+                              value={editConfig?.name ?? ''}
+                              onChange={(e) => setEditConfig(prev => prev ? { ...prev, name: e.target.value } : null)}
+                            />
+                          </div>
+
+                          <Tabs value={editConfig?.protocol} onValueChange={(value) => setEditConfig(prev => prev ? { ...prev, protocol: value as 'stdio' | 'http' } : null)}>
+                            <TabsList className="grid w-full grid-cols-2">
+                              <TabsTrigger value="stdio">Stdio</TabsTrigger>
+                              <TabsTrigger value="http">HTTP</TabsTrigger>
+                            </TabsList>
+                            
+                            <TabsContent value="stdio" className="space-y-4">
+                              <div>
+                                <div className="text-sm font-medium mb-1">Command</div>
+                                <Input
+                                  value={editConfig?.command.command || ''}
+                                  onChange={(e) => setEditConfig(prev => prev ? { ...prev, command: { ...prev.command, command: e.target.value } } : null)}
+                                />
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium mb-1">Arguments</div>
+                                <Input
+                                  value={editConfig?.command.args || ''}
+                                  onChange={(e) => setEditConfig(prev => prev ? { ...prev, command: { ...prev.command, args: e.target.value } } : null)}
+                                />
+                              </div>
+                              <div>
+                                <div className="text-sm font-medium mb-1">Environment Variables (JSON)</div>
+                                <Textarea
+                                  value={editConfig?.command.env || ''}
+                                  onChange={(e) => setEditConfig(prev => prev ? { ...prev, command: { ...prev.command, env: e.target.value } } : null)}
+                                  rows={3}
+                                />
+                              </div>
+                            </TabsContent>
+                            
+                            <TabsContent value="http" className="space-y-4">
+                              <div>
+                                <div className="text-sm font-medium mb-1">URLs (one per line)</div>
+                                <Textarea
+                                  value={editConfig?.http.url || ''}
+                                  onChange={(e) => setEditConfig(prev => prev ? { ...prev, http: { ...prev.http, url: e.target.value } } : null)}
+                                  rows={3}
+                                />
+                              </div>
+                            </TabsContent>
+                          </Tabs>
+
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={handleSaveEdit}>
+                              <Save className="h-4 w-4 mr-1" />
+                              Save
+                            </Button>
+                            <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                              <X className="h-4 w-4 mr-1" />
+                              Cancel
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <CardHeader>
+                          <CardTitle className="text-sm flex items-center justify-between">
+                            {name}
+                            <div className="flex gap-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleEditServer(name, config)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleDeleteServer(name)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <div className="text-xs text-gray-600">
+                            {config.type === 'Stdio' && (
+                              <div>
+                                <strong>Command:</strong> {config.command}
+                                {config.args && config.args.length > 0 && (
+                                  <div><strong>Args:</strong> {config.args.join(' ')}</div>
+                                )}
+                                {config.env && (
+                                  <div><strong>Env:</strong> {Object.keys(config.env).join(', ')}</div>
+                                )}
+                              </div>
+                            )}
+                            {config.type === 'Http' && (
+                              <div>
+                                <strong>HTTP:</strong> {config.url?.join(', ')}
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </>
+                    )}
+                  </Card>
+                ))}
+                {Object.keys(servers).length === 0 && (
+                  <div className="text-gray-500 text-center py-8">
+                    No MCP servers configured
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Add New Server</h3>
+              <div className="space-y-4">
+                <div>
+                  <div className="text-sm font-medium mb-1">Server Name</div>
+                  <Input
+                    value={newServerName}
+                    onChange={(e) => setNewServerName(e.target.value)}
+                    placeholder="e.g., fetch, deepwiki"
+                  />
+                </div>
+
+                <Tabs value={newServerProtocol} onValueChange={(value) => setNewServerProtocol(value as 'stdio' | 'http')}>
+                  <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="stdio">Stdio</TabsTrigger>
+                    <TabsTrigger value="http">HTTP</TabsTrigger>
+                  </TabsList>
+                  
+                  <TabsContent value="stdio" className="space-y-4">
+                    <div>
+                      <div className="text-sm font-medium mb-1">Stdio</div>
+                      <Input
+                        value={commandConfig.command}
+                        onChange={(e) => setCommandConfig(prev => ({ ...prev, command: e.target.value }))}
+                        placeholder="e.g., uvx, npx"
+                      />
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium mb-1">Arguments</div>
+                      <Input
+                        value={commandConfig.args}
+                        onChange={(e) => setCommandConfig(prev => ({ ...prev, args: e.target.value }))}
+                        placeholder="e.g., -y mcp-server-fetch"
+                      />
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium mb-1">Environment Variables (JSON, optional)</div>
+                      <Textarea
+                        value={commandConfig.env}
+                        onChange={(e) => setCommandConfig(prev => ({ ...prev, env: e.target.value }))}
+                        placeholder='{"API_KEY": "value"} - Leave empty if not needed'
+                        rows={3}
+                      />
+                    </div>
+                  </TabsContent>
+                  
+                  <TabsContent value="http" className="space-y-4">
+                    <div>
+                      <div className="text-sm font-medium mb-1">URLs (one per line)</div>
+                      <Textarea
+                        value={httpConfig.url}
+                        onChange={(e) => setHttpConfig(prev => ({ ...prev, url: e.target.value }))}
+                        placeholder="https://mcp.deepwiki.com/mcp"
+                        rows={3}
+                      />
+                    </div>
+                  </TabsContent>
+                </Tabs>
+
+                <Button onClick={handleAddServer} disabled={!newServerName} className="w-full">
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Server
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
