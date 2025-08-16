@@ -38,6 +38,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [isConnected, setIsConnected] = useState(false);
   const [tempSessionId, setTempSessionId] = useState<string | null>(null);
   const [activeSessionId, setActiveSessionId] = useState<string>(sessionId);
+  const [sessionStarting, setSessionStarting] = useState(false);
 
   const {
     conversations,
@@ -92,8 +93,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       setIsConnected(isRunning);
 
       // Don't auto-start session if we're viewing a historical conversation or pending new conversation
+      // Also don't auto-start if we're already starting a session in handleSendMessage
       if (
         !isRunning &&
+        !sessionStarting &&
         messages.length === 0 &&
         !selectedConversation &&
         !pendingNewConversation &&
@@ -122,7 +125,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         startSession();
       }
     }
-  }, [sessionId, selectedConversation, pendingNewConversation]);
+  }, [sessionId, selectedConversation, pendingNewConversation, sessionStarting]);
 
   const handleSendMessage = async (messageContent: string) => {
     console.log("=== handleSendMessage called ===");
@@ -194,89 +197,37 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       console.log("Checking if session is running:", sessionToStart);
       if (!sessionManager.isSessionRunning(sessionToStart)) {
         console.log("Session not running, starting session...");
+        setSessionStarting(true); // Prevent useEffect from starting another session
         setSessionLoading(sessionToStart, true);
         await sessionManager.ensureSessionRunning(sessionToStart, config);
         setIsConnected(true);
         console.log("Session started successfully");
         
-        // If this was a pending session, get the real session ID from filesystem
+        // If this was a pending session, just use the started session ID
         if (isPendingSession) {
-          console.log("Getting real session ID after starting codex session");
-          try {
-            // Try multiple times with increasing delays to get the session ID
-            let realSessionId = null;
-            for (let attempt = 1; attempt <= 5; attempt++) {
-              console.log(`Attempt ${attempt} to get real session ID`);
-              await new Promise(resolve => setTimeout(resolve, attempt * 500)); // 500ms, 1s, 1.5s, 2s, 2.5s
-              
-              realSessionId = await invoke<string | null>("get_latest_session_id");
-              console.log(`Attempt ${attempt} - realSessionId:`, realSessionId);
-              
-              if (realSessionId) {
-                break;
-              }
-            }
-            
-            if (realSessionId) {
-              console.log(`Using real session ID from filesystem: ${realSessionId}`);
-              actualSessionId = realSessionId;
-              
-              // Start session with real ID in backend
-              try {
-                console.log(`Starting backend session with real ID: ${actualSessionId}`);
-                await sessionManager.ensureSessionRunning(actualSessionId, config);
-                console.log(`Backend session started with real ID: ${actualSessionId}`);
-              } catch (error) {
-                console.error(`Failed to start backend session with real ID: ${error}`);
-              }
-              
-              // Stop the temporary session since we now have the real one
-              try {
-                console.log(`Stopping temporary session: ${sessionToStart}`);
-                await sessionManager.stopSession(sessionToStart);
-                console.log(`Temporary session stopped: ${sessionToStart}`);
-              } catch (error) {
-                console.warn(`Failed to stop temporary session: ${error}`);
-              }
-              
-              // Update session manager mapping from temp ID to real ID  
-              console.log(`Updating session manager mapping from ${sessionToStart} to ${actualSessionId}`);
-              sessionManager.updateSessionId(sessionToStart, actualSessionId);
-              
-              // Remove any existing pending conversation
-              const pendingConversations = conversations.filter(conv => conv.id.startsWith('pending_'));
-              for (const pendingConv of pendingConversations) {
-                console.log(`Removing pending conversation: ${pendingConv.id}`);
-                // deleteConversation(pendingConv.id); // Don't delete, just let it be replaced
-              }
-              
-              // Create conversation with real session ID
-              createConversationWithSessionId(actualSessionId, "New Chat");
-              setCurrentConversation(actualSessionId);
-              setActiveSessionId(actualSessionId); // Update active session ID for events
-              setTempSessionId(null);
-            } else {
-              console.warn("Could not get real session ID after 5 attempts, using temporary ID");
-              actualSessionId = sessionToStart;
-              createConversationWithSessionId(actualSessionId, "New Chat");
-              setCurrentConversation(actualSessionId);
-              setActiveSessionId(actualSessionId); // Update active session ID for events
-              setTempSessionId(null);
-            }
-          } catch (error) {
-            console.error("Failed to get real session ID:", error);
-            actualSessionId = sessionToStart;
-            createConversationWithSessionId(actualSessionId, "New Chat");
-            setCurrentConversation(actualSessionId);
-            setActiveSessionId(actualSessionId); // Update active session ID for events
-            setTempSessionId(null);
+          console.log("Using started session ID for pending session");
+          actualSessionId = sessionToStart;
+          
+          // Remove any existing pending conversation
+          const pendingConversations = conversations.filter(conv => conv.id.startsWith('pending_'));
+          for (const pendingConv of pendingConversations) {
+            console.log(`Removing pending conversation: ${pendingConv.id}`);
+            // deleteConversation(pendingConv.id); // Don't delete, just let it be replaced
           }
+          
+          // Create conversation with the session ID we started
+          createConversationWithSessionId(actualSessionId, "New Chat");
+          setCurrentConversation(actualSessionId);
+          setActiveSessionId(actualSessionId); // Update active session ID for events
+          setTempSessionId(null);
         }
         
         setSessionLoading(actualSessionId, false);
+        setSessionStarting(false); // Reset the flag
       }
     } catch (error) {
       console.error("Failed to start session:", error);
+      setSessionStarting(false); // Reset the flag on error
       const errorMessage = {
         id: `${actualSessionId}-startup-error-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
         role: "system" as const,
