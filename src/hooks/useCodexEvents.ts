@@ -103,7 +103,7 @@ export const useCodexEvents = ({
         break;
         
       case 'exec_command_output_delta':
-        console.log('Command output:', msg.output || '');
+        console.log('Command output:', (msg as any).stream || '');
         break;
         
       case 'exec_command_end':

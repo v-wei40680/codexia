@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 import { useNoteStore } from "@/stores/NoteStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, MoreHorizontal, Trash2, Search, Star, StarOff } from "lucide-react";
+import { MoreHorizontal, Trash2, Search, Star, StarOff } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,

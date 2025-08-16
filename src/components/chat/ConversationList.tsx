@@ -1,7 +1,6 @@
 import { cn } from "@/lib/utils";
 import {
   useConversationStore,
-  createNewSessionConversation,
 } from "@/stores/ConversationStore";
 import { sessionLoader } from "@/services/sessionLoader";
 import { Button } from "@/components/ui/button";

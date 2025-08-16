@@ -46,9 +46,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     createConversationWithSessionId,
     pendingNewConversation,
     setPendingNewConversation,
-    createNewSessionConversation,
     setCurrentConversation,
-    updateConversationId,
   } = useConversationStore();
 
   // Priority: selectedConversation (from disk) > conversations (from store)

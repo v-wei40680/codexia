@@ -28,7 +28,6 @@ export const SimpleChatComponent: React.FC<SimpleChatComponentProps> = ({
     createConversationWithLatestSession,
     selectOrCreateExternalSession,
     deleteConversation,
-    pendingNewConversation,
   } = useConversationStore();
   const { showSessionList } = useLayoutStore();
 
