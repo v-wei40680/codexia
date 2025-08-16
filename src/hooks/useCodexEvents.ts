@@ -12,14 +12,14 @@ export const useCodexEvents = ({
   sessionId, 
   onApprovalRequest
 }: UseCodexEventsProps) => {
-  const { addMessage, setSessionLoading, createConversationWithSessionId, conversations } = useConversationStore();
+  const { addMessage, setSessionLoading, createConversation, conversations } = useConversationStore();
 
   const addMessageToStore = (message: ChatMessage) => {
     // Ensure conversation exists
     const conversationExists = conversations.find(conv => conv.id === sessionId);
     if (!conversationExists) {
       console.log(`Creating conversation for session ${sessionId} from event`);
-      createConversationWithSessionId(sessionId, 'New Chat');
+      createConversation('New Chat', 'agent', sessionId);
     }
     
     // Convert message format and add to store

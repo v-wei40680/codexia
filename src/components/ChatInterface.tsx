@@ -44,7 +44,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     conversations,
     addMessage,
     setSessionLoading,
-    createConversationWithSessionId,
+    createConversation,
     pendingNewConversation,
     setPendingNewConversation,
     setCurrentConversation,
@@ -173,7 +173,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           }
 
           // Create conversation with the real session ID
-          createConversationWithSessionId(actualSessionId, "New Chat");
+          createConversation("New Chat", "agent", actualSessionId);
         } catch (error) {
           console.error("Failed to get session ID:", error);
           // Fallback to current sessionId
@@ -216,7 +216,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           }
           
           // Create conversation with the session ID we started
-          createConversationWithSessionId(actualSessionId, "New Chat");
+          createConversation("New Chat", "agent", actualSessionId);
           setCurrentConversation(actualSessionId);
           setActiveSessionId(actualSessionId); // Update active session ID for events
           setTempSessionId(null);

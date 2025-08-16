@@ -17,10 +17,8 @@ interface ConversationStore {
   pendingNewConversation: boolean;
 
   // Conversation management
-  createConversation: (title?: string, mode?: ChatMode) => string;
-  createConversationWithSessionId: (sessionId: string, title?: string, mode?: ChatMode) => void;
+  createConversation: (title?: string, mode?: ChatMode, sessionId?: string) => string;
   createConversationWithLatestSession: (title?: string, mode?: ChatMode) => Promise<string>;
-  createNewSessionConversation: (title?: string, mode?: ChatMode) => string;
   selectOrCreateExternalSession: (sessionId: string, name?: string) => void;
   deleteConversation: (id: string) => void;
   setCurrentConversation: (id: string) => void;
@@ -34,8 +32,6 @@ interface ConversationStore {
   addDisconnectionWarning: (conversationId: string) => void;
   setSessionLoading: (sessionId: string, loading: boolean) => void;
   setPendingNewConversation: (pending: boolean) => void;
-  removeDuplicateConversations: () => void;
-  updateConversationId: (oldId: string, newId: string) => void;
 
   // Message management
   addMessage: (conversationId: string, message: ChatMessage) => void;
@@ -82,18 +78,12 @@ export const createConversationWithLatestSession = async (title?: string, mode: 
     }
     
     // Create new conversation with existing session ID
-    store.createConversationWithSessionId(runningSessionId, title, mode);
+    store.createConversation(title, mode, runningSessionId);
     return runningSessionId;
   } else {
     // No running session, create a new conversation (which will start a new session)
     return store.createConversation(title, mode);
   }
-};
-
-// Export function to create conversation with new session (never reuse)
-export const createNewSessionConversation = (title?: string, mode: ChatMode = "agent"): string => {
-  const store = useConversationStore.getState();
-  return store.createNewSessionConversation(title, mode);
 };
 
 export const useConversationStore = create<ConversationStore>()(
@@ -112,123 +102,23 @@ export const useConversationStore = create<ConversationStore>()(
         set({ config });
       },
 
-      createConversation: (title?: string, mode: ChatMode = "agent") => {
-        // Generate a simple UUID-like ID for the conversation which will also be the session ID
-        const id = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      createConversation: (title?: string, mode: ChatMode = "agent", sessionId?: string) => {
+        // Use provided sessionId or generate a simple UUID-like ID for the conversation
+        const id = sessionId || `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         const state = get();
         
         // Check if conversation with this ID already exists (unlikely but possible)
         const existingConversation = state.conversations.find(conv => conv.id === id);
-        if (existingConversation) {
-          return id;
-        }
-
-        const now = Date.now();
-        const newConversation: Conversation = {
-          id,
-          title: title || "New Conversation",
-          messages: [],
-          mode,
-          createdAt: now,
-          updatedAt: now,
-          isFavorite: false,
-        };
-
-        set((state) => ({
-          conversations: [newConversation, ...state.conversations],
-          currentConversationId: id,
-        }));
-
-        return id;
-      },
-
-      createConversationWithSessionId: (sessionId: string, title?: string, mode: ChatMode = "agent") => {
-        const state = get();
-        // Check if conversation already exists to prevent duplicates
-        const existingConversation = state.conversations.find(conv => conv.id === sessionId);
         if (existingConversation) {
           // Just set as current if it already exists
-          set({ currentConversationId: sessionId });
-          return;
-        }
-
-        const now = Date.now();
-        const newConversation: Conversation = {
-          id: sessionId,
-          title: title || "New Conversation",
-          messages: [],
-          mode,
-          createdAt: now,
-          updatedAt: now,
-          isFavorite: false,
-        };
-
-        set((state) => ({
-          conversations: [newConversation, ...state.conversations],
-          currentConversationId: sessionId,
-        }));
-      },
-
-      createConversationWithLatestSession: async (title?: string, mode: ChatMode = "agent") => {
-        try {
-          // Get running sessions from backend
-          const runningSessions = await invoke<string[]>('get_running_sessions');
-          
-          if (runningSessions.length > 0) {
-            const sessionId = runningSessions[0];
-            
-            // Check if conversation with this session ID already exists
-            const store = get();
-            const existingConversation = store.conversations.find(conv => conv.id === sessionId);
-            if (existingConversation) {
-              set({ currentConversationId: sessionId });
-              return sessionId;
-            }
-            
-            // Create new conversation with existing session ID
-            const now = Date.now();
-            const newConversation: Conversation = {
-              id: sessionId,
-              title: title || "Continued Chat",
-              messages: [],
-              mode,
-              createdAt: now,
-              updatedAt: now,
-              isFavorite: false,
-            };
-
-            set((state) => ({
-              conversations: [newConversation, ...state.conversations],
-              currentConversationId: sessionId,
-            }));
-            
-            return sessionId;
-          } else {
-            // No running session, create a new conversation
-            return get().createConversation(title, mode);
-          }
-        } catch (error) {
-          console.error('Failed to get running sessions:', error);
-          // Fallback to regular conversation creation
-          return get().createConversation(title, mode);
-        }
-      },
-
-      createNewSessionConversation: (title?: string, mode: ChatMode = "agent") => {
-        // Always create a completely new conversation with new session (no reuse)
-        const id = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        const state = get();
-        
-        // Check if conversation with this ID already exists (unlikely but possible)
-        const existingConversation = state.conversations.find(conv => conv.id === id);
-        if (existingConversation) {
+          set({ currentConversationId: id });
           return id;
         }
 
         const now = Date.now();
         const newConversation: Conversation = {
           id,
-          title: title || "New Session",
+          title: title || "New Conversation",
           messages: [],
           mode,
           createdAt: now,
@@ -243,6 +133,10 @@ export const useConversationStore = create<ConversationStore>()(
 
         return id;
       },
+
+  // Expose helper that creates/selects a conversation using the latest running session
+  createConversationWithLatestSession: createConversationWithLatestSession,
+
 
       selectOrCreateExternalSession: (sessionId: string, name?: string) => {
         set((state) => {
@@ -338,58 +232,6 @@ export const useConversationStore = create<ConversationStore>()(
         set({ pendingNewConversation: pending });
       },
 
-      removeDuplicateConversations: () => {
-        set((state) => {
-          const uniqueConversations = state.conversations.reduce((acc: Conversation[], current) => {
-            const existingIndex = acc.findIndex(conv => conv.id === current.id);
-            if (existingIndex === -1) {
-              acc.push(current);
-            } else {
-              // Keep the one with more messages or the newer one
-              const existing = acc[existingIndex];
-              if (current.messages.length > existing.messages.length || 
-                  (current.messages.length === existing.messages.length && current.updatedAt > existing.updatedAt)) {
-                acc[existingIndex] = current;
-              }
-            }
-            return acc;
-          }, []);
-
-          return {
-            conversations: uniqueConversations
-          };
-        });
-      },
-
-      updateConversationId: (oldId: string, newId: string) => {
-        set((state) => {
-          const conversationIndex = state.conversations.findIndex(conv => conv.id === oldId);
-          if (conversationIndex === -1) return state;
-
-          // Check if newId already exists to prevent duplicates
-          const existingNewIdConv = state.conversations.find(conv => conv.id === newId);
-          if (existingNewIdConv) {
-            // Remove the old conversation if new ID already exists
-            return {
-              conversations: state.conversations.filter(conv => conv.id !== oldId),
-              currentConversationId: state.currentConversationId === oldId ? newId : state.currentConversationId
-            };
-          }
-
-          // Update the conversation ID
-          const updatedConversations = [...state.conversations];
-          updatedConversations[conversationIndex] = {
-            ...updatedConversations[conversationIndex],
-            id: newId,
-            updatedAt: Date.now()
-          };
-
-          return {
-            conversations: updatedConversations,
-            currentConversationId: state.currentConversationId === oldId ? newId : state.currentConversationId
-          };
-        });
-      },
 
       setSessionLoading: (sessionId: string, loading: boolean) => {
         set((state) => ({
@@ -492,51 +334,9 @@ export const useConversationStore = create<ConversationStore>()(
         currentConversationId: state.currentConversationId,
       }),
       migrate: (persistedState: any, version: number) => {
-        if (version < 2) {
-          // Migrate from version 1: add mode field to existing conversations
-          if (persistedState.conversations) {
-            persistedState.conversations = persistedState.conversations.map(
-              (conv: any) => ({
-                ...conv,
-                mode: conv.mode || "chat", // Default to chat mode
-              }),
-            );
-          }
-        }
-        if (version < 3) {
-          // Migrate from version 2: add isFavorite field to existing conversations
-          if (persistedState.conversations) {
-            persistedState.conversations = persistedState.conversations.map(
-              (conv: any) => ({
-                ...conv,
-                isFavorite: conv.isFavorite || false, // Default to not favorite
-              }),
-            );
-          }
-        }
         if (version < 4) {
           // Migrate from version 3: add config field
           persistedState.config = persistedState.config || DEFAULT_CONFIG;
-        }
-        
-        // Remove duplicates after migration
-        if (persistedState.conversations && Array.isArray(persistedState.conversations)) {
-          const uniqueConversations = persistedState.conversations.reduce((acc: any[], current: any) => {
-            const existingIndex = acc.findIndex((conv: any) => conv.id === current.id);
-            if (existingIndex === -1) {
-              acc.push(current);
-            } else {
-              // Keep the one with more messages or the newer one
-              const existing = acc[existingIndex];
-              if ((current.messages?.length || 0) > (existing.messages?.length || 0) || 
-                  ((current.messages?.length || 0) === (existing.messages?.length || 0) && 
-                   (current.updatedAt || 0) > (existing.updatedAt || 0))) {
-                acc[existingIndex] = current;
-              }
-            }
-            return acc;
-          }, []);
-          persistedState.conversations = uniqueConversations;
         }
 
         return persistedState;
