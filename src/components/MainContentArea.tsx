@@ -1,11 +1,9 @@
-import React, { useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import React from 'react';
 import { ChatInterface } from './ChatInterface';
 import { NoteList, NoteEditor } from './notes';
 import { ConversationList } from './chat';
 import { CodexConfig } from '../types/codex';
 import type { Conversation } from '../types/chat';
-import { useFolderStore } from '../stores/FolderStore';
 
 interface MainContentAreaProps {
   activeTab: string;
@@ -19,6 +17,7 @@ interface MainContentAreaProps {
   isSessionListVisible?: boolean;
   isNotesListVisible?: boolean;
   onConversationSelect?: (conversation: Conversation) => void;
+  selectedConversation?: Conversation | null;
 }
 
 export const MainContentArea: React.FC<MainContentAreaProps> = ({
@@ -33,51 +32,19 @@ export const MainContentArea: React.FC<MainContentAreaProps> = ({
   isSessionListVisible,
   isNotesListVisible,
   onConversationSelect,
+  selectedConversation,
 }) => {
-  const [isContinuing, setIsContinuing] = useState(false);
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
-  const { currentFolder } = useFolderStore();
-
-  const handleSelectConversation = async (conversation: Conversation) => {
-    if (isContinuing) return;
-
-    setIsContinuing(true);
-    try {
-      console.log('Selecting conversation:', conversation.id);
-      
-      // Set the selected conversation to be displayed in ChatInterface
-      setSelectedConversation(conversation);
-      
-      // Create a new Codex session for this conversation
-      const newSessionId = `history-${conversation.id}-${Date.now()}`;
-      
-      // Convert camelCase to snake_case for Rust compatibility
-      const rustConfig = {
-        working_directory: currentFolder || config.workingDirectory,
-        model: config.model,
-        provider: config.provider,
-        use_oss: config.useOss,
-        custom_args: config.customArgs,
-        approval_policy: config.approvalPolicy,
-        sandbox_mode: config.sandboxMode,
-        codex_path: config.codexPath,
-      };
-      
-      await invoke('start_codex_session', {
-        sessionId: newSessionId,
-        config: rustConfig,
-      });
-
-      console.log('Switching to new session in ChatInterface');
-      // Switch to the new session in ChatInterface
-      if (onSelectSession) {
-        onSelectSession(newSessionId);
-      }
-    } catch (error) {
-      console.error('Failed to create session for conversation:', error);
-      alert(`Failed to open conversation: ${error}`);
-    } finally {
-      setIsContinuing(false);
+  const handleSelectConversation = (conversation: Conversation) => {
+    console.log('Selecting conversation:', conversation.id);
+    
+    // Call the onConversationSelect if provided
+    if (onConversationSelect) {
+      onConversationSelect(conversation);
+    }
+    
+    // Switch to this conversation's session ID
+    if (onSelectSession) {
+      onSelectSession(conversation.id);
     }
   };
 
@@ -89,6 +56,7 @@ export const MainContentArea: React.FC<MainContentAreaProps> = ({
             <ConversationList 
               onSelectConversation={onConversationSelect || handleSelectConversation} 
               onCreateNewSession={onCreateSession}
+              activeSessionId={sessionId}
             />
           </div>
         )}
@@ -102,8 +70,7 @@ export const MainContentArea: React.FC<MainContentAreaProps> = ({
             onSelectSession={onSelectSession}
             onCloseSession={onCloseSession}
             isSessionListVisible={false}
-            historyMessages={selectedConversation?.messages || []}
-            onClearHistory={() => setSelectedConversation(null)}
+            selectedConversation={selectedConversation}
           />
         </div>
       </div>

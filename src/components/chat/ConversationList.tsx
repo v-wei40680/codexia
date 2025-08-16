@@ -3,7 +3,7 @@ import { useConversationStore } from "@/stores/ConversationStore";
 import { sessionLoader } from "@/services/sessionLoader";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, MoreHorizontal, Trash2, Search, Star, StarOff, MessageSquare } from "lucide-react";
+import { Plus, MoreHorizontal, Trash2, Search, Star, StarOff, MessageSquare, Circle } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -18,9 +18,10 @@ import { invoke } from "@tauri-apps/api/core";
 interface ConversationListProps {
   onSelectConversation?: (conversation: Conversation) => void;
   onCreateNewSession?: () => void;
+  activeSessionId?: string;
 }
 
-export function ConversationList({ onSelectConversation, onCreateNewSession }: ConversationListProps) {
+export function ConversationList({ onSelectConversation, onCreateNewSession, activeSessionId }: ConversationListProps) {
   const {
     conversations: favoriteConversations,
     currentConversationId,
@@ -161,6 +162,7 @@ export function ConversationList({ onSelectConversation, onCreateNewSession }: C
 
   const renderConversationItem = (conversation: Conversation, index: number, tabPrefix: string) => {
     const isCurrentlySelected = currentConversationId === conversation.id;
+    const isActiveSession = activeSessionId === conversation.id;
     const isFavorited = activeTab === "favorites" 
       ? conversation.isFavorite 
       : favoriteStatuses[conversation.id];
@@ -170,8 +172,10 @@ export function ConversationList({ onSelectConversation, onCreateNewSession }: C
         key={`${tabPrefix}-${conversation.id}-${index}`}
         className={cn(
           "group relative p-3 rounded-lg cursor-pointer border transition-all hover:bg-white hover:shadow-sm",
-          isCurrentlySelected
-            ? "bg-blue-50 border-blue-200 shadow-sm"
+          isActiveSession
+            ? "bg-blue-50 border-blue-200 shadow-sm ring-2 ring-blue-100"
+            : isCurrentlySelected
+            ? "bg-gray-50 border-gray-200 shadow-sm"
             : "bg-white border-transparent hover:border-gray-200"
         )}
         onClick={() => handleSelectConversation(conversation)}
@@ -179,9 +183,19 @@ export function ConversationList({ onSelectConversation, onCreateNewSession }: C
         <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <MessageSquare className="h-3 w-3 text-gray-400 flex-shrink-0" />
-            <h4 className="text-sm font-medium text-gray-900 truncate flex-1">
+            {isActiveSession ? (
+              <Circle className="h-3 w-3 text-green-500 fill-current flex-shrink-0" />
+            ) : (
+              <MessageSquare className="h-3 w-3 text-gray-400 flex-shrink-0" />
+            )}
+            <h4 className={cn(
+              "text-sm font-medium truncate flex-1",
+              isActiveSession ? "text-blue-900" : "text-gray-900"
+            )}>
               {conversation.title}
+              {isActiveSession && (
+                <span className="ml-1 text-xs text-blue-600 font-normal">(Active)</span>
+              )}
             </h4>
             {isFavorited && (
               <Star className="h-3 w-3 text-yellow-500 fill-current" />

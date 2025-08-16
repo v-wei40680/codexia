@@ -1,0 +1,113 @@
+use crate::codex_client::CodexClient;
+use crate::protocol::CodexConfig;
+use crate::state::CodexState;
+use crate::utils::codex_discovery::discover_codex_command;
+use std::process::Command;
+use tauri::{AppHandle, State};
+
+pub async fn start_codex_session(
+    app: AppHandle,
+    state: State<'_, CodexState>,
+    session_id: String,
+    config: CodexConfig,
+) -> Result<(), String> {
+    {
+        let sessions = state.sessions.lock().await;
+        if sessions.contains_key(&session_id) {
+            return Ok(());
+        }
+    }
+
+    let codex_client = CodexClient::new(&app, session_id.clone(), config)
+        .await
+        .map_err(|e| format!("Failed to start Codex session: {}", e))?;
+
+    state.sessions.lock().await.insert(session_id, codex_client);
+    Ok(())
+}
+
+pub async fn send_message(
+    state: State<'_, CodexState>,
+    session_id: String,
+    message: String,
+) -> Result<(), String> {
+    let mut sessions = state.sessions.lock().await;
+    if let Some(client) = sessions.get_mut(&session_id) {
+        client
+            .send_user_input(message)
+            .await
+            .map_err(|e| format!("Failed to send message: {}", e))?;
+        Ok(())
+    } else {
+        Err("Session not found".to_string())
+    }
+}
+
+pub async fn approve_execution(
+    state: State<'_, CodexState>,
+    session_id: String,
+    approval_id: String,
+    approved: bool,
+) -> Result<(), String> {
+    let mut sessions = state.sessions.lock().await;
+    if let Some(client) = sessions.get_mut(&session_id) {
+        client
+            .send_exec_approval(approval_id, approved)
+            .await
+            .map_err(|e| format!("Failed to send approval: {}", e))?;
+        Ok(())
+    } else {
+        Err("Session not found".to_string())
+    }
+}
+
+pub async fn stop_session(state: State<'_, CodexState>, session_id: String) -> Result<(), String> {
+    let mut sessions = state.sessions.lock().await;
+    if let Some(mut client) = sessions.remove(&session_id) {
+        client
+            .shutdown()
+            .await
+            .map_err(|e| format!("Failed to shutdown session: {}", e))?;
+        Ok(())
+    } else {
+        Err("Session not found".to_string())
+    }
+}
+
+pub async fn close_session(state: State<'_, CodexState>, session_id: String) -> Result<(), String> {
+    let mut sessions = state.sessions.lock().await;
+    if let Some(mut client) = sessions.remove(&session_id) {
+        client
+            .close_session()
+            .await
+            .map_err(|e| format!("Failed to close session: {}", e))?;
+        Ok(())
+    } else {
+        Err("Session not found".to_string())
+    }
+}
+
+pub async fn get_running_sessions(state: State<'_, CodexState>) -> Result<Vec<String>, String> {
+    let sessions = state.sessions.lock().await;
+    Ok(sessions.keys().cloned().collect())
+}
+
+pub async fn check_codex_version() -> Result<String, String> {
+    let path = match discover_codex_command() {
+        Some(p) => p.to_string_lossy().to_string(),
+        None => "codex".to_string(),
+    };
+
+    let output = Command::new(&path)
+        .arg("-V")
+        .output()
+        .map_err(|e| format!("Failed to execute codex binary: {}", e))?;
+
+    if output.status.success() {
+        let version = String::from_utf8_lossy(&output.stdout).trim().to_string();
+        Ok(version)
+    } else {
+        let err_msg = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        Err(format!("Codex binary returned error: {}", err_msg))
+    }
+}

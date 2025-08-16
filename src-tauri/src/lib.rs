@@ -3,12 +3,14 @@ mod commands;
 mod config;
 mod filesystem;
 mod protocol;
+mod services;
 mod state;
 mod utils;
 
 use commands::{
     approve_execution, check_codex_version, close_session, get_running_sessions,
     load_sessions_from_disk, send_message, start_codex_session, stop_session, delete_session_file,
+    get_latest_session_id,
 };
 use config::{get_project_name, read_codex_config, read_mcp_servers, add_mcp_server, delete_mcp_server};
 use filesystem::{
@@ -46,6 +48,7 @@ pub fn run() {
             get_running_sessions,
             load_sessions_from_disk,
             delete_session_file,
+            get_latest_session_id,
             check_codex_version,
             read_directory,
             get_default_directories,

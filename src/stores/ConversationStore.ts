@@ -1,18 +1,27 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { invoke } from "@tauri-apps/api/core";
 import type { Conversation, ChatMessage, ChatMode } from "@/types/chat";
 
 interface ConversationStore {
   conversations: Conversation[];
   currentConversationId: string | null;
+  sessionDisconnected: boolean;
+  pendingUserInput: string | null;
 
   // Conversation management
   createConversation: (title?: string, mode?: ChatMode) => string;
+  createConversationWithSessionId: (sessionId: string, title?: string, mode?: ChatMode) => void;
   deleteConversation: (id: string) => void;
   setCurrentConversation: (id: string) => void;
   updateConversationTitle: (id: string, title: string) => void;
   updateConversationMode: (id: string, mode: ChatMode) => void;
   toggleFavorite: (id: string) => void;
+
+  // Session management
+  setSessionDisconnected: (disconnected: boolean) => void;
+  setPendingUserInput: (input: string | null) => void;
+  addDisconnectionWarning: (conversationId: string) => void;
 
   // Message management
   addMessage: (conversationId: string, message: ChatMessage) => void;
@@ -23,9 +32,6 @@ interface ConversationStore {
   getCurrentMessages: () => ChatMessage[];
 }
 
-const generateId = () =>
-  `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
 const generateTitle = (messages: ChatMessage[]): string => {
   const firstUserMessage = messages.find((msg) => msg.role === "user");
   if (firstUserMessage) {
@@ -35,14 +41,49 @@ const generateTitle = (messages: ChatMessage[]): string => {
   return "New Conversation";
 };
 
+// Function to get the latest codex session ID
+const getLatestCodexSessionId = async (): Promise<string | null> => {
+  try {
+    const result = await invoke<string | null>('get_latest_session_id');
+    return result;
+  } catch (error) {
+    console.error('Failed to get latest session ID:', error);
+    return null;
+  }
+};
+
+// Export async function to create conversation with latest codex session ID
+export const createConversationWithLatestSession = async (title?: string, mode: ChatMode = "agent"): Promise<string> => {
+  const sessionId = await getLatestCodexSessionId();
+  const store = useConversationStore.getState();
+  
+  if (sessionId) {
+    // Check if conversation with this session ID already exists
+    const existingConversation = store.conversations.find(conv => conv.id === sessionId);
+    if (existingConversation) {
+      store.setCurrentConversation(sessionId);
+      return sessionId;
+    }
+    
+    // Create new conversation with codex session ID
+    store.createConversationWithSessionId(sessionId, title, mode);
+    return sessionId;
+  } else {
+    // Fallback to regular conversation creation
+    return store.createConversation(title, mode);
+  }
+};
+
 export const useConversationStore = create<ConversationStore>()(
   persist(
     (set, get) => ({
       conversations: [],
       currentConversationId: null,
+      sessionDisconnected: false,
+      pendingUserInput: null,
 
       createConversation: (title?: string, mode: ChatMode = "agent") => {
-        const id = generateId();
+        const id = `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         const now = Date.now();
         const newConversation: Conversation = {
           id,
@@ -60,6 +101,24 @@ export const useConversationStore = create<ConversationStore>()(
         }));
 
         return id;
+      },
+
+      createConversationWithSessionId: (sessionId: string, title?: string, mode: ChatMode = "agent") => {
+        const now = Date.now();
+        const newConversation: Conversation = {
+          id: sessionId,
+          title: title || "New Conversation",
+          messages: [],
+          mode,
+          createdAt: now,
+          updatedAt: now,
+          isFavorite: false,
+        };
+
+        set((state) => ({
+          conversations: [newConversation, ...state.conversations],
+          currentConversationId: sessionId,
+        }));
       },
 
       deleteConversation: (id: string) => {
@@ -110,6 +169,36 @@ export const useConversationStore = create<ConversationStore>()(
               ? { ...conv, isFavorite: !conv.isFavorite, updatedAt: Date.now() } 
               : conv,
           ),
+        }));
+      },
+
+      setSessionDisconnected: (disconnected: boolean) => {
+        set({ sessionDisconnected: disconnected });
+      },
+
+      setPendingUserInput: (input: string | null) => {
+        set({ pendingUserInput: input });
+      },
+
+      addDisconnectionWarning: (conversationId: string) => {
+        const warningMessage: ChatMessage = {
+          id: `${conversationId}-disconnection-warning-${Date.now()}`,
+          role: "system",
+          content: "⚠️ Codex session has been disconnected. Your previous conversation history cannot be resumed. Please start a new conversation to continue chatting with the AI assistant.",
+          timestamp: Date.now(),
+        };
+
+        set((state) => ({
+          conversations: state.conversations.map((conv) => {
+            if (conv.id === conversationId) {
+              return {
+                ...conv,
+                messages: [...conv.messages, warningMessage],
+                updatedAt: Date.now(),
+              };
+            }
+            return conv;
+          }),
         }));
       },
 

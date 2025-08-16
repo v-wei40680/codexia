@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
+import { invoke } from "@tauri-apps/api/core";
 import { MainContentArea } from "@/components/MainContentArea";
-import { ConversationViewer } from "@/components/chat/ConversationViewer";
 import { ConfigDialog } from "@/components/ConfigDialog";
 import { ConfigIndicator } from "@/components/ConfigIndicator";
 import { SessionKillManager } from "@/components/SessionKillManager";
@@ -16,9 +16,8 @@ export default function ChatPage() {
   const { showFileTree } = useLayoutStore();
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [activeTab, setActiveTab] = useState("chat");
-  const [chatMode, setChatMode] = useState<'conversation' | 'readonly'>('conversation');
-  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const [showSessionManager, setShowSessionManager] = useState(false);
+  const [selectedConversation, setSelectedConversation] = useState<Conversation | null>(null);
   const initialSessionCreated = useRef(false);
 
   // Zustand stores
@@ -29,6 +28,7 @@ export default function ChatPage() {
     setConfig,
     createSession,
     selectSession,
+    selectOrCreateExternalSession,
     closeSession,
   } = useChatStore();
 
@@ -45,13 +45,34 @@ export default function ChatPage() {
 
   const { currentFolder } = useFolderStore();
 
-  // Create initial session if none exists
+  // Create initial session using latest codex session ID if available
   useEffect(() => {
-    if (sessions.length === 0 && !initialSessionCreated.current) {
-      initialSessionCreated.current = true;
-      createSession();
-    }
-  }, [sessions.length, createSession]);
+    const initializeSession = async () => {
+      if (sessions.length === 0 && !initialSessionCreated.current) {
+        initialSessionCreated.current = true;
+        
+        try {
+          // Try to get the latest codex session ID
+          const latestSessionId = await invoke<string | null>('get_latest_session_id');
+          
+          if (latestSessionId) {
+            console.log('Using latest codex session ID:', latestSessionId);
+            // Select or create the codex session
+            selectOrCreateExternalSession(latestSessionId, 'Latest Codex Session');
+          } else {
+            console.log('No codex session found, creating new session');
+            // Create a new session if no codex session exists
+            createSession();
+          }
+        } catch (error) {
+          console.error('Failed to get latest session ID, creating new session:', error);
+          createSession();
+        }
+      }
+    };
+    
+    initializeSession();
+  }, [sessions.length, createSession, selectOrCreateExternalSession]);
 
   // Sync session manager with backend - less frequent to reduce CPU usage
   useEffect(() => {
@@ -88,30 +109,21 @@ export default function ChatPage() {
 
   // Handle conversation selection from history
   const handleConversationSelect = (conversation: Conversation) => {
+    console.log('Selecting conversation in chat.tsx:', conversation.id, conversation.title);
+    
+    // Store the selected conversation data
     setSelectedConversation(conversation);
-    setChatMode('readonly');
+    
+    // Switch to this conversation's session ID
+    selectOrCreateExternalSession(conversation.id, conversation.title);
   };
 
-  // Handle continuing a conversation - switch to conversation mode and create new session
-  const handleContinueConversation = async (_message: string) => {
-    try {
-      // Create new session if none exists
-      if (sessions.length === 0) {
-        createSession();
-      }
-      
-      // Switch to conversation mode
-      setChatMode('conversation');
-      
-      // Clear selected conversation to show fresh chat
+  // Clear selected conversation when activeSessionId changes (unless it's the same conversation)
+  useEffect(() => {
+    if (selectedConversation && activeSessionId !== selectedConversation.id) {
       setSelectedConversation(null);
-      
-      // Here you could also send the message to the new session
-      // This would require access to the ChatInterface's send message functionality
-    } catch (error) {
-      console.error('Failed to continue conversation:', error);
     }
-  };
+  }, [activeSessionId, selectedConversation]);
 
 
   return (
@@ -150,38 +162,28 @@ export default function ChatPage() {
               {/* Right Panel - MainContentArea */}
               <div className="flex-1 min-w-0">
                 {activeTab === 'chat' ? (
-                  chatMode === 'readonly' ? (
-                    <ConversationViewer
-                      conversation={selectedConversation}
-                      onContinueConversation={handleContinueConversation}
-                      onBack={() => {
-                        setSelectedConversation(null);
-                        setChatMode('conversation');
-                      }}
+                  activeSessionId ? (
+                    <MainContentArea
+                      activeTab={activeTab}
+                      sessionId={activeSessionId}
+                      config={currentConfig}
+                      sessions={sessions}
+                      activeSessionId={activeSessionId}
+                      onCreateSession={createSession}
+                      onSelectSession={selectOrCreateExternalSession}
+                      onCloseSession={closeSession}
+                      isSessionListVisible={showSessionList}
+                      isNotesListVisible={showNotesList}
+                      onConversationSelect={handleConversationSelect}
+                      selectedConversation={selectedConversation}
                     />
                   ) : (
-                    activeSessionId ? (
-                      <MainContentArea
-                        activeTab={activeTab}
-                        sessionId={activeSessionId}
-                        config={currentConfig}
-                        sessions={sessions}
-                        activeSessionId={activeSessionId}
-                        onCreateSession={createSession}
-                        onSelectSession={selectSession}
-                        onCloseSession={closeSession}
-                        isSessionListVisible={showSessionList}
-                        isNotesListVisible={showNotesList}
-                        onConversationSelect={handleConversationSelect}
-                      />
-                    ) : (
-                      <div className="flex items-center justify-center text-gray-500 h-full">
-                        <div className="text-center">
-                          <h2 className="text-xl font-semibold mb-2">Welcome to Codexia</h2>
-                          <p>Create a new chat session to get started</p>
-                        </div>
+                    <div className="flex items-center justify-center text-gray-500 h-full">
+                      <div className="text-center">
+                        <h2 className="text-xl font-semibold mb-2">Welcome to Codexia</h2>
+                        <p>Create a new chat session to get started</p>
                       </div>
-                    )
+                    </div>
                   )
                 ) : activeTab === 'notes' ? (
                   <MainContentArea
@@ -202,38 +204,28 @@ export default function ChatPage() {
           ) : (
             <div className="flex-1 min-w-0">
               {activeTab === 'chat' ? (
-                chatMode === 'readonly' ? (
-                  <ConversationViewer
-                    conversation={selectedConversation}
-                    onContinueConversation={handleContinueConversation}
-                    onBack={() => {
-                      setSelectedConversation(null);
-                      setChatMode('conversation');
-                    }}
+                activeSessionId ? (
+                  <MainContentArea
+                    activeTab={activeTab}
+                    sessionId={activeSessionId}
+                    config={currentConfig}
+                    sessions={sessions}
+                    activeSessionId={activeSessionId}
+                    onCreateSession={createSession}
+                    onSelectSession={selectOrCreateExternalSession}
+                    onCloseSession={closeSession}
+                    isSessionListVisible={showSessionList}
+                    isNotesListVisible={showNotesList}
+                    onConversationSelect={handleConversationSelect}
+                    selectedConversation={selectedConversation}
                   />
                 ) : (
-                  activeSessionId ? (
-                    <MainContentArea
-                      activeTab={activeTab}
-                      sessionId={activeSessionId}
-                      config={currentConfig}
-                      sessions={sessions}
-                      activeSessionId={activeSessionId}
-                      onCreateSession={createSession}
-                      onSelectSession={selectSession}
-                      onCloseSession={closeSession}
-                      isSessionListVisible={showSessionList}
-                      isNotesListVisible={showNotesList}
-                      onConversationSelect={handleConversationSelect}
-                    />
-                  ) : (
-                    <div className="flex items-center justify-center text-gray-500 h-full">
-                      <div className="text-center">
-                        <h2 className="text-xl font-semibold mb-2">Welcome to Codexia</h2>
-                        <p>Create a new chat session to get started</p>
-                      </div>
+                  <div className="flex items-center justify-center text-gray-500 h-full">
+                    <div className="text-center">
+                      <h2 className="text-xl font-semibold mb-2">Welcome to Codexia</h2>
+                      <p>Create a new chat session to get started</p>
                     </div>
-                  )
+                  </div>
                 )
               ) : activeTab === 'notes' ? (
                 <MainContentArea

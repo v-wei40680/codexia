@@ -274,12 +274,11 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
           <div className="space-y-2">
             <label className="text-sm font-medium">Command Preview</label>
             <div className="bg-gray-100 p-3 rounded text-sm font-mono">
-              {localConfig.codexPath || 'codex'} proto
-              {localConfig.useOss && ' --oss'}
-              {localConfig.model && ` -m ${localConfig.model}`}
-              {localConfig.approvalPolicy && ` -a ${localConfig.approvalPolicy}`}
-              {localConfig.sandboxMode && ` -s ${localConfig.sandboxMode}`}
-              {localConfig.workingDirectory && ` -C "${localConfig.workingDirectory}"`}
+              cd {localConfig.workingDirectory || '.'} && {localConfig.codexPath || 'codex'} proto
+              {localConfig.useOss && ' -c model_provider=oss'}
+              {localConfig.model && ` -c model=${localConfig.model}`}
+              {localConfig.approvalPolicy && ` -c approval_policy=${localConfig.approvalPolicy}`}
+              {localConfig.sandboxMode && ` -c sandbox_mode=${localConfig.sandboxMode}`}
               {localConfig.customArgs && localConfig.customArgs.length > 0 && ` ${localConfig.customArgs.join(' ')}`}
             </div>
           </div>

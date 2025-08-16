@@ -15,6 +15,7 @@ interface ChatStore {
   // Session management
   createSession: () => string;
   selectSession: (sessionId: string) => void;
+  selectOrCreateExternalSession: (sessionId: string, name?: string) => void;
   closeSession: (sessionId: string) => void;
   
   // Message management
@@ -94,6 +95,38 @@ export const useChatStore = create<ChatStore>()(
             isActive: session.id === sessionId
           }))
         }));
+      },
+
+      selectOrCreateExternalSession: (sessionId, name) => {
+        set((state) => {
+          // Check if session already exists
+          const existingSession = state.sessions.find(s => s.id === sessionId);
+          
+          if (existingSession) {
+            // Session exists, just select it
+            return {
+              activeSessionId: sessionId,
+              sessions: state.sessions.map(session => ({
+                ...session,
+                isActive: session.id === sessionId
+              }))
+            };
+          } else {
+            // Session doesn't exist, create it
+            const newSession: ChatSession = {
+              id: sessionId,
+              name: name || `External Session`,
+              messages: [],
+              isActive: true,
+              config: state.config,
+            };
+            
+            return {
+              activeSessionId: sessionId,
+              sessions: [...state.sessions.map(s => ({ ...s, isActive: false })), newSession]
+            };
+          }
+        });
       },
 
       closeSession: (sessionId) => {

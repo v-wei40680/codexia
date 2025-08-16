@@ -8,17 +8,19 @@ use tokio::sync::mpsc;
 use uuid::Uuid;
 
 use crate::protocol::{
-    CodexConfig, Event, EventMsg, InputItem, ModelProvider, Op, SandboxPolicy, Submission
+    CodexConfig, Event, InputItem, Op, Submission
 };
 use crate::utils::logger::log_to_file;
 use crate::utils::codex_discovery::discover_codex_command;
 
 
 pub struct CodexClient {
+    #[allow(dead_code)]
     app: AppHandle,
     session_id: String,
     process: Option<Child>,
     stdin_tx: Option<mpsc::UnboundedSender<String>>,
+    #[allow(dead_code)]
     config: CodexConfig,
 }
 
@@ -47,26 +49,26 @@ impl CodexClient {
         }
         
         if !config.model.is_empty() {
-            cmd.arg("-c").arg(format!("model=\"{}\"", config.model));
+            cmd.arg("-c").arg(format!("model={}", config.model));
         }
         
         if !config.approval_policy.is_empty() {
-            cmd.arg("-c").arg(format!("approval_policy=\"{}\"", config.approval_policy));
+            cmd.arg("-c").arg(format!("approval_policy={}", config.approval_policy));
         }
         
         if !config.sandbox_mode.is_empty() {
             let sandbox_config = match config.sandbox_mode.as_str() {
-                "read-only" => "sandbox_policy=\"read-only\"".to_string(),
-                "workspace-write" => "sandbox_policy=\"workspace-write\"".to_string(), 
-                "danger-full-access" => "sandbox_policy=\"danger-full-access\"".to_string(),
-                _ => "sandbox_policy=\"workspace-write\"".to_string(),
+                "read-only" => "sandbox_mode=read-only".to_string(),
+                "workspace-write" => "sandbox_mode=workspace-write".to_string(), 
+                "danger-full-access" => "sandbox_mode=danger-full-access".to_string(),
+                _ => "sandbox_mode=workspace-write".to_string(),
             };
             cmd.arg("-c").arg(sandbox_config);
         }
         
-        // Set working directory
+        // Set working directory for the process
         if !config.working_directory.is_empty() {
-            cmd.arg("-c").arg(format!("cwd=\"{}\"", config.working_directory));
+            cmd.current_dir(&config.working_directory);
         }
         
         // Add custom arguments
@@ -179,6 +181,7 @@ impl CodexClient {
         self.send_submission(submission).await
     }
 
+    #[allow(dead_code)]
     pub async fn send_patch_approval(&self, approval_id: String, approved: bool) -> Result<()> {
         let decision = if approved { "allow" } else { "deny" }.to_string();
         
@@ -193,6 +196,7 @@ impl CodexClient {
         self.send_submission(submission).await
     }
 
+    #[allow(dead_code)]
     pub async fn interrupt(&self) -> Result<()> {
         let submission = Submission {
             id: Uuid::new_v4().to_string(),
@@ -234,6 +238,7 @@ impl CodexClient {
         self.close_session().await
     }
 
+    #[allow(dead_code)]
     pub fn is_active(&self) -> bool {
         self.process.is_some() && self.stdin_tx.is_some()
     }
