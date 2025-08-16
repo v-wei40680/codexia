@@ -10,9 +10,10 @@ interface MessageListProps {
   messages: UnifiedMessage[];
   className?: string;
   isLoading?: boolean;
+  isPendingNewConversation?: boolean;
 }
 
-export function MessageList({ messages, className = "", isLoading = false }: MessageListProps) {
+export function MessageList({ messages, className = "", isLoading = false, isPendingNewConversation = false }: MessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -128,10 +129,21 @@ export function MessageList({ messages, className = "", isLoading = false }: Mes
       <div className={`flex-1 min-h-0 flex items-center justify-center ${className}`}>
         <div className="text-center space-y-4 max-w-md">
           <Bot className="w-12 h-12 text-gray-400 mx-auto" />
-          <h3 className="text-lg font-medium text-gray-800">No messages</h3>
-          <p className="text-gray-600">
-            This conversation doesn't have any messages yet.
-          </p>
+          {isPendingNewConversation ? (
+            <>
+              <h3 className="text-lg font-medium text-gray-800">Ready to start</h3>
+              <p className="text-gray-600">
+                Type a message below to start your new conversation with the AI assistant.
+              </p>
+            </>
+          ) : (
+            <>
+              <h3 className="text-lg font-medium text-gray-800">No messages</h3>
+              <p className="text-gray-600">
+                This conversation doesn't have any messages yet.
+              </p>
+            </>
+          )}
         </div>
       </div>
     );

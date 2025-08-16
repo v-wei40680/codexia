@@ -4,6 +4,7 @@ import { Layout } from "@/components/Layout";
 import ChatPage from "@/pages/chat";
 import ProjectsPage from "@/pages/projects";
 import DxtPage from "./pages/dxt";
+import SettingsPage from "./pages/settings";
 
 export const router = createHashRouter([
   {
@@ -12,16 +13,20 @@ export const router = createHashRouter([
     children: [
       {
         index: true,
-        element: <ProjectsPage />
+        element: <ProjectsPage />,
       },
       {
         path: "chat",
-        element: <ChatPage />
+        element: <ChatPage />,
       },
       {
         path: "dxt",
-        element: <DxtPage />
-      }
+        element: <DxtPage />,
+      },
+      {
+        path: "settings",
+        element: <SettingsPage />,
+      },
     ],
   },
 ]);

@@ -1,88 +1,120 @@
-import React from 'react';
-import { Badge } from './ui/badge';
-import { Button } from './ui/button';
-import { Settings, PanelLeftClose, PanelLeftOpen, Activity, FolderTree } from 'lucide-react';
-import { CodexConfig } from '../types/codex';
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import React from "react";
+import { Badge } from "./ui/badge";
+import { Button } from "./ui/button";
+import {
+  Settings,
+  PanelLeftClose,
+  PanelLeftOpen,
+  Activity,
+  FolderTree,
+  Plus,
+} from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useConversationStore } from "@/stores/ConversationStore";
+import { useLayoutStore } from "@/stores/layoutStore";
+import { useNoteStore } from "@/stores/NoteStore";
 
 interface ConfigIndicatorProps {
-  config: CodexConfig;
   onOpenConfig: () => void;
-  isSessionListVisible: boolean;
-  onToggleSessionList: () => void;
-  isNotesListVisible: boolean;
-  onToggleNotesList: () => void;
-  activeTab: string;
-  onTabChange: (tab: string) => void;
-  showSessionManager?: boolean;
   onToggleSessionManager?: () => void;
-  isFileTreeVisible?: boolean;
-  onToggleFileTree?: () => void;
+  onCreateNewSession?: () => void;
 }
 
 export const ConfigIndicator: React.FC<ConfigIndicatorProps> = ({
-  config,
   onOpenConfig,
-  isSessionListVisible,
-  onToggleSessionList,
-  isNotesListVisible,
-  onToggleNotesList,
-  activeTab,
-  onTabChange,
   onToggleSessionManager,
-  isFileTreeVisible,
-  onToggleFileTree,
+  onCreateNewSession,
 }) => {
+  const { config, setPendingNewConversation, setCurrentConversation } =
+    useConversationStore();
+  const { createNote, setCurrentNote } = useNoteStore();
+  const {
+    showFileTree,
+    showSessionList,
+    showNotesList,
+    activeTab,
+    toggleFileTree,
+    toggleSessionList,
+    toggleNotesList,
+    setActiveTab,
+  } = useLayoutStore();
   const getProviderColor = (provider: string) => {
     switch (provider) {
-      case 'openai': return 'bg-green-100 text-green-800';
-      case 'oss': return 'bg-blue-100 text-blue-800';
-      case 'custom': return 'bg-purple-100 text-purple-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "openai":
+        return "bg-green-100 text-green-800";
+      case "oss":
+        return "bg-blue-100 text-blue-800";
+      case "custom":
+        return "bg-purple-100 text-purple-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   const getSandboxColor = (mode: string) => {
     switch (mode) {
-      case 'read-only': return 'bg-green-100 text-green-800';
-      case 'workspace-write': return 'bg-yellow-100 text-yellow-800';
-      case 'danger-full-access': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      case "read-only":
+        return "bg-green-100 text-green-800";
+      case "workspace-write":
+        return "bg-yellow-100 text-yellow-800";
+      case "danger-full-access":
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
   const handleToggleLeftPanel = () => {
-    if (activeTab === 'chat') {
-      onToggleSessionList();
-    } else if (activeTab === 'notes') {
-      onToggleNotesList();
+    if (activeTab === "chat") {
+      toggleSessionList();
+    } else if (activeTab === "notes") {
+      toggleNotesList();
     }
   };
 
-  const isLeftPanelVisible = activeTab === 'chat' ? isSessionListVisible : isNotesListVisible;
+  const isLeftPanelVisible =
+    activeTab === "chat" ? showSessionList : showNotesList;
+
+  const handleCreateNote = () => {
+    const newNote = createNote();
+    setCurrentNote(newNote.id);
+  };
+
+  const handleCreateConversation = () => {
+    if (onCreateNewSession) {
+      // Use the callback for full session creation if provided
+      onCreateNewSession();
+    } else {
+      // Set pending state to prepare for new conversation
+      setPendingNewConversation(true);
+      // Set a temporary conversation ID so user sees the new chat interface
+      const tempId = `pending_${Date.now()}`;
+      setCurrentConversation(tempId);
+    }
+  };
 
   return (
-    <div className="flex items-center justify-between">
-      <span className="flex">
+    <div className="flex items-center justify-between gap-2 min-w-0">
+      <div className="flex items-center gap-1 min-w-0">
         {/* File Tree Toggle button */}
-        {onToggleFileTree && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onToggleFileTree}
-            className="h-7 px-2"
-            title="Toggle File Tree"
-          >
-            <FolderTree className={`w-4 h-4 ${isFileTreeVisible ? 'text-blue-600' : ''}`} />
-          </Button>
-        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={toggleFileTree}
+          className="h-7 px-1.5 shrink-0"
+          title="Toggle File Tree"
+        >
+          <FolderTree
+            className={`w-4 h-4 ${showFileTree ? "text-blue-600" : ""}`}
+          />
+        </Button>
 
         {/* Panel Toggle button */}
         <Button
           variant="ghost"
           size="sm"
           onClick={handleToggleLeftPanel}
-          className="h-7 px-2"
+          className="h-7 px-1.5 shrink-0"
         >
           {isLeftPanelVisible ? (
             <PanelLeftClose className="w-4 h-4" />
@@ -90,58 +122,96 @@ export const ConfigIndicator: React.FC<ConfigIndicatorProps> = ({
             <PanelLeftOpen className="w-4 h-4" />
           )}
         </Button>
-      
-        <Tabs value={activeTab} onValueChange={onTabChange} className="w-[400px]">
-          <TabsList>
-            <TabsTrigger value="chat">chat</TabsTrigger>
-            <TabsTrigger value="notes">notes</TabsTrigger>
+
+        <Tabs
+          value={activeTab}
+          onValueChange={setActiveTab}
+          className="min-w-0 flex-1 max-w-[200px]"
+        >
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="chat" className="text-xs px-2">
+              chat
+            </TabsTrigger>
+            <TabsTrigger value="notes" className="text-xs px-2">
+              notes
+            </TabsTrigger>
           </TabsList>
         </Tabs>
-      </span>
+      </div>
 
-      <div className="flex items-center gap-2">
-        {/* Model */}
-        <div className="flex items-center gap-1">
-          <Badge variant="secondary" className="text-xs">
+      {activeTab == "chat" && (
+        <div className="flex items-center gap-1 shrink-0">
+          {/* Model */}
+          <Badge
+            variant="secondary"
+            className="text-xs px-1.5 hidden sm:inline-flex"
+          >
             {config.model}
           </Badge>
-        </div>
 
-        {/* Provider */}
-        <Badge className={`text-xs ${getProviderColor(config.provider)}`}>
-          {config.provider.toUpperCase()}
-          {config.useOss}
-        </Badge>
+          {/* Provider */}
+          <Badge
+            className={`text-xs px-1.5 ${getProviderColor(config.provider)}`}
+          >
+            {config.provider.toUpperCase()}
+            {config.useOss}
+          </Badge>
 
-        {/* Sandbox */}
-        <Badge className={`text-xs ${getSandboxColor(config.sandboxMode)}`}>
-          {config.sandboxMode.replace('-', ' ').toUpperCase()}
-        </Badge>
+          {/* Sandbox */}
+          <Badge
+            className={`text-xs px-1.5 hidden md:inline-flex ${getSandboxColor(config.sandboxMode)}`}
+          >
+            {config.sandboxMode.replace("-", " ").toUpperCase()}
+          </Badge>
 
-        {/* Session Manager Button */}
-        {onToggleSessionManager && (
+          {/* Session Manager Button */}
+          {onToggleSessionManager && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onToggleSessionManager}
+              className="h-7 px-1.5 shrink-0"
+              title="Active Sessions - Kill active sessions"
+            >
+              <Activity className="w-4 h-4" />
+            </Button>
+          )}
+
+          {/* Create Conversation Button */}
+          <Button
+            onClick={handleCreateConversation}
+            size="sm"
+            className="h-7 w-7 p-0"
+            title="Create New Conversation"
+          >
+            <Plus className="h-3 w-3" />
+          </Button>
+
+          {/* Settings Button */}
           <Button
             variant="ghost"
             size="sm"
-            onClick={onToggleSessionManager}
-            className="h-7 px-2"
-            title="Active Sessions - Kill active sessions"
+            onClick={onOpenConfig}
+            className="h-7 px-1.5 shrink-0"
+            title="Configuration Settings"
           >
-            <Activity className="w-4 h-4" />
+            <Settings className="w-4 h-4" />
           </Button>
-        )}
-        
-        {/* Settings Button */}
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onOpenConfig}
-          className="h-7 px-2"
-          title="Configuration Settings"
-        >
-          <Settings className="w-4 h-4" />
-        </Button>
-      </div>
+        </div>
+      )}
+
+      {activeTab === "notes" && (
+        <div className="flex items-center gap-1 shrink-0">
+          <Button
+            onClick={handleCreateNote}
+            size="sm"
+            className="h-7 w-7 p-0"
+            title="Create New Note"
+          >
+            <Plus className="h-3 w-3" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

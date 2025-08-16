@@ -1,21 +1,37 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { ChatMessage, CodexEvent, ApprovalRequest } from '@/types/codex';
-import { useChatStore } from '../stores/chatStore';
+import { useConversationStore } from '../stores/ConversationStore';
 
 interface UseCodexEventsProps {
   sessionId: string;
   onApprovalRequest: (request: ApprovalRequest) => void;
-  onStreamingMessage: (message: ChatMessage | null) => void;
 }
 
 export const useCodexEvents = ({ 
   sessionId, 
-  onApprovalRequest, 
-  onStreamingMessage 
+  onApprovalRequest
 }: UseCodexEventsProps) => {
-  const [streamingMessage, setStreamingMessage] = useState<ChatMessage | null>(null);
-  const { addMessage, setSessionLoading } = useChatStore();
+  const { addMessage, setSessionLoading, createConversationWithSessionId, conversations } = useConversationStore();
+
+  const addMessageToStore = (message: ChatMessage) => {
+    // Ensure conversation exists
+    const conversationExists = conversations.find(conv => conv.id === sessionId);
+    if (!conversationExists) {
+      console.log(`Creating conversation for session ${sessionId} from event`);
+      createConversationWithSessionId(sessionId, 'New Chat');
+    }
+    
+    // Convert message format and add to store
+    const conversationMessage = {
+      id: message.id,
+      role: message.type === 'user' ? 'user' as const : message.type === 'agent' ? 'assistant' as const : 'system' as const,
+      content: message.content,
+      timestamp: message.timestamp.getTime(),
+    };
+    console.log(`Adding message to session ${sessionId}:`, conversationMessage.content.substring(0, 100));
+    addMessage(sessionId, conversationMessage);
+  };
 
   const handleCodexEvent = (event: CodexEvent) => {
     const { msg } = event;
@@ -31,12 +47,6 @@ export const useCodexEvents = ({
         
       case 'task_complete':
         setSessionLoading(sessionId, false);
-        if (streamingMessage) {
-          const finalMessage = { ...streamingMessage, isStreaming: false };
-          addMessage(sessionId, finalMessage);
-          setStreamingMessage(null);
-          onStreamingMessage(null);
-        }
         break;
         
       case 'agent_message':
@@ -47,28 +57,7 @@ export const useCodexEvents = ({
             content: msg.message,
             timestamp: new Date(),
           };
-          addMessage(sessionId, agentMessage);
-        }
-        break;
-        
-      case 'agent_message_delta':
-        if (streamingMessage) {
-          const updatedMessage = {
-            ...streamingMessage,
-            content: streamingMessage.content + msg.delta,
-          };
-          setStreamingMessage(updatedMessage);
-          onStreamingMessage(updatedMessage);
-        } else {
-          const newMessage: ChatMessage = {
-            id: `${sessionId}-stream-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
-            type: 'agent',
-            content: msg.delta,
-            timestamp: new Date(),
-            isStreaming: true,
-          };
-          setStreamingMessage(newMessage);
-          onStreamingMessage(newMessage);
+          addMessageToStore(agentMessage);
         }
         break;
         
@@ -97,7 +86,7 @@ export const useCodexEvents = ({
           content: `Error: ${msg.message}`,
           timestamp: new Date(),
         };
-        addMessage(sessionId, errorMessage);
+        addMessageToStore(errorMessage);
         setSessionLoading(sessionId, false);
         break;
         
@@ -107,6 +96,18 @@ export const useCodexEvents = ({
         
       case 'background_event':
         console.log('Background event:', msg.message);
+        break;
+        
+      case 'exec_command_begin':
+        console.log('Command execution started');
+        break;
+        
+      case 'exec_command_output_delta':
+        console.log('Command output:', msg.output || '');
+        break;
+        
+      case 'exec_command_end':
+        console.log('Command execution completed');
         break;
         
       default:
@@ -133,7 +134,7 @@ export const useCodexEvents = ({
         content: response,
         timestamp: new Date(),
       };
-      addMessage(sessionId, agentMessage);
+      addMessageToStore(agentMessage);
       setSessionLoading(sessionId, false);
     });
     
@@ -158,7 +159,7 @@ export const useCodexEvents = ({
           content: `Error: ${errorLine}`,
           timestamp: new Date(),
         };
-        addMessage(sessionId, errorMessage);
+        addMessageToStore(errorMessage);
         setSessionLoading(sessionId, false);
       }
     });
@@ -170,5 +171,5 @@ export const useCodexEvents = ({
     };
   }, [sessionId]);
 
-  return { streamingMessage };
+  return {};
 };

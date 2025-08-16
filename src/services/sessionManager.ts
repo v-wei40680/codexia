@@ -126,6 +126,22 @@ class SessionManager {
   getSessionConfig(sessionId: string): CodexConfig | undefined {
     return this.sessionConfigs.get(sessionId);
   }
+
+  // Update session ID mapping when the real session ID is discovered
+  updateSessionId(oldSessionId: string, newSessionId: string): void {
+    const config = this.sessionConfigs.get(oldSessionId);
+    if (config) {
+      // Remove old mapping
+      this.sessionConfigs.delete(oldSessionId);
+      this.runningSessions.delete(oldSessionId);
+      
+      // Add new mapping
+      this.sessionConfigs.set(newSessionId, config);
+      this.runningSessions.add(newSessionId);
+      
+      console.log(`Session ID updated from ${oldSessionId} to ${newSessionId}`);
+    }
+  }
 }
 
 export const sessionManager = new SessionManager();

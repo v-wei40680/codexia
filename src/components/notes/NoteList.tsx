@@ -16,7 +16,6 @@ export function NoteList() {
   const {
     notes,
     currentNoteId,
-    createNote,
     setCurrentNote,
     deleteNote,
     toggleFavorite,
@@ -24,11 +23,6 @@ export function NoteList() {
   
   const [searchQuery, setSearchQuery] = useState("");
   const [activeTab, setActiveTab] = useState("all");
-
-  const handleCreateNote = () => {
-    const newNote = createNote();
-    setCurrentNote(newNote.id);
-  };
 
   const handleDeleteNote = (noteId: string, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -150,13 +144,6 @@ export function NoteList() {
       {/* Header */}
       <div className="flex items-center justify-between p-3 border-b bg-white">
         <h3 className="text-sm font-medium text-gray-900">Notes</h3>
-        <Button
-          onClick={handleCreateNote}
-          size="sm"
-          className="h-7 w-7 p-0"
-        >
-          <Plus className="h-3 w-3" />
-        </Button>
       </div>
 
       {/* Search */}

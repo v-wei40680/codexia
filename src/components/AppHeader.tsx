@@ -1,4 +1,4 @@
-import { PartyPopper, Usb, PanelLeft } from "lucide-react";
+import { PartyPopper, Usb, PanelLeft, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link, useLocation } from "react-router-dom";
@@ -52,16 +52,20 @@ export function AppHeader() {
         )}
       </span>
 
-      {location.pathname === "/chat" && (
-        <span className="flex gap-2">
+      <span className="flex">
+        {location.pathname === "/chat" && (
           <McpDialog>
-            <Button variant="ghost" className="flex gap-2">
+            <Button variant="ghost" className="flex gap-1">
               <Usb />
               MCP
             </Button>
           </McpDialog>
-        </span>
-      )}
+        )}
+        <Link to="/settings" className="flex items-center">
+          <Settings className="w-4 h-4" />
+          Settings
+        </Link>
+      </span>
     </div>
   );
 }

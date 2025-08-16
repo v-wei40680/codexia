@@ -12,6 +12,9 @@ interface LayoutState {
   // Selected file
   selectedFile: string | null;
   
+  // Active tab
+  activeTab: string;
+  
   // Actions
   setFilePanel: (visible: boolean) => void;
   setSessionList: (visible: boolean) => void;
@@ -24,6 +27,7 @@ interface LayoutState {
   toggleFileTree: () => void;
   openFile: (filePath: string) => void;
   closeFile: () => void;
+  setActiveTab: (tab: string) => void;
 }
 
 export const useLayoutStore = create<LayoutState>()(
@@ -36,6 +40,7 @@ export const useLayoutStore = create<LayoutState>()(
       showFileTree: true,
       showNotesList: true,
       selectedFile: null,
+      activeTab: 'chat',
       
       // Actions
       setFilePanel: (visible) => set({ showFilePanel: visible }),
@@ -64,6 +69,8 @@ export const useLayoutStore = create<LayoutState>()(
         selectedFile: null, 
         showFilePanel: false 
       }),
+      
+      setActiveTab: (tab) => set({ activeTab: tab }),
     }),
     {
       name: 'layout-store',
@@ -72,6 +79,7 @@ export const useLayoutStore = create<LayoutState>()(
         showChatPane: state.showChatPane,
         showFileTree: state.showFileTree,
         showNotesList: state.showNotesList,
+        activeTab: state.activeTab,
       }),
     }
   )
