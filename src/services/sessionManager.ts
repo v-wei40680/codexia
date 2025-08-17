@@ -1,5 +1,5 @@
 import { invoke } from '@tauri-apps/api/core';
-import { CodexConfig } from '../types/codex';
+import { CodexConfig } from '@/types/codex';
 
 class SessionManager {
   private sessionConfigs: Map<string, CodexConfig> = new Map();

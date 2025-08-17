@@ -2,8 +2,8 @@ import React from 'react';
 import { Button } from '../ui/button';
 import { Badge } from '../ui/badge';
 import { MessageSquare, X, SquarePen } from 'lucide-react';
-import type { Conversation } from '../../types/chat';
-import { sessionManager } from '../../services/sessionManager';
+import type { Conversation } from '@/types/chat';
+import { sessionManager } from '@/services/sessionManager';
 
 interface SessionManagerProps {
   conversations: Conversation[];

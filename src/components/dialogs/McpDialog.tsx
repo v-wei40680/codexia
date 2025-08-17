@@ -13,7 +13,7 @@ import { Textarea } from '../ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Trash2, Plus, Edit, Save, X } from 'lucide-react';
-import { McpServerConfig } from '../../types/codex';
+import { McpServerConfig } from '@/types/codex';
 
 interface McpDialogProps {
   children: React.ReactNode;

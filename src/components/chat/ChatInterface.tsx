@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { ApprovalRequest, CodexConfig } from "@/types/codex";
 import type { Conversation } from "@/types/chat";
 import { useConversationStore } from "../../stores/ConversationStore";
-import { sessionManager } from "../../services/sessionManager";
+import { sessionManager } from "@/services/sessionManager";
 import { SessionManager } from "./SessionManager";
 import { ChatInput } from "./ChatInput";
 import { MessageList } from "./MessageList";

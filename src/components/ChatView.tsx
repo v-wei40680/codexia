@@ -3,9 +3,9 @@ import { ChatInterface } from "./chat/ChatInterface";
 import { ConversationTabs } from "./chat/ConversationTabs";
 import { useConversationStore } from "@/stores/ConversationStore";
 import { useLayoutStore } from "@/stores/layoutStore";
-import { sessionManager } from "../services/sessionManager";
+import { sessionManager } from "@/services/sessionManager";
 import { sessionLoader } from "@/services/sessionLoader";
-import type { Conversation } from "../types/chat";
+import type { Conversation } from "@/types/chat";
 import { invoke } from "@tauri-apps/api/core";
 import { DebugInfo } from "./common/DebugInfo";
 
