@@ -8,6 +8,17 @@ interface UseCodexEventsProps {
   onApprovalRequest: (request: ApprovalRequest) => void;
 }
 
+// Helper function to extract session ID from codex events
+const getEventSessionId = (event: CodexEvent): string | null => {
+  const { msg } = event;
+  switch (msg.type) {
+    case 'session_configured':
+      return msg.session_id;
+    default:
+      return null; // For other events, we can't determine session ID, so process them
+  }
+};
+
 export const useCodexEvents = ({ 
   sessionId, 
   onApprovalRequest
@@ -39,6 +50,7 @@ export const useCodexEvents = ({
     switch (msg.type) {
       case 'session_configured':
         console.log('Session configured:', msg.session_id);
+        // Session is now configured and ready
         break;
         
       case 'task_started':
@@ -118,56 +130,25 @@ export const useCodexEvents = ({
   useEffect(() => {
     if (!sessionId) return;
 
-    const eventUnlisten = listen<CodexEvent>(`codex-event-${sessionId}`, (event) => {
+    // Listen to the global codex-events channel
+    const eventUnlisten = listen<CodexEvent>("codex-events", (event) => {
       const codexEvent = event.payload;
-      console.log('Received codex event:', codexEvent);
+      
+      // Check if this event is for our session
+      const eventSessionId = getEventSessionId(codexEvent);
+      const ourSessionId = sessionId.replace('codex-event-', '');
+      
+      if (eventSessionId && eventSessionId !== ourSessionId) {
+        // This event is for a different session, ignore it
+        return;
+      }
+      
+      console.log(`Received codex event for session ${sessionId}:`, codexEvent);
       handleCodexEvent(codexEvent);
     });
     
-    const responseUnlisten = listen<string>(`codex-response:${sessionId}`, (event) => {
-      const response = event.payload;
-      console.log('Received codex response:', response);
-      
-      const agentMessage: ChatMessage = {
-        id: `${sessionId}-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
-        type: 'agent',
-        content: response,
-        timestamp: new Date(),
-      };
-      addMessageToStore(agentMessage);
-      setSessionLoading(sessionId, false);
-    });
-    
-    const errorUnlisten = listen<string>(`codex-error:${sessionId}`, (event) => {
-      let errorLine = event.payload;
-      console.log('Received codex error:', errorLine);
-      
-      errorLine = errorLine.replace(/\u001b\[[0-9;]*m/g, '');
-      
-      if (errorLine.trim() && 
-          !errorLine.includes('INFO') && 
-          !errorLine.includes('WARN') &&
-          !errorLine.includes('cwd not set') &&
-          !errorLine.includes('resume_path: None') &&
-          !errorLine.includes('Aborting existing session') &&
-          !errorLine.includes('stream disconnected') &&
-          !errorLine.includes('retrying turn')) {
-        
-        const errorMessage: ChatMessage = {
-          id: `${sessionId}-error-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
-          type: 'system',
-          content: `Error: ${errorLine}`,
-          timestamp: new Date(),
-        };
-        addMessageToStore(errorMessage);
-        setSessionLoading(sessionId, false);
-      }
-    });
-
     return () => {
       eventUnlisten.then(fn => fn());
-      responseUnlisten.then(fn => fn());
-      errorUnlisten.then(fn => fn());
     };
   }, [sessionId]);
 

@@ -1,6 +1,5 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { invoke } from "@tauri-apps/api/core";
 import type { Conversation, ChatMessage, ChatMode } from "@/types/chat";
 import { CodexConfig, DEFAULT_CONFIG } from "@/types/codex";
 
@@ -19,7 +18,7 @@ interface ConversationStore {
   // Conversation management
   createConversation: (title?: string, mode?: ChatMode, sessionId?: string) => string;
   createConversationWithLatestSession: (title?: string, mode?: ChatMode) => Promise<string>;
-  selectOrCreateExternalSession: (sessionId: string, name?: string) => void;
+  selectHistoryConversation: (conversation: Conversation) => void;
   deleteConversation: (id: string) => void;
   setCurrentConversation: (id: string) => void;
   updateConversationTitle: (id: string, title: string) => void;
@@ -51,39 +50,13 @@ const generateTitle = (messages: ChatMessage[]): string => {
   return "New Conversation";
 };
 
-// Function to get the latest running codex session ID
-const getLatestRunningSessionId = async (): Promise<string | null> => {
-  try {
-    const result = await invoke<string[]>('get_running_sessions');
-    return result.length > 0 ? result[0] : null;
-  } catch (error) {
-    console.error('Failed to get running sessions:', error);
-    return null;
-  }
-};
-
 // Export function to create conversation with latest running session or create new one
 export const createConversationWithLatestSession = async (title?: string, mode: ChatMode = "agent"): Promise<string> => {
   const store = useConversationStore.getState();
   
-  // Try to get a running session first
-  const runningSessionId = await getLatestRunningSessionId();
-  
-  if (runningSessionId) {
-    // Check if conversation with this session ID already exists
-    const existingConversation = store.conversations.find(conv => conv.id === runningSessionId);
-    if (existingConversation) {
-      store.setCurrentConversation(runningSessionId);
-      return runningSessionId;
-    }
-    
-    // Create new conversation with existing session ID
-    store.createConversation(title, mode, runningSessionId);
-    return runningSessionId;
-  } else {
-    // No running session, create a new conversation (which will start a new session)
-    return store.createConversation(title, mode);
-  }
+  // Always create a new conversation with timestamp format for consistency
+  // This prevents UUID session IDs from being used
+  return store.createConversation(title, mode);
 };
 
 export const useConversationStore = create<ConversationStore>()(
@@ -103,8 +76,8 @@ export const useConversationStore = create<ConversationStore>()(
       },
 
       createConversation: (title?: string, mode: ChatMode = "agent", sessionId?: string) => {
-        // Use provided sessionId or generate a simple UUID-like ID for the conversation
-        const id = sessionId || `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        // Use provided sessionId or generate a codex-event-{uuid} format for the conversation
+        const id = sessionId || `codex-event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         const state = get();
         
         // Check if conversation with this ID already exists (unlikely but possible)
@@ -137,35 +110,15 @@ export const useConversationStore = create<ConversationStore>()(
   // Expose helper that creates/selects a conversation using the latest running session
   createConversationWithLatestSession: createConversationWithLatestSession,
 
-
-      selectOrCreateExternalSession: (sessionId: string, name?: string) => {
-        set((state) => {
-          // Check if conversation already exists
-          const existingConversation = state.conversations.find(s => s.id === sessionId);
-          
-          if (existingConversation) {
-            // Conversation exists, just select it
-            return {
-              currentConversationId: sessionId,
-            };
-          } else {
-            // Conversation doesn't exist, create it
-            const now = Date.now();
-            const newConversation: Conversation = {
-              id: sessionId,
-              title: name || "External Session",
-              messages: [],
-              mode: "agent",
-              createdAt: now,
-              updatedAt: now,
-              isFavorite: false,
-            };
-            
-            return {
-              currentConversationId: sessionId,
-              conversations: [newConversation, ...state.conversations]
-            };
-          }
+      // Select conversation from history (disk) - simplified for session_id only
+      selectHistoryConversation: (conversation: Conversation) => {
+        set(() => {
+          console.log(`📁 selectHistoryConversation: ${conversation.id} (${conversation.title})`);
+          // Simply set the current conversation ID - no need to merge into store
+          // The selectedConversation prop will handle displaying the data
+          return {
+            currentConversationId: conversation.id,
+          };
         });
       },
 

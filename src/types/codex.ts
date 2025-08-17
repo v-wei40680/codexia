@@ -59,7 +59,7 @@ export interface CodexConfig {
 
 export const DEFAULT_CONFIG: CodexConfig = {
   workingDirectory: '',
-  model: 'gpt-oss:20b',
+  model: 'llama3.2',
   provider: 'oss',
   useOss: true,
   approvalPolicy: 'on-request',

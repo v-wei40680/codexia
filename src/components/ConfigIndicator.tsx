@@ -5,7 +5,6 @@ import {
   Settings,
   PanelLeftClose,
   PanelLeftOpen,
-  Activity,
   FolderTree,
   Plus,
 } from "lucide-react";
@@ -16,13 +15,11 @@ import { useNoteStore } from "@/stores/NoteStore";
 
 interface ConfigIndicatorProps {
   onOpenConfig: () => void;
-  onToggleSessionManager?: () => void;
   onCreateNewSession?: () => void;
 }
 
 export const ConfigIndicator: React.FC<ConfigIndicatorProps> = ({
   onOpenConfig,
-  onToggleSessionManager,
   onCreateNewSession,
 }) => {
   const { config, setPendingNewConversation, setCurrentConversation } =
@@ -88,7 +85,7 @@ export const ConfigIndicator: React.FC<ConfigIndicatorProps> = ({
       // Set pending state to prepare for new conversation
       setPendingNewConversation(true);
       // Set a temporary conversation ID so user sees the new chat interface
-      const tempId = `pending_${Date.now()}`;
+      const tempId = `codex-event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       setCurrentConversation(tempId);
     }
   };
@@ -164,18 +161,6 @@ export const ConfigIndicator: React.FC<ConfigIndicatorProps> = ({
             {config.sandboxMode.replace("-", " ").toUpperCase()}
           </Badge>
 
-          {/* Session Manager Button */}
-          {onToggleSessionManager && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={onToggleSessionManager}
-              className="h-7 px-1.5 shrink-0"
-              title="Active Sessions - Kill active sessions"
-            >
-              <Activity className="w-4 h-4" />
-            </Button>
-          )}
 
           {/* Create Conversation Button */}
           <Button

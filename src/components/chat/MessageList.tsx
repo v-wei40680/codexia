@@ -124,6 +124,7 @@ export function MessageList({ messages, className = "", isLoading = false, isPen
     );
   };
 
+
   if (messages.length === 0) {
     return (
       <div className={`flex-1 min-h-0 flex items-center justify-center ${className}`}>

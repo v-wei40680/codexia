@@ -10,6 +10,14 @@ use uuid::Uuid;
 use crate::protocol::{
     CodexConfig, Event, InputItem, Op, Submission
 };
+
+// Helper function to extract session_id from codex events
+fn get_session_id_from_event(event: &Event) -> Option<String> {
+    match &event.msg {
+        crate::protocol::EventMsg::SessionConfigured { session_id, .. } => Some(session_id.clone()),
+        _ => None,
+    }
+}
 use crate::utils::logger::log_to_file;
 use crate::utils::codex_discovery::discover_codex_command;
 
@@ -125,8 +133,14 @@ impl CodexClient {
                 log_to_file(&format!("Received line from codex: {}", line));
                 if let Ok(event) = serde_json::from_str::<Event>(&line) {
                     log_to_file(&format!("Parsed event: {:?}", event));
-                    // Send event to frontend
-                    if let Err(e) = app_clone.emit(&format!("codex-event-{}", session_id_clone), &event) {
+                    
+                    // Log the event for debugging
+                    if let Some(event_session_id) = get_session_id_from_event(&event) {
+                        log_to_file(&format!("Event for session: {}", event_session_id));
+                    }
+                    
+                    // Use a single global event channel instead of per-session channels
+                    if let Err(e) = app_clone.emit("codex-events", &event) {
                         log_to_file(&format!("Failed to emit event: {}", e));
                     }
                 } else {

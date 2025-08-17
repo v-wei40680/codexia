@@ -17,6 +17,7 @@ interface ChatInputProps {
   onSendMessage: (message: string) => void;
   disabled?: boolean;
   isLoading?: boolean;
+  placeholderOverride?: string;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -25,6 +26,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   onSendMessage,
   disabled = false,
   isLoading = false,
+  placeholderOverride,
 }) => {
   const {
     fileReferences,
@@ -123,7 +125,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           value={inputValue}
           onChange={(e) => onInputChange(e.target.value)}
           onKeyDown={handleKeyPress}
-          placeholder="Type your message..."
+          placeholder={placeholderOverride || (disabled ? "Viewing historical conversation..." : "Type your message...")}
           className="flex-1 min-h-[40px] max-h-[120px]"
           disabled={disabled || isLoading}
         />

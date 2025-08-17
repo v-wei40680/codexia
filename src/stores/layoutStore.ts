@@ -15,6 +15,12 @@ interface LayoutState {
   // Active tab
   activeTab: string;
   
+  // Chat conversation list tab
+  conversationListTab: string;
+  
+  // Last route
+  lastRoute: string;
+  
   // Actions
   setFilePanel: (visible: boolean) => void;
   setSessionList: (visible: boolean) => void;
@@ -28,6 +34,8 @@ interface LayoutState {
   openFile: (filePath: string) => void;
   closeFile: () => void;
   setActiveTab: (tab: string) => void;
+  setConversationListTab: (tab: string) => void;
+  setLastRoute: (route: string) => void;
 }
 
 export const useLayoutStore = create<LayoutState>()(
@@ -41,6 +49,8 @@ export const useLayoutStore = create<LayoutState>()(
       showNotesList: true,
       selectedFile: null,
       activeTab: 'chat',
+      conversationListTab: 'all',
+      lastRoute: '/',
       
       // Actions
       setFilePanel: (visible) => set({ showFilePanel: visible }),
@@ -71,6 +81,10 @@ export const useLayoutStore = create<LayoutState>()(
       }),
       
       setActiveTab: (tab) => set({ activeTab: tab }),
+      
+      setConversationListTab: (tab) => set({ conversationListTab: tab }),
+      
+      setLastRoute: (route) => set({ lastRoute: route }),
     }),
     {
       name: 'layout-store',
@@ -80,6 +94,8 @@ export const useLayoutStore = create<LayoutState>()(
         showFileTree: state.showFileTree,
         showNotesList: state.showNotesList,
         activeTab: state.activeTab,
+        conversationListTab: state.conversationListTab,
+        lastRoute: state.lastRoute,
       }),
     }
   )

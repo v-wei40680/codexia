@@ -4,11 +4,19 @@ import { CodexConfig } from '../types/codex';
 class SessionManager {
   private sessionConfigs: Map<string, CodexConfig> = new Map();
   private runningSessions: Set<string> = new Set();
+  private readonly MAX_CONCURRENT_SESSIONS = 2; // Limit concurrent sessions
 
   async ensureSessionRunning(sessionId: string, config: CodexConfig): Promise<void> {
     // If session is already running, do nothing
     if (this.runningSessions.has(sessionId)) {
       return;
+    }
+
+    // If we're at the limit, stop the oldest session
+    if (this.runningSessions.size >= this.MAX_CONCURRENT_SESSIONS) {
+      const oldestSession = Array.from(this.runningSessions)[0];
+      console.log(`Session limit reached (${this.MAX_CONCURRENT_SESSIONS}), stopping oldest session: ${oldestSession}`);
+      await this.stopSession(oldestSession);
     }
 
     try {
@@ -36,9 +44,12 @@ class SessionManager {
 
   async stopSession(sessionId: string): Promise<void> {
     try {
+      console.log(`🛑 SessionManager: Stopping session ${sessionId}`);
       await invoke('stop_session', { sessionId });
       this.sessionConfigs.delete(sessionId);
       this.runningSessions.delete(sessionId);
+      console.log(`✅ SessionManager: Session ${sessionId} stopped and removed from local state`);
+      console.log(`📊 Remaining sessions:`, Array.from(this.runningSessions));
     } catch (error) {
       console.error('Failed to stop session:', error);
       throw error;
@@ -83,7 +94,7 @@ class SessionManager {
     return this.runningSessions.has(sessionId);
   }
 
-  getRunningSessions(): string[] {
+  getLocalRunningSessions(): string[] {
     return Array.from(this.runningSessions);
   }
   
@@ -100,28 +111,6 @@ class SessionManager {
     console.log(`Stopped ${sessions.length} sessions`);
   }
 
-  async syncWithBackend(): Promise<void> {
-    try {
-      const runningSessions = await invoke<string[]>('get_running_sessions');
-      const previousCount = this.runningSessions.size;
-      this.runningSessions = new Set(runningSessions);
-      
-      // Log if session count changed significantly
-      const currentCount = this.runningSessions.size;
-      if (Math.abs(currentCount - previousCount) >= 2) {
-        console.log(`Session count changed: ${previousCount} -> ${currentCount}`);
-      }
-      
-      // Clean up stale session configs for sessions that are no longer running
-      for (const sessionId of this.sessionConfigs.keys()) {
-        if (!this.runningSessions.has(sessionId)) {
-          this.sessionConfigs.delete(sessionId);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to sync with backend:', error);
-    }
-  }
 
   getSessionConfig(sessionId: string): CodexConfig | undefined {
     return this.sessionConfigs.get(sessionId);

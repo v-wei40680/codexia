@@ -5,6 +5,7 @@ use walkdir::WalkDir;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ChatMessage {
+    pub id: String,
     pub role: String,
     pub content: String,
     pub timestamp: i64,
@@ -94,6 +95,7 @@ pub fn parse_session_file(content: &str, file_path: &Path) -> Option<Conversatio
                     };
 
                     messages.push(ChatMessage {
+                        id: format!("{}-{}-{}", session_id.as_ref().unwrap_or(&"unknown".to_string()), role, timestamp),
                         role,
                         content: content_text.trim().to_string(),
                         timestamp,
@@ -135,8 +137,14 @@ pub fn parse_session_file(content: &str, file_path: &Path) -> Option<Conversatio
 
             let file_path_str = file_path.canonicalize().ok().and_then(|p| p.to_str().map(|s| s.to_string()));
 
+            let full_session_id = if id.starts_with("codex-event-") {
+                id
+            } else {
+                format!("codex-event-{}", id)
+            };
+
             return Some(Conversation {
-                id,
+                id: full_session_id,
                 title,
                 messages,
                 mode: "agent".to_string(),
@@ -228,7 +236,14 @@ pub async fn get_latest_session_id() -> Result<Option<String>, String> {
         if let Ok(content) = fs::read_to_string(&file_path) {
             let first_line = content.lines().next().unwrap_or("");
             if let Ok(record) = serde_json::from_str::<SessionRecord>(first_line) {
-                return Ok(record.id);
+                if let Some(id) = record.id {
+                    let full_session_id = if id.starts_with("codex-event-") {
+                        id
+                    } else {
+                        format!("codex-event-{}", id)
+                    };
+                    return Ok(Some(full_session_id));
+                }
             }
         }
     }
