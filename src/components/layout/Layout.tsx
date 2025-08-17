@@ -1,6 +1,6 @@
 import { Outlet } from "react-router-dom";
-import { AppHeader } from "@/components/AppHeader";
-import { RouteTracker } from "@/components/RouteTracker";
+import { AppHeader } from "./AppHeader";
+import { RouteTracker } from "../common/RouteTracker";
 
 export function Layout() {
   return (

@@ -2,13 +2,13 @@ import React, { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { ApprovalRequest, CodexConfig } from "@/types/codex";
 import type { Conversation } from "@/types/chat";
-import { useConversationStore } from "../stores/ConversationStore";
-import { sessionManager } from "../services/sessionManager";
+import { useConversationStore } from "../../stores/ConversationStore";
+import { sessionManager } from "../../services/sessionManager";
 import { SessionManager } from "./SessionManager";
 import { ChatInput } from "./ChatInput";
-import { MessageList } from "./chat/MessageList";
-import { ApprovalDialog } from "./ApprovalDialog";
-import { useCodexEvents } from "../hooks/useCodexEvents";
+import { MessageList } from "./MessageList";
+import { ApprovalDialog } from "../dialogs/ApprovalDialog";
+import { useCodexEvents } from "../../hooks/useCodexEvents";
 
 interface ChatInterfaceProps {
   sessionId: string;

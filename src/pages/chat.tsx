@@ -5,8 +5,8 @@ import { useFolderStore } from "@/stores/FolderStore";
 import { FileTree } from "@/components/filetree/FileTreeView";
 import { FileViewer } from "@/components/filetree/FileViewer";
 import { useState } from "react";
-import { ConfigDialog } from "@/components/ConfigDialog";
-import { AppToolbar } from "@/components/AppToolbar";
+import { ConfigDialog } from "@/components/dialogs/ConfigDialog";
+import { AppToolbar } from "@/components/layout/AppToolbar";
 import { useConversationStore } from "@/stores/ConversationStore";
 
 export default function ChatPage() {

@@ -1,6 +1,6 @@
 import React from "react";
-import { Badge } from "./ui/badge";
-import { Button } from "./ui/button";
+import { Badge } from "../ui/badge";
+import { Button } from "../ui/button";
 import {
   Settings,
   PanelLeftClose,
@@ -8,7 +8,7 @@ import {
   FolderTree,
   Plus,
 } from "lucide-react";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
 import { useConversationStore } from "@/stores/ConversationStore";
 import { useLayoutStore } from "@/stores/layoutStore";
 import { useNoteStore } from "@/stores/NoteStore";

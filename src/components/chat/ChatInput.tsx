@@ -1,15 +1,15 @@
 import React from 'react';
-import { Button } from './ui/button';
-import { Textarea } from './ui/textarea';
-import { Badge } from './ui/badge';
+import { Button } from '../ui/button';
+import { Textarea } from '../ui/textarea';
+import { Badge } from '../ui/badge';
 import { Send, AtSign, X } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from './ui/tooltip';
-import { useChatInputStore } from '../stores/chatInputStore';
+} from '../ui/tooltip';
+import { useChatInputStore } from '../../stores/chatInputStore';
 
 interface ChatInputProps {
   inputValue: string;

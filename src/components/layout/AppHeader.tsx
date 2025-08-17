@@ -5,7 +5,7 @@ import { Link, useLocation } from "react-router-dom";
 import { useLayoutStore } from "@/stores/layoutStore";
 import { invoke } from "@tauri-apps/api/core";
 import { useState, useEffect } from "react";
-import { McpDialog } from "./McpDialog";
+import { McpDialog } from "../dialogs/McpDialog";
 
 export function AppHeader() {
   const { showFileTree, toggleFileTree } = useLayoutStore();

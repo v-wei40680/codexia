@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
-import { Button } from './ui/button';
-import { Input } from './ui/input';
+import { Button } from '../ui/button';
+import { Input } from '../ui/input';
 import { Settings, Folder, FileText } from 'lucide-react';
 import { CodexConfig, DEFAULT_CONFIG } from '@/types/codex';
 import {

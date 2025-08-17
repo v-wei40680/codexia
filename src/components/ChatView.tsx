@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { ChatInterface } from "./ChatInterface";
+import { ChatInterface } from "./chat/ChatInterface";
 import { ConversationTabs } from "./chat/ConversationTabs";
 import { useConversationStore } from "@/stores/ConversationStore";
 import { useLayoutStore } from "@/stores/layoutStore";
@@ -7,7 +7,7 @@ import { sessionManager } from "../services/sessionManager";
 import { sessionLoader } from "@/services/sessionLoader";
 import type { Conversation } from "../types/chat";
 import { invoke } from "@tauri-apps/api/core";
-import { DebugInfo } from "./DebugInfo";
+import { DebugInfo } from "./common/DebugInfo";
 
 export const ChatView: React.FC = () => {
   const [selectedConversation, setSelectedConversation] =

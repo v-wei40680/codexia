@@ -1,6 +1,6 @@
 import { RouterProvider, createHashRouter } from "react-router-dom";
 import { useEffect } from "react";
-import { Layout } from "@/components/Layout";
+import { Layout } from "@/components/layout/Layout";
 import ChatPage from "@/pages/chat";
 import ProjectsPage from "@/pages/projects";
 import DxtPage from "./pages/dxt";
