@@ -6,7 +6,6 @@ import { useConversationStore } from "../stores/ConversationStore";
 import { sessionManager } from "../services/sessionManager";
 import { SessionManager } from "./SessionManager";
 import { ChatInput } from "./ChatInput";
-import { ChatHeader } from "./ChatHeader";
 import { MessageList } from "./chat/MessageList";
 import { ApprovalDialog } from "./ApprovalDialog";
 import { useCodexEvents } from "../hooks/useCodexEvents";
@@ -150,6 +149,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   }, [sessionId, selectedConversation, pendingNewConversation, sessionStarting]);
 
   const handleSendMessage = async (messageContent: string) => {
+    console.log("isConnected", isConnected)
     
     if (!messageContent.trim() || isLoading) {
       return;
@@ -231,8 +231,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     setSessionLoading(actualSessionId, true);
 
     try {
+      // Extract raw session ID for backend communication
+      const rawSessionId = actualSessionId.startsWith('codex-event-') 
+        ? actualSessionId.replace('codex-event-', '') 
+        : actualSessionId;
+
       await invoke("send_message", {
-        sessionId: actualSessionId,
+        sessionId: rawSessionId,
         message: messageContent,
       });
     } catch (error) {
@@ -252,8 +257,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     if (!pendingApproval) return;
 
     try {
+      // Extract raw session ID for backend communication
+      const rawSessionId = sessionId.startsWith('codex-event-') 
+        ? sessionId.replace('codex-event-', '') 
+        : sessionId;
+
       await invoke("approve_execution", {
-        sessionId,
+        sessionId: rawSessionId,
         approvalId: pendingApproval.id,
         approved,
       });
@@ -261,12 +271,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     } catch (error) {
       console.error("Failed to send approval:", error);
     }
-  };
-
-  const handleClearHistory = () => {
-    // Clear the selected conversation to exit history mode
-    setCurrentConversation('');
-    setPendingNewConversation(true);
   };
 
   return (
@@ -289,13 +293,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
       {/* Chat Interface */}
       <div className="flex flex-col flex-1 min-h-0">
-        <ChatHeader
-          isConnected={isConnected}
-          isHistoryView={!!selectedConversation}
-          historyMessageCount={selectedConversation?.messages.length || 0}
-          onClearHistory={handleClearHistory}
-        />
-
         <MessageList 
           messages={messages} 
           isLoading={isLoading} 

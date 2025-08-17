@@ -2,8 +2,12 @@ use crate::codex_client::CodexClient;
 use crate::protocol::CodexConfig;
 use crate::state::CodexState;
 use crate::utils::codex_discovery::discover_codex_command;
+use crate::utils::logger::log_to_file;
 use std::process::Command;
 use tauri::{AppHandle, State};
+
+// Note: Frontend now properly extracts raw session IDs before calling backend
+// so we no longer need complex ID normalization
 
 pub async fn start_codex_session(
     app: AppHandle,
@@ -11,9 +15,12 @@ pub async fn start_codex_session(
     session_id: String,
     config: CodexConfig,
 ) -> Result<(), String> {
+    log_to_file(&format!("DEBUG: Starting session with ID: {}", session_id));
+    
     {
         let sessions = state.sessions.lock().await;
         if sessions.contains_key(&session_id) {
+            log_to_file(&format!("DEBUG: Session {} already exists, skipping", session_id));
             return Ok(());
         }
     }
@@ -22,7 +29,13 @@ pub async fn start_codex_session(
         .await
         .map_err(|e| format!("Failed to start Codex session: {}", e))?;
 
-    state.sessions.lock().await.insert(session_id, codex_client);
+    {
+        let mut sessions = state.sessions.lock().await;
+        sessions.insert(session_id.clone(), codex_client);
+        log_to_file(&format!("DEBUG: Session {} stored successfully", session_id));
+        log_to_file(&format!("DEBUG: Total sessions now: {}", sessions.len()));
+        log_to_file(&format!("DEBUG: All session keys: {:?}", sessions.keys().collect::<Vec<_>>()));
+    }
     Ok(())
 }
 
@@ -63,13 +76,20 @@ pub async fn approve_execution(
 
 pub async fn stop_session(state: State<'_, CodexState>, session_id: String) -> Result<(), String> {
     let mut sessions = state.sessions.lock().await;
+    let stored_sessions: Vec<String> = sessions.keys().cloned().collect();
+    
+    log_to_file(&format!("DEBUG: Attempting to stop session: {}", session_id));
+    log_to_file(&format!("DEBUG: Currently stored sessions: {:?}", stored_sessions));
+    
     if let Some(mut client) = sessions.remove(&session_id) {
+        log_to_file(&format!("DEBUG: Found and removing session: {}", session_id));
         client
             .shutdown()
             .await
             .map_err(|e| format!("Failed to shutdown session: {}", e))?;
         Ok(())
     } else {
+        log_to_file(&format!("DEBUG: Session not found: {}", session_id));
         Err("Session not found".to_string())
     }
 }
@@ -89,7 +109,12 @@ pub async fn close_session(state: State<'_, CodexState>, session_id: String) -> 
 
 pub async fn get_running_sessions(state: State<'_, CodexState>) -> Result<Vec<String>, String> {
     let sessions = state.sessions.lock().await;
-    Ok(sessions.keys().cloned().collect())
+    let session_keys: Vec<String> = sessions.keys().cloned().collect();
+    
+    // Debug log to see what sessions are actually stored
+    log_to_file(&format!("DEBUG: get_running_sessions called - stored sessions: {:?}", session_keys));
+    
+    Ok(session_keys)
 }
 
 pub async fn check_codex_version() -> Result<String, String> {

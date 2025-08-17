@@ -20,9 +20,16 @@ class SessionManager {
     }
 
     try {
+      // Extract raw session ID for backend process management
+      const rawSessionId = sessionId.startsWith('codex-event-') 
+        ? sessionId.replace('codex-event-', '') 
+        : sessionId;
+      
+      console.log(`🚀 Starting backend session: ${rawSessionId} (from frontend: ${sessionId})`);
+
       // Start the session (backend will check if already exists)
       await invoke('start_codex_session', {
-        sessionId,
+        sessionId: rawSessionId,
         config: {
           working_directory: config.workingDirectory,
           model: config.model,
@@ -43,23 +50,38 @@ class SessionManager {
   }
 
   async stopSession(sessionId: string): Promise<void> {
+    console.log(`🛑 SessionManager: Stopping session ${sessionId}`);
+    
+    // Extract raw session ID for backend process management
+    const rawSessionId = sessionId.startsWith('codex-event-') 
+      ? sessionId.replace('codex-event-', '') 
+      : sessionId;
+    
+    console.log(`🔧 Stopping backend session: ${rawSessionId} (from frontend: ${sessionId})`);
+    
     try {
-      console.log(`🛑 SessionManager: Stopping session ${sessionId}`);
-      await invoke('stop_session', { sessionId });
-      this.sessionConfigs.delete(sessionId);
-      this.runningSessions.delete(sessionId);
-      console.log(`✅ SessionManager: Session ${sessionId} stopped and removed from local state`);
-      console.log(`📊 Remaining sessions:`, Array.from(this.runningSessions));
+      await invoke('stop_session', { sessionId: rawSessionId });
     } catch (error) {
       console.error('Failed to stop session:', error);
-      throw error;
+      // Continue to clean up local state even if backend call fails
     }
+    
+    // Always clean up local state regardless of backend success/failure
+    this.sessionConfigs.delete(sessionId);
+    this.runningSessions.delete(sessionId);
+    console.log(`✅ SessionManager: Session ${sessionId} removed from local state`);
+    console.log(`📊 Remaining sessions:`, Array.from(this.runningSessions));
   }
 
   async closeSession(sessionId: string): Promise<void> {
     try {
+      // Extract raw session ID for backend process management
+      const rawSessionId = sessionId.startsWith('codex-event-') 
+        ? sessionId.replace('codex-event-', '') 
+        : sessionId;
+      
       // Use the new close_session command which properly shuts down the protocol connection
-      await invoke('close_session', { sessionId });
+      await invoke('close_session', { sessionId: rawSessionId });
       this.sessionConfigs.delete(sessionId);
       this.runningSessions.delete(sessionId);
     } catch (error) {

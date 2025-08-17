@@ -223,7 +223,7 @@ impl CodexClient {
     pub async fn close_session(&mut self) -> Result<()> {
         log_to_file(&format!("Closing session: {}", self.session_id));
         
-        // Send shutdown command
+        // Send shutdown command to codex (graceful shutdown)
         let submission = Submission {
             id: Uuid::new_v4().to_string(),
             op: Op::Shutdown,
@@ -233,18 +233,46 @@ impl CodexClient {
             log_to_file(&format!("Failed to send shutdown command: {}", e));
         }
 
-        // Close stdin channel
+        // Close stdin channel to signal end of input
         if let Some(stdin_tx) = self.stdin_tx.take() {
             drop(stdin_tx);
+            log_to_file("Stdin channel closed");
         }
 
-        // Terminate process
+        // Wait a moment for graceful shutdown, then terminate process if needed
         if let Some(mut process) = self.process.take() {
-            if let Err(e) = process.kill().await {
-                log_to_file(&format!("Failed to kill codex process: {}", e));
+            if let Some(pid) = process.id() {
+                log_to_file(&format!("Terminating codex process with PID: {}", pid));
+            }
+            
+            // Give the process a moment to shutdown gracefully
+            tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
+            
+            // Check if process is still running, then kill if necessary
+            match process.try_wait() {
+                Ok(Some(status)) => {
+                    log_to_file(&format!("Codex process exited with status: {}", status));
+                }
+                Ok(None) => {
+                    // Process still running, kill it
+                    log_to_file("Process still running, terminating...");
+                    if let Err(e) = process.kill().await {
+                        log_to_file(&format!("Failed to kill codex process: {}", e));
+                    } else {
+                        log_to_file("Codex process terminated successfully");
+                    }
+                }
+                Err(e) => {
+                    log_to_file(&format!("Error checking process status: {}", e));
+                    // Try to kill anyway
+                    if let Err(e) = process.kill().await {
+                        log_to_file(&format!("Failed to kill codex process: {}", e));
+                    }
+                }
             }
         }
 
+        log_to_file(&format!("Session {} closed", self.session_id));
         Ok(())
     }
 

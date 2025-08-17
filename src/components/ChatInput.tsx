@@ -125,7 +125,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           value={inputValue}
           onChange={(e) => onInputChange(e.target.value)}
           onKeyDown={handleKeyPress}
-          placeholder={placeholderOverride || (disabled ? "Viewing historical conversation..." : "Type your message...")}
+          placeholder={placeholderOverride || "Type your message..."}
           className="flex-1 min-h-[40px] max-h-[120px]"
           disabled={disabled || isLoading}
         />

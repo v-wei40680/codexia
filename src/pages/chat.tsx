@@ -23,6 +23,7 @@ export default function ChatPage() {
   const {
     config,
     setConfig,
+    createConversationWithLatestSession,
   } = useConversationStore();
 
   const { currentFolder } = useFolderStore();
@@ -55,6 +56,7 @@ export default function ChatPage() {
         <div className="flex flex-col flex-1 min-w-0">
           <ConfigIndicator
             onOpenConfig={() => setIsConfigOpen(true)}
+            onCreateNewSession={createConversationWithLatestSession}
           />
           {activeTab === "chat" ? (
             <SimpleChatComponent />
