@@ -1,5 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ConversationListContent } from "./ConversationListContent";
+import { ConversationList } from "./ConversationList";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Activity, Circle, X, Search } from "lucide-react";
@@ -28,7 +28,7 @@ interface ChatTabsProps {
   onKillSession?: (sessionId: string) => void;
 }
 
-export function ChatTabs({
+export function ConversationTabs({
   historyConversations,
   favoriteStatuses,
   activeConversations,
@@ -164,7 +164,7 @@ export function ChatTabs({
             />
           </div>
         </div>
-        <ConversationListContent
+        <ConversationList
           conversations={filteredConversations}
           currentConversationId={currentConversationId}
           activeSessionId={activeSessionId}
@@ -188,7 +188,7 @@ export function ChatTabs({
             />
           </div>
         </div>
-        <ConversationListContent
+        <ConversationList
           conversations={filteredConversations}
           currentConversationId={currentConversationId}
           activeSessionId={activeSessionId}

@@ -13,7 +13,7 @@ import {
   ChevronDown,
   FolderCheck,
 } from "lucide-react";
-import { getFileIcon } from "./fileIcons";
+import { getFileIcon } from "./FileIcons";
 import { SubFolderContent } from "./SubFolderContent";
 import { useChatInputStore } from "@/stores/chatInputStore";
 import { useFolderStore } from "@/stores/FolderStore";

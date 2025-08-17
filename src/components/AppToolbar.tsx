@@ -13,12 +13,12 @@ import { useConversationStore } from "@/stores/ConversationStore";
 import { useLayoutStore } from "@/stores/layoutStore";
 import { useNoteStore } from "@/stores/NoteStore";
 
-interface ConfigIndicatorProps {
+interface AppToolbarProps {
   onOpenConfig: () => void;
   onCreateNewSession?: () => void;
 }
 
-export const ConfigIndicator: React.FC<ConfigIndicatorProps> = ({
+export const AppToolbar: React.FC<AppToolbarProps> = ({
   onOpenConfig,
   onCreateNewSession,
 }) => {

@@ -1,12 +1,12 @@
-import { ChatComponent } from "@/components/ChatComponent";
-import { NotesComponent } from "@/components/NotesComponent";
+import { ChatView } from "@/components/ChatView";
+import { NotesView } from "@/components/NotesView";
 import { useLayoutStore } from "@/stores/layoutStore";
 import { useFolderStore } from "@/stores/FolderStore";
-import { FileTree } from "@/components/filetree";
+import { FileTree } from "@/components/filetree/FileTreeView";
 import { FileViewer } from "@/components/filetree/FileViewer";
 import { useState } from "react";
 import { ConfigDialog } from "@/components/ConfigDialog";
-import { ConfigIndicator } from "@/components/ConfigIndicator";
+import { AppToolbar } from "@/components/AppToolbar";
 import { useConversationStore } from "@/stores/ConversationStore";
 
 export default function ChatPage() {
@@ -54,14 +54,14 @@ export default function ChatPage() {
 
         {/* Right Panel - Chat/Notes */}
         <div className="flex flex-col flex-1 min-w-0">
-          <ConfigIndicator
+          <AppToolbar
             onOpenConfig={() => setIsConfigOpen(true)}
             onCreateNewSession={createConversationWithLatestSession}
           />
           {activeTab === "chat" ? (
-            <ChatComponent />
+            <ChatView />
           ) : activeTab === "notes" ? (
-            <NotesComponent />
+            <NotesView />
           ) : null}
         </div>
       </div>

@@ -2,7 +2,7 @@ import React from "react";
 import { NoteList, NoteEditor } from "./notes";
 import { useLayoutStore } from "@/stores/layoutStore";
 
-export const NotesComponent: React.FC = () => {
+export const NotesView: React.FC = () => {
   const { showNotesList } = useLayoutStore();
 
   return (

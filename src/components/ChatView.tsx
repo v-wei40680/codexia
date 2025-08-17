@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ChatInterface } from "./ChatInterface";
-import { ChatTabs } from "./chat/ChatTabs";
+import { ConversationTabs } from "./chat/ConversationTabs";
 import { useConversationStore } from "@/stores/ConversationStore";
 import { useLayoutStore } from "@/stores/layoutStore";
 import { sessionManager } from "../services/sessionManager";
@@ -9,7 +9,7 @@ import type { Conversation } from "../types/chat";
 import { invoke } from "@tauri-apps/api/core";
 import { DebugInfo } from "./DebugInfo";
 
-export const ChatComponent: React.FC = () => {
+export const ChatView: React.FC = () => {
   const [selectedConversation, setSelectedConversation] =
     useState<Conversation | null>(null);
   const [searchQueries, setSearchQueries] = useState({
@@ -77,7 +77,7 @@ export const ChatComponent: React.FC = () => {
     setSelectedConversation(conversation);
 
     // Use the new method to select history conversation with full data
-    console.log("🔄 SimpleChatComponent: Calling selectHistoryConversation");
+    console.log("🔄 ChatView: Calling selectHistoryConversation");
     selectHistoryConversation(conversation);
   };
 
@@ -133,7 +133,7 @@ export const ChatComponent: React.FC = () => {
   };
 
   const handleKillSession = async (sessionId: string) => {
-    console.log(`💀 SimpleChatComponent: Killing session ${sessionId}`);
+    console.log(`💀 ChatView: Killing session ${sessionId}`);
     try {
       // First check if it's a timestamp format session
       const isTimestampFormat = sessionId.startsWith('codex-event-') && sessionId.includes('-') && 
@@ -174,7 +174,7 @@ export const ChatComponent: React.FC = () => {
               searchQueries={searchQueries}
             />
 
-            <ChatTabs
+            <ConversationTabs
               historyConversations={historyConversations}
               favoriteStatuses={favoriteStatuses}
               activeConversations={activeConversations}

@@ -1,7 +1,7 @@
 import { ConversationItem } from "./ConversationItem";
 import type { Conversation } from "@/types/chat";
 
-interface ConversationListContentProps {
+interface ConversationListProps {
   conversations: Conversation[];
   currentConversationId: string | null;
   activeSessionId?: string;
@@ -12,7 +12,7 @@ interface ConversationListContentProps {
   onDeleteConversation: (conversationId: string, e: React.MouseEvent) => void;
 }
 
-export function ConversationListContent({
+export function ConversationList({
   conversations,
   currentConversationId,
   activeSessionId,
@@ -21,7 +21,7 @@ export function ConversationListContent({
   onSelectConversation,
   onToggleFavorite,
   onDeleteConversation,
-}: ConversationListContentProps) {
+}: ConversationListProps) {
   const tabPrefix = isFav ? "favorites" : "all";
 
   if (conversations.length === 0) {
@@ -48,7 +48,7 @@ export function ConversationListContent({
 
   return (
     <div className="space-y-1 p-2 overflow-y-auto">
-      {conversations.map((conversation, index) => {
+      {conversations.map((conversation: Conversation, index: number) => {
         const isCurrentlySelected = currentConversationId === conversation.id;
         const isActiveSession = activeSessionId === conversation.id;
         const isFavorited = isFav ? (conversation.isFavorite || false) : favoriteStatuses[conversation.id] || false;
