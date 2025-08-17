@@ -14,6 +14,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Trash2, Plus, Edit, Save, X } from 'lucide-react';
 import { McpServerConfig } from '@/types/codex';
+import { toast } from 'sonner';
 
 interface McpDialogProps {
   children: React.ReactNode;
@@ -72,7 +73,7 @@ export function McpDialog({ children }: McpDialogProps) {
           try {
             config.env = JSON.parse(commandConfig.env);
           } catch (e) {
-            alert('Invalid JSON format for environment variables');
+            toast.error('Invalid JSON format for environment variables');
             return;
           }
         }
@@ -91,7 +92,7 @@ export function McpDialog({ children }: McpDialogProps) {
       loadServers();
     } catch (error) {
       console.error('Failed to add MCP server:', error);
-      alert('Failed to add MCP server: ' + error);
+      toast.error('Failed to add MCP server: ' + error);
     }
   };
 
@@ -101,7 +102,7 @@ export function McpDialog({ children }: McpDialogProps) {
       loadServers();
     } catch (error) {
       console.error('Failed to delete MCP server:', error);
-      alert('Failed to delete MCP server: ' + error);
+      toast.error('Failed to delete MCP server: ' + error);
     }
   };
 
@@ -138,7 +139,7 @@ export function McpDialog({ children }: McpDialogProps) {
           try {
             config.env = JSON.parse(editConfig.command.env);
           } catch (e) {
-            alert('Invalid JSON format for environment variables');
+            toast.error('Invalid JSON format for environment variables');
             return;
           }
         }
@@ -157,7 +158,7 @@ export function McpDialog({ children }: McpDialogProps) {
       loadServers();
     } catch (error) {
       console.error('Failed to update MCP server:', error);
-      alert('Failed to update MCP server: ' + error);
+      toast.error('Failed to update MCP server: ' + error);
     }
   };
 
@@ -192,7 +193,7 @@ export function McpDialog({ children }: McpDialogProps) {
       loadServers();
     } catch (error) {
       console.error('Failed to add default MCP server:', error);
-      alert('Failed to add MCP server: ' + error);
+      toast.error('Failed to add MCP server: ' + error);
     }
   };
 

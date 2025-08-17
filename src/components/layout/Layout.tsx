@@ -1,6 +1,7 @@
 import { Outlet } from "react-router-dom";
 import { AppHeader } from "./AppHeader";
 import { RouteTracker } from "../common/RouteTracker";
+import { Toaster } from 'sonner';
 
 export function Layout() {
   return (
@@ -16,6 +17,7 @@ export function Layout() {
         <Outlet />
       </div>
 
+      <Toaster />
     </main>
   );
 }
