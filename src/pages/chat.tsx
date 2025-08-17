@@ -1,9 +1,9 @@
-import { SimpleChatComponent } from "@/components/SimpleChatComponent";
-import { SimpleNotesComponent } from "@/components/SimpleNotesComponent";
+import { ChatComponent } from "@/components/ChatComponent";
+import { NotesComponent } from "@/components/NotesComponent";
 import { useLayoutStore } from "@/stores/layoutStore";
 import { useFolderStore } from "@/stores/FolderStore";
-import { FileTree } from "@/components/FileTree";
-import { FileViewer } from "@/components/FileTree/FileViewer";
+import { FileTree } from "@/components/filetree";
+import { FileViewer } from "@/components/filetree/FileViewer";
 import { useState } from "react";
 import { ConfigDialog } from "@/components/ConfigDialog";
 import { ConfigIndicator } from "@/components/ConfigIndicator";
@@ -59,9 +59,9 @@ export default function ChatPage() {
             onCreateNewSession={createConversationWithLatestSession}
           />
           {activeTab === "chat" ? (
-            <SimpleChatComponent />
+            <ChatComponent />
           ) : activeTab === "notes" ? (
-            <SimpleNotesComponent />
+            <NotesComponent />
           ) : null}
         </div>
       </div>

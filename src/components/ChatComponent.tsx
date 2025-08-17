@@ -9,7 +9,7 @@ import type { Conversation } from "../types/chat";
 import { invoke } from "@tauri-apps/api/core";
 import { DebugInfo } from "./DebugInfo";
 
-export const SimpleChatComponent: React.FC = () => {
+export const ChatComponent: React.FC = () => {
   const [selectedConversation, setSelectedConversation] =
     useState<Conversation | null>(null);
   const [searchQueries, setSearchQueries] = useState({
