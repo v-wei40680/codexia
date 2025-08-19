@@ -15,7 +15,6 @@ interface ConversationListProps {
 export function ConversationList({
   conversations,
   currentConversationId,
-  activeSessionId,
   favoriteStatuses,
   isFav,
   onSelectConversation,
@@ -50,8 +49,7 @@ export function ConversationList({
     <div className="space-y-1 p-2 overflow-y-auto">
       {conversations.map((conversation: Conversation, index: number) => {
         const isCurrentlySelected = currentConversationId === conversation.id;
-        const isActiveSession = activeSessionId === conversation.id;
-        const isFavorited = isFav ? (conversation.isFavorite || false) : favoriteStatuses[conversation.id] || false;
+        const isFavorited = isFav ? true : favoriteStatuses[conversation.id] || false;
 
         return (
           <ConversationItem
@@ -60,7 +58,6 @@ export function ConversationList({
             index={index}
             tabPrefix={tabPrefix}
             isCurrentlySelected={isCurrentlySelected}
-            isActiveSession={isActiveSession}
             isFavorited={isFavorited}
             showSessionId={false}
             onSelectConversation={onSelectConversation}

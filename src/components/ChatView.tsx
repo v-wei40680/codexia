@@ -32,14 +32,30 @@ export const ChatView: React.FC = () => {
     selectHistoryConversation,
     deleteConversation,
     setCurrentConversation,
+    pendingNewConversation,
   } = useConversationStore();
-  const { showSessionList, conversationListTab, setConversationListTab } = useLayoutStore();
+  const { showSessionList, conversationListTab } = useLayoutStore();
 
+  // Don't auto-switch tabs to prevent unwanted tab changes when favoriting/deleting conversations
+  // Users can manually switch tabs as needed
+
+  // Clear selected conversation when starting a new conversation
   useEffect(() => {
-    if (currentConversationId && activeConversations.some(conv => conv.id === currentConversationId)) {
-      setConversationListTab("sessions");
+    if (pendingNewConversation) {
+      setSelectedConversation(null);
     }
-  }, [currentConversationId, activeConversations, setConversationListTab]);
+  }, [pendingNewConversation]);
+
+  // Also clear when currentConversationId changes to a new codex-event format (from toolbar button)
+  useEffect(() => {
+    if (currentConversationId && currentConversationId.startsWith('codex-event-')) {
+      // Check if this is a new conversation (no messages)
+      const currentConv = activeConversations.find(conv => conv.id === currentConversationId);
+      if (currentConv && currentConv.messages.length === 0) {
+        setSelectedConversation(null);
+      }
+    }
+  }, [currentConversationId, activeConversations]);
 
   useEffect(() => {
     const loadHistory = async () => {
@@ -73,12 +89,15 @@ export const ChatView: React.FC = () => {
 
   // Handle conversation selection from history
   const handleConversationSelect = (conversation: Conversation) => {
+    // Always create a new object to force re-render even if same conversation
+    const conversationCopy = { ...conversation };
+    
     // Store the selected conversation data
-    setSelectedConversation(conversation);
+    setSelectedConversation(conversationCopy);
 
     // Use the new method to select history conversation with full data
-    console.log("🔄 ChatView: Calling selectHistoryConversation");
-    selectHistoryConversation(conversation);
+    console.log("🔄 ChatView: Calling selectHistoryConversation", conversation.id);
+    selectHistoryConversation(conversationCopy);
   };
 
   const handleSelectSession = (sessionId: string) => {

@@ -84,9 +84,9 @@ export const AppToolbar: React.FC<AppToolbarProps> = ({
     } else {
       // Set pending state to prepare for new conversation
       setPendingNewConversation(true);
-      // Set a temporary conversation ID so user sees the new chat interface
-      const tempId = `codex-event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      setCurrentConversation(tempId);
+      // Clear current conversation to show new chat interface
+      // The actual session ID will be created when user sends first message
+      setCurrentConversation('');
     }
   };
 

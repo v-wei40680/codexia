@@ -2,7 +2,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConversationList } from "./ConversationList";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Activity, Circle, X, Search } from "lucide-react";
+import { Circle, X, Search } from "lucide-react";
 import { useLayoutStore } from "@/stores/layoutStore";
 import type { Conversation } from "@/types/chat";
 import React, { useMemo } from "react";
@@ -90,14 +90,20 @@ export function ConversationTabs({
     return (
       <div
         key={`sessions-${conversation.id}-${index}`}
-        className="group relative p-3 rounded-lg cursor-pointer border transition-all hover:bg-white hover:shadow-sm bg-white border-gray-200"
+        className={`group relative p-3 rounded-lg cursor-pointer border transition-all hover:shadow-sm ${
+          isCurrentlySelected 
+            ? 'bg-blue-50 border-blue-300 shadow-sm' 
+            : 'bg-white border-gray-200 hover:bg-white'
+        }`}
         onClick={() => onSelectConversation(conversation)}
       >
         <div className="flex items-start justify-between gap-2">
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2 mb-1">
               <Circle className="h-3 w-3 text-green-500 fill-current flex-shrink-0" />
-              <h4 className="text-sm font-medium text-gray-900">
+              <h4 className={`text-sm font-medium ${
+                isCurrentlySelected ? 'text-blue-900' : 'text-gray-900'
+              }`}>
                 {conversation.title}
                 {isCurrentlySelected && (
                   <span className="ml-1 text-xs text-blue-600 font-normal">
@@ -147,7 +153,6 @@ export function ConversationTabs({
         <TabsTrigger value="all">All</TabsTrigger>
         <TabsTrigger value="favorites">Favorites</TabsTrigger>
         <TabsTrigger value="sessions">
-          <Activity className="w-3 h-3 mr-1" />
           Sessions
         </TabsTrigger>
       </TabsList>

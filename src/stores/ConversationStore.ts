@@ -102,6 +102,7 @@ export const useConversationStore = create<ConversationStore>()(
         set((state) => ({
           conversations: [newConversation, ...state.conversations],
           currentConversationId: id,
+          pendingNewConversation: true,
         }));
 
         return id;

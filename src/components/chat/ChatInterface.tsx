@@ -56,6 +56,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     conversations.find((conv) => conv.id === currentConversationId) ||
     conversations.find((conv) => conv.id === sessionId);
 
+  // Debug log to track conversation changes
+  console.log("🔍 ChatInterface: currentConversation:", {
+    selectedConversationId: selectedConversation?.id,
+    currentConversationId,
+    sessionId,
+    finalConversationId: currentConversation?.id,
+    messageCount: currentConversation?.messages.length || 0
+  });
+
 
 
   // Convert conversation messages to chat messages format
@@ -165,17 +174,32 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     // Handle pending new conversation, temporary sessionId, or empty sessionId
     let isPendingSession = false;
     if (pendingNewConversation || !sessionId.trim()) {
-      // Close any previous sessions before creating a new one
-      const runningSessions = sessionManager.getLocalRunningSessions();
-      if (runningSessions.length > 0) {
-        console.log(`Closing ${runningSessions.length} existing sessions before creating new one`);
-        await sessionManager.stopAllSessions();
-      }
+      // Check if there's already a conversation waiting to be used
+      const existingNewConversation = conversations.find(conv => 
+        conv.id.startsWith('codex-event-') && 
+        conv.messages.length === 0 &&
+        /\d{13}-[a-z0-9]+$/.test(conv.id.replace('codex-event-', ''))
+      );
 
-      actualSessionId = `codex-event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      setTempSessionId(actualSessionId);
-      setPendingNewConversation(false);
-      isPendingSession = true;
+      if (existingNewConversation) {
+        // Use the existing empty conversation
+        actualSessionId = existingNewConversation.id;
+        setCurrentConversation(actualSessionId);
+        setActiveSessionId(actualSessionId);
+        setPendingNewConversation(false);
+      } else {
+        // Close any previous sessions before creating a new one
+        const runningSessions = sessionManager.getLocalRunningSessions();
+        if (runningSessions.length > 0) {
+          console.log(`Closing ${runningSessions.length} existing sessions before creating new one`);
+          await sessionManager.stopAllSessions();
+        }
+
+        actualSessionId = `codex-event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        setTempSessionId(actualSessionId);
+        setPendingNewConversation(false);
+        isPendingSession = true;
+      }
     } else {
       // If no conversation exists, create a new session with timestamp format
       const conversationExists = conversations.find(
