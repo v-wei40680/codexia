@@ -1,7 +1,11 @@
 import { useRef, useEffect } from 'react';
 import { Bot, User, Terminal } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypePrism from 'rehype-prism-plus';
 import type { ChatMessage as ChatMessageType } from '@/types/chat';
 import type { ChatMessage as CodexMessageType } from '@/types/codex';
+import 'prismjs/themes/prism.css';
 
 // Unified message type
 type UnifiedMessage = ChatMessageType | CodexMessageType;
@@ -112,8 +116,61 @@ export function MessageList({ messages, className = "", isLoading = false, isPen
 
           {/* Content */}
           <div className={`rounded-lg border p-3 ${getMessageStyle(normalized.role)}`}>
-            <div className="text-sm text-gray-800 whitespace-pre-wrap leading-relaxed">
-              {normalized.content}
+            <div className="text-sm text-gray-800 leading-relaxed prose prose-sm max-w-none">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                rehypePlugins={[rehypePrism]}
+                components={{
+                  p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                  code: ({ inline, className, children, ...props }: any) => {
+                    if (inline) {
+                      return (
+                        <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono" {...props}>
+                          {children}
+                        </code>
+                      );
+                    }
+                    return (
+                      <code className={className} {...props}>
+                        {children}
+                      </code>
+                    );
+                  },
+                  pre: ({ children }) => (
+                    <pre className="bg-gray-50 border rounded-md p-3 overflow-x-auto my-2">
+                      {children}
+                    </pre>
+                  ),
+                  blockquote: ({ children }) => (
+                    <blockquote className="border-l-4 border-gray-300 pl-4 italic my-2">
+                      {children}
+                    </blockquote>
+                  ),
+                  ul: ({ children }) => <ul className="list-disc pl-4 my-2">{children}</ul>,
+                  ol: ({ children }) => <ol className="list-decimal pl-4 my-2">{children}</ol>,
+                  li: ({ children }) => <li className="mb-1">{children}</li>,
+                  h1: ({ children }) => <h1 className="text-lg font-bold mb-2">{children}</h1>,
+                  h2: ({ children }) => <h2 className="text-base font-bold mb-2">{children}</h2>,
+                  h3: ({ children }) => <h3 className="text-sm font-bold mb-2">{children}</h3>,
+                  table: ({ children }) => (
+                    <div className="overflow-x-auto my-2">
+                      <table className="min-w-full border-collapse border border-gray-300">
+                        {children}
+                      </table>
+                    </div>
+                  ),
+                  th: ({ children }) => (
+                    <th className="border border-gray-300 px-2 py-1 bg-gray-100 font-medium text-left">
+                      {children}
+                    </th>
+                  ),
+                  td: ({ children }) => (
+                    <td className="border border-gray-300 px-2 py-1">{children}</td>
+                  ),
+                }}
+              >
+                {normalized.content}
+              </ReactMarkdown>
               {normalized.isStreaming && (
                 <span className="inline-block w-2 h-5 bg-current opacity-75 animate-pulse ml-1 align-text-bottom">|</span>
               )}
