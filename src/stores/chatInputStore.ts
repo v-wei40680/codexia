@@ -12,11 +12,16 @@ interface ChatInputStore {
   // File references for current input
   fileReferences: FileReference[];
   
+  // Input value (not persisted)
+  inputValue: string;
+  
   // Actions
   addFileReference: (path: string, relativePath: string, name: string, isDirectory: boolean) => void;
   removeFileReference: (path: string) => void;
   clearFileReferences: () => void;
   replaceFileReferences: (files: FileReference[]) => void;
+  setInputValue: (value: string) => void;
+  appendToInput: (value: string) => void;
   
   // Utility
   hasFileReference: (path: string) => boolean;
@@ -26,6 +31,7 @@ export const useChatInputStore = create<ChatInputStore>()(
   persist(
     (set, get) => ({
       fileReferences: [],
+      inputValue: "",
 
       addFileReference: (path: string, relativePath: string, name: string, isDirectory: boolean) => {
         const { fileReferences } = get();
@@ -50,6 +56,16 @@ export const useChatInputStore = create<ChatInputStore>()(
 
       replaceFileReferences: (files: FileReference[]) => {
         set({ fileReferences: files });
+      },
+
+      setInputValue: (value: string) => {
+        set({ inputValue: value });
+      },
+
+      appendToInput: (value: string) => {
+        const { inputValue } = get();
+        const separator = inputValue.trim() ? '\n\n' : '';
+        set({ inputValue: inputValue + separator + value });
       },
 
       hasFileReference: (path: string) => {

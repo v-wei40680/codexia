@@ -7,6 +7,7 @@ import AceEditor from "react-ace";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import rehypePrism from "rehype-prism-plus";
+import { NoteToChat } from "./NoteToChat";
 
 import "ace-builds/src-noconflict/mode-markdown";
 import "ace-builds/src-noconflict/theme-github";
@@ -104,6 +105,9 @@ export function NoteEditor() {
         </div>
         
         <div className="flex items-center gap-2">
+          {/* Add to Chat Button */}
+          <NoteToChat content={content} title={title} />
+          
           {/* View Mode Toggle */}
           <div className="flex rounded-md border">
             <Button

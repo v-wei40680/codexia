@@ -1,11 +1,10 @@
-import { useRef, useEffect } from 'react';
-import { Bot, User, Terminal } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import rehypePrism from 'rehype-prism-plus';
+import { useRef, useEffect, useMemo, useCallback } from 'react';
+import { Bot } from 'lucide-react';
 import type { ChatMessage as ChatMessageType } from '@/types/chat';
 import type { ChatMessage as CodexMessageType } from '@/types/codex';
-import 'prismjs/themes/prism.css';
+import { TextSelectionMenu } from './TextSelectionMenu';
+import { Message } from './Message';
+import { useTextSelection } from '../../hooks/useTextSelection';
 
 // Unified message type
 type UnifiedMessage = ChatMessageType | CodexMessageType;
@@ -19,17 +18,18 @@ interface MessageListProps {
 
 export function MessageList({ messages, className = "", isLoading = false, isPendingNewConversation = false }: MessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const { selectedText } = useTextSelection();
 
-  const scrollToBottom = () => {
+  const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
+  }, []);
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages]);
+  }, [messages, scrollToBottom]);
 
-  // Helper to normalize message data
-  const normalizeMessage = (msg: UnifiedMessage) => {
+  // Helper to normalize message data - memoized to prevent re-calculations
+  const normalizeMessage = useCallback((msg: UnifiedMessage) => {
     // Check if it's a codex message (has 'type' property)
     if ('type' in msg) {
       return {
@@ -48,138 +48,13 @@ export function MessageList({ messages, className = "", isLoading = false, isPen
       timestamp: typeof msg.timestamp === 'number' ? msg.timestamp : new Date().getTime(),
       isStreaming: false
     };
-  };
+  }, []);
 
-  const getMessageIcon = (role: string) => {
-    switch (role) {
-      case 'user':
-        return <User className="w-5 h-5 text-blue-600" />;
-      case 'assistant':
-        return <Bot className="w-5 h-5 text-green-600" />;
-      case 'system':
-        return <Terminal className="w-5 h-5 text-gray-600" />;
-      default:
-        return <div className="w-5 h-5 bg-gray-400 rounded-full" />;
-    }
-  };
+  // Memoize normalized messages to avoid re-computation
+  const normalizedMessages = useMemo(() => {
+    return messages.map(normalizeMessage);
+  }, [messages, normalizeMessage]);
 
-  const getMessageStyle = (role: string) => {
-    switch (role) {
-      case 'user':
-        return 'bg-blue-50 border-blue-200';
-      case 'assistant':
-        return 'bg-white border-gray-200';
-      case 'system':
-        return 'bg-gray-50 border-gray-300';
-      default:
-        return 'bg-gray-50 border-gray-200';
-    }
-  };
-
-  const formatTime = (timestamp: number) => {
-    return new Date(timestamp).toLocaleTimeString([], { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    });
-  };
-
-  const renderMessage = (message: UnifiedMessage, index: number) => {
-    const normalized = normalizeMessage(message);
-    const isUser = normalized.role === 'user';
-    const isLastMessage = index === messages.length - 1;
-
-    return (
-      <div
-        key={`${normalized.id}-${index}`}
-        className={`flex gap-3 p-4 ${isLastMessage ? 'mb-4' : ''}`}
-      >
-        {/* Avatar */}
-        <div className="flex-shrink-0">
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-            isUser ? 'bg-blue-100' : 'bg-green-100'
-          }`}>
-            {getMessageIcon(normalized.role)}
-          </div>
-        </div>
-
-        {/* Message Content */}
-        <div className="flex-1 min-w-0">
-          {/* Header */}
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-sm font-medium text-gray-900 capitalize">
-              {normalized.role === 'assistant' ? 'Assistant' : normalized.role}
-            </span>
-            <span className="text-xs text-gray-500">
-              {formatTime(normalized.timestamp)}
-            </span>
-          </div>
-
-          {/* Content */}
-          <div className={`rounded-lg border p-3 ${getMessageStyle(normalized.role)}`}>
-            <div className="text-sm text-gray-800 leading-relaxed prose prose-sm max-w-none">
-              <ReactMarkdown
-                remarkPlugins={[remarkGfm]}
-                rehypePlugins={[rehypePrism]}
-                components={{
-                  p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                  code: ({ inline, className, children, ...props }: any) => {
-                    if (inline) {
-                      return (
-                        <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono" {...props}>
-                          {children}
-                        </code>
-                      );
-                    }
-                    return (
-                      <code className={className} {...props}>
-                        {children}
-                      </code>
-                    );
-                  },
-                  pre: ({ children }) => (
-                    <pre className="bg-gray-50 border rounded-md p-3 overflow-x-auto my-2">
-                      {children}
-                    </pre>
-                  ),
-                  blockquote: ({ children }) => (
-                    <blockquote className="border-l-4 border-gray-300 pl-4 italic my-2">
-                      {children}
-                    </blockquote>
-                  ),
-                  ul: ({ children }) => <ul className="list-disc pl-4 my-2">{children}</ul>,
-                  ol: ({ children }) => <ol className="list-decimal pl-4 my-2">{children}</ol>,
-                  li: ({ children }) => <li className="mb-1">{children}</li>,
-                  h1: ({ children }) => <h1 className="text-lg font-bold mb-2">{children}</h1>,
-                  h2: ({ children }) => <h2 className="text-base font-bold mb-2">{children}</h2>,
-                  h3: ({ children }) => <h3 className="text-sm font-bold mb-2">{children}</h3>,
-                  table: ({ children }) => (
-                    <div className="overflow-x-auto my-2">
-                      <table className="min-w-full border-collapse border border-gray-300">
-                        {children}
-                      </table>
-                    </div>
-                  ),
-                  th: ({ children }) => (
-                    <th className="border border-gray-300 px-2 py-1 bg-gray-100 font-medium text-left">
-                      {children}
-                    </th>
-                  ),
-                  td: ({ children }) => (
-                    <td className="border border-gray-300 px-2 py-1">{children}</td>
-                  ),
-                }}
-              >
-                {normalized.content}
-              </ReactMarkdown>
-              {normalized.isStreaming && (
-                <span className="inline-block w-2 h-5 bg-current opacity-75 animate-pulse ml-1 align-text-bottom">|</span>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
 
 
   if (messages.length === 0) {
@@ -209,10 +84,20 @@ export function MessageList({ messages, className = "", isLoading = false, isPen
 
   return (
     <div className={`flex flex-col flex-1 min-h-0 ${className}`}>
+      {/* Single Text Selection Menu for all messages */}
+      <TextSelectionMenu />
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-2">
         <div className="max-w-4xl mx-auto">
-          {messages.map((message, index) => renderMessage(message, index))}
+          {normalizedMessages.map((normalizedMessage, index) => (
+            <Message
+              key={`${normalizedMessage.id}-${index}`}
+              message={normalizedMessage}
+              index={index}
+              isLastMessage={index === messages.length - 1}
+              selectedText={selectedText}
+            />
+          ))}
           
           {/* Loading indicator */}
           {isLoading && (

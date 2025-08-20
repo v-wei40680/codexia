@@ -10,6 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { NoteToChat } from "./NoteToChat";
 import { useState, useMemo } from "react";
 
 export function NoteList() {
@@ -100,6 +101,12 @@ export function NoteList() {
         {/* Actions */}
         <div className="opacity-0 group-hover:opacity-100 transition-opacity">
           <div className="flex gap-1">
+            <div onClick={(e) => e.stopPropagation()}>
+              <NoteToChat 
+                content={note.content} 
+                title={note.title} 
+              />
+            </div>
             <Button
               variant="ghost"
               size="sm"

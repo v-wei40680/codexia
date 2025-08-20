@@ -15,7 +15,7 @@ A modern, multi-session GUI application for the [Codex CLI](https://github.com/o
 - Switch between sessions without interrupting ongoing conversations
 - Persistent session storage with automatic restoration on app restart
 
-### 💬 **Real-Time Streaming**
+### 💬 **Real-Time Streaming** - Todo
 - Live streaming responses for immediate feedback
 - Character-by-character message updates as AI generates responses
 - No more waiting for complete responses - see results as they appear
@@ -163,11 +163,10 @@ bun tauri dev
 bun run build
 
 # Check Rust code
-cargo check --manifest-path src-tauri/Cargo.toml
+cd src-tauri && cargo check
 
 # Format code
-cargo fmt --manifest-path src-tauri/Cargo.toml
-bun run format
+cd src-tauri && cargo fmt --all
 ```
 
 ## 🤝 Contributing

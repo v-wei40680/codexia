@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { ApprovalRequest, CodexConfig } from "@/types/codex";
 import type { Conversation } from "@/types/chat";
 import { useConversationStore } from "../../stores/ConversationStore";
+import { useChatInputStore } from "../../stores/chatInputStore";
 import { sessionManager } from "@/services/sessionManager";
 import { SessionManager } from "./SessionManager";
 import { ChatInput } from "./ChatInput";
@@ -31,7 +32,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   isSessionListVisible = false,
   selectedConversation = null,
 }) => {
-  const [inputValue, setInputValue] = useState("");
+  const { inputValue, setInputValue } = useChatInputStore();
   const [pendingApproval, setPendingApproval] =
     useState<ApprovalRequest | null>(null);
   const [isConnected, setIsConnected] = useState(false);
