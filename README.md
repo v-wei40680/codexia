@@ -33,6 +33,8 @@ A modern, multi-session GUI application for the [Codex CLI](https://github.com/o
 - Session management sidebar with visual status indicators
 - Configuration panel with live preview
 - Debug panel for monitoring session states
+- **Notepad-chat integration** for seamless note-taking during conversations
+- **Enhanced markdown rendering** with syntax highlighting for code blocks
 - Persistent UI state and preferences
 
 ### 🛡️ **Security & Control**
