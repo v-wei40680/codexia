@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="src-tauri/icons/128x128@2x.png" alt="Claudia Logo" width="120" height="120">
+  <img src="src-tauri/icons/128x128@2x.png" alt="Codexia Logo" width="120" height="120" />
    <a href="https://github.com/milisp/codexia"><h1>Codexia</h1></a>
 </div>
 
