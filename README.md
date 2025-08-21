@@ -15,8 +15,6 @@ A modern, multi-session GUI application for the [Codex CLI](https://github.com/o
 
 TLDR: Notepad + @file from FileTree + git diff + streaming chat + agent + mcp
 
-👉 If you like this project, don't forget to **⭐ star** it!
-
 > [!TIP]
 > **⭐ Star the repo and follow [milisp](https://x.com/lisp_mi) on X for more**.
 
