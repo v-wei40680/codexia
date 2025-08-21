@@ -1,6 +1,7 @@
 <div align="center">
   <img src="src-tauri/icons/128x128@2x.png" alt="Codexia Logo" width="120" height="120" />
-   <a href="https://github.com/milisp/codexia"><h1>Codexia</h1></a>
+
+  # [Codexia](https://github.com/milisp/codexia)
 </div>
 
 [![Stars](https://img.shields.io/github/stars/milisp/codexia?style=social)](https://github.com/milisp/codexia/stargazers)
