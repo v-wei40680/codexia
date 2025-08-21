@@ -10,7 +10,12 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#-contributing)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A modern, multi-session GUI application for the [Codex CLI](https://github.com/openai/codex) built with Tauri v2, React, and TypeScript. Notepad + @file from FileTree + git diff
+
+A modern, multi-session GUI application for the [Codex CLI](https://github.com/openai/codex) built with Tauri v2, React, and TypeScript. 
+
+TLDR: Notepad + @file from FileTree + git diff + streaming chat + agent + mcp
+
+👉 If you like this project, don't forget to **⭐ star** it!
 
 > [!TIP]
 > **⭐ Star the repo and follow [milisp](https://x.com/lisp_mi) on X for more**.
