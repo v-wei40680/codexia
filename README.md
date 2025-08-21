@@ -1,11 +1,14 @@
-# Codexia
-
-A modern, multi-session GUI application for the [Codex CLI](https://github.com/openai/codex) built with Tauri v2, React, and TypeScript.
+<div align="center">
+  <img src="src-tauri/icons/128x128@2x.png" alt="Claudia Logo" width="120" height="120">
+   <a href="https://github.com/milisp/codexia"><h1>Codexia</h1></a>
+</div>
 
 [![Stars](https://img.shields.io/github/stars/milisp/codexia?style=social)](https://github.com/milisp/codexia/stargazers)
 
+A modern, multi-session GUI application for the `Codex CLI` built with Tauri v2, React, and TypeScript. Notepad + @file from FileTree + git diff
+
 > [!TIP]
-> **⭐ Star the repo and follow [milisp](https://x.com/lisp_mi) on X for more ideas**.
+> **⭐ Star the repo and follow [milisp](https://x.com/lisp_mi) on X for more**.
 
 ## ✨ Features
 
@@ -127,7 +130,7 @@ bun tauri build
 - ✅ **Command execution** with approval workflows
 - ✅ **Multiple AI providers** (OpenAI, OSS models via Ollama)
 - ✅ **Working directory context** for project-aware assistance
-- ✅ **Streaming responses** for real-time interaction
+- [ ] **Streaming responses** for real-time interaction
 
 ## 🛠️ Development
 
@@ -185,6 +188,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 🙏 Acknowledgments
 
+- [Plux](https://github.com/milisp/plux) one click @files from FileTree & notepad
 - [Claude code](https://www.anthropic.com/claude-code) Build by Claude code
 - [codex](https://chatgpt.com/codex) for the Codex CLI
 - [Tauri](https://tauri.app/) for the excellent desktop app framework
