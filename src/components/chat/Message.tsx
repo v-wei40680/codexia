@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { Bot, User, Terminal } from 'lucide-react';
 import { MessageNoteActions } from './MessageNoteActions';
 import { MarkdownRenderer } from './MarkdownRenderer';
+import { StreamingMessage } from '../StreamingMessage';
 
 interface NormalizedMessage {
   id: string;
@@ -62,7 +63,7 @@ export const Message = memo<MessageProps>(({
   return (
     <div
       key={`${normalized.id}-${index}`}
-      className={`group flex gap-3 p-4 ${isLastMessage ? 'mb-4' : ''}`}
+      className={`group flex gap-3 p-4 min-w-0 ${isLastMessage ? 'mb-4' : ''}`}
       data-message-role={normalized.role}
       data-message-timestamp={normalized.timestamp}
     >
@@ -101,11 +102,22 @@ export const Message = memo<MessageProps>(({
         </div>
 
         {/* Content */}
-        <div className={`relative rounded-lg border p-3 ${getMessageStyle(normalized.role)}`}>
-          <MarkdownRenderer content={normalized.content} />
-          {normalized.isStreaming && (
-            <span className="inline-block w-2 h-5 bg-current opacity-75 animate-pulse ml-1 align-text-bottom">|</span>
-          )}
+        <div className={`relative rounded-lg border p-3 w-full min-w-0 ${getMessageStyle(normalized.role)}`}>
+          <div className="break-words overflow-wrap-anywhere min-w-0">
+            {normalized.isStreaming ? (
+              <StreamingMessage 
+                message={{
+                  id: normalized.id,
+                  role: normalized.role as "user" | "assistant" | "system",
+                  content: normalized.content,
+                  timestamp: normalized.timestamp,
+                  isStreaming: normalized.isStreaming
+                }}
+              />
+            ) : (
+              <MarkdownRenderer content={normalized.content} />
+            )}
+          </div>
         </div>
       </div>
     </div>

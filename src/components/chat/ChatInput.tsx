@@ -117,15 +117,15 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     
     if (directories.length > 0 && files.length === 0) {
       return directories.length === 1 
-        ? `Read this folder: ${filePaths}`
-        : `Read these folders: ${filePaths}`;
+        ? `${filePaths}`
+        : `${filePaths}`;
     } else if (files.length > 0 && directories.length === 0) {
       return files.length === 1 
-        ? `Read this file: ${filePaths}`
-        : `Read these files: ${filePaths}`;
+        ? `${filePaths}`
+        : `${filePaths}`;
     } else {
       // Mixed files and folders
-      return `Read these files and folders: ${filePaths}`;
+      return `${filePaths}`;
     }
   };
 

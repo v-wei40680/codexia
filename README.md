@@ -19,7 +19,7 @@ A modern, multi-session GUI application for the `Codex CLI` built with Tauri v2,
 - Switch between sessions without interrupting ongoing conversations
 - Persistent session storage with automatic restoration on app restart
 
-### 💬 **Real-Time Streaming** - Todo
+### 💬 **Real-Time Streaming**
 - Live streaming responses for immediate feedback
 - Character-by-character message updates as AI generates responses
 - No more waiting for complete responses - see results as they appear
@@ -131,7 +131,7 @@ bun tauri build
 - ✅ **Command execution** with approval workflows
 - ✅ **Multiple AI providers** (OpenAI, OSS models via Ollama)
 - ✅ **Working directory context** for project-aware assistance
-- [ ] **Streaming responses** for real-time interaction
+- ✅ **Streaming responses** for real-time interaction - by config show_raw_agent_reasoning=true
 
 ## 🛠️ Development
 

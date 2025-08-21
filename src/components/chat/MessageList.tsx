@@ -88,7 +88,7 @@ export function MessageList({ messages, className = "", isLoading = false, isPen
       <TextSelectionMenu />
       {/* Messages */}
       <div className="flex-1 overflow-y-auto px-4 py-2">
-        <div className="max-w-4xl mx-auto">
+        <div className="w-full max-w-full min-w-0">
           {normalizedMessages.map((normalizedMessage, index) => (
             <Message
               key={`${normalizedMessage.id}-${index}`}

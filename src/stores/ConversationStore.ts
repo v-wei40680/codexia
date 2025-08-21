@@ -34,6 +34,7 @@ interface ConversationStore {
 
   // Message management
   addMessage: (conversationId: string, message: ChatMessage) => void;
+  updateMessage: (conversationId: string, messageId: string, updates: Partial<ChatMessage>) => void;
   updateLastMessage: (conversationId: string, content: string) => void;
 
   // Getters
@@ -242,6 +243,25 @@ export const useConversationStore = create<ConversationStore>()(
 
           return { conversations: updatedConversations };
         });
+      },
+
+      updateMessage: (conversationId: string, messageId: string, updates: Partial<ChatMessage>) => {
+        set((state) => ({
+          conversations: state.conversations.map((conv) => {
+            if (conv.id === conversationId) {
+              const updatedMessages = conv.messages.map((msg) => 
+                msg.id === messageId ? { ...msg, ...updates } : msg
+              );
+              
+              return {
+                ...conv,
+                messages: updatedMessages,
+                updatedAt: Date.now(),
+              };
+            }
+            return conv;
+          }),
+        }));
       },
 
       updateLastMessage: (conversationId: string, content: string) => {

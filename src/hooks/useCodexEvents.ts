@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { ChatMessage, CodexEvent, ApprovalRequest } from '@/types/codex';
 import { useConversationStore } from '../stores/ConversationStore';
+import { StreamController, StreamControllerSink } from '@/utils/streamController';
 
 interface UseCodexEventsProps {
   sessionId: string;
@@ -23,7 +24,9 @@ export const useCodexEvents = ({
   sessionId, 
   onApprovalRequest
 }: UseCodexEventsProps) => {
-  const { addMessage, setSessionLoading, createConversation, conversations } = useConversationStore();
+  const { addMessage, updateMessage, setSessionLoading, createConversation, conversations } = useConversationStore();
+  const streamController = useRef<StreamController>(new StreamController());
+  const currentStreamingMessageId = useRef<string | null>(null);
 
   const addMessageToStore = (message: ChatMessage) => {
     // Ensure conversation exists
@@ -44,6 +47,30 @@ export const useCodexEvents = ({
     addMessage(sessionId, conversationMessage);
   };
 
+  // Create streaming sink for the controller
+  const createStreamSink = useCallback((messageId: string): StreamControllerSink => {
+    let accumulatedContent = '';
+    
+    return {
+      insertLines: (lines: string[]) => {
+        // Append new lines to accumulated content
+        const newContent = lines.join('\n');
+        if (accumulatedContent) {
+          accumulatedContent += '\n' + newContent;
+        } else {
+          accumulatedContent = newContent;
+        }
+        updateMessage(sessionId, messageId, { content: accumulatedContent });
+      },
+      startAnimation: () => {
+        // Animation started - could add visual indicators here
+      },
+      stopAnimation: () => {
+        // Animation finished
+      }
+    };
+  }, [sessionId, updateMessage]);
+
   const handleCodexEvent = (event: CodexEvent) => {
     const { msg } = event;
     
@@ -55,14 +82,23 @@ export const useCodexEvents = ({
         
       case 'task_started':
         setSessionLoading(sessionId, true);
+        // Clear any previous streaming state
+        streamController.current.clearAll();
+        currentStreamingMessageId.current = null;
         break;
         
       case 'task_complete':
         setSessionLoading(sessionId, false);
+        // Finalize any ongoing stream
+        if (currentStreamingMessageId.current) {
+          streamController.current.finalize(true);
+          currentStreamingMessageId.current = null;
+        }
         break;
         
       case 'agent_message':
-        if (msg.message) {
+        // Handle complete message (fallback for non-streaming)
+        if (msg.message && !currentStreamingMessageId.current) {
           const agentMessage: ChatMessage = {
             id: `${sessionId}-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
             type: 'agent',
@@ -70,6 +106,33 @@ export const useCodexEvents = ({
             timestamp: new Date(),
           };
           addMessageToStore(agentMessage);
+        }
+        break;
+        
+      case 'agent_message_delta':
+        // Handle streaming delta
+        if (!currentStreamingMessageId.current) {
+          // Start new streaming message
+          const messageId = `${sessionId}-stream-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
+          currentStreamingMessageId.current = messageId;
+          
+          const streamingMessage: ChatMessage = {
+            id: messageId,
+            type: 'agent',
+            content: '',
+            timestamp: new Date(),
+            isStreaming: true,
+          };
+          addMessageToStore(streamingMessage);
+          
+          // Begin streaming with sink
+          const sink = createStreamSink(messageId);
+          streamController.current.begin(sink);
+        }
+        
+        // Push delta to stream controller
+        if (currentStreamingMessageId.current && msg.delta) {
+          streamController.current.pushAndMaybeCommit(msg.delta);
         }
         break;
         
@@ -104,6 +167,9 @@ export const useCodexEvents = ({
         
       case 'shutdown_complete':
         console.log('Session shutdown completed');
+        // Clean up streaming state on shutdown
+        streamController.current.clearAll();
+        currentStreamingMessageId.current = null;
         break;
         
       case 'background_event':
@@ -147,10 +213,14 @@ export const useCodexEvents = ({
       handleCodexEvent(codexEvent);
     });
     
+    // Cleanup function
     return () => {
       eventUnlisten.then(fn => fn());
+      // Clear streaming state when component unmounts or sessionId changes
+      streamController.current.clearAll();
+      currentStreamingMessageId.current = null;
     };
-  }, [sessionId]);
+  }, [sessionId, createStreamSink]);
 
   return {};
 };

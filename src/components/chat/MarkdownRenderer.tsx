@@ -15,7 +15,7 @@ export const MarkdownRenderer = memo<MarkdownRendererProps>(({
   className = "" 
 }) => {
   return (
-    <div className={`text-sm text-gray-800 leading-relaxed prose prose-sm max-w-none ${className}`}>
+    <div className={`text-sm text-gray-800 leading-relaxed prose prose-sm max-w-none break-words ${className}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypePrism]}

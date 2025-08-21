@@ -134,6 +134,10 @@ impl CodexClient {
             cmd.arg("-c").arg(sandbox_config);
         }
 
+        // Enable streaming by setting show_raw_agent_reasoning=true
+        // This is required for agent_message_delta events to be generated
+        cmd.arg("-c").arg("show_raw_agent_reasoning=true");
+
         // Set working directory for the process
         if !config.working_directory.is_empty() {
             cmd.current_dir(&config.working_directory);
