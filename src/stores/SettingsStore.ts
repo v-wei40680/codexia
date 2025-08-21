@@ -56,7 +56,7 @@ const DEFAULT_PROVIDERS: Providers = {
   },
   OpenRouter: {
     apiKey: "OPENROUTER_API_KEY",
-    baseUrl: "",
+    baseUrl: "https://openrouter.ai/api/v1",
     models: [
       "anthropic/claude-opus-4.1",
       "anthropic/claude-opus-4",
