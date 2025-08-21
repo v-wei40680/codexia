@@ -1,6 +1,6 @@
+use super::file_types::FileEntry;
 use std::fs;
 use std::path::Path;
-use super::file_types::FileEntry;
 
 #[tauri::command]
 pub async fn read_directory(path: String) -> Result<Vec<FileEntry>, String> {

@@ -26,9 +26,12 @@ pub async fn read_xlsx_content(file_path: String) -> Result<String, String> {
     }
 
     let sheet_name = &sheet_names[0];
-    content.push_str(&format!("Sheet: {}
+    content.push_str(&format!(
+        "Sheet: {}
 
-", sheet_name));
+",
+        sheet_name
+    ));
 
     if let Ok(range) = workbook.worksheet_range(sheet_name) {
         let mut row_count = 0;

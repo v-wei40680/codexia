@@ -14,7 +14,6 @@ pub fn current_timestamp_millis() -> i64 {
 
 #[allow(dead_code)]
 pub fn format_timestamp(timestamp_millis: i64) -> String {
-    let dt = DateTime::from_timestamp_millis(timestamp_millis)
-        .unwrap_or_else(|| Utc::now());
+    let dt = DateTime::from_timestamp_millis(timestamp_millis).unwrap_or_else(|| Utc::now());
     dt.to_rfc3339()
 }

@@ -20,11 +20,21 @@ pub enum McpServerConfig {
         env: Option<HashMap<String, String>>,
     },
     #[serde(rename = "http")]
-    Http {
-        url: String,
-    },
+    Http { url: String },
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ModelProvider {
+    pub name: String,
+    pub base_url: String,
+    pub env_key: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Profile {
+    pub model_provider: String,
+    pub model: String,
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CodexConfig {
@@ -32,6 +42,10 @@ pub struct CodexConfig {
     pub projects: HashMap<String, ProjectConfig>,
     #[serde(default)]
     pub mcp_servers: HashMap<String, McpServerConfig>,
+    #[serde(default)]
+    pub model_providers: HashMap<String, ModelProvider>,
+    #[serde(default)]
+    pub profiles: HashMap<String, Profile>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -103,8 +117,8 @@ pub async fn read_mcp_servers() -> Result<HashMap<String, McpServerConfig>, Stri
 #[command]
 pub async fn add_mcp_server(name: String, config: McpServerConfig) -> Result<(), String> {
     let config_path = get_config_path()?;
-    
-    let mut codex_config = if config_path.exists() {
+
+    let mut codex_config: CodexConfig = if config_path.exists() {
         let content = fs::read_to_string(&config_path)
             .map_err(|e| format!("Failed to read config file: {}", e))?;
         toml::from_str(&content).map_err(|e| format!("Failed to parse config file: {}", e))?
@@ -112,13 +126,193 @@ pub async fn add_mcp_server(name: String, config: McpServerConfig) -> Result<(),
         CodexConfig {
             projects: HashMap::new(),
             mcp_servers: HashMap::new(),
+            model_providers: HashMap::new(),
+            profiles: HashMap::new(),
         }
     };
 
     codex_config.mcp_servers.insert(name, config);
 
-    let toml_content = toml::to_string(&codex_config)
-        .map_err(|e| format!("Failed to serialize config: {}", e))?;
+    let toml_content =
+        toml::to_string(&codex_config).map_err(|e| format!("Failed to serialize config: {}", e))?;
+
+    if let Some(parent) = config_path.parent() {
+        fs::create_dir_all(parent)
+            .map_err(|e| format!("Failed to create config directory: {}", e))?;
+    }
+
+    fs::write(&config_path, toml_content)
+        .map_err(|e| format!("Failed to write config file: {}", e))?;
+
+    Ok(())
+}
+
+#[command]
+pub async fn read_model_providers() -> Result<HashMap<String, ModelProvider>, String> {
+    let config_path = get_config_path()?;
+
+    if !config_path.exists() {
+        return Ok(HashMap::new());
+    }
+
+    let content = fs::read_to_string(&config_path)
+        .map_err(|e| format!("Failed to read config file: {}", e))?;
+
+    let config: CodexConfig =
+        toml::from_str(&content).map_err(|e| format!("Failed to parse config file: {}", e))?;
+
+    Ok(config.model_providers)
+}
+
+#[command]
+pub async fn read_profiles() -> Result<HashMap<String, Profile>, String> {
+    let config_path = get_config_path()?;
+
+    if !config_path.exists() {
+        return Ok(HashMap::new());
+    }
+
+    let content = fs::read_to_string(&config_path)
+        .map_err(|e| format!("Failed to read config file: {}", e))?;
+
+    let config: CodexConfig =
+        toml::from_str(&content).map_err(|e| format!("Failed to parse config file: {}", e))?;
+
+    Ok(config.profiles)
+}
+
+#[command]
+pub async fn get_provider_config(
+    provider_name: String,
+) -> Result<Option<(ModelProvider, Option<Profile>)>, String> {
+    let providers = read_model_providers().await?;
+    let profiles = read_profiles().await?;
+
+    if let Some(provider) = providers.get(&provider_name) {
+        let profile = profiles.get(&provider_name).cloned();
+        Ok(Some((provider.clone(), profile)))
+    } else {
+        Ok(None)
+    }
+}
+
+#[command]
+pub async fn get_profile_config(profile_name: String) -> Result<Option<Profile>, String> {
+    let profiles = read_profiles().await?;
+    Ok(profiles.get(&profile_name).cloned())
+}
+
+#[command]
+pub async fn update_profile_model(profile_name: String, new_model: String) -> Result<(), String> {
+    let config_path = get_config_path()?;
+
+    let mut codex_config: CodexConfig = if config_path.exists() {
+        let content = fs::read_to_string(&config_path)
+            .map_err(|e| format!("Failed to read config file: {}", e))?;
+        toml::from_str(&content).map_err(|e| format!("Failed to parse config file: {}", e))?
+    } else {
+        return Err("Config file does not exist".to_string());
+    };
+
+    if let Some(profile) = codex_config.profiles.get_mut(&profile_name) {
+        profile.model = new_model;
+    } else {
+        return Err(format!("Profile '{}' not found", profile_name));
+    }
+
+    let toml_content =
+        toml::to_string(&codex_config).map_err(|e| format!("Failed to serialize config: {}", e))?;
+
+    fs::write(&config_path, toml_content)
+        .map_err(|e| format!("Failed to write config file: {}", e))?;
+
+    Ok(())
+}
+
+#[command]
+pub async fn add_or_update_profile(profile_name: String, profile: Profile) -> Result<(), String> {
+    let config_path = get_config_path()?;
+
+    let mut codex_config: CodexConfig = if config_path.exists() {
+        let content = fs::read_to_string(&config_path)
+            .map_err(|e| format!("Failed to read config file: {}", e))?;
+        toml::from_str(&content).map_err(|e| format!("Failed to parse config file: {}", e))?
+    } else {
+        CodexConfig {
+            projects: HashMap::new(),
+            mcp_servers: HashMap::new(),
+            model_providers: HashMap::new(),
+            profiles: HashMap::new(),
+        }
+    };
+
+    codex_config.profiles.insert(profile_name, profile);
+
+    let toml_content =
+        toml::to_string(&codex_config).map_err(|e| format!("Failed to serialize config: {}", e))?;
+
+    if let Some(parent) = config_path.parent() {
+        fs::create_dir_all(parent)
+            .map_err(|e| format!("Failed to create config directory: {}", e))?;
+    }
+
+    fs::write(&config_path, toml_content)
+        .map_err(|e| format!("Failed to write config file: {}", e))?;
+
+    Ok(())
+}
+
+#[command]
+pub async fn delete_profile(profile_name: String) -> Result<(), String> {
+    let config_path = get_config_path()?;
+
+    if !config_path.exists() {
+        return Err("Config file does not exist".to_string());
+    }
+
+    let content = fs::read_to_string(&config_path)
+        .map_err(|e| format!("Failed to read config file: {}", e))?;
+
+    let mut config: CodexConfig =
+        toml::from_str(&content).map_err(|e| format!("Failed to parse config file: {}", e))?;
+
+    if config.profiles.remove(&profile_name).is_none() {
+        return Err(format!("Profile '{}' not found", profile_name));
+    }
+
+    let toml_content =
+        toml::to_string(&config).map_err(|e| format!("Failed to serialize config: {}", e))?;
+
+    fs::write(&config_path, toml_content)
+        .map_err(|e| format!("Failed to write config file: {}", e))?;
+
+    Ok(())
+}
+
+#[command]
+pub async fn add_or_update_model_provider(
+    provider_name: String,
+    provider: ModelProvider,
+) -> Result<(), String> {
+    let config_path = get_config_path()?;
+
+    let mut codex_config: CodexConfig = if config_path.exists() {
+        let content = fs::read_to_string(&config_path)
+            .map_err(|e| format!("Failed to read config file: {}", e))?;
+        toml::from_str(&content).map_err(|e| format!("Failed to parse config file: {}", e))?
+    } else {
+        CodexConfig {
+            projects: HashMap::new(),
+            mcp_servers: HashMap::new(),
+            model_providers: HashMap::new(),
+            profiles: HashMap::new(),
+        }
+    };
+
+    codex_config.model_providers.insert(provider_name, provider);
+
+    let toml_content =
+        toml::to_string(&codex_config).map_err(|e| format!("Failed to serialize config: {}", e))?;
 
     if let Some(parent) = config_path.parent() {
         fs::create_dir_all(parent)
@@ -149,8 +343,8 @@ pub async fn delete_mcp_server(name: String) -> Result<(), String> {
         return Err(format!("MCP server '{}' not found", name));
     }
 
-    let toml_content = toml::to_string(&config)
-        .map_err(|e| format!("Failed to serialize config: {}", e))?;
+    let toml_content =
+        toml::to_string(&config).map_err(|e| format!("Failed to serialize config: {}", e))?;
 
     fs::write(&config_path, toml_content)
         .map_err(|e| format!("Failed to write config file: {}", e))?;

@@ -4,6 +4,7 @@ import { ApprovalRequest, CodexConfig } from "@/types/codex";
 import type { Conversation } from "@/types/chat";
 import { useConversationStore } from "../../stores/ConversationStore";
 import { useChatInputStore } from "../../stores/chatInputStore";
+import { useModelStore } from "../../stores/ModelStore";
 import { sessionManager } from "@/services/sessionManager";
 import { SessionManager } from "./SessionManager";
 import { ChatInput } from "./ChatInput";
@@ -33,6 +34,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   selectedConversation = null,
 }) => {
   const { inputValue, setInputValue } = useChatInputStore();
+  const { currentModel, currentProvider } = useModelStore();
   const [pendingApproval, setPendingApproval] =
     useState<ApprovalRequest | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -133,7 +135,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             const startSession = async () => {
               try {
                 setSessionLoading(sessionId, true);
-                await sessionManager.ensureSessionRunning(sessionId, config);
+                // Create updated config with current model selection
+                const updatedConfig = {
+                  ...config,
+                  model: currentModel,
+                  provider: currentProvider,
+                  useOss: currentProvider.toLowerCase() !== 'openai'
+                };
+                await sessionManager.ensureSessionRunning(sessionId, updatedConfig);
                 setIsConnected(true);
                 setSessionLoading(sessionId, false);
               } catch (error) {
@@ -218,7 +227,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       if (!sessionManager.isSessionRunning(actualSessionId)) {
         setSessionStarting(true);
         setSessionLoading(actualSessionId, true);
-        await sessionManager.ensureSessionRunning(actualSessionId, config);
+        // Create updated config with current model selection
+        const updatedConfig = {
+          ...config,
+          model: currentModel,
+          provider: currentProvider,
+          useOss: currentProvider.toLowerCase() !== 'openai'
+        };
+        await sessionManager.ensureSessionRunning(actualSessionId, updatedConfig);
         setIsConnected(true);
         
         if (isPendingSession) {

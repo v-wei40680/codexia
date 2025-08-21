@@ -7,9 +7,8 @@ use tokio::process::{Child, Command};
 use tokio::sync::mpsc;
 use uuid::Uuid;
 
-use crate::protocol::{
-    CodexConfig, Event, InputItem, Op, Submission
-};
+use crate::config::{read_model_providers, read_profiles};
+use crate::protocol::{CodexConfig, Event, InputItem, Op, Submission};
 
 // Helper function to extract session_id from codex events
 fn get_session_id_from_event(event: &Event) -> Option<String> {
@@ -18,9 +17,7 @@ fn get_session_id_from_event(event: &Event) -> Option<String> {
         _ => None,
     }
 }
-use crate::utils::logger::log_to_file;
 use crate::utils::codex_discovery::discover_codex_command;
-
 
 pub struct CodexClient {
     #[allow(dead_code)]
@@ -34,61 +31,124 @@ pub struct CodexClient {
 
 impl CodexClient {
     pub async fn new(app: &AppHandle, session_id: String, config: CodexConfig) -> Result<Self> {
-        log_to_file(&format!("Creating CodexClient for session: {}", session_id));
-        
+        log::debug!("Creating CodexClient for session: {}", session_id);
+
         // Build codex command based on configuration
-        let (command, args): (String, Vec<String>) = if let Some(configured_path) = &config.codex_path {
-            (configured_path.clone(), vec![])
-        } else if let Some(path) = discover_codex_command() {
-            (path.to_string_lossy().to_string(), vec![])
-        } else {
-            return Err(anyhow::anyhow!("Could not find codex executable"));
-        };
+        let (command, args): (String, Vec<String>) =
+            if let Some(configured_path) = &config.codex_path {
+                (configured_path.clone(), vec![])
+            } else if let Some(path) = discover_codex_command() {
+                (path.to_string_lossy().to_string(), vec![])
+            } else {
+                return Err(anyhow::anyhow!("Could not find codex executable"));
+            };
 
         let mut cmd = Command::new(&command);
         if !args.is_empty() {
             cmd.args(&args);
         }
         cmd.arg("proto");
-        
-        // Use -c configuration parameter format (codex proto only supports -c configuration)
-        if config.use_oss {
-            cmd.arg("-c").arg("model_provider=oss");
+
+        // Load provider configuration from config.toml if provider is specified
+        if !config.provider.is_empty() && config.provider != "openai" {
+            if let Ok(providers) = read_model_providers().await {
+                if let Ok(profiles) = read_profiles().await {
+                    // Check if there's a matching provider in config
+                    if let Some(provider_config) = providers.get(&config.provider) {
+                        // Set model provider based on config
+                        cmd.arg("-c")
+                            .arg(format!("model_provider={}", provider_config.name));
+
+                        // Set base URL if available
+                        if !provider_config.base_url.is_empty() {
+                            cmd.arg("-c")
+                                .arg(format!("base_url={}", provider_config.base_url));
+                        }
+
+                        // Set API key environment variable reference
+                        if !provider_config.env_key.is_empty() {
+                            cmd.arg("-c")
+                                .arg(format!("api_key_env={}", provider_config.env_key));
+                        }
+
+                        // Use model from profile if available, otherwise from config
+                        let model_to_use = if let Some(profile) = profiles.get(&config.provider) {
+                            &profile.model
+                        } else {
+                            &config.model
+                        };
+
+                        if !model_to_use.is_empty() {
+                            cmd.arg("-c").arg(format!("model={}", model_to_use));
+                        }
+                    } else {
+                        // Fallback to original logic for custom providers
+                        if config.use_oss {
+                            cmd.arg("-c").arg("model_provider=oss");
+                        } else {
+                            cmd.arg("-c")
+                                .arg(format!("model_provider={}", config.provider));
+                        }
+
+                        if !config.model.is_empty() {
+                            cmd.arg("-c").arg(format!("model={}", config.model));
+                        }
+                    }
+                }
+            } else {
+                // Fallback to original logic if config reading fails
+                if config.use_oss {
+                    cmd.arg("-c").arg("model_provider=oss");
+                } else {
+                    cmd.arg("-c")
+                        .arg(format!("model_provider={}", config.provider));
+                }
+
+                if !config.model.is_empty() {
+                    cmd.arg("-c").arg(format!("model={}", config.model));
+                }
+            }
+        } else {
+            // Original logic for OSS and default cases
+            if config.use_oss {
+                cmd.arg("-c").arg("model_provider=oss");
+            }
+
+            if !config.model.is_empty() {
+                cmd.arg("-c").arg(format!("model={}", config.model));
+            }
         }
-        
-        if !config.model.is_empty() {
-            cmd.arg("-c").arg(format!("model={}", config.model));
-        }
-        
+
         if !config.approval_policy.is_empty() {
-            cmd.arg("-c").arg(format!("approval_policy={}", config.approval_policy));
+            cmd.arg("-c")
+                .arg(format!("approval_policy={}", config.approval_policy));
         }
-        
+
         if !config.sandbox_mode.is_empty() {
             let sandbox_config = match config.sandbox_mode.as_str() {
                 "read-only" => "sandbox_mode=read-only".to_string(),
-                "workspace-write" => "sandbox_mode=workspace-write".to_string(), 
+                "workspace-write" => "sandbox_mode=workspace-write".to_string(),
                 "danger-full-access" => "sandbox_mode=danger-full-access".to_string(),
                 _ => "sandbox_mode=workspace-write".to_string(),
             };
             cmd.arg("-c").arg(sandbox_config);
         }
-        
+
         // Set working directory for the process
         if !config.working_directory.is_empty() {
             cmd.current_dir(&config.working_directory);
         }
-        
+
         // Add custom arguments
         if let Some(custom_args) = &config.custom_args {
             for arg in custom_args {
                 cmd.arg(arg);
             }
         }
-        
+
         // Print the command to be executed for debugging
-        log_to_file(&format!("Starting codex with command: {:?}", cmd));
-        
+        log::debug!("Starting codex with command: {:?}", cmd);
+
         let mut process = cmd
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
@@ -105,19 +165,19 @@ impl CodexClient {
         tokio::spawn(async move {
             while let Some(line) = stdin_rx.recv().await {
                 if let Err(e) = stdin_writer.write_all(line.as_bytes()).await {
-                    log_to_file(&format!("Failed to write to codex stdin: {}", e));
+                    log::error!("Failed to write to codex stdin: {}", e);
                     break;
                 }
                 if let Err(e) = stdin_writer.write_all(b"\n").await {
-                    log_to_file(&format!("Failed to write newline to codex stdin: {}", e));
+                    log::error!("Failed to write newline to codex stdin: {}", e);
                     break;
                 }
                 if let Err(e) = stdin_writer.flush().await {
-                    log_to_file(&format!("Failed to flush codex stdin: {}", e));
+                    log::error!("Failed to flush codex stdin: {}", e);
                     break;
                 }
             }
-            log_to_file("Stdin writer task terminated");
+            log::debug!("Stdin writer task terminated");
         });
 
         // Handle stdout reading
@@ -126,28 +186,28 @@ impl CodexClient {
         tokio::spawn(async move {
             let reader = BufReader::new(stdout);
             let mut lines = reader.lines();
-            
-            log_to_file(&format!("Starting stdout reader for session: {}", session_id_clone));
-            
+
+            log::debug!("Starting stdout reader for session: {}", session_id_clone);
+
             while let Ok(Some(line)) = lines.next_line().await {
-                log_to_file(&format!("Received line from codex: {}", line));
+                log::debug!("Received line from codex: {}", line);
                 if let Ok(event) = serde_json::from_str::<Event>(&line) {
-                    log_to_file(&format!("Parsed event: {:?}", event));
-                    
+                    log::debug!("Parsed event: {:?}", event);
+
                     // Log the event for debugging
                     if let Some(event_session_id) = get_session_id_from_event(&event) {
-                        log_to_file(&format!("Event for session: {}", event_session_id));
+                        log::debug!("Event for session: {}", event_session_id);
                     }
-                    
+
                     // Use a single global event channel instead of per-session channels
                     if let Err(e) = app_clone.emit("codex-events", &event) {
-                        log_to_file(&format!("Failed to emit event: {}", e));
+                        log::error!("Failed to emit event: {}", e);
                     }
                 } else {
-                    log_to_file(&format!("Failed to parse codex event: {}", line));
+                    log::warn!("Failed to parse codex event: {}", line);
                 }
             }
-            log_to_file(&format!("Stdout reader terminated for session: {}", session_id_clone));
+            log::debug!("Stdout reader terminated for session: {}", session_id_clone);
         });
 
         let client = Self {
@@ -160,7 +220,6 @@ impl CodexClient {
 
         Ok(client)
     }
-
 
     async fn send_submission(&self, submission: Submission) -> Result<()> {
         if let Some(stdin_tx) = &self.stdin_tx {
@@ -183,7 +242,7 @@ impl CodexClient {
 
     pub async fn send_exec_approval(&self, approval_id: String, approved: bool) -> Result<()> {
         let decision = if approved { "allow" } else { "deny" }.to_string();
-        
+
         let submission = Submission {
             id: Uuid::new_v4().to_string(),
             op: Op::ExecApproval {
@@ -198,7 +257,7 @@ impl CodexClient {
     #[allow(dead_code)]
     pub async fn send_patch_approval(&self, approval_id: String, approved: bool) -> Result<()> {
         let decision = if approved { "allow" } else { "deny" }.to_string();
-        
+
         let submission = Submission {
             id: Uuid::new_v4().to_string(),
             op: Op::PatchApproval {
@@ -221,58 +280,58 @@ impl CodexClient {
     }
 
     pub async fn close_session(&mut self) -> Result<()> {
-        log_to_file(&format!("Closing session: {}", self.session_id));
-        
+        log::debug!("Closing session: {}", self.session_id);
+
         // Send shutdown command to codex (graceful shutdown)
         let submission = Submission {
             id: Uuid::new_v4().to_string(),
             op: Op::Shutdown,
         };
-        
+
         if let Err(e) = self.send_submission(submission).await {
-            log_to_file(&format!("Failed to send shutdown command: {}", e));
+            log::error!("Failed to send shutdown command: {}", e);
         }
 
         // Close stdin channel to signal end of input
         if let Some(stdin_tx) = self.stdin_tx.take() {
             drop(stdin_tx);
-            log_to_file("Stdin channel closed");
+            log::debug!("Stdin channel closed");
         }
 
         // Wait a moment for graceful shutdown, then terminate process if needed
         if let Some(mut process) = self.process.take() {
             if let Some(pid) = process.id() {
-                log_to_file(&format!("Terminating codex process with PID: {}", pid));
+                log::debug!("Terminating codex process with PID: {}", pid);
             }
-            
+
             // Give the process a moment to shutdown gracefully
             tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
-            
+
             // Check if process is still running, then kill if necessary
             match process.try_wait() {
                 Ok(Some(status)) => {
-                    log_to_file(&format!("Codex process exited with status: {}", status));
+                    log::debug!("Codex process exited with status: {}", status);
                 }
                 Ok(None) => {
                     // Process still running, kill it
-                    log_to_file("Process still running, terminating...");
+                    log::debug!("Process still running, terminating...");
                     if let Err(e) = process.kill().await {
-                        log_to_file(&format!("Failed to kill codex process: {}", e));
+                        log::error!("Failed to kill codex process: {}", e);
                     } else {
-                        log_to_file("Codex process terminated successfully");
+                        log::debug!("Codex process terminated successfully");
                     }
                 }
                 Err(e) => {
-                    log_to_file(&format!("Error checking process status: {}", e));
+                    log::error!("Error checking process status: {}", e);
                     // Try to kill anyway
                     if let Err(e) = process.kill().await {
-                        log_to_file(&format!("Failed to kill codex process: {}", e));
+                        log::error!("Failed to kill codex process: {}", e);
                     }
                 }
             }
         }
 
-        log_to_file(&format!("Session {} closed", self.session_id));
+        log::debug!("Session {} closed", self.session_id);
         Ok(())
     }
 

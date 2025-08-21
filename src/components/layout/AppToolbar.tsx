@@ -35,18 +35,6 @@ export const AppToolbar: React.FC<AppToolbarProps> = ({
     toggleNotesList,
     setActiveTab,
   } = useLayoutStore();
-  const getProviderColor = (provider: string) => {
-    switch (provider) {
-      case "openai":
-        return "bg-green-100 text-green-800";
-      case "oss":
-        return "bg-blue-100 text-blue-800";
-      case "custom":
-        return "bg-purple-100 text-purple-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
 
   const getSandboxColor = (mode: string) => {
     switch (mode) {
@@ -138,21 +126,6 @@ export const AppToolbar: React.FC<AppToolbarProps> = ({
 
       {activeTab == "chat" && (
         <div className="flex items-center gap-1 shrink-0">
-          {/* Model */}
-          <Badge
-            variant="secondary"
-            className="text-xs px-1.5 hidden sm:inline-flex"
-          >
-            {config.model}
-          </Badge>
-
-          {/* Provider */}
-          <Badge
-            className={`text-xs px-1.5 ${getProviderColor(config.provider)}`}
-          >
-            {config.provider.toUpperCase()}
-            {config.useOss}
-          </Badge>
 
           {/* Sandbox */}
           <Badge

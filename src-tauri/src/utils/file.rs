@@ -31,9 +31,5 @@ pub fn remove_file<P: AsRef<Path>>(file_path: P) -> Result<(), String> {
 
 #[allow(dead_code)]
 pub fn get_file_modification_time<P: AsRef<Path>>(file_path: P) -> Option<std::time::SystemTime> {
-    file_path.as_ref()
-        .metadata()
-        .ok()?
-        .modified()
-        .ok()
+    file_path.as_ref().metadata().ok()?.modified().ok()
 }

@@ -18,6 +18,7 @@ pub async fn start_codex_session(
     session_id: String,
     config: CodexConfig,
 ) -> Result<(), String> {
+    log::info!("Starting codex session: {}", session_id);
     codex::start_codex_session(app, state, session_id, config).await
 }
 

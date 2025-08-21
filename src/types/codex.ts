@@ -49,7 +49,7 @@ export interface ChatSession {
 export interface CodexConfig {
   workingDirectory: string;
   model: string;
-  provider: 'openai' | 'oss' | 'custom';
+  provider: string; // Support any provider from config.toml
   useOss: boolean;
   customArgs?: string[];
   approvalPolicy: 'untrusted' | 'on-failure' | 'on-request' | 'never';

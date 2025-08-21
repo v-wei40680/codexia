@@ -1,7 +1,7 @@
+use super::file_types::GitDiff;
 use std::fs;
 use std::path::Path;
 use std::process::Command;
-use super::file_types::GitDiff;
 
 #[tauri::command]
 pub async fn get_git_file_diff(file_path: String) -> Result<GitDiff, String> {

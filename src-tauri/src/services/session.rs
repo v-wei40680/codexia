@@ -90,7 +90,7 @@ pub fn parse_session_file(content: &str, file_path: &Path) -> Option<Conversatio
                     if role == "user" && content_text.trim().starts_with("<environment_context>") {
                         continue;
                     }
-                    
+
                     let timestamp = if let Some(ts) = &session_timestamp {
                         chrono::DateTime::parse_from_rfc3339(ts)
                             .map(|dt| dt.timestamp_millis())
@@ -100,7 +100,12 @@ pub fn parse_session_file(content: &str, file_path: &Path) -> Option<Conversatio
                     };
 
                     messages.push(ChatMessage {
-                        id: format!("{}-{}-{}", session_id.as_ref().unwrap_or(&"unknown".to_string()), role, timestamp),
+                        id: format!(
+                            "{}-{}-{}",
+                            session_id.as_ref().unwrap_or(&"unknown".to_string()),
+                            role,
+                            timestamp
+                        ),
                         role,
                         content: content_text.trim().to_string(),
                         timestamp,
@@ -140,7 +145,10 @@ pub fn parse_session_file(content: &str, file_path: &Path) -> Option<Conversatio
                 })
                 .unwrap_or_else(|| "Imported Session".to_string());
 
-            let file_path_str = file_path.canonicalize().ok().and_then(|p| p.to_str().map(|s| s.to_string()));
+            let file_path_str = file_path
+                .canonicalize()
+                .ok()
+                .and_then(|p| p.to_str().map(|s| s.to_string()));
 
             let full_session_id = if id.starts_with("codex-event-") {
                 id
@@ -201,8 +209,7 @@ pub async fn load_sessions_from_disk() -> Result<Vec<Conversation>, String> {
 }
 
 pub async fn delete_session_file(file_path: String) -> Result<(), String> {
-    fs::remove_file(&file_path)
-        .map_err(|e| format!("Failed to delete file '{}': {}", file_path, e))
+    fs::remove_file(&file_path).map_err(|e| format!("Failed to delete file '{}': {}", file_path, e))
 }
 
 pub async fn get_latest_session_id() -> Result<Option<String>, String> {

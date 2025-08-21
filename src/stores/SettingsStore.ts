@@ -47,7 +47,7 @@ const DEFAULT_PROVIDERS: Providers = {
   Ollama: {
     apiKey: "OLLAMA_API_KEY",
     baseUrl: "http://localhost:11434/v1",
-    models: ["gpt-oss:20b", "gpt-oss:120b", "mistral", "qwen3", "deepseek-r1"],
+    models: ["gpt-oss:20b", "gpt-oss:120b", "mistral", "qwen3", "deepseek-r1", "llama3.2"],
   },
   Gemini: {
     apiKey: "GEMINI_API_KEY",
