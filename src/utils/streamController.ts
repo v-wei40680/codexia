@@ -3,7 +3,7 @@
  * Based on codex CLI's StreamController implementation
  */
 
-import { MarkdownStreamCollector, AnimatedLineStreamer, AnimationStep } from './streamingCollector';
+import { MarkdownStreamCollector, AnimatedLineStreamer } from './streamingCollector';
 
 export interface StreamControllerSink {
   insertLines(lines: string[]): void;

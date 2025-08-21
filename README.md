@@ -5,8 +5,12 @@
 </div>
 
 [![Stars](https://img.shields.io/github/stars/milisp/codexia?style=social)](https://github.com/milisp/codexia/stargazers)
+[![Forks](https://img.shields.io/github/forks/milisp/codexia?style=social)](https://github.com/milisp/codexia/network/members)
+[![Issues](https://img.shields.io/github/issues/milisp/codexia)](https://github.com/milisp/codexia/issues)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#-contributing)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-A modern, multi-session GUI application for the `Codex CLI` built with Tauri v2, React, and TypeScript. Notepad + @file from FileTree + git diff
+A modern, multi-session GUI application for the [Codex CLI](https://github.com/openai/codex) built with Tauri v2, React, and TypeScript. Notepad + @file from FileTree + git diff
 
 > [!TIP]
 > **⭐ Star the repo and follow [milisp](https://x.com/lisp_mi) on X for more**.
