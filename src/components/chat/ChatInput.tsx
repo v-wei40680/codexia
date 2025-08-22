@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
-import { Send, AtSign, X, ChevronUp, Cpu } from 'lucide-react';
+import { Send, AtSign, X, ChevronUp, Cpu, Square } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -23,6 +23,7 @@ interface ChatInputProps {
   inputValue: string;
   onInputChange: (value: string) => void;
   onSendMessage: (message: string) => void;
+  onStopStreaming?: () => void;
   disabled?: boolean;
   isLoading?: boolean;
   placeholderOverride?: string;
@@ -32,6 +33,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   inputValue,
   onInputChange,
   onSendMessage,
+  onStopStreaming,
   disabled = false,
   isLoading = false,
   placeholderOverride,
@@ -144,6 +146,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     clearFileReferences();
   };
 
+  const handleStopStreaming = () => {
+    if (onStopStreaming) {
+      onStopStreaming();
+    }
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -201,14 +209,25 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           className="flex-1 min-h-[40px] max-h-[120px]"
           disabled={false}
         />
-        <Button
-          onClick={handleSendMessage}
-          disabled={!inputValue.trim() || isLoading || disabled}
-          size="sm"
-          className="self-end"
-        >
-          <Send className="w-4 h-4" />
-        </Button>
+        {isLoading ? (
+          <Button
+            onClick={handleStopStreaming}
+            size="sm"
+            className="self-end bg-red-500 hover:bg-red-600 text-white"
+            variant="default"
+          >
+            <Square className="w-4 h-4" />
+          </Button>
+        ) : (
+          <Button
+            onClick={handleSendMessage}
+            disabled={!inputValue.trim() || disabled}
+            size="sm"
+            className="self-end"
+          >
+            <Send className="w-4 h-4" />
+          </Button>
+        )}
       </div>
       
       {/* Model Selection Bar */}

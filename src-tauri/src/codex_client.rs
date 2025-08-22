@@ -273,7 +273,6 @@ impl CodexClient {
         self.send_submission(submission).await
     }
 
-    #[allow(dead_code)]
     pub async fn interrupt(&self) -> Result<()> {
         let submission = Submission {
             id: Uuid::new_v4().to_string(),
@@ -338,7 +337,8 @@ impl CodexClient {
         log::debug!("Session {} closed", self.session_id);
         Ok(())
     }
-
+    
+    #[allow(dead_code)]
     pub async fn shutdown(&mut self) -> Result<()> {
         self.close_session().await
     }

@@ -314,6 +314,27 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
+  const handleStopStreaming = async () => {
+    try {
+      // Extract raw session ID for backend communication
+      const rawSessionId = sessionId.startsWith('codex-event-') 
+        ? sessionId.replace('codex-event-', '') 
+        : sessionId;
+
+      await invoke("pause_session", {
+        sessionId: rawSessionId,
+      });
+      
+      // Immediately set loading to false after successful pause
+      setSessionLoading(sessionId, false);
+      
+    } catch (error) {
+      console.error("Failed to pause streaming:", error);
+      // On error, also set loading to false
+      setSessionLoading(sessionId, false);
+    }
+  };
+
   return (
     <div className="flex h-full min-h-0">
       {/* Session Manager - conditionally visible */}
@@ -349,6 +370,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           inputValue={inputValue}
           onInputChange={setInputValue}
           onSendMessage={handleSendMessage}
+          onStopStreaming={handleStopStreaming}
           disabled={!!selectedConversation}
           isLoading={isLoading}
         />

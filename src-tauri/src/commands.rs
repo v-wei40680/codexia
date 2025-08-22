@@ -47,6 +47,11 @@ pub async fn stop_session(state: State<'_, CodexState>, session_id: String) -> R
 }
 
 #[tauri::command]
+pub async fn pause_session(state: State<'_, CodexState>, session_id: String) -> Result<(), String> {
+    codex::pause_session(state, session_id).await
+}
+
+#[tauri::command]
 pub async fn close_session(state: State<'_, CodexState>, session_id: String) -> Result<(), String> {
     codex::close_session(state, session_id).await
 }

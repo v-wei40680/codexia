@@ -9,7 +9,7 @@ mod utils;
 
 use commands::{
     approve_execution, check_codex_version, close_session, delete_session_file,
-    get_latest_session_id, get_running_sessions, load_sessions_from_disk, send_message,
+    get_latest_session_id, get_running_sessions, load_sessions_from_disk, pause_session, send_message,
     start_codex_session, stop_session,
 };
 use config::{
@@ -53,6 +53,7 @@ pub fn run() {
             send_message,
             approve_execution,
             stop_session,
+            pause_session,
             close_session,
             get_running_sessions,
             load_sessions_from_disk,

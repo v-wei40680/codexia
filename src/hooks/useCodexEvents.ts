@@ -88,6 +88,7 @@ export const useCodexEvents = ({
         break;
         
       case 'task_complete':
+        console.log('🔄 Task complete event received, setting loading to false');
         setSessionLoading(sessionId, false);
         // Finalize any ongoing stream
         if (currentStreamingMessageId.current) {
