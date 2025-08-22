@@ -196,7 +196,7 @@ impl CodexClient {
             while let Ok(Some(line)) = lines.next_line().await {
                 log::debug!("Received line from codex: {}", line);
                 if let Ok(event) = serde_json::from_str::<Event>(&line) {
-                    log::debug!("Parsed event: {:?}", event);
+                    // log::debug!("Parsed event: {:?}", event);
 
                     // Log the event for debugging
                     if let Some(event_session_id) = get_session_id_from_event(&event) {

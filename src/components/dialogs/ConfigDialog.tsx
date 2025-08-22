@@ -12,6 +12,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { useFolderStore } from "@/stores/FolderStore";
+import { useModelStore } from "@/stores/ModelStore";
+import { useSettingsStore } from "@/stores/SettingsStore";
 
 interface ConfigDialogProps {
   isOpen: boolean;
@@ -27,6 +29,8 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
   onSave,
 }) => {
   const { currentFolder, setCurrentFolder } = useFolderStore();
+  const { currentModel, currentProvider } = useModelStore();
+  const { providers } = useSettingsStore();
   const [localConfig, setLocalConfig] = useState<CodexConfig>({
     ...config,
     workingDirectory: currentFolder || config.workingDirectory
@@ -148,67 +152,6 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
             </p>
           </div>
 
-          {/* Model Configuration */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Model Settings</h3>
-            
-            {/* Provider */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Provider</label>
-              <div className="flex gap-2">
-                {['openai', 'oss', 'custom'].map((provider) => (
-                  <Button
-                    key={provider}
-                    variant={localConfig.provider === provider ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => updateConfig('provider', provider)}
-                  >
-                    {provider.toUpperCase()}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            {/* Use OSS */}
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="useOss"
-                checked={localConfig.useOss}
-                onChange={(e) => updateConfig('useOss', e.target.checked)}
-                className="rounded"
-              />
-              <label htmlFor="useOss" className="text-sm font-medium">
-                Use OSS (--oss flag)
-              </label>
-            </div>
-
-            {/* Model */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Model</label>
-              <Input
-                value={localConfig.model}
-                onChange={(e) => updateConfig('model', e.target.value)}
-                placeholder="llama3.2, gpt-5, etc."
-              />
-              <div className="flex gap-2 mt-2">
-                {['gpt-oss:20b', 'gpt-5', 'gpt-4o', 'mistral', 'deepseek-r1', 'qwen3'].map((m) => (
-                  <Button
-                    key={m}
-                    variant="outline"
-                    size="sm"
-                    onClick={() => updateConfig('model', m)}
-                  >
-                    {m}
-                  </Button>
-                ))}
-              </div>
-              <p className="text-xs text-gray-500">
-                Model name (e.g., llama3.2 for OSS, gpt-4 for OpenAI)
-              </p>
-            </div>
-          </div>
-
           {/* Security Settings */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Security Settings</h3>
@@ -275,8 +218,18 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
             <label className="text-sm font-medium">Command Preview</label>
             <div className="bg-gray-100 p-3 rounded text-sm font-mono">
               cd {localConfig.workingDirectory || '.'} && {localConfig.codexPath || 'codex'} proto
-              {localConfig.useOss && ' -c model_provider=oss'}
-              {localConfig.model && ` -c model=${localConfig.model}`}
+              {currentProvider && currentModel && (
+                <>
+                  {(() => {
+                    const settingsProvider = Object.keys(providers).find(
+                      p => p.toLowerCase() === currentProvider.toLowerCase()
+                    );
+                    const useOss = settingsProvider && settingsProvider.toLowerCase() === 'ollama';
+                    return useOss ? ' -c model_provider=oss' : '';
+                  })()}
+                  {` -c model=${currentModel}`}
+                </>
+              )}
               {localConfig.approvalPolicy && ` -c approval_policy=${localConfig.approvalPolicy}`}
               {localConfig.sandboxMode && ` -c sandbox_mode=${localConfig.sandboxMode}`}
               {localConfig.customArgs && localConfig.customArgs.length > 0 && ` ${localConfig.customArgs.join(' ')}`}

@@ -57,24 +57,24 @@ export const ChatView: React.FC = () => {
     }
   }, [currentConversationId, activeConversations]);
 
-  useEffect(() => {
-    const loadHistory = async () => {
-      try {
-        const history = await sessionLoader.loadSessionsFromDisk();
-        setHistoryConversations(history);
+  const loadHistory = async () => {
+    try {
+      const history = await sessionLoader.loadSessionsFromDisk();
+      setHistoryConversations(history);
 
-        const statuses: Record<string, boolean> = {};
-        for (const conv of history) {
-          statuses[conv.id] = await sessionLoader.isConversationFavorited(
-            conv.id,
-          );
-        }
-        setFavoriteStatuses(statuses);
-      } catch (error) {
-        console.error("Failed to load history conversations:", error);
+      const statuses: Record<string, boolean> = {};
+      for (const conv of history) {
+        statuses[conv.id] = await sessionLoader.isConversationFavorited(
+          conv.id,
+        );
       }
-    };
+      setFavoriteStatuses(statuses);
+    } catch (error) {
+      console.error("Failed to load history conversations:", error);
+    }
+  };
 
+  useEffect(() => {
     loadHistory();
   }, []);
 
@@ -206,6 +206,7 @@ export const ChatView: React.FC = () => {
               onDeleteConversation={handleDeleteConversation}
               onSelectSession={handleSelectSession}
               onKillSession={handleKillSession}
+              onRefreshConversations={loadHistory}
             />
           </div>
         </div>

@@ -2,7 +2,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConversationList } from "./ConversationList";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Circle, X, Search } from "lucide-react";
+import { Circle, X, Search, RefreshCw } from "lucide-react";
 import { useLayoutStore } from "@/stores/layoutStore";
 import type { Conversation } from "@/types/chat";
 import React, { useMemo } from "react";
@@ -26,6 +26,7 @@ interface ChatTabsProps {
   onDeleteConversation: (conversationId: string, e: React.MouseEvent) => void;
   onSelectSession?: (sessionId: string) => void;
   onKillSession?: (sessionId: string) => void;
+  onRefreshConversations?: () => void;
 }
 
 export function ConversationTabs({
@@ -40,6 +41,7 @@ export function ConversationTabs({
   onToggleFavorite,
   onDeleteConversation,
   onKillSession,
+  onRefreshConversations,
 }: ChatTabsProps) {
   const { conversationListTab, setConversationListTab } = useLayoutStore();
 
@@ -159,14 +161,25 @@ export function ConversationTabs({
 
       <TabsContent value="all" className="flex-1 overflow-y-auto mt-0">
         <div className="p-3 bg-white border-b">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
-            <Input
-              placeholder="Search all conversations..."
-              value={searchQueries.all}
-              onChange={(e) => handleSearchChange(e.target.value)}
-              className="pl-8 h-8 text-sm"
-            />
+          <div className="flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
+              <Input
+                placeholder="Search all conversations..."
+                value={searchQueries.all}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="pl-8 h-8 text-sm"
+              />
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0"
+              onClick={onRefreshConversations}
+              title="Refresh conversations"
+            >
+              <RefreshCw className="h-3 w-3" />
+            </Button>
           </div>
         </div>
         <ConversationList
