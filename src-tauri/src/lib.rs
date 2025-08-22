@@ -23,6 +23,7 @@ use filesystem::{
     file_io::{read_file, write_file},
     file_parsers::{csv::read_csv_content, pdf::read_pdf_content, xlsx::read_xlsx_content},
     git_diff::get_git_file_diff,
+    git_status::get_git_status,
 };
 use state::CodexState;
 
@@ -69,6 +70,7 @@ pub fn run() {
             read_csv_content,
             read_xlsx_content,
             get_git_file_diff,
+            get_git_status,
             read_codex_config,
             get_project_name,
             read_mcp_servers,

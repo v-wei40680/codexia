@@ -70,10 +70,13 @@ export const useLayoutStore = create<LayoutState>()(
       toggleChatPane: () => set((state) => ({ showChatPane: !state.showChatPane })),
       toggleFileTree: () => set((state) => ({ showFileTree: !state.showFileTree })),
       
-      openFile: (filePath) => set({ 
-        selectedFile: filePath, 
-        showFilePanel: true 
-      }),
+      openFile: (filePath) => {
+        console.log('layoutStore: openFile called with', filePath);
+        set({ 
+          selectedFile: filePath, 
+          showFilePanel: true 
+        });
+      },
       
       closeFile: () => set({ 
         selectedFile: null, 
