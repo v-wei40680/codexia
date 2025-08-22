@@ -1,8 +1,9 @@
 import { memo } from 'react';
-import { Bot, User, Terminal } from 'lucide-react';
+import { Copy, Check } from 'lucide-react';
 import { MessageNoteActions } from './MessageNoteActions';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { StreamingMessage } from '../StreamingMessage';
+import { useState } from 'react';
 
 interface NormalizedMessage {
   id: string;
@@ -10,6 +11,8 @@ interface NormalizedMessage {
   content: string;
   timestamp: number;
   isStreaming: boolean;
+  model?: string;
+  workingDirectory?: string;
 }
 
 interface MessageProps {
@@ -19,18 +22,6 @@ interface MessageProps {
   selectedText: string;
 }
 
-const getMessageIcon = (role: string) => {
-  switch (role) {
-    case 'user':
-      return <User className="w-5 h-5 text-blue-600" />;
-    case 'assistant':
-      return <Bot className="w-5 h-5 text-green-600" />;
-    case 'system':
-      return <Terminal className="w-5 h-5 text-gray-600" />;
-    default:
-      return <div className="w-5 h-5 bg-gray-400 rounded-full" />;
-  }
-};
 
 const getMessageStyle = (role: string) => {
   switch (role) {
@@ -58,39 +49,53 @@ export const Message = memo<MessageProps>(({
   isLastMessage, 
   selectedText 
 }) => {
-  const isUser = normalized.role === 'user';
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(normalized.content);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (error) {
+      console.error('Failed to copy text:', error);
+    }
+  };
 
   return (
     <div
       key={`${normalized.id}-${index}`}
-      className={`group flex gap-3 p-4 min-w-0 ${isLastMessage ? 'mb-4' : ''}`}
+      className={`group min-w-0 ${isLastMessage ? 'mb-4' : ''}`}
       data-message-role={normalized.role}
       data-message-timestamp={normalized.timestamp}
     >
-      {/* Avatar */}
-      <div className="flex-shrink-0">
-        <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-          isUser ? 'bg-blue-100' : 'bg-green-100'
-        }`}>
-          {getMessageIcon(normalized.role)}
-        </div>
-      </div>
-
       {/* Message Content */}
-      <div className="flex-1 min-w-0">
+      <div className="w-full min-w-0">
         {/* Header */}
         <div className="flex items-center justify-between mb-1">
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-900 capitalize">
-              {normalized.role === 'assistant' ? 'Assistant' : normalized.role}
-            </span>
+            {normalized.model && normalized.role === 'assistant' && (
+              <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded">
+                {normalized.model}
+              </span>
+            )}
             <span className="text-xs text-gray-500">
               {formatTime(normalized.timestamp)}
             </span>
           </div>
           
-          {/* Note actions */}
-          <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+          {/* Actions */}
+          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={handleCopy}
+              className="p-1 hover:bg-gray-200 rounded transition-colors"
+              title={copied ? "Copied!" : "Copy message"}
+            >
+              {copied ? (
+                <Check className="w-4 h-4 text-green-600" />
+              ) : (
+                <Copy className="w-4 h-4 text-gray-600" />
+              )}
+            </button>
             <MessageNoteActions
               messageId={normalized.id}
               messageContent={normalized.content}
@@ -102,8 +107,8 @@ export const Message = memo<MessageProps>(({
         </div>
 
         {/* Content */}
-        <div className={`relative rounded-lg border p-3 w-full min-w-0 ${getMessageStyle(normalized.role)}`}>
-          <div className="break-words overflow-wrap-anywhere min-w-0">
+        <div className={`relative rounded-lg border px-3 py-2 w-full min-w-0 max-w-full ${getMessageStyle(normalized.role)}`}>
+          <div className="break-words overflow-wrap-anywhere min-w-0 max-w-full overflow-hidden">
             {normalized.isStreaming ? (
               <StreamingMessage 
                 message={{

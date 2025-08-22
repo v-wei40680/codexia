@@ -86,10 +86,7 @@ pub fn parse_session_file(content: &str, file_path: &Path) -> Option<Conversatio
                 };
 
                 if !content_text.trim().is_empty() {
-                    // Filter out user messages that start with <environment_context>
-                    if role == "user" && content_text.trim().starts_with("<environment_context>") {
-                        continue;
-                    }
+                    // Don't filter environment_context messages - let frontend handle them
 
                     let timestamp = if let Some(ts) = &session_timestamp {
                         chrono::DateTime::parse_from_rfc3339(ts)

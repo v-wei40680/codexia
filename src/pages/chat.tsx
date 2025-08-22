@@ -44,16 +44,16 @@ export default function ChatPage() {
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 min-h-0 h-full flex">
+      <div className="flex-1 min-h-0 h-full flex min-w-0 overflow-hidden">
         {/* Middle Panel - FileViewer */}
         {showFilePanel && selectedFile && (
-          <div className="flex-1 min-w-0 border-r">
+          <div className="flex-1 min-w-0 border-r overflow-hidden">
             <FileViewer filePath={selectedFile} onClose={closeFile} />
           </div>
         )}
 
         {/* Right Panel - Chat/Notes */}
-        <div className="flex flex-col flex-1 min-w-0">
+        <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
           <AppToolbar
             onOpenConfig={() => setIsConfigOpen(true)}
             onCreateNewSession={createConversationWithLatestSession}

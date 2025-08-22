@@ -15,7 +15,7 @@ export const MarkdownRenderer = memo<MarkdownRendererProps>(({
   className = "" 
 }) => {
   return (
-    <div className={`text-sm text-gray-800 leading-relaxed prose prose-sm max-w-none break-words ${className}`}>
+    <div className={`text-sm text-gray-800 leading-relaxed prose prose-sm max-w-full break-words overflow-hidden ${className}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypePrism]}
@@ -38,7 +38,7 @@ export const MarkdownRenderer = memo<MarkdownRendererProps>(({
           },
           
           pre: ({ children }) => (
-            <pre className="bg-gray-50 border rounded-md p-3 overflow-x-auto my-2 select-text">
+            <pre className="bg-gray-50 border rounded-md p-3 overflow-x-auto my-2 select-text max-w-full">
               {children}
             </pre>
           ),
@@ -49,8 +49,8 @@ export const MarkdownRenderer = memo<MarkdownRendererProps>(({
             </blockquote>
           ),
           
-          ul: ({ children }) => <ul className="list-disc pl-4 my-2 select-text">{children}</ul>,
-          ol: ({ children }) => <ol className="list-decimal pl-4 my-2 select-text">{children}</ol>,
+          ul: ({ children }) => <ul className="list-disc pl-6 my-2 select-text">{children}</ul>,
+          ol: ({ children }) => <ol className="list-decimal pl-6 my-2 select-text">{children}</ol>,
           li: ({ children }) => <li className="mb-1 select-text">{children}</li>,
           
           h1: ({ children }) => <h1 className="text-lg font-bold mb-2 select-text">{children}</h1>,
@@ -58,8 +58,8 @@ export const MarkdownRenderer = memo<MarkdownRendererProps>(({
           h3: ({ children }) => <h3 className="text-sm font-bold mb-2 select-text">{children}</h3>,
           
           table: ({ children }) => (
-            <div className="overflow-x-auto my-2">
-              <table className="min-w-full border-collapse border border-gray-300 select-text">
+            <div className="overflow-x-auto my-2 max-w-full">
+              <table className="w-full border-collapse border border-gray-300 select-text">
                 {children}
               </table>
             </div>
