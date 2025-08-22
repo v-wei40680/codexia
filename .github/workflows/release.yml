@@ -22,7 +22,7 @@ jobs:
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             name: Windows x86_64
-            artifact-name: MCP-Linker-Windows
+            artifact-name: Windows_x64
             artifact-path: |
               src-tauri/target/release/bundle/**/*.exe
               src-tauri/target/release/bundle/**/*.msi
