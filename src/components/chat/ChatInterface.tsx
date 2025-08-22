@@ -381,7 +381,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           messages={messages} 
           isLoading={isLoading} 
           isPendingNewConversation={pendingNewConversation || !sessionId.trim()}
-          conversationTitle={currentConversation?.title}
         />
 
         <ApprovalDialog

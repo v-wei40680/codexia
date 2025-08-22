@@ -2,10 +2,9 @@ import { Folder } from 'lucide-react';
 
 interface MessageHeaderProps {
   workingDirectory?: string;
-  conversationTitle?: string;
 }
 
-export const MessageHeader = ({ workingDirectory, conversationTitle }: MessageHeaderProps) => {
+export const MessageHeader = ({ workingDirectory }: MessageHeaderProps) => {
   if (!workingDirectory) {
     return null;
   }
@@ -19,11 +18,6 @@ export const MessageHeader = ({ workingDirectory, conversationTitle }: MessageHe
           {workingDirectory}
         </span>
       </div>
-      {conversationTitle && (
-        <div className="mt-1 text-xs text-gray-500">
-          {conversationTitle}
-        </div>
-      )}
     </div>
   );
 };

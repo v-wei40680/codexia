@@ -18,7 +18,7 @@ export const DebugInfo: React.FC<DebugInfoProps> = ({
   return (
     <div className="relative group">
       <div className="absolute top-0 right-0 p-2 text-xs text-gray-400 group-hover:text-gray-600">
-        Debug Info
+        Debug
       </div>
       <div className="hidden group-hover:block absolute top-6 right-0 z-10 p-2 bg-white border rounded shadow-lg text-xs text-gray-700 w-64">
         <div>

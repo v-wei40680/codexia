@@ -15,10 +15,9 @@ interface MessageListProps {
   className?: string;
   isLoading?: boolean;
   isPendingNewConversation?: boolean;
-  conversationTitle?: string;
 }
 
-export function MessageList({ messages, className = "", isLoading = false, isPendingNewConversation = false, conversationTitle }: MessageListProps) {
+export function MessageList({ messages, className = "", isLoading = false, isPendingNewConversation = false }: MessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollButtons, setShowScrollButtons] = useState(false);
@@ -131,7 +130,6 @@ export function MessageList({ messages, className = "", isLoading = false, isPen
       {/* Message Header */}
       <MessageHeader 
         workingDirectory={workingDirectory as string | undefined}
-        conversationTitle={conversationTitle}
       />
       {/* Single Text Selection Menu for all messages */}
       <TextSelectionMenu />
