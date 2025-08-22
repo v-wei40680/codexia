@@ -1,4 +1,4 @@
-import { PartyPopper, Usb, PanelLeft, Settings } from "lucide-react";
+import { PartyPopper, Usb, PanelLeft, Settings, MessageCircleCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link, useLocation } from "react-router-dom";
@@ -36,8 +36,12 @@ export function AppHeader() {
         ></div>
         <Badge>{codexVersion}</Badge>
         {/* Welcome button to projects page */}
-        <Link to="/" className="flex">
-          <PartyPopper className="w-5 h-5" /> Projects
+        <Link to="/" className="hover:text-blue-500">
+          <PartyPopper className="w-5 h-5" />
+        </Link>
+
+        <Link to="/chat" className="hover:text-blue-500 ">
+          <MessageCircleCode className="w-5 h-5" />
         </Link>
 
         {location.pathname === "/chat" && (
