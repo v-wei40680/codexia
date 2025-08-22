@@ -1,4 +1,4 @@
-import { PartyPopper, Usb, PanelLeft, Settings, MessageCircleCode } from "lucide-react";
+import { PartyPopper, Usb, PanelLeft, Settings, MessageCircleCode, BarChart3 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link, useLocation } from "react-router-dom";
@@ -42,6 +42,10 @@ export function AppHeader() {
 
         <Link to="/chat" className="hover:text-blue-500 ">
           <MessageCircleCode className="w-5 h-5" />
+        </Link>
+
+        <Link to="/usage" className="hover:text-blue-500">
+          <BarChart3 className="w-5 h-5" />
         </Link>
 
         {location.pathname === "/chat" && (

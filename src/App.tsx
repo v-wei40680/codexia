@@ -5,6 +5,7 @@ import ChatPage from "@/pages/chat";
 import ProjectsPage from "@/pages/projects";
 import DxtPage from "./pages/dxt";
 import SettingsPage from "./pages/settings";
+import UsagePage from "./pages/usage";
 import { useLayoutStore } from "./stores/layoutStore";
 import "./App.css";
 
@@ -31,6 +32,10 @@ export default function App() {
         {
           path: "settings",
           element: <SettingsPage />,
+        },
+        {
+          path: "usage",
+          element: <UsagePage />,
         },
       ],
     },
