@@ -30,22 +30,18 @@ export function AppHeader() {
 
   return (
     <div data-tauri-drag-region className="flex justify-between px-2">
-      <span className="flex gap-1 items-center">
+      <span className="flex gap-2 items-center">
         <div
           className={`w-2 h-2 rounded-full ${isCodexAvailable ? "bg-green-500" : "bg-red-500"}`}
         ></div>
         <Badge>{codexVersion}</Badge>
         {/* Welcome button to projects page */}
-        <Link to="/" className="hover:text-blue-500">
-          <PartyPopper className="w-5 h-5" />
+        <Link to="/" className="flex hover:text-blue-500 items-center gap-1">
+          <PartyPopper className="w-5 h-5" /> Projects
         </Link>
 
-        <Link to="/chat" className="hover:text-blue-500 ">
-          <MessageCircleCode className="w-5 h-5" />
-        </Link>
-
-        <Link to="/usage" className="hover:text-blue-500">
-          <BarChart3 className="w-5 h-5" />
+        <Link to="/chat" className="flex hover:text-blue-500 items-center gap-1">
+          <MessageCircleCode className="w-5 h-5" /> Chat
         </Link>
 
         {location.pathname === "/chat" && (
@@ -60,7 +56,7 @@ export function AppHeader() {
         )}
       </span>
 
-      <span className="flex">
+      <span className="flex gap-2">
         {location.pathname === "/chat" && (
           <McpDialog>
             <Button variant="ghost" className="flex gap-1">
@@ -69,7 +65,12 @@ export function AppHeader() {
             </Button>
           </McpDialog>
         )}
-        <Link to="/settings" className="flex items-center">
+
+        <Link to="/usage" className="flex hover:text-blue-500 items-center gap-1">
+          <BarChart3 className="w-4 h-4" /> Usage
+        </Link>
+
+        <Link to="/settings" className="flex items-center gap-1">
           <Settings className="w-4 h-4" />
           Settings
         </Link>

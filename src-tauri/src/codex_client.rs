@@ -101,7 +101,7 @@ impl CodexClient {
         // Load provider configuration from config.toml if provider is specified
         if !config.provider.is_empty() && config.provider != "openai" {
             if let Ok(providers) = read_model_providers().await {
-                if let Ok(profiles) = read_profiles().await {
+                if let Ok(_profiles) = read_profiles().await {
                     // Check if there's a matching provider in config (try exact match first, then lowercase)
                     let provider_config = providers.get(&config.provider)
                         .or_else(|| providers.get(&config.provider.to_lowercase()));
@@ -251,9 +251,9 @@ impl CodexClient {
             log::debug!("Starting stdout reader for session: {}", session_id_clone);
 
             while let Ok(Some(line)) = lines.next_line().await {
-                log::debug!("📥 Received line from codex: {}", line);
+                // log::debug!("📥 Received line from codex: {}", line);
                 if let Ok(event) = serde_json::from_str::<Event>(&line) {
-                    log::debug!("📨 Parsed event: {:?}", event);
+                    // log::debug!("📨 Parsed event: {:?}", event);
 
                     // Log the event for debugging
                     if let Some(event_session_id) = get_session_id_from_event(&event) {
