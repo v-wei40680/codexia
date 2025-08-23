@@ -11,13 +11,14 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/milisp/codexia/actions/workflows/ci.yml/badge.svg)](https://github.com/milisp/codexia/actions/workflows/ci.yml)
 
-
 A modern, multi-session GUI application for the [Codex CLI](https://github.com/openai/codex) built with Tauri v2, React, and TypeScript. 
 
 TLDR: Notepad + @file from FileTree + git diff + streaming chat + agent + mcp
 
 > [!TIP]
 > **⭐ Star the repo and follow [milisp](https://x.com/lisp_mi) on X and [github](https://github.com/milisp) for more**.
+
+![demo](public/codexia.png)
 
 ## ✨ Features
 
