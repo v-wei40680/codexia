@@ -20,6 +20,10 @@ interface SubFolderContentProps {
   onSetWorkingFolder: (path: string) => void;
   onCalculateTokens: (path: string) => Promise<number | null>;
   isFiltered: (entry: FileEntry) => boolean;
+  showAddButton?: boolean;
+  onRemoveFromChat?: (path: string) => void;
+  preventFileReplace?: boolean;
+  shouldShowRemoveButton?: (path: string) => boolean;
 }
 
 export function SubFolderContent({
@@ -32,6 +36,10 @@ export function SubFolderContent({
   onSetWorkingFolder,
   onCalculateTokens,
   isFiltered,
+  showAddButton,
+  onRemoveFromChat,
+  preventFileReplace,
+  shouldShowRemoveButton,
 }: SubFolderContentProps) {
   const [subEntries, setSubEntries] = useState<FileEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -79,6 +87,10 @@ export function SubFolderContent({
           onSetWorkingFolder={onSetWorkingFolder}
           onCalculateTokens={onCalculateTokens}
           isFiltered={isFiltered}
+          showAddButton={showAddButton}
+          onRemoveFromChat={shouldShowRemoveButton && shouldShowRemoveButton(entry.path) ? onRemoveFromChat : undefined}
+          preventFileReplace={preventFileReplace}
+          shouldShowRemoveButton={shouldShowRemoveButton}
         />
       ))}
     </>

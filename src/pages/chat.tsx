@@ -3,6 +3,7 @@ import { NotesView } from "@/components/NotesView";
 import { useLayoutStore } from "@/stores/layoutStore";
 import { useFolderStore } from "@/stores/FolderStore";
 import { FileTree } from "@/components/filetree/FileTreeView";
+import { FileTreeItem } from "@/components/filetree/FileTreeItem";
 import { FileViewer } from "@/components/filetree/FileViewer";
 import { GitStatusView } from "@/components/filetree/GitStatusView";
 import { DiffViewer } from "@/components/filetree/DiffViewer";
@@ -10,9 +11,10 @@ import { useState } from "react";
 import { ConfigDialog } from "@/components/dialogs/ConfigDialog";
 import { AppToolbar } from "@/components/layout/AppToolbar";
 import { useConversationStore } from "@/stores/ConversationStore";
+import { useChatInputStore } from "@/stores/chatInputStore";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { invoke } from "@tauri-apps/api/core";
-import { GitBranch } from "lucide-react";
+import { GitBranch, Files } from "lucide-react";
 
 export default function ChatPage() {
 
@@ -32,8 +34,27 @@ export default function ChatPage() {
   } = useConversationStore();
 
   const { currentFolder } = useFolderStore();
+  const { fileReferences, removeFileReference } = useChatInputStore();
   const [isConfigOpen, setIsConfigOpen] = useState(false);
   const [diffFile, setDiffFile] = useState<{ original: string; current: string; fileName: string } | null>(null);
+  const [expandedAddedFolders, setExpandedAddedFolders] = useState<Set<string>>(new Set());
+
+  const handleToggleAddedFolder = (folderPath: string) => {
+    setExpandedAddedFolders(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(folderPath)) {
+        newSet.delete(folderPath);
+      } else {
+        newSet.add(folderPath);
+      }
+      return newSet;
+    });
+  };
+
+  // Check if a file should show remove button (only if it's in the original fileReferences list)
+  const shouldShowRemoveButton = (filePath: string) => {
+    return fileReferences.some(ref => ref.path === filePath);
+  };
 
   const handleDiffClick = async (filePath: string) => {
     try {
@@ -72,11 +93,20 @@ export default function ChatPage() {
       {showFileTree && (
         <div className="w-64 border-r h-full flex-shrink-0">
           <Tabs defaultValue="files" className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="files">Files</TabsTrigger>
               <TabsTrigger value="git">
                 <GitBranch size={14} className="mr-1.5" />
                 Git
+              </TabsTrigger>
+              <TabsTrigger value="attached" className="relative">
+                <Files size={14} className="mr-1.5" />
+                Added
+                {fileReferences.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
+                    {fileReferences.length}
+                  </span>
+                )}
               </TabsTrigger>
             </TabsList>
             <TabsContent value="files" className="flex-1 overflow-hidden mt-0">
@@ -94,6 +124,50 @@ export default function ChatPage() {
                 currentFolder={currentFolder || undefined}
                 onDiffClick={handleDiffClick}
               />
+            </TabsContent>
+            <TabsContent value="attached" className="flex-1 overflow-hidden mt-0">
+              <div className="h-full overflow-auto p-2">
+                {fileReferences.length === 0 ? (
+                  <div className="text-center text-gray-500 mt-8">
+                    <Files size={32} className="mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No files added yet</p>
+                    <p className="text-xs mt-1">Add files from the Files tab to see them here</p>
+                  </div>
+                ) : (
+                  <div className="space-y-0">
+                    <div className="text-xs text-gray-500 mb-2 px-2">
+                      {fileReferences.length} file{fileReferences.length !== 1 ? 's' : ''} added to chat
+                    </div>
+                    {fileReferences.map((ref) => (
+                      <FileTreeItem
+                        key={ref.path}
+                        entry={{
+                          name: ref.name,
+                          path: ref.path,
+                          is_directory: ref.isDirectory,
+                        }}
+                        level={0}
+                        expandedFolders={expandedAddedFolders}
+                        onToggleFolder={handleToggleAddedFolder}
+                        onAddToChat={(path) => console.log('Added to chat:', path)}
+                        onFileClick={(path, isDirectory) => {
+                          if (!isDirectory) {
+                            setDiffFile(null);
+                            openFile(path);
+                          }
+                        }}
+                        onSetWorkingFolder={() => {}}
+                        onCalculateTokens={async () => null}
+                        isFiltered={() => false}
+                        showAddButton={true}
+                        onRemoveFromChat={(path) => removeFileReference(path)}
+                        preventFileReplace={true}
+                        shouldShowRemoveButton={shouldShowRemoveButton}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
             </TabsContent>
           </Tabs>
         </div>

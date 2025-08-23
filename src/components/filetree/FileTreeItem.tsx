@@ -8,10 +8,17 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import {
   Plus,
   ChevronRight,
   ChevronDown,
   FolderCheck,
+  X,
 } from "lucide-react";
 import { getFileIcon } from "./FileIcons";
 import { SubFolderContent } from "./SubFolderContent";
@@ -37,6 +44,11 @@ interface FileTreeItemProps {
   onSetWorkingFolder: (path: string) => void;
   onCalculateTokens: (path: string) => Promise<number | null>;
   isFiltered: (entry: FileEntry) => boolean;
+  showAddButton?: boolean;
+  onRemoveFromChat?: (path: string) => void;
+  disableSubFolderExpansion?: boolean;
+  preventFileReplace?: boolean;
+  shouldShowRemoveButton?: (path: string) => boolean;
 }
 
 export function FileTreeItem({
@@ -49,6 +61,10 @@ export function FileTreeItem({
   onSetWorkingFolder,
   onCalculateTokens,
   isFiltered,
+  showAddButton = true,
+  onRemoveFromChat,
+  preventFileReplace = false,
+  shouldShowRemoveButton,
 }: FileTreeItemProps) {
   const [tokens, setTokens] = useState<number | null>(null);
   const [loadingTokens, setLoadingTokens] = useState(false);
@@ -94,14 +110,16 @@ export function FileTreeItem({
     if (entry.is_directory) {
       onToggleFolder(entry.path);
     } else {
-      // Replace current file references with this single file
-      const relativePath = getRelativePath(entry.path);
-      replaceFileReferences([{
-        path: entry.path,
-        relativePath,
-        name: entry.name,
-        isDirectory: entry.is_directory
-      }]);
+      // Only replace file references if not prevented (e.g., in regular Files tab)
+      if (!preventFileReplace) {
+        const relativePath = getRelativePath(entry.path);
+        replaceFileReferences([{
+          path: entry.path,
+          relativePath,
+          name: entry.name,
+          isDirectory: entry.is_directory
+        }]);
+      }
       
       onFileClick(entry.path, entry.is_directory);
     }
@@ -116,97 +134,133 @@ export function FileTreeItem({
     }
   };
 
+  const handleCopyRelativePath = async () => {
+    const relativePath = getRelativePath(entry.path);
+    try {
+      await navigator.clipboard.writeText(relativePath);
+    } catch (error) {
+      console.error('Failed to copy to clipboard:', error);
+    }
+  };
+
   if (isFiltered(entry)) return null;
 
   return (
-    <div
-      className="group"
-      style={{ marginLeft: `${level * 2}px` }}
-      onMouseEnter={handleMouseEnter}
-    >
-      <div className="flex items-center gap-0.5 py-1 px-1 hover:bg-gray-100 rounded">
-        {entry.is_directory && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="p-0.5 w-4 h-4"
-            onClick={() => onToggleFolder(entry.path)}
-          >
-            {expandedFolders.has(entry.path) ? (
-              <ChevronDown className="w-3 h-3" />
-            ) : (
-              <ChevronRight className="w-3 h-3" />
-            )}
-          </Button>
-        )}
-
-        {getFileIcon(entry)}
-
-        <span
-          className="flex-1 text-sm cursor-pointer hover:text-blue-600"
-          onClick={handleFileClickWithInput}
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <div
+          className={`group indent-${level * 2}`}
+          onMouseEnter={handleMouseEnter}
         >
-          {entry.name}
-        </span>
+          <div className="flex items-center gap-0.5 py-1 px-1 hover:bg-gray-100 rounded">
+            {entry.is_directory && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="p-0.5 w-4 h-4"
+                onClick={() => onToggleFolder(entry.path)}
+              >
+                {expandedFolders.has(entry.path) ? (
+                  <ChevronDown className="w-3 h-3" />
+                ) : (
+                  <ChevronRight className="w-3 h-3" />
+                )}
+              </Button>
+            )}
 
-        {tokens !== null && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger>
-                <Badge variant="secondary" className="text-xs">
-                  {tokens}
-                </Badge>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>{tokens} tokens</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
+            {getFileIcon(entry)}
 
-        {entry.is_directory && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
+            <span
+              className="flex-1 text-sm cursor-pointer hover:text-blue-600"
+              onClick={handleFileClickWithInput}
+            >
+              {entry.name}
+            </span>
+
+            {tokens !== null && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger>
+                    <Badge variant="secondary" className="text-xs">
+                      {tokens}
+                    </Badge>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{tokens} tokens</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+
+            {entry.is_directory && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="opacity-0 group-hover:opacity-100 p-0.5 w-4 h-4 h-auto"
+                      onClick={() => onSetWorkingFolder(entry.path)}
+                    >
+                      <FolderCheck className="w-3 h-3" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Set as working folder</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+
+            <div className="flex items-center">
+              {showAddButton && (
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="opacity-0 group-hover:opacity-100 p-1 h-auto mr-1"
-                  onClick={() => onSetWorkingFolder(entry.path)}
+                  className="opacity-0 group-hover:opacity-100 h-auto p-0.5 w-4 h-4"
+                  onClick={handleAddToChatInput}
                 >
-                  <FolderCheck className="w-3 h-3" />
+                  <Plus className="w-3 h-3" />
                 </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Set as working folder</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
+              )}
+              {onRemoveFromChat && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="opacity-0 group-hover:opacity-100 h-auto p-0.5 w-4 h-4 text-red-500 hover:text-red-700"
+                  onClick={() => onRemoveFromChat(entry.path)}
+                >
+                  <X className="w-3 h-3" />
+                </Button>
+              )}
+            </div>
+          </div>
 
-        <Button
-          variant="ghost"
-          size="sm"
-          className="opacity-0 group-hover:opacity-100 p-1 h-auto"
-          onClick={handleAddToChatInput}
-        >
-          <Plus className="w-3 h-3" />
-        </Button>
-      </div>
-
-      {entry.is_directory && expandedFolders.has(entry.path) && (
-        <SubFolderContent
-          folderPath={entry.path}
-          level={level + 1}
-          expandedFolders={expandedFolders}
-          onToggleFolder={onToggleFolder}
-          onAddToChat={onAddToChat}
-          onFileClick={onFileClick}
-          onSetWorkingFolder={onSetWorkingFolder}
-          onCalculateTokens={onCalculateTokens}
-          isFiltered={isFiltered}
-        />
-      )}
-    </div>
+          {entry.is_directory && expandedFolders.has(entry.path) && (
+            <SubFolderContent
+              folderPath={entry.path}
+              level={level + 1}
+              expandedFolders={expandedFolders}
+              onToggleFolder={onToggleFolder}
+              onAddToChat={onAddToChat}
+              onFileClick={onFileClick}
+              onSetWorkingFolder={onSetWorkingFolder}
+              onCalculateTokens={onCalculateTokens}
+              isFiltered={isFiltered}
+              showAddButton={showAddButton}
+              onRemoveFromChat={onRemoveFromChat}
+              preventFileReplace={preventFileReplace}
+              shouldShowRemoveButton={shouldShowRemoveButton}
+            />
+          )}
+        </div>
+      </ContextMenuTrigger>
+      
+      <ContextMenuContent>
+        <ContextMenuItem onClick={handleCopyRelativePath}>
+          Copy relative path
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 }
