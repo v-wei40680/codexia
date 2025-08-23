@@ -13,15 +13,15 @@ export default function SettingsPage() {
     setProviderModels,
   } = useSettingsStore();
   const [activeSection, setActiveSection] = useState("provider");
-  const [selectedProvider, setSelectedProvider] = useState<string>("OpenAI");
+  const [selectedProvider, setSelectedProvider] = useState<string>("openai");
   const [newModelName, setNewModelName] = useState("");
   const [editingModelIdx, setEditingModelIdx] = useState<number | null>(null);
   const [editingModelValue, setEditingModelValue] = useState("");
   const providerNames = [
-    "OpenAI",
-    "Gemini",
-    "Ollama",
-    "OpenRouter",
+    "openai",
+    "gemini",
+    "ollama",
+    "openrouter",
   ];
 
   return (
@@ -80,7 +80,7 @@ export default function SettingsPage() {
                 <div className="mb-4">
                   <label className="block mb-1 font-medium">API Key</label>
                   <Input
-                    type="text"
+                    type="password"
                     value={providers[selectedProvider as Provider]?.apiKey || ""}
                     onChange={(e) =>
                       setProviderApiKey(selectedProvider as Provider, e.target.value)

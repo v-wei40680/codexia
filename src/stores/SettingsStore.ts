@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type Provider = "OpenAI" | "Gemini" | "Ollama" | "OpenRouter";
+export type Provider = "openai" | "gemini" | "ollama" | "openrouter";
 
 type ProviderConfig = {
   apiKey: string;
@@ -39,23 +39,23 @@ const DEFAULT_EXCLUDE_FOLDERS = [
 ];
 
 const DEFAULT_PROVIDERS: Providers = {
-  OpenAI: {
-    apiKey: "OPENAI_API_KEY",
+  openai: {
+    apiKey: "",
     baseUrl: "",
-    models: ["gpt-5", "gpt-4o", "gpt-4o-mini", "gpt-3.5-turbo"],
+    models: ["gpt-5", "gpt-5-mini", "gpt-5-nano", "gpt-4o", "gpt-4o-mini"],
   },
-  Ollama: {
-    apiKey: "OLLAMA_API_KEY",
+  ollama: {
+    apiKey: "",
     baseUrl: "http://localhost:11434/v1",
     models: ["gpt-oss:20b", "gpt-oss:120b", "mistral", "qwen3", "deepseek-r1", "llama3.2"],
   },
-  Gemini: {
-    apiKey: "GEMINI_API_KEY",
+  gemini: {
+    apiKey: "",
     baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
     models: ["gemini-2.5-flash", "gemini-2.5-pro"],
   },
-  OpenRouter: {
-    apiKey: "OPENROUTER_API_KEY",
+  openrouter: {
+    apiKey: "",
     baseUrl: "https://openrouter.ai/api/v1",
     models: [
       "anthropic/claude-opus-4.1",
@@ -72,7 +72,7 @@ export const useSettingsStore = create<SettingsStore>()(
     (set) => ({
       excludeFolders: DEFAULT_EXCLUDE_FOLDERS,
       providers: { ...DEFAULT_PROVIDERS },
-      defaultProvider: "OpenAI",
+      defaultProvider: "openai",
       addExcludeFolder: (folder: string) =>
         set((state) => ({
           excludeFolders: [...state.excludeFolders, folder],

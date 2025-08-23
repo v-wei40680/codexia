@@ -217,7 +217,7 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
           <div className="space-y-2">
             <label className="text-sm font-medium">Command Preview</label>
             <div className="bg-gray-100 p-3 rounded text-sm font-mono">
-              cd {localConfig.workingDirectory || '.'} && {localConfig.codexPath || 'codex'} proto
+              {localConfig.codexPath || 'codex'} proto
               {currentProvider && currentModel && (
                 <>
                   {(() => {
@@ -230,6 +230,7 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
                   {` -c model=${currentModel}`}
                 </>
               )}
+              {` -c cwd=${localConfig.workingDirectory}`}
               {localConfig.approvalPolicy && ` -c approval_policy=${localConfig.approvalPolicy}`}
               {localConfig.sandboxMode && ` -c sandbox_mode=${localConfig.sandboxMode}`}
               {localConfig.customArgs && localConfig.customArgs.length > 0 && ` ${localConfig.customArgs.join(' ')}`}

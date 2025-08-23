@@ -1,6 +1,7 @@
 use anyhow::Result;
 use serde_json;
 use std::process::Stdio;
+use std::collections::HashMap;
 use tauri::{AppHandle, Emitter};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::process::{Child, Command};
@@ -48,13 +49,64 @@ impl CodexClient {
             cmd.args(&args);
         }
         cmd.arg("proto");
+        
+        // Set up environment variables for API keys
+        let mut env_vars = HashMap::new();
+        log::debug!("Config provider: {}, API key present: {}", 
+                   config.provider, 
+                   config.api_key.as_ref().map_or(false, |k| !k.is_empty()));
+        
+        if let Some(api_key) = &config.api_key {
+            if !api_key.is_empty() {
+                log::debug!("API key provided, length: {}", api_key.len());
+                // Try to get the env_key from provider configuration first
+                if let Ok(providers) = read_model_providers().await {
+                    log::debug!("Successfully read providers, available: {:?}", providers.keys().collect::<Vec<_>>());
+                    
+                    // Try exact match first, then lowercase match
+                    let provider_config = providers.get(&config.provider)
+                        .or_else(|| providers.get(&config.provider.to_lowercase()));
+                    
+                    if let Some(provider_config) = provider_config {
+                        log::debug!("Found provider config: {:?}", provider_config);
+                        if !provider_config.env_key.is_empty() {
+                            log::debug!("Setting env var {} from provider config", provider_config.env_key);
+                            env_vars.insert(provider_config.env_key.clone(), api_key.clone());
+                        } else {
+                            log::debug!("Provider config has empty env_key");
+                        }
+                    } else {
+                        log::debug!("Provider {} not found in config", config.provider);
+                    }
+                } else {
+                    log::debug!("Failed to read providers, using fallback mapping");
+                    // Fallback mapping if config reading fails
+                    let env_var_name = match config.provider.as_str() {
+                        "gemini" => "GEMINI_API_KEY",
+                        "openai" => "OPENAI_API_KEY", 
+                        "openrouter" => "OPENROUTER_API_KEY",
+                        "ollama" => "OLLAMA_API_KEY",
+                        _ => "OPENAI_API_KEY", // fallback
+                    };
+                    log::debug!("Using fallback env var: {}", env_var_name);
+                    env_vars.insert(env_var_name.to_string(), api_key.clone());
+                }
+            } else {
+                log::debug!("API key is empty");
+            }
+        } else {
+            log::debug!("No API key provided");
+        }
 
         // Load provider configuration from config.toml if provider is specified
         if !config.provider.is_empty() && config.provider != "openai" {
             if let Ok(providers) = read_model_providers().await {
                 if let Ok(profiles) = read_profiles().await {
-                    // Check if there's a matching provider in config
-                    if let Some(provider_config) = providers.get(&config.provider) {
+                    // Check if there's a matching provider in config (try exact match first, then lowercase)
+                    let provider_config = providers.get(&config.provider)
+                        .or_else(|| providers.get(&config.provider.to_lowercase()));
+                    
+                    if let Some(provider_config) = provider_config {
                         // Set model provider based on config
                         cmd.arg("-c")
                             .arg(format!("model_provider={}", provider_config.name));
@@ -65,14 +117,13 @@ impl CodexClient {
                                 .arg(format!("base_url={}", provider_config.base_url));
                         }
 
-                        // Set API key environment variable reference
-                        if !provider_config.env_key.is_empty() {
-                            cmd.arg("-c")
-                                .arg(format!("api_key_env={}", provider_config.env_key));
-                        }
+                        // API key will be provided via environment variable - no need to modify provider config
 
                         // Use model from profile if available, otherwise from config
-                        let model_to_use = if let Some(profile) = profiles.get(&config.provider) {
+                        let profile = profiles.get(&config.provider)
+                            .or_else(|| profiles.get(&config.provider.to_lowercase()));
+                        
+                        let model_to_use = if let Some(profile) = profile {
                             &profile.model
                         } else {
                             &config.model
@@ -93,6 +144,8 @@ impl CodexClient {
                         if !config.model.is_empty() {
                             cmd.arg("-c").arg(format!("model={}", config.model));
                         }
+
+                        // API key will be provided via environment variable for custom providers
                     }
                 }
             } else {
@@ -107,6 +160,8 @@ impl CodexClient {
                 if !config.model.is_empty() {
                     cmd.arg("-c").arg(format!("model={}", config.model));
                 }
+
+                // API key will be provided via environment variable
             }
         } else {
             // Original logic for OSS and default cases
@@ -117,6 +172,8 @@ impl CodexClient {
             if !config.model.is_empty() {
                 cmd.arg("-c").arg(format!("model={}", config.model));
             }
+
+            // API key will be provided via environment variable for OpenAI
         }
 
         if !config.approval_policy.is_empty() {
@@ -140,7 +197,8 @@ impl CodexClient {
 
         // Set working directory for the process
         if !config.working_directory.is_empty() {
-            cmd.current_dir(&config.working_directory);
+            log::debug!("working_directory: {:?}", config.working_directory);
+            cmd.arg("-c").arg(format!("cwd={}", config.working_directory));
         }
 
         // Add custom arguments
@@ -153,10 +211,17 @@ impl CodexClient {
         // Print the command to be executed for debugging
         log::debug!("Starting codex with command: {:?}", cmd);
 
+        // Apply environment variables to the command
+        for (key, value) in &env_vars {
+            log::debug!("Setting environment variable: {}=***", key);
+            cmd.env(key, value);
+        }
+
         let mut process = cmd
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
+            .current_dir(&config.working_directory)
             .spawn()?;
 
         let stdin = process.stdin.take().expect("Failed to open stdin");
@@ -194,7 +259,7 @@ impl CodexClient {
             log::debug!("Starting stdout reader for session: {}", session_id_clone);
 
             while let Ok(Some(line)) = lines.next_line().await {
-                log::debug!("Received line from codex: {}", line);
+                // log::debug!("Received line from codex: {}", line);
                 if let Ok(event) = serde_json::from_str::<Event>(&line) {
                     // log::debug!("Parsed event: {:?}", event);
 

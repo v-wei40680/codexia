@@ -1,5 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { CodexConfig } from '@/types/codex';
+import { useFolderStore } from '@/stores/FolderStore';
+import { useSettingsStore } from '@/stores/SettingsStore';
 
 class SessionManager {
   private sessionConfigs: Map<string, CodexConfig> = new Map();
@@ -27,17 +29,30 @@ class SessionManager {
       
       console.log(`🚀 Starting backend session: ${rawSessionId} (from frontend: ${sessionId})`);
 
+      // Get current folder
+      const currentFolder = useFolderStore.getState().currentFolder;
+      
+      console.log(`📁 currentFolder: ${currentFolder})`);
+
+      // Get API key from settings store
+      const settingsStore = useSettingsStore.getState();
+      const providerConfig = settingsStore.providers[config.provider as keyof typeof settingsStore.providers];
+      const apiKey = providerConfig?.apiKey || null;
+      
+      console.log(`🔑 API key debug - Provider: ${config.provider}, Has API key: ${!!apiKey}, Length: ${apiKey?.length || 0}`);
+
       // Start the session (backend will check if already exists)
       await invoke('start_codex_session', {
         sessionId: rawSessionId,
         config: {
-          working_directory: config.workingDirectory,
+          working_directory: currentFolder,
           model: config.model,
           provider: config.provider,
           use_oss: config.useOss,
           custom_args: config.customArgs || null,
           approval_policy: config.approvalPolicy,
           sandbox_mode: config.sandboxMode,
+          api_key: apiKey,
         },
       });
 

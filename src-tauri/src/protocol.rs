@@ -138,4 +138,5 @@ pub struct CodexConfig {
     pub approval_policy: String,
     pub sandbox_mode: String,
     pub codex_path: Option<String>,
+    pub api_key: Option<String>,
 }
