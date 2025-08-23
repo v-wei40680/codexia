@@ -107,6 +107,22 @@ export default function SettingsPage() {
                       type="text"
                       value={newModelName}
                       onChange={(e) => setNewModelName(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          const trimmed = newModelName.trim();
+                          if (!trimmed) return;
+                          const provider = selectedProvider as Provider;
+                          if ((providers[provider]?.models || []).includes(trimmed)) {
+                            setNewModelName("");
+                            return;
+                          }
+                          setProviderModels(provider, [
+                            ...(providers[provider]?.models || []),
+                            trimmed,
+                          ]);
+                          setNewModelName("");
+                        }
+                      }}
                       placeholder="Add new model"
                       className="flex-1"
                     />

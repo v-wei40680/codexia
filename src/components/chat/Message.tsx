@@ -1,9 +1,14 @@
 import { memo } from 'react';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, ChevronDown, ChevronRight } from 'lucide-react';
 import { MessageNoteActions } from './MessageNoteActions';
 import { MarkdownRenderer } from './MarkdownRenderer';
 import { StreamingMessage } from '../StreamingMessage';
 import { useState } from 'react';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
 
 interface NormalizedMessage {
   id: string;
@@ -12,7 +17,6 @@ interface NormalizedMessage {
   timestamp: number;
   isStreaming: boolean;
   model?: string;
-  workingDirectory?: string;
 }
 
 interface MessageProps {
@@ -50,6 +54,15 @@ export const Message = memo<MessageProps>(({
   selectedText 
 }) => {
   const [copied, setCopied] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(true);
+  
+  const isEnvironmentContext = normalized.content.startsWith('<environment_context>');
+  
+  const getWorkingDirectory = () => {
+    if (!isEnvironmentContext) return '';
+    const match = normalized.content.match(/Current working directory: ([^\n\r]+)/);
+    return match ? match[1] : '';
+  };
 
   const handleCopy = async () => {
     try {
@@ -70,6 +83,50 @@ export const Message = memo<MessageProps>(({
     >
       {normalized.content.length !== 0 && 
         <div className="w-full min-w-0">
+          {/* Content */}
+          <div className={`relative rounded-lg border px-3 py-2 w-full min-w-0 max-w-full ${getMessageStyle(normalized.role)}`}>
+            <div className="break-words overflow-wrap-anywhere min-w-0 max-w-full overflow-hidden">
+              {isEnvironmentContext ? (
+                <Collapsible open={!isCollapsed} onOpenChange={(open) => setIsCollapsed(!open)}>
+                  <CollapsibleTrigger asChild>
+                    <div className="flex items-center gap-2 w-full text-left hover:bg-gray-100 px-2 py-1 rounded cursor-pointer">
+                    {isCollapsed ? (
+                      <ChevronRight className="w-4 h-4" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4" />
+                    )}
+                    <span className="text-sm text-gray-600 font-mono">Environment Context</span>
+                    {getWorkingDirectory() && (
+                      <span className="text-xs text-gray-500 ml-2">
+                        {getWorkingDirectory()}
+                      </span>
+                    )}
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="mt-2">
+                    <MarkdownRenderer content={normalized.content} />
+                  </CollapsibleContent>
+                </Collapsible>
+              ) : (
+                <>
+                  {normalized.isStreaming ? (
+                    <StreamingMessage 
+                      message={{
+                        id: normalized.id,
+                        role: normalized.role as "user" | "assistant" | "system",
+                        content: normalized.content,
+                        timestamp: normalized.timestamp,
+                        isStreaming: normalized.isStreaming
+                      }}
+                    />
+                  ) : (
+                    <MarkdownRenderer content={normalized.content} />
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
           {/* Header */}
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
@@ -98,25 +155,6 @@ export const Message = memo<MessageProps>(({
                 timestamp={normalized.timestamp}
                 selectedText={selectedText}
               />
-            </div>
-          </div>
-
-          {/* Content */}
-          <div className={`relative rounded-lg border px-3 py-2 w-full min-w-0 max-w-full ${getMessageStyle(normalized.role)}`}>
-            <div className="break-words overflow-wrap-anywhere min-w-0 max-w-full overflow-hidden">
-              {normalized.isStreaming ? (
-                <StreamingMessage 
-                  message={{
-                    id: normalized.id,
-                    role: normalized.role as "user" | "assistant" | "system",
-                    content: normalized.content,
-                    timestamp: normalized.timestamp,
-                    isStreaming: normalized.isStreaming
-                  }}
-                />
-              ) : (
-                <MarkdownRenderer content={normalized.content} />
-              )}
             </div>
           </div>
         </div>

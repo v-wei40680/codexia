@@ -68,27 +68,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     messageCount: currentConversation?.messages.length || 0
   });
 
-  // Function to extract environment context info from messages
-  const extractEnvironmentContext = (content: string) => {
-    const envMatch = content.match(/<environment_context>([\s\S]*?)<\/environment_context>/);
-    if (envMatch) {
-      const envContent = envMatch[1];
-      const dirMatch = envContent.match(/Current working directory:\s*(.+)/);
-      console.log("🔍 Environment context found:", { envContent, dirMatch: dirMatch?.[1] });
-      return {
-        workingDirectory: dirMatch ? dirMatch[1].trim() : undefined,
-        hasEnvironmentContext: true
-      };
-    }
-    return { workingDirectory: undefined, hasEnvironmentContext: false };
-  };
-
-
-
   // Convert conversation messages to chat messages format
   const sessionMessages = currentConversation
     ? currentConversation.messages.map((msg, index) => {
-        const envContext = extractEnvironmentContext(msg.content);
         return {
           id: msg.id || `${currentConversation.id}-msg-${index}`,
           type: (msg.role === "user"
@@ -96,12 +78,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             : msg.role === "assistant"
               ? "agent"
               : "system") as "user" | "agent" | "system",
-          content: envContext.hasEnvironmentContext 
-            ? msg.content.replace(/<environment_context>[\s\S]*?<\/environment_context>/, '').trim()
-            : msg.content,
+          content: msg.content,
           timestamp: new Date(typeof msg.timestamp === 'number' ? msg.timestamp : Date.now()),
-          model: msg.role === "assistant" ? currentModel : undefined,
-          workingDirectory: envContext.workingDirectory
+          model: msg.role === "assistant" ? currentModel : undefined
         };
       })
     : [];

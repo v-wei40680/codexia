@@ -4,7 +4,6 @@ import type { ChatMessage as ChatMessageType } from '@/types/chat';
 import type { ChatMessage as CodexMessageType } from '@/types/codex';
 import { TextSelectionMenu } from './TextSelectionMenu';
 import { Message } from './Message';
-import { MessageHeader } from './MessageHeader';
 import { useTextSelection } from '../../hooks/useTextSelection';
 
 // Unified message type
@@ -91,15 +90,6 @@ export function MessageList({ messages, className = "", isLoading = false, isPen
     return messages.map(normalizeMessage);
   }, [messages, normalizeMessage]);
 
-  // Extract working directory from the first message that has environment context
-  const workingDirectory = useMemo(() => {
-    const result = normalizedMessages.find(msg => msg.workingDirectory)?.workingDirectory;
-    console.log("🔍 MessageList workingDirectory:", { result, messagesWithWD: normalizedMessages.filter(msg => msg.workingDirectory) });
-    return result;
-  }, [normalizedMessages]);
-
-
-
   if (messages.length === 0) {
     return (
       <div className={`flex-1 min-h-0 flex items-center justify-center ${className}`}>
@@ -127,10 +117,6 @@ export function MessageList({ messages, className = "", isLoading = false, isPen
 
   return (
     <div className={`flex flex-col flex-1 min-h-0 min-w-0 relative ${className}`}>
-      {/* Message Header */}
-      <MessageHeader 
-        workingDirectory={workingDirectory as string | undefined}
-      />
       {/* Single Text Selection Menu for all messages */}
       <TextSelectionMenu />
       {/* Messages */}
@@ -174,14 +160,14 @@ export function MessageList({ messages, className = "", isLoading = false, isPen
           <button
             onClick={jumpToTop}
             className="bg-white border border-gray-200 rounded-full p-2 shadow-md hover:bg-gray-50 transition-colors"
-            title="跳到顶部"
+            title="jumpToTop"
           >
             <ChevronUp className="w-4 h-4 text-gray-600" />
           </button>
           <button
             onClick={jumpToBottom}
             className="bg-white border border-gray-200 rounded-full p-2 shadow-md hover:bg-gray-50 transition-colors"
-            title="跳到底部"
+            title="jumpToBottom"
           >
             <ChevronDown className="w-4 h-4 text-gray-600" />
           </button>
