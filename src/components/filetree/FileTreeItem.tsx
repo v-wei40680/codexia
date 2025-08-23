@@ -17,6 +17,7 @@ import { getFileIcon } from "./FileIcons";
 import { SubFolderContent } from "./SubFolderContent";
 import { useChatInputStore } from "@/stores/chatInputStore";
 import { useFolderStore } from "@/stores/FolderStore";
+import { isMediaFile, createMediaAttachment } from "@/utils/mediaUtils";
 
 interface FileEntry {
   name: string;
@@ -52,7 +53,7 @@ export function FileTreeItem({
   const [tokens, setTokens] = useState<number | null>(null);
   const [loadingTokens, setLoadingTokens] = useState(false);
   
-  const { addFileReference, replaceFileReferences } = useChatInputStore();
+  const { addFileReference, replaceFileReferences, addMediaAttachment } = useChatInputStore();
   const { currentFolder } = useFolderStore();
 
   const getRelativePath = (fullPath: string): string => {
@@ -66,9 +67,24 @@ export function FileTreeItem({
     return fullPath;
   };
 
-  const handleAddToChatInput = () => {
+  const handleAddToChatInput = async () => {
     const relativePath = getRelativePath(entry.path);
-    addFileReference(entry.path, relativePath, entry.name, entry.is_directory);
+    
+    // If it's a media file, add to media attachments
+    if (!entry.is_directory && isMediaFile(entry.name)) {
+      try {
+        const mediaAttachment = await createMediaAttachment(entry.path);
+        addMediaAttachment(mediaAttachment);
+      } catch (error) {
+        console.error('Failed to create media attachment:', error);
+        // Fallback: still add as file reference
+        addFileReference(entry.path, relativePath, entry.name, entry.is_directory);
+      }
+    } else {
+      // Regular file or directory, add to file references
+      addFileReference(entry.path, relativePath, entry.name, entry.is_directory);
+    }
+    
     if (onAddToChat) {
       onAddToChat(entry.path);
     }

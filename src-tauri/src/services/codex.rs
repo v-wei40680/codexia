@@ -55,6 +55,32 @@ pub async fn send_message(
     }
 }
 
+pub async fn send_message_with_media(
+    state: State<'_, CodexState>,
+    session_id: String,
+    message: String,
+    media_paths: Vec<String>,
+) -> Result<(), String> {
+    log::debug!("🚀 [Codex Service] send_message_with_media called:");
+    log::debug!("  📝 session_id: {}", session_id);
+    log::debug!("  💬 message: {}", message);
+    log::debug!("  📸 media_paths: {:?}", media_paths);
+    log::debug!("  📊 media_paths count: {}", media_paths.len());
+    
+    let mut sessions = state.sessions.lock().await;
+    if let Some(client) = sessions.get_mut(&session_id) {
+        log::debug!("✅ Session found, sending to client");
+        client
+            .send_user_input_with_media(message, media_paths)
+            .await
+            .map_err(|e| format!("Failed to send message with media: {}", e))?;
+        Ok(())
+    } else {
+        log::error!("❌ Session not found: {}", session_id);
+        Err("Session not found".to_string())
+    }
+}
+
 pub async fn approve_execution(
     state: State<'_, CodexState>,
     session_id: String,

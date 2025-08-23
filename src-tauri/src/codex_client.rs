@@ -32,7 +32,7 @@ pub struct CodexClient {
 
 impl CodexClient {
     pub async fn new(app: &AppHandle, session_id: String, config: CodexConfig) -> Result<Self> {
-        log::debug!("Creating CodexClient for session: {}", session_id);
+        log::debug!("Creating CodexClient for session and config: {} {:?}", session_id, config);
 
         // Build codex command based on configuration
         let (command, args): (String, Vec<String>) =
@@ -119,18 +119,10 @@ impl CodexClient {
 
                         // API key will be provided via environment variable - no need to modify provider config
 
-                        // Use model from profile if available, otherwise from config
-                        let profile = profiles.get(&config.provider)
-                            .or_else(|| profiles.get(&config.provider.to_lowercase()));
-                        
-                        let model_to_use = if let Some(profile) = profile {
-                            &profile.model
-                        } else {
-                            &config.model
-                        };
-
-                        if !model_to_use.is_empty() {
-                            cmd.arg("-c").arg(format!("model={}", model_to_use));
+                        // Always use model from config (user selection), not from profile
+                        // This ensures user's model choice in the GUI takes precedence
+                        if !config.model.is_empty() {
+                            cmd.arg("-c").arg(format!("model={}", config.model));
                         }
                     } else {
                         // Fallback to original logic for custom providers
@@ -259,9 +251,9 @@ impl CodexClient {
             log::debug!("Starting stdout reader for session: {}", session_id_clone);
 
             while let Ok(Some(line)) = lines.next_line().await {
-                // log::debug!("Received line from codex: {}", line);
+                log::debug!("📥 Received line from codex: {}", line);
                 if let Ok(event) = serde_json::from_str::<Event>(&line) {
-                    // log::debug!("Parsed event: {:?}", event);
+                    log::debug!("📨 Parsed event: {:?}", event);
 
                     // Log the event for debugging
                     if let Some(event_session_id) = get_session_id_from_event(&event) {
@@ -293,6 +285,7 @@ impl CodexClient {
     async fn send_submission(&self, submission: Submission) -> Result<()> {
         if let Some(stdin_tx) = &self.stdin_tx {
             let json = serde_json::to_string(&submission)?;
+            log::debug!("📤 Sending JSON to codex: {}", json);
             stdin_tx.send(json)?;
         }
         Ok(())
@@ -306,6 +299,32 @@ impl CodexClient {
             },
         };
 
+        self.send_submission(submission).await
+    }
+
+    pub async fn send_user_input_with_media(&self, message: String, media_paths: Vec<String>) -> Result<()> {
+        log::debug!("🎯 [CodexClient] send_user_input_with_media called:");
+        log::debug!("  💬 message: {}", message);
+        log::debug!("  📸 media_paths: {:?}", media_paths);
+        log::debug!("  📊 media_paths count: {}", media_paths.len());
+        
+        let mut items = vec![InputItem::Text { text: message }];
+        
+        // Add media files as LocalImage items - codex will convert to base64 automatically
+        for path in media_paths {
+            let path_buf = std::path::PathBuf::from(path.clone());
+            log::debug!("  🔗 Adding local image path: {}", path);
+            items.push(InputItem::LocalImage { path: path_buf });
+        }
+        
+        log::debug!("  📦 Total items in submission: {}", items.len());
+        
+        let submission = Submission {
+            id: Uuid::new_v4().to_string(),
+            op: Op::UserInput { items },
+        };
+        
+        log::debug!("  🚀 Sending submission to codex");
         self.send_submission(submission).await
     }
 

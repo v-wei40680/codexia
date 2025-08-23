@@ -1,9 +1,19 @@
+export interface MediaAttachment {
+  id: string;
+  type: 'image' | 'audio';
+  path: string;
+  name: string;
+  mimeType?: string;
+  dataUrl?: string; // base64 data URL
+}
+
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant" | "system";
   content: string;
   timestamp: number;
-  image?: string;
+  image?: string; // deprecated, use attachments
+  attachments?: MediaAttachment[];
   isStreaming?: boolean;
   model?: string;
   workingDirectory?: string;

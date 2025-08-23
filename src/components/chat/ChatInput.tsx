@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
 import { Badge } from '../ui/badge';
-import { Send, AtSign, X, ChevronUp, Cpu, Square } from 'lucide-react';
+import { Send, AtSign, X, ChevronUp, Cpu, Square, Image, Music, FileX } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
@@ -18,11 +18,12 @@ import { useChatInputStore } from '../../stores/chatInputStore';
 import { useSettingsStore } from '../../stores/SettingsStore';
 import { useModelStore } from '../../stores/ModelStore';
 import { ConfigService } from '../../services/configService';
+import { MediaSelector } from './MediaSelector';
 
 interface ChatInputProps {
   inputValue: string;
   onInputChange: (value: string) => void;
-  onSendMessage: (message: string) => void;
+  onSendMessage: (messageData: string | { text: string; mediaAttachments?: any[] }) => void;
   onStopStreaming?: () => void;
   disabled?: boolean;
   isLoading?: boolean;
@@ -40,8 +41,11 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 }) => {
   const {
     fileReferences,
+    mediaAttachments,
     removeFileReference,
+    removeMediaAttachment,
     clearFileReferences,
+    clearMediaAttachments,
   } = useChatInputStore();
   
   const { providers } = useSettingsStore();
@@ -141,9 +145,19 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       messageContent = `${smartPrompt}\n\n${inputValue}`;
     }
 
-    onSendMessage(messageContent);
+    // Pass media attachments along with the message
+    const messageParts = {
+      text: messageContent,
+      mediaAttachments: mediaAttachments.length > 0 ? mediaAttachments : undefined
+    };
+
+    console.log("📤 ChatInput: Sending message parts:", messageParts);
+    console.log("📸 Media attachments count:", mediaAttachments.length);
+    
+    onSendMessage(messageParts);
     onInputChange('');
     clearFileReferences();
+    clearMediaAttachments();
   };
 
   const handleStopStreaming = () => {
@@ -199,16 +213,68 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           </Button>
         </div>
       )}
+
+      {/* Media attachments display */}
+      {mediaAttachments.length > 0 && (
+        <div className="mb-3 flex flex-wrap gap-2 items-center">
+          {mediaAttachments.map((attachment) => (
+            <TooltipProvider key={attachment.id}>
+              <Tooltip>
+                <TooltipTrigger>
+                  <Badge
+                    variant="outline"
+                    className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 px-3 py-1"
+                  >
+                    {attachment.type === 'image' ? (
+                      <Image className="w-3 h-3 text-blue-500" />
+                    ) : (
+                      <Music className="w-3 h-3 text-green-500" />
+                    )}
+                    <span className="text-xs font-medium">{attachment.name}</span>
+                    <X
+                      className="w-3 h-3 hover:bg-gray-300 rounded"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        removeMediaAttachment(attachment.id);
+                      }}
+                    />
+                  </Badge>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <div className="text-xs">
+                    <p>{attachment.path}</p>
+                    <p className="text-gray-500 mt-1">{attachment.type} • {attachment.mimeType}</p>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+          ))}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearMediaAttachments}
+            className="h-6 px-2 text-xs text-gray-500 hover:text-gray-700"
+          >
+            <FileX className="w-3 h-3 mr-1" />
+            Clear media
+          </Button>
+        </div>
+      )}
       
       <div className="flex gap-2">
-        <Textarea
-          value={inputValue}
-          onChange={(e) => onInputChange(e.target.value)}
-          onKeyDown={handleKeyPress}
-          placeholder={placeholderOverride || "Type your message..."}
-          className="flex-1 min-h-[40px] max-h-[120px]"
-          disabled={false}
-        />
+        <div className="flex-1 relative">
+          <Textarea
+            value={inputValue}
+            onChange={(e) => onInputChange(e.target.value)}
+            onKeyDown={handleKeyPress}
+            placeholder={placeholderOverride || "Type your message..."}
+            className="min-h-[40px] max-h-[120px] pr-10"
+            disabled={false}
+          />
+          <div className="absolute right-2 top-2">
+            <MediaSelector />
+          </div>
+        </div>
         {isLoading ? (
           <Button
             onClick={handleStopStreaming}

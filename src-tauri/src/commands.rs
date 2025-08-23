@@ -33,6 +33,22 @@ pub async fn send_message(
 }
 
 #[tauri::command]
+pub async fn send_message_with_media(
+    state: State<'_, CodexState>,
+    session_id: String,
+    message: String,
+    media_paths: Vec<String>,
+) -> Result<(), String> {
+    log::debug!("🔄 [Tauri Command] send_message_with_media called:");
+    log::debug!("  📝 session_id: {}", session_id);
+    log::debug!("  💬 message: {}", message);
+    log::debug!("  📸 media_paths: {:?}", media_paths);
+    log::debug!("  📊 media_paths count: {}", media_paths.len());
+    
+    codex::send_message_with_media(state, session_id, message, media_paths).await
+}
+
+#[tauri::command]
 pub async fn approve_execution(
     state: State<'_, CodexState>,
     session_id: String,

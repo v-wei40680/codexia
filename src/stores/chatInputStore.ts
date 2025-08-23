@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { MediaAttachment } from '@/types/chat';
 
 interface FileReference {
   path: string;
@@ -12,27 +13,43 @@ interface ChatInputStore {
   // File references for current input
   fileReferences: FileReference[];
   
+  // Media attachments (images, audio)
+  mediaAttachments: MediaAttachment[];
+  
   // Input value (not persisted)
   inputValue: string;
   
-  // Actions
+  // Actions for file references
   addFileReference: (path: string, relativePath: string, name: string, isDirectory: boolean) => void;
   removeFileReference: (path: string) => void;
   clearFileReferences: () => void;
   replaceFileReferences: (files: FileReference[]) => void;
+  
+  // Actions for media attachments
+  addMediaAttachment: (attachment: MediaAttachment) => void;
+  removeMediaAttachment: (id: string) => void;
+  clearMediaAttachments: () => void;
+  
+  // Input actions
   setInputValue: (value: string) => void;
   appendToInput: (value: string) => void;
   
+  // Clear all
+  clearAll: () => void;
+  
   // Utility
   hasFileReference: (path: string) => boolean;
+  hasMediaAttachment: (path: string) => boolean;
 }
 
 export const useChatInputStore = create<ChatInputStore>()(
   persist(
     (set, get) => ({
       fileReferences: [],
+      mediaAttachments: [],
       inputValue: "",
 
+      // File reference actions
       addFileReference: (path: string, relativePath: string, name: string, isDirectory: boolean) => {
         const { fileReferences } = get();
         const exists = fileReferences.some(ref => ref.path === path);
@@ -58,6 +75,29 @@ export const useChatInputStore = create<ChatInputStore>()(
         set({ fileReferences: files });
       },
 
+      // Media attachment actions
+      addMediaAttachment: (attachment: MediaAttachment) => {
+        const { mediaAttachments } = get();
+        const exists = mediaAttachments.some(media => media.path === attachment.path);
+        
+        if (!exists) {
+          set({
+            mediaAttachments: [...mediaAttachments, attachment]
+          });
+        }
+      },
+
+      removeMediaAttachment: (id: string) => {
+        set((state) => ({
+          mediaAttachments: state.mediaAttachments.filter(media => media.id !== id)
+        }));
+      },
+
+      clearMediaAttachments: () => {
+        set({ mediaAttachments: [] });
+      },
+
+      // Input actions
       setInputValue: (value: string) => {
         set({ inputValue: value });
       },
@@ -68,16 +108,32 @@ export const useChatInputStore = create<ChatInputStore>()(
         set({ inputValue: inputValue + separator + value });
       },
 
+      // Clear all
+      clearAll: () => {
+        set({ 
+          fileReferences: [],
+          mediaAttachments: [],
+          inputValue: ""
+        });
+      },
+
+      // Utilities
       hasFileReference: (path: string) => {
         const { fileReferences } = get();
         return fileReferences.some(ref => ref.path === path);
       },
+
+      hasMediaAttachment: (path: string) => {
+        const { mediaAttachments } = get();
+        return mediaAttachments.some(media => media.path === path);
+      },
     }),
     {
       name: 'codexia-chat-input-store',
-      // Only persist file references
+      // Only persist references, not input value
       partialize: (state) => ({
         fileReferences: state.fileReferences,
+        mediaAttachments: state.mediaAttachments,
       }),
     }
   )

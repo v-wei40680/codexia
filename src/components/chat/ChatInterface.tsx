@@ -55,18 +55,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   // Simplified: Use session_id to find conversation data
   // Priority: selectedConversation (from disk/history) > conversations (from store)
-  const currentConversation = selectedConversation ||
+  const currentConversation =
+    selectedConversation ||
     conversations.find((conv) => conv.id === currentConversationId) ||
     conversations.find((conv) => conv.id === sessionId);
 
   // Debug log to track conversation changes
-  console.log("🔍 ChatInterface: currentConversation:", {
+  /*
+   console.log("🔍 ChatInterface: currentConversation:", {
     selectedConversationId: selectedConversation?.id,
     currentConversationId,
     sessionId,
     finalConversationId: currentConversation?.id,
     messageCount: currentConversation?.messages.length || 0
   });
+  */
 
   // Convert conversation messages to chat messages format
   const sessionMessages = currentConversation
@@ -79,12 +82,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               ? "agent"
               : "system") as "user" | "agent" | "system",
           content: msg.content,
-          timestamp: new Date(typeof msg.timestamp === 'number' ? msg.timestamp : Date.now()),
-          model: msg.role === "assistant" ? currentModel : undefined
+          timestamp: new Date(
+            typeof msg.timestamp === "number" ? msg.timestamp : Date.now(),
+          ),
+          model: msg.role === "assistant" ? currentModel : undefined,
         };
       })
     : [];
-
 
   useCodexEvents({
     sessionId: activeSessionId,
@@ -96,7 +100,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   // Update activeSessionId when sessionId prop changes
   useEffect(() => {
-    if (sessionId && sessionId !== activeSessionId && !tempSessionId && sessionId.startsWith('codex-event-')) {
+    if (
+      sessionId &&
+      sessionId !== activeSessionId &&
+      !tempSessionId &&
+      sessionId.startsWith("codex-event-")
+    ) {
       setActiveSessionId(sessionId);
     }
   }, [sessionId, activeSessionId, tempSessionId]);
@@ -113,9 +122,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       // 3. Not pending new conversation
       // 4. Session is not already starting
       // 5. Session ID looks like current timestamp format (not old UUID format)
-      const isTimestampFormat = sessionId.startsWith('codex-event-') && 
-        /\d{13}-[a-z0-9]+$/.test(sessionId.replace('codex-event-', ''));
-      
+      const isTimestampFormat =
+        sessionId.startsWith("codex-event-") &&
+        /\d{13}-[a-z0-9]+$/.test(sessionId.replace("codex-event-", ""));
+
       if (
         !isRunning &&
         !sessionStarting &&
@@ -130,8 +140,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         if (timestampMatch) {
           const sessionTimestamp = parseInt(timestampMatch[1]);
           const now = Date.now();
-          const isRecentSession = (now - sessionTimestamp) < 5000; // 5 seconds
-          
+          const isRecentSession = now - sessionTimestamp < 5000; // 5 seconds
+
           if (isRecentSession) {
             const startSession = async () => {
               try {
@@ -141,9 +151,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   ...config,
                   model: currentModel,
                   provider: currentProvider,
-                  useOss: currentProvider.toLowerCase() !== 'openai'
+                  useOss: currentProvider.toLowerCase() !== "openai",
                 };
-                await sessionManager.ensureSessionRunning(sessionId, updatedConfig);
+                await sessionManager.ensureSessionRunning(
+                  sessionId,
+                  updatedConfig,
+                );
                 setIsConnected(true);
                 setSessionLoading(sessionId, false);
               } catch (error) {
@@ -166,11 +179,26 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       } else {
       }
     }
-  }, [sessionId, selectedConversation, pendingNewConversation, sessionStarting]);
+  }, [
+    sessionId,
+    selectedConversation,
+    pendingNewConversation,
+    sessionStarting,
+  ]);
 
-  const handleSendMessage = async (messageContent: string) => {
-    console.log("isConnected", isConnected)
-    
+  const handleSendMessage = async (
+    messageData: string | { text: string; mediaAttachments?: any[] },
+  ) => {
+    console.log("isConnected", isConnected);
+
+    // Extract message content and media attachments
+    const messageContent =
+      typeof messageData === "string" ? messageData : messageData.text;
+    const mediaAttachments =
+      typeof messageData === "object"
+        ? messageData.mediaAttachments
+        : undefined;
+
     if (!messageContent.trim() || isLoading) {
       return;
     }
@@ -186,10 +214,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     let isPendingSession = false;
     if (pendingNewConversation || !sessionId.trim()) {
       // Check if there's already a conversation waiting to be used
-      const existingNewConversation = conversations.find(conv => 
-        conv.id.startsWith('codex-event-') && 
-        conv.messages.length === 0 &&
-        /\d{13}-[a-z0-9]+$/.test(conv.id.replace('codex-event-', ''))
+      const existingNewConversation = conversations.find(
+        (conv) =>
+          conv.id.startsWith("codex-event-") &&
+          conv.messages.length === 0 &&
+          /\d{13}-[a-z0-9]+$/.test(conv.id.replace("codex-event-", "")),
       );
 
       if (existingNewConversation) {
@@ -202,7 +231,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         // Close any previous sessions before creating a new one
         const runningSessions = sessionManager.getLocalRunningSessions();
         if (runningSessions.length > 0) {
-          console.log(`Closing ${runningSessions.length} existing sessions before creating new one`);
+          console.log(
+            `Closing ${runningSessions.length} existing sessions before creating new one`,
+          );
           await sessionManager.stopAllSessions();
         }
 
@@ -233,18 +264,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           ...config,
           model: currentModel,
           provider: currentProvider,
-          useOss: currentProvider.toLowerCase() !== 'openai'
+          useOss: currentProvider.toLowerCase() !== "openai",
         };
-        await sessionManager.ensureSessionRunning(actualSessionId, updatedConfig);
+        await sessionManager.ensureSessionRunning(
+          actualSessionId,
+          updatedConfig,
+        );
         setIsConnected(true);
-        
+
         if (isPendingSession) {
           createConversation("New Chat", "agent", actualSessionId);
           setCurrentConversation(actualSessionId);
           setActiveSessionId(actualSessionId);
           setTempSessionId(null);
         }
-        
+
         setSessionLoading(actualSessionId, false);
         setSessionStarting(false);
       }
@@ -274,14 +308,30 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
     try {
       // Extract raw session ID for backend communication
-      const rawSessionId = actualSessionId.startsWith('codex-event-') 
-        ? actualSessionId.replace('codex-event-', '') 
+      const rawSessionId = actualSessionId.startsWith("codex-event-")
+        ? actualSessionId.replace("codex-event-", "")
         : actualSessionId;
 
-      await invoke("send_message", {
-        sessionId: rawSessionId,
-        message: messageContent,
-      });
+      if (mediaAttachments && mediaAttachments.length > 0) {
+        // Send message with media attachments
+        const mediaPaths = mediaAttachments.map(
+          (attachment) => attachment.path,
+        );
+        const messageData = {
+          sessionId: rawSessionId,
+          message: messageContent,
+          mediaPaths,
+        };
+        console.log("📤 ChatInterface: Sending message with media:", messageData);
+        console.log("📸 Media paths:", mediaPaths);
+        await invoke("send_message_with_media", messageData);
+      } else {
+        // Send regular text message
+        await invoke("send_message", {
+          sessionId: rawSessionId,
+          message: messageContent,
+        });
+      }
     } catch (error) {
       console.error("Failed to send message:", error);
       const errorMessage = {
@@ -300,8 +350,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
     try {
       // Extract raw session ID for backend communication
-      const rawSessionId = sessionId.startsWith('codex-event-') 
-        ? sessionId.replace('codex-event-', '') 
+      const rawSessionId = sessionId.startsWith("codex-event-")
+        ? sessionId.replace("codex-event-", "")
         : sessionId;
 
       await invoke("approve_execution", {
@@ -318,17 +368,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const handleStopStreaming = async () => {
     try {
       // Extract raw session ID for backend communication
-      const rawSessionId = sessionId.startsWith('codex-event-') 
-        ? sessionId.replace('codex-event-', '') 
+      const rawSessionId = sessionId.startsWith("codex-event-")
+        ? sessionId.replace("codex-event-", "")
         : sessionId;
 
       await invoke("pause_session", {
         sessionId: rawSessionId,
       });
-      
+
       // Immediately set loading to false after successful pause
       setSessionLoading(sessionId, false);
-      
     } catch (error) {
       console.error("Failed to pause streaming:", error);
       // On error, also set loading to false
@@ -356,9 +405,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
       {/* Chat Interface */}
       <div className="flex flex-col flex-1 min-h-0 min-w-0">
-        <MessageList 
-          messages={messages} 
-          isLoading={isLoading} 
+        <MessageList
+          messages={messages}
+          isLoading={isLoading}
           isPendingNewConversation={pendingNewConversation || !sessionId.trim()}
         />
 
