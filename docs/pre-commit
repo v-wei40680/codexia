@@ -1,0 +1,25 @@
+#!/bin/bash
+
+echo "🛡️ Running pre-commit hook: Checking for relevant changes..."
+
+cd "$(git rev-parse --show-toplevel)"
+
+# check bun run build
+RELEVANT_FILES=$(git diff --cached --name-only | grep -E '\.(ts|tsx|js|json|rs|html|css|scss|toml|vue)$|^src/')
+
+if [ -z "$RELEVANT_FILES" ]; then
+  echo "✅ No relevant frontend/tauri changes detected – skipping bun run build"
+  exit 0
+fi
+
+echo "🔧 Relevant changes detected – executing: bun run build"
+bun run build
+
+if [ $? -eq 0 ]; then
+    echo "✅ bun run build successful - proceeding with commit"
+    exit 0
+else
+    echo "❌ bun run build failed - commit aborted"
+    echo "Please fix the build errors before committing"
+    exit 1
+fi

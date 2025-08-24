@@ -182,7 +182,14 @@ cd src-tauri && cargo check
 
 # Format code
 cd src-tauri && cargo fmt --all
+
+# Copy the pre-commit hook to prevent frontend issues.
+cp docs/pre-commit .git/hooks/pre-commit
 ```
+
+## tauri llm.txt
+
+https://tauri.app/llms.txt
 
 ## 🤝 Contributing
 
@@ -190,6 +197,8 @@ cd src-tauri && cargo fmt --all
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
 3. Commit your changes (`git commit -m 'Add some amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
+  - test before push
+  - test command `bun run build` and `cargo check` at src-tauri folder
 5. Open a Pull Request
 
 ## 📄 License
