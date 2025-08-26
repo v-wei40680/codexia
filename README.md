@@ -20,6 +20,10 @@ TLDR: Notepad + @file from FileTree + git diff + streaming chat + agent + mcp
 
 ![demo](public/codexia.png)
 
+## Disclaimer
+
+Codexia is an independent open-source project and is not built by OpenAI or any company.
+
 ## ✨ Features
 
 ### 🔄 **Multi-Session Support**

@@ -6,7 +6,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   FolderTree,
-  Plus,
+  PencilIcon,
 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "../ui/tabs";
 import { useConversationStore } from "@/stores/ConversationStore";
@@ -142,7 +142,7 @@ export const AppToolbar: React.FC<AppToolbarProps> = ({
             className="h-7 w-7 p-0"
             title="Create New Conversation"
           >
-            <Plus className="h-3 w-3" />
+            <PencilIcon className="h-3 w-3" />
           </Button>
 
           {/* Settings Button */}
@@ -159,14 +159,14 @@ export const AppToolbar: React.FC<AppToolbarProps> = ({
       )}
 
       {activeTab === "notes" && (
-        <div className="flex items-center gap-1 shrink-0">
+        <div className="flex items-center gap-1 shrink-0 pr-2">
           <Button
             onClick={handleCreateNote}
             size="sm"
             className="h-7 w-7 p-0"
             title="Create New Note"
           >
-            <Plus className="h-3 w-3" />
+            <PencilIcon className="h-3 w-3" />
           </Button>
         </div>
       )}

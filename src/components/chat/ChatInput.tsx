@@ -212,7 +212,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           value={inputValue}
           onChange={(e) => onInputChange(e.target.value)}
           onKeyDown={handleKeyPress}
-          placeholder={placeholderOverride || "Type your message..."}
+          placeholder={placeholderOverride || "Ask Codex to do anything"}
           className={`min-h-[60px] max-h-[200px] pr-32 bg-gray-100 resize-none overflow-y-auto pb-8 ${
             (fileReferences.length > 0 || mediaAttachments.length > 0) ? 'pt-8' : ''
           }`}
