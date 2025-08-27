@@ -2,7 +2,7 @@ import { memo } from 'react';
 import { Copy, Check, ChevronDown, ChevronRight } from 'lucide-react';
 import { MessageNoteActions } from './MessageNoteActions';
 import { MarkdownRenderer } from './MarkdownRenderer';
-import { StreamingMessage } from '../StreamingMessage';
+import { StreamingMessage } from './StreamingMessage';
 import { useState } from 'react';
 import {
   Collapsible,

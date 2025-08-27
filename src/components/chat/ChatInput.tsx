@@ -1,17 +1,12 @@
 import React from 'react';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
-import { Badge } from '../ui/badge';
-import { Send, AtSign, X, Square, Image, Music } from 'lucide-react';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '../ui/tooltip';
+import { Send, Square } from 'lucide-react';
 import { useChatInputStore } from '@/stores/chatInputStore';
 import { MediaSelector } from './MediaSelector';
 import { ModelSelector } from './ModelSelector';
+import { FileReferenceList } from './FileReferenceList';
+import { MediaAttachmentList } from './MediaAttachmentList';
 
 interface ChatInputProps {
   inputValue: string;
@@ -97,9 +92,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
+    if (e.key === 'Enter') {
+      if (e.shiftKey) {
+        // allow newline
+        return;
+      } else {
+        e.preventDefault();
+        handleSendMessage();
+      }
     }
   };
 
@@ -110,75 +110,16 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         {(fileReferences.length > 0 || mediaAttachments.length > 0) && (
           <div className="absolute top-2 left-3 right-32 z-10 flex flex-wrap gap-1 items-center mb-2 max-h-20 overflow-y-auto">
             {/* File references */}
-            {fileReferences.length > 0 && (
-              <>
-                <AtSign className="w-3 h-3 text-gray-400 flex-shrink-0" />
-                {fileReferences.map((ref) => (
-                  <TooltipProvider key={ref.path}>
-                    <Tooltip>
-                      <TooltipTrigger>
-                        <Badge
-                          variant="secondary"
-                          className="flex items-center gap-1 cursor-pointer hover:bg-gray-200 h-5 text-xs px-1.5 py-0"
-                        >
-                          <span>{ref.name}</span>
-                          <button
-                            className="ml-1 p-0.5 hover:bg-gray-300 rounded flex-shrink-0 cursor-pointer"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              removeFileReference(ref.path);
-                            }}
-                            type="button"
-                          >
-                            <X className="w-2.5 h-2.5" />
-                          </button>
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>{ref.relativePath}</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                ))}
-              </>
-            )}
+            <FileReferenceList 
+              fileReferences={fileReferences}
+              onRemove={removeFileReference}
+            />
             
             {/* Media attachments */}
-            {mediaAttachments.map((attachment) => (
-              <TooltipProvider key={attachment.id}>
-                <Tooltip>
-                  <TooltipTrigger>
-                    <Badge
-                      variant="outline"
-                      className="flex items-center gap-1 cursor-pointer hover:bg-gray-50 h-5 text-xs px-1.5 py-0"
-                    >
-                      {attachment.type === 'image' ? (
-                        <Image className="w-2.5 h-2.5 text-blue-500 flex-shrink-0" />
-                      ) : (
-                        <Music className="w-2.5 h-2.5 text-green-500 flex-shrink-0" />
-                      )}
-                      <span className="truncate max-w-12">{attachment.name}</span>
-                      <button
-                        className="ml-1 p-0.5 hover:bg-gray-300 rounded flex-shrink-0 cursor-pointer"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          removeMediaAttachment(attachment.id);
-                        }}
-                        type="button"
-                      >
-                        <X className="w-2.5 h-2.5" />
-                      </button>
-                    </Badge>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <div className="text-xs">
-                      <p>{attachment.path}</p>
-                      <p className="text-gray-500 mt-1">{attachment.type} • {attachment.mimeType}</p>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
-            ))}
+            <MediaAttachmentList
+              mediaAttachments={mediaAttachments}
+              onRemove={removeMediaAttachment}
+            />
             
             {/* Clear buttons */}
             {(fileReferences.length > 0 || mediaAttachments.length > 0) && (

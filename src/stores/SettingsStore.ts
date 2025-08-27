@@ -22,6 +22,8 @@ interface SettingsStore {
   setProviderModels: (provider: Provider, models: string[]) => void;
   defaultProvider: Provider;
   setDefaultProvider: (provider: Provider) => void;
+  activeSection: string;
+  setActiveSection: (section: string) => void;
 }
 
 const DEFAULT_EXCLUDE_FOLDERS = [
@@ -73,6 +75,7 @@ export const useSettingsStore = create<SettingsStore>()(
       excludeFolders: DEFAULT_EXCLUDE_FOLDERS,
       providers: { ...DEFAULT_PROVIDERS },
       defaultProvider: "openai",
+      activeSection: "provider",
       addExcludeFolder: (folder: string) =>
         set((state) => ({
           excludeFolders: [...state.excludeFolders, folder],
@@ -106,6 +109,8 @@ export const useSettingsStore = create<SettingsStore>()(
         })),
       setDefaultProvider: (provider: Provider) =>
         set({ defaultProvider: provider }),
+      setActiveSection: (section: string) =>
+        set({ activeSection: section }),
     }),
     {
       name: "settings-storage",
