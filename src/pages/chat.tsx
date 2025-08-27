@@ -17,7 +17,6 @@ import { invoke } from "@tauri-apps/api/core";
 import { GitBranch, Files } from "lucide-react";
 
 export default function ChatPage() {
-
   const {
     showFileTree,
     showFilePanel,
@@ -27,20 +26,23 @@ export default function ChatPage() {
     closeFile,
   } = useLayoutStore();
 
-  const {
-    config,
-    setConfig,
-    createConversationWithLatestSession,
-  } = useConversationStore();
+  const { config, setConfig, createConversationWithLatestSession } =
+    useConversationStore();
 
   const { currentFolder } = useFolderStore();
   const { fileReferences, removeFileReference } = useChatInputStore();
   const [isConfigOpen, setIsConfigOpen] = useState(false);
-  const [diffFile, setDiffFile] = useState<{ original: string; current: string; fileName: string } | null>(null);
-  const [expandedAddedFolders, setExpandedAddedFolders] = useState<Set<string>>(new Set());
+  const [diffFile, setDiffFile] = useState<{
+    original: string;
+    current: string;
+    fileName: string;
+  } | null>(null);
+  const [expandedAddedFolders, setExpandedAddedFolders] = useState<Set<string>>(
+    new Set(),
+  );
 
   const handleToggleAddedFolder = (folderPath: string) => {
-    setExpandedAddedFolders(prev => {
+    setExpandedAddedFolders((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(folderPath)) {
         newSet.delete(folderPath);
@@ -53,22 +55,28 @@ export default function ChatPage() {
 
   // Check if a file should show remove button (only if it's in the original fileReferences list)
   const shouldShowRemoveButton = (filePath: string) => {
-    return fileReferences.some(ref => ref.path === filePath);
+    return fileReferences.some((ref) => ref.path === filePath);
   };
 
   const handleDiffClick = async (filePath: string) => {
     try {
-      console.log('handleDiffClick called with:', filePath);
-      console.log('currentFolder:', currentFolder);
-      
+      console.log("handleDiffClick called with:", filePath);
+      console.log("currentFolder:", currentFolder);
+
       // Try with currentFolder first, then fallback to direct path
-      const fullPath = currentFolder ? `${currentFolder}/${filePath}` : filePath;
-      console.log('Trying full path:', fullPath);
-      
-      const result = await invoke<{ original_content: string; current_content: string; has_changes: boolean }>("get_git_file_diff", {
-        filePath: fullPath
+      const fullPath = currentFolder
+        ? `${currentFolder}/${filePath}`
+        : filePath;
+      console.log("Trying full path:", fullPath);
+
+      const result = await invoke<{
+        original_content: string;
+        current_content: string;
+        has_changes: boolean;
+      }>("get_git_file_diff", {
+        filePath: fullPath,
       });
-      
+
       if (result.has_changes) {
         // Clear selected file to avoid conflicts
         closeFile();
@@ -76,12 +84,15 @@ export default function ChatPage() {
         setDiffFile({
           original: result.original_content,
           current: result.current_content,
-          fileName: filePath
+          fileName: filePath,
         });
       }
     } catch (error) {
       console.error("Failed to get diff:", error);
-      console.error("Tried path:", currentFolder ? `${currentFolder}/${filePath}` : filePath);
+      console.error(
+        "Tried path:",
+        currentFolder ? `${currentFolder}/${filePath}` : filePath,
+      );
     }
   };
 
@@ -96,24 +107,17 @@ export default function ChatPage() {
             <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="files">Files</TabsTrigger>
               <TabsTrigger value="git">
-                <GitBranch size={14} className="mr-1.5" />
-                Git
+                <GitBranch /> Git
               </TabsTrigger>
-              <TabsTrigger value="attached" className="relative">
-                <Files size={14} className="mr-1.5" />
-                Added
-                {fileReferences.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-blue-500 text-white text-xs rounded-full h-4 w-4 flex items-center justify-center">
-                    {fileReferences.length}
-                  </span>
-                )}
+              <TabsTrigger value="attached">
+                <Files /> Added
               </TabsTrigger>
             </TabsList>
             <TabsContent value="files" className="flex-1 overflow-hidden mt-0">
               <FileTree
                 currentFolder={currentFolder || undefined}
                 onFileClick={(path) => {
-                  console.log('ChatPage: opening file from FileTree', path);
+                  console.log("ChatPage: opening file from FileTree", path);
                   setDiffFile(null); // Clear any existing diff view
                   openFile(path);
                 }}
@@ -125,18 +129,24 @@ export default function ChatPage() {
                 onDiffClick={handleDiffClick}
               />
             </TabsContent>
-            <TabsContent value="attached" className="flex-1 overflow-hidden mt-0">
+            <TabsContent
+              value="attached"
+              className="flex-1 overflow-hidden mt-0"
+            >
               <div className="h-full overflow-auto p-2">
                 {fileReferences.length === 0 ? (
                   <div className="text-center text-gray-500 mt-8">
                     <Files size={32} className="mx-auto mb-2 opacity-50" />
                     <p className="text-sm">No files added yet</p>
-                    <p className="text-xs mt-1">Add files from the Files tab to see them here</p>
+                    <p className="text-xs mt-1">
+                      Add files from the Files tab to see them here
+                    </p>
                   </div>
                 ) : (
                   <div className="space-y-0">
                     <div className="text-xs text-gray-500 mb-2 px-2">
-                      {fileReferences.length} file{fileReferences.length !== 1 ? 's' : ''} added to chat
+                      {fileReferences.length} file
+                      {fileReferences.length !== 1 ? "s" : ""} added to chat
                     </div>
                     {fileReferences.map((ref) => (
                       <FileTreeItem
@@ -149,7 +159,9 @@ export default function ChatPage() {
                         level={0}
                         expandedFolders={expandedAddedFolders}
                         onToggleFolder={handleToggleAddedFolder}
-                        onAddToChat={(path) => console.log('Added to chat:', path)}
+                        onAddToChat={(path) =>
+                          console.log("Added to chat:", path)
+                        }
                         onFileClick={(path, isDirectory) => {
                           if (!isDirectory) {
                             setDiffFile(null);
@@ -181,7 +193,9 @@ export default function ChatPage() {
             {diffFile ? (
               <div className="h-full flex flex-col">
                 <div className="p-2 border-b bg-gray-50 flex items-center justify-between">
-                  <span className="text-sm font-medium">Diff: {diffFile.fileName}</span>
+                  <span className="text-sm font-medium">
+                    Diff: {diffFile.fileName}
+                  </span>
                   <button
                     onClick={() => setDiffFile(null)}
                     className="text-gray-500 hover:text-gray-700"

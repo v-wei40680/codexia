@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Folder, Filter, RefreshCw } from "lucide-react";
+import { Folder, RefreshCw, Search } from "lucide-react";
+import { useState } from "react";
 
 interface FileTreeHeaderProps {
   currentFolder?: string;
@@ -17,21 +17,19 @@ export function FileTreeHeader({
   currentFolder,
   filterText,
   onFilterTextChange,
-  showFilter,
-  onToggleFilter,
   onRefresh,
-  excludeFolders,
 }: FileTreeHeaderProps) {
+  const [showSearchInput, setShowSearchInput] = useState(false);
   const getCurrentDirectoryName = () => {
     if (!currentFolder) return "Home";
     return currentFolder.split("/").pop() || currentFolder;
   };
 
   return (
-    <div className="p-2 border-b space-y-2">
+    <div>
       <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
-        <Folder className="w-4 h-4 text-blue-500" />
+        <div className="flex items-center gap-1">
+          <Folder className="w-4 h-4 text-blue-500" />
           <span
             className="text-sm font-medium text-gray-700 truncate"
             title={currentFolder || "Home"}
@@ -40,47 +38,35 @@ export function FileTreeHeader({
           </span>
         </div>
 
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onRefresh}
-          title="Refresh directory"
-        >
-          <RefreshCw className="w-4 h-4" />
-        </Button>
+        <span className="flex gap-0.5">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={onRefresh}
+            title="Refresh directory"
+          >
+            <RefreshCw className="w-3 h-3" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-6 w-6"
+            onClick={() => setShowSearchInput(!showSearchInput)}
+          >
+            <Search className="w-3 h-3" />
+          </Button>
+        </span>
       </div>
 
-      <div className="flex items-center gap-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={onToggleFilter}
-        >
-          <Filter className="w-4 h-4" />
-        </Button>
+      {showSearchInput &&
         <Input
           placeholder="Filter files..."
           value={filterText}
           onChange={(e) => onFilterTextChange(e.target.value)}
           className="text-sm"
         />
-      </div>
-
-      {showFilter && (
-        <div className="text-xs">
-          <div className="mb-2 font-medium">Excluded folders:</div>
-          <div className="flex flex-wrap gap-1">
-            {excludeFolders.map((folder) => (
-              <Badge key={folder} variant="outline" className="text-xs">
-                {folder}
-              </Badge>
-            ))}
-          </div>
-          <div className="text-xs text-gray-400 mt-1">
-            Go to Settings to manage excluded folders
-          </div>
-        </div>
-      )}
+      }
     </div>
   );
 }
