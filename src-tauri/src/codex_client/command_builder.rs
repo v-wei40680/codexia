@@ -199,6 +199,14 @@ impl CommandBuilder {
             cmd.arg("-c").arg(sandbox_config);
         }
 
+        // Add reasoning effort parameter
+        if let Some(reasoning_effort) = &config.reasoning_effort {
+            if !reasoning_effort.is_empty() {
+                cmd.arg("-c")
+                    .arg(format!("model_reasoning_effort={}", reasoning_effort));
+            }
+        }
+
         // Enable streaming by setting show_raw_agent_reasoning=true
         // This is required for agent_message_delta events to be generated
         cmd.arg("-c").arg("show_raw_agent_reasoning=true");

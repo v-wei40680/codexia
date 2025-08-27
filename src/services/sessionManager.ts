@@ -53,6 +53,7 @@ class SessionManager {
           approval_policy: config.approvalPolicy,
           sandbox_mode: config.sandboxMode,
           api_key: apiKey,
+          reasoning_effort: config.reasoningEffort,
         },
       });
 

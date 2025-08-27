@@ -5,6 +5,7 @@ import { Send, Square } from 'lucide-react';
 import { useChatInputStore } from '@/stores/chatInputStore';
 import { MediaSelector } from './MediaSelector';
 import { ModelSelector } from './ModelSelector';
+import { ReasoningEffortSelector } from './ReasoningEffortSelector';
 import { FileReferenceList } from './FileReferenceList';
 import { MediaAttachmentList } from './MediaAttachmentList';
 
@@ -127,9 +128,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           <MediaSelector />
         </div>
         
-        {/* Model Selector and Send Button - bottom right inside textarea */}
+        {/* Reasoning Effort, Model Selector and Send Button - bottom right inside textarea */}
         <div className="absolute right-2 bottom-2 flex items-center gap-1">
           <ModelSelector />
+          <ReasoningEffortSelector />
           {isLoading ? (
             <Button
               onClick={handleStopStreaming}

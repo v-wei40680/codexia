@@ -106,7 +106,7 @@ export const ModelSelector: React.FC = () => {
   }, [modelsByProvider, searchTerm]);
 
   return (
-    <div className="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
+    <div className="flex items-center justify-between border-t border-gray-100">
       <Popover open={isModelPopoverOpen} onOpenChange={(open) => {
         setIsModelPopoverOpen(open);
         if (!open) {
@@ -115,7 +115,7 @@ export const ModelSelector: React.FC = () => {
       }}>
         <PopoverTrigger asChild>
           <div className="flex items-center gap-2 text-xs text-gray-500">
-            <Badge variant="outline" className="text-xs cursor-pointer hover:bg-gray-100">
+            <Badge variant="outline" className="text-xs cursor-pointer hover:bg-gray-100 h-6 px-2">
               {currentProvider}/{currentModel}
             </Badge>
           </div>

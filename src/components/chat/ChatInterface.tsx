@@ -34,7 +34,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   selectedConversation = null,
 }) => {
   const { inputValue, setInputValue } = useChatInputStore();
-  const { currentModel, currentProvider } = useModelStore();
+  const { currentModel, currentProvider, reasoningEffort } = useModelStore();
   const [pendingApproval, setPendingApproval] =
     useState<ApprovalRequest | null>(null);
   const [isConnected, setIsConnected] = useState(false);
@@ -152,6 +152,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   model: currentModel,
                   provider: currentProvider,
                   useOss: currentProvider.toLowerCase() === "ollama",
+                  reasoningEffort,
                 };
                 await sessionManager.ensureSessionRunning(
                   sessionId,
@@ -265,6 +266,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           model: currentModel,
           provider: currentProvider,
           useOss: currentProvider.toLowerCase() === "ollama",
+          reasoningEffort,
         };
         await sessionManager.ensureSessionRunning(
           actualSessionId,

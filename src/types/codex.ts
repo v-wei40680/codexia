@@ -59,6 +59,7 @@ export interface CodexConfig {
   approvalPolicy: 'untrusted' | 'on-failure' | 'on-request' | 'never';
   sandboxMode: 'read-only' | 'workspace-write' | 'danger-full-access';
   codexPath?: string;
+  reasoningEffort?: 'high' | 'medium' | 'low';
 }
 
 export const DEFAULT_CONFIG: CodexConfig = {

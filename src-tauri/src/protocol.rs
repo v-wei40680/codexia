@@ -151,4 +151,5 @@ pub struct CodexConfig {
     pub sandbox_mode: String,
     pub codex_path: Option<String>,
     pub api_key: Option<String>,
+    pub reasoning_effort: Option<String>,
 }
