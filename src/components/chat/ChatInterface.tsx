@@ -151,7 +151,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
                   ...config,
                   model: currentModel,
                   provider: currentProvider,
-                  useOss: currentProvider.toLowerCase() !== "openai",
+                  useOss: currentProvider.toLowerCase() === "ollama",
                 };
                 await sessionManager.ensureSessionRunning(
                   sessionId,
@@ -264,7 +264,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           ...config,
           model: currentModel,
           provider: currentProvider,
-          useOss: currentProvider.toLowerCase() !== "openai",
+          useOss: currentProvider.toLowerCase() === "ollama",
         };
         await sessionManager.ensureSessionRunning(
           actualSessionId,
@@ -354,11 +354,21 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         ? sessionId.replace("codex-event-", "")
         : sessionId;
 
-      await invoke("approve_execution", {
-        sessionId: rawSessionId,
-        approvalId: pendingApproval.id,
-        approved,
-      });
+      if (pendingApproval.type === 'apply_patch') {
+        // For apply_patch, use event.id (stored in pendingApproval.id)
+        await invoke("approve_patch", {
+          sessionId: rawSessionId,
+          approvalId: pendingApproval.id,
+          approved,
+        });
+      } else {
+        // For exec, use call_id (stored in pendingApproval.id)  
+        await invoke("approve_execution", {
+          sessionId: rawSessionId,
+          approvalId: pendingApproval.id,
+          approved,
+        });
+      }
       setPendingApproval(null);
     } catch (error) {
       console.error("Failed to send approval:", error);

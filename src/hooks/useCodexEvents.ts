@@ -141,8 +141,9 @@ export const useCodexEvents = ({
         onApprovalRequest({
           id: event.id,
           type: 'exec',
-          command: msg.command,
+          command: Array.isArray(msg.command) ? msg.command.join(' ') : msg.command,
           cwd: msg.cwd,
+          call_id: msg.call_id,
         });
         break;
         
@@ -152,6 +153,15 @@ export const useCodexEvents = ({
           type: 'patch',
           patch: msg.patch,
           files: msg.files,
+        });
+        break;
+        
+      case 'apply_patch_approval_request':
+        onApprovalRequest({
+          id: event.id,
+          type: 'apply_patch',
+          call_id: (msg as any).call_id,
+          changes: (msg as any).changes,
         });
         break;
         
@@ -175,6 +185,11 @@ export const useCodexEvents = ({
         
       case 'background_event':
         console.log('Background event:', msg.message);
+        break;
+        
+      case 'turn_diff':
+        console.log('Turn diff received, length:', (msg as any).unified_diff?.length || 0);
+        // Could emit this for diff viewer components if needed
         break;
         
       case 'exec_command_begin':
@@ -210,7 +225,9 @@ export const useCodexEvents = ({
         return;
       }
       
-      console.log(`Received codex event for session ${sessionId}:`, codexEvent);
+      // if (codexEvent.msg.type !== "agent_message_delta") {
+        console.log(`Received codex event for session ${sessionId}:`, codexEvent);
+      // }
       handleCodexEvent(codexEvent);
     });
     

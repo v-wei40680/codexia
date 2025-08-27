@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
-import { Settings, Folder, FileText } from 'lucide-react';
+import { Settings, FileText } from 'lucide-react';
 import { CodexConfig, DEFAULT_CONFIG } from '@/types/codex';
 import {
   Dialog,
@@ -11,9 +11,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { useFolderStore } from "@/stores/FolderStore";
-import { useModelStore } from "@/stores/ModelStore";
-import { useSettingsStore } from "@/stores/SettingsStore";
 
 interface ConfigDialogProps {
   isOpen: boolean;
@@ -28,38 +25,9 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
   onClose,
   onSave,
 }) => {
-  const { currentFolder, setCurrentFolder } = useFolderStore();
-  const { currentModel, currentProvider } = useModelStore();
-  const { providers } = useSettingsStore();
   const [localConfig, setLocalConfig] = useState<CodexConfig>({
     ...config,
-    workingDirectory: currentFolder || config.workingDirectory
   });
-
-  // Update localConfig when currentFolder changes
-  useEffect(() => {
-    if (currentFolder) {
-      setLocalConfig(prev => ({
-        ...prev,
-        workingDirectory: currentFolder
-      }));
-    }
-  }, [currentFolder]);
-
-  const handleSelectDirectory = async () => {
-    try {
-      const result = await open({
-        directory: true,
-        multiple: false,
-      });
-      if (result) {
-        setCurrentFolder(result)
-        setLocalConfig(prev => ({ ...prev, workingDirectory: result }));
-      }
-    } catch (error) {
-      console.error('Failed to select directory:', error);
-    }
-  };
 
   const handleSelectCodexExecutable = async () => {
     try {
@@ -128,30 +96,6 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
             </p>
           </div>
 
-          {/* Working Directory */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Working Directory</label>
-            <div className="flex gap-2">
-              <Input
-                value={localConfig.workingDirectory}
-                onChange={(e) => updateConfig('workingDirectory', e.target.value)}
-                placeholder="/path/to/project"
-                className="flex-1"
-              />
-              <Button
-                variant="outline"
-                onClick={handleSelectDirectory}
-                className="flex items-center gap-2"
-              >
-                <Folder className="w-4 h-4" />
-                Browse
-              </Button>
-            </div>
-            <p className="text-xs text-gray-500">
-              Directory where codex will run and execute commands
-            </p>
-          </div>
-
           {/* Security Settings */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium">Security Settings</h3>
@@ -211,30 +155,6 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
             <p className="text-xs text-gray-500">
               Additional command-line arguments for codex
             </p>
-          </div>
-
-          {/* Current Config Preview */}
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Command Preview</label>
-            <div className="bg-gray-100 p-3 rounded text-sm font-mono">
-              {localConfig.codexPath || 'codex'} proto
-              {currentProvider && currentModel && (
-                <>
-                  {(() => {
-                    const settingsProvider = Object.keys(providers).find(
-                      p => p.toLowerCase() === currentProvider.toLowerCase()
-                    );
-                    const useOss = settingsProvider && settingsProvider.toLowerCase() === 'ollama';
-                    return useOss ? ' -c model_provider=oss' : '';
-                  })()}
-                  {` -c model=${currentModel}`}
-                </>
-              )}
-              {` -c cwd=${localConfig.workingDirectory}`}
-              {localConfig.approvalPolicy && ` -c approval_policy=${localConfig.approvalPolicy}`}
-              {localConfig.sandboxMode && ` -c sandbox_mode=${localConfig.sandboxMode}`}
-              {localConfig.customArgs && localConfig.customArgs.length > 0 && ` ${localConfig.customArgs.join(' ')}`}
-            </div>
           </div>
         </div>
 

@@ -10,7 +10,7 @@ interface ModelStore {
 export const useModelStore = create<ModelStore>()(
   persist(
     (set) => ({
-      currentModel: 'gpt-4o',
+      currentModel: 'gpt-5',
       currentProvider: 'openai',
       setCurrentModel: (model: string, provider: string) =>
         set({ currentModel: model, currentProvider: provider }),

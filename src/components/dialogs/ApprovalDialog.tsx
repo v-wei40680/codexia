@@ -20,7 +20,12 @@ export const ApprovalDialog: React.FC<ApprovalDialogProps> = ({
         <AlertTriangle className="w-5 h-5 text-yellow-600 mt-0.5" />
         <div className="flex-1">
           <h3 className="font-medium text-yellow-800">
-            {pendingApproval.type === 'exec' ? 'Command Execution Request' : 'Code Patch Request'}
+            {pendingApproval.type === 'exec' 
+              ? 'Command Execution Request' 
+              : pendingApproval.type === 'apply_patch' 
+              ? 'Apply Code Changes Request' 
+              : 'Code Patch Request'
+            }
           </h3>
           {pendingApproval.type === 'exec' ? (
             <div className="mt-2">
@@ -31,6 +36,19 @@ export const ApprovalDialog: React.FC<ApprovalDialogProps> = ({
               <p className="text-xs text-yellow-600 mt-1">
                 Working directory: {pendingApproval.cwd}
               </p>
+            </div>
+          ) : pendingApproval.type === 'apply_patch' ? (
+            <div className="mt-2">
+              <p className="text-sm text-yellow-700">Changes to be applied:</p>
+              <div className="bg-yellow-100 p-2 rounded text-sm mt-1 max-h-40 overflow-y-auto">
+                {pendingApproval.changes ? (
+                  <pre className="text-xs whitespace-pre-wrap">
+                    {JSON.stringify(pendingApproval.changes, null, 2)}
+                  </pre>
+                ) : (
+                  <span className="text-yellow-600">No change details available</span>
+                )}
+              </div>
             </div>
           ) : (
             <div className="mt-2">

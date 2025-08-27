@@ -99,6 +99,24 @@ pub async fn approve_execution(
     }
 }
 
+pub async fn approve_patch(
+    state: State<'_, CodexState>,
+    session_id: String,
+    approval_id: String,
+    approved: bool,
+) -> Result<(), String> {
+    let mut sessions = state.sessions.lock().await;
+    if let Some(client) = sessions.get_mut(&session_id) {
+        client
+            .send_apply_patch_approval(approval_id, approved)
+            .await
+            .map_err(|e| format!("Failed to send patch approval: {}", e))?;
+        Ok(())
+    } else {
+        Err("Session not found".to_string())
+    }
+}
+
 pub async fn stop_session(state: State<'_, CodexState>, session_id: String) -> Result<(), String> {
     let sessions = state.sessions.lock().await;
     let stored_sessions: Vec<String> = sessions.keys().cloned().collect();

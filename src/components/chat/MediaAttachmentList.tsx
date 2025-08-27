@@ -27,7 +27,7 @@ export const MediaAttachmentList: React.FC<MediaAttachmentListProps> = ({
       {mediaAttachments.map((attachment) => (
         <TooltipProvider key={attachment.id}>
           <Tooltip>
-            <TooltipTrigger>
+            <TooltipTrigger asChild>
               <Badge
                 variant="outline"
                 className="flex items-center gap-1 cursor-pointer hover:bg-gray-50 h-5 text-xs px-1.5 py-0"

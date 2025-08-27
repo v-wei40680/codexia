@@ -97,12 +97,17 @@ pub enum EventMsg {
         delta: String,
     },
     ExecApprovalRequest {
-        command: String,
+        call_id: String,
+        command: Vec<String>,
         cwd: String,
     },
     PatchApprovalRequest {
         patch: String,
         files: Vec<String>,
+    },
+    ApplyPatchApprovalRequest {
+        call_id: String,
+        changes: serde_json::Value,
     },
     Error {
         message: String,
@@ -129,6 +134,9 @@ pub enum EventMsg {
     ShutdownComplete,
     BackgroundEvent {
         message: String,
+    },
+    TurnDiff {
+        unified_diff: String,
     },
 }
 

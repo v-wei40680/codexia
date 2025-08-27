@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-export type Provider = "openai" | "gemini" | "ollama" | "openrouter";
+export type Provider = "openai" | "google" | "ollama" | "openrouter";
 
 type ProviderConfig = {
   apiKey: string;
@@ -51,7 +51,7 @@ const DEFAULT_PROVIDERS: Providers = {
     baseUrl: "http://localhost:11434/v1",
     models: ["gpt-oss:20b", "gpt-oss:120b", "mistral", "qwen3", "deepseek-r1", "llama3.2", "gemma3"],
   },
-  gemini: {
+  google: {
     apiKey: "",
     baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
     models: ["gemini-2.5-flash", "gemini-2.5-pro"],
@@ -64,7 +64,9 @@ const DEFAULT_PROVIDERS: Providers = {
       "anthropic/claude-opus-4",
       "anthropic/claude-sonnet-4",
       "anthropic/claude-3.5-sonnet",
-      "openai/codex-mini",
+      "openai/gpt-oss-20b:free",
+      "qwen/qwen3-coder:free",
+      "moonshotai/kimi-k2:free"
     ],
   },
 };

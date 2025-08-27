@@ -75,7 +75,7 @@ export const ModelSelector: React.FC = () => {
 
   // Helper function to determine if provider should use OSS
   const shouldUseOss = (provider: string) => {
-    return provider.toLowerCase() !== 'openai';
+    return provider.toLowerCase() === 'ollama';
   };
 
   // Filter models based on search term

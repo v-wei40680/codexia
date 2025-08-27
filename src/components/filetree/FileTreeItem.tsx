@@ -180,7 +180,7 @@ export function FileTreeItem({
             {tokens !== null && (
               <TooltipProvider>
                 <Tooltip>
-                  <TooltipTrigger>
+                  <TooltipTrigger asChild>
                     <Badge variant="secondary" className="text-xs">
                       {tokens}
                     </Badge>

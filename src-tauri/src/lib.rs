@@ -2,20 +2,22 @@ mod codex_client;
 mod commands;
 mod config;
 mod filesystem;
+mod mcp;
 mod protocol;
 mod services;
 mod state;
 mod utils;
 
 use commands::{
-    approve_execution, check_codex_version, close_session, delete_session_file,
-    get_latest_session_id, get_running_sessions, get_session_files, read_session_file, read_history_file,
-    load_sessions_from_disk, pause_session, send_message, send_message_with_media, start_codex_session, stop_session,
+    approve_execution, approve_patch, check_codex_version, close_session, delete_session_file,
+    get_latest_session_id, get_running_sessions, get_session_files, load_sessions_from_disk,
+    pause_session, read_history_file, read_session_file, send_message, send_message_with_media,
+    start_codex_session, stop_session,
 };
 use config::{
-    add_mcp_server, add_or_update_model_provider, add_or_update_profile, delete_mcp_server,
-    delete_profile, get_profile_config, get_project_name, get_provider_config, read_codex_config,
-    read_mcp_servers, read_model_providers, read_profiles, update_profile_model,
+    add_or_update_model_provider, add_or_update_profile, delete_profile, get_profile_config,
+    get_project_name, get_provider_config, read_codex_config, read_model_providers, read_profiles,
+    update_profile_model,
 };
 use filesystem::{
     directory_ops::{get_default_directories, read_directory},
@@ -25,6 +27,7 @@ use filesystem::{
     git_diff::get_git_file_diff,
     git_status::get_git_status,
 };
+use mcp::{add_mcp_server, delete_mcp_server, read_mcp_servers};
 use state::CodexState;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -42,7 +45,7 @@ pub fn run() {
                         file_name: Some("logs".to_string()),
                     },
                 ))
-                .build()
+                .build(),
         )
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
@@ -54,6 +57,7 @@ pub fn run() {
             send_message,
             send_message_with_media,
             approve_execution,
+            approve_patch,
             stop_session,
             pause_session,
             close_session,

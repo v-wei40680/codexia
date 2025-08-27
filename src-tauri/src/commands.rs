@@ -59,6 +59,16 @@ pub async fn approve_execution(
 }
 
 #[tauri::command]
+pub async fn approve_patch(
+    state: State<'_, CodexState>,
+    session_id: String,
+    approval_id: String,
+    approved: bool,
+) -> Result<(), String> {
+    codex::approve_patch(state, session_id, approval_id, approved).await
+}
+
+#[tauri::command]
 pub async fn stop_session(state: State<'_, CodexState>, session_id: String) -> Result<(), String> {
     codex::stop_session(state, session_id).await
 }

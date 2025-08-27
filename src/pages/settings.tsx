@@ -10,7 +10,7 @@ export default function SettingsPage() {
   const [selectedProvider, setSelectedProvider] = useState<string>("openai");
   const providerNames = [
     "openai",
-    "gemini",
+    "google",
     "ollama",
     "openrouter",
   ];

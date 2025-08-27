@@ -39,25 +39,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   const generateSmartPrompt = (): string => {
     if (fileReferences.length === 0) return '';
-    
-    // Use the accurate isDirectory flag
-    const directories = fileReferences.filter(ref => ref.isDirectory);
-    const files = fileReferences.filter(ref => !ref.isDirectory);
-    
-    const filePaths = fileReferences.map(ref => ref.relativePath).join(' ');
-    
-    if (directories.length > 0 && files.length === 0) {
-      return directories.length === 1 
-        ? `${filePaths}`
-        : `${filePaths}`;
-    } else if (files.length > 0 && directories.length === 0) {
-      return files.length === 1 
-        ? `${filePaths}`
-        : `${filePaths}`;
-    } else {
-      // Mixed files and folders
-      return `${filePaths}`;
-    }
+    return fileReferences.map(ref => ref.relativePath).join(' ');
   };
 
   const handleSendMessage = () => {
@@ -120,32 +102,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               mediaAttachments={mediaAttachments}
               onRemove={removeMediaAttachment}
             />
-            
-            {/* Clear buttons */}
-            {(fileReferences.length > 0 || mediaAttachments.length > 0) && (
-              <div className="flex gap-1 ml-1">
-                {fileReferences.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearFileReferences}
-                    className="h-4 px-1 text-xs text-gray-400 hover:text-gray-600"
-                  >
-                    Clear files
-                  </Button>
-                )}
-                {mediaAttachments.length > 0 && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={clearMediaAttachments}
-                    className="h-4 px-1 text-xs text-gray-400 hover:text-gray-600"
-                  >
-                    Clear media
-                  </Button>
-                )}
-              </div>
-            )}
           </div>
         )}
         

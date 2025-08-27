@@ -58,7 +58,7 @@ export class ConfigService {
 
   // Helper method to get configuration for commonly used providers
   static async getCommonProviders() {
-    const providers = ['gemini', 'openrouter', 'openai', 'anthropic'];
+    const providers = ['google', 'openrouter', 'openai', 'anthropic'];
     const configs: Record<string, ProviderConfig> = {};
     
     for (const providerName of providers) {

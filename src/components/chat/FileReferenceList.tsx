@@ -34,7 +34,7 @@ export const FileReferenceList: React.FC<FileReferenceListProps> = ({
       {fileReferences.map((ref) => (
         <TooltipProvider key={ref.path}>
           <Tooltip>
-            <TooltipTrigger>
+            <TooltipTrigger asChild>
               <Badge
                 variant="secondary"
                 className="flex items-center gap-1 cursor-pointer hover:bg-gray-200 h-5 text-xs px-1.5 py-0"
