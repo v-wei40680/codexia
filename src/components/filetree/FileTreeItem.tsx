@@ -149,7 +149,8 @@ export function FileTreeItem({
     <ContextMenu>
       <ContextMenuTrigger asChild>
         <div
-          className={`group indent-${level * 2}`}
+          className="group"
+          style={{ paddingLeft: `${level * 4}px` }}
           onMouseEnter={handleMouseEnter}
         >
           <div className="flex items-center gap-0.5 py-1 px-1 hover:bg-accent rounded">
@@ -198,7 +199,7 @@ export function FileTreeItem({
                   <TooltipTrigger asChild>
                     <Button
                       variant="ghost"
-                      size="sm"
+                      size="icon"
                       className="opacity-0 group-hover:opacity-100 p-0.5 w-4 h-4 h-auto"
                       onClick={() => onSetWorkingFolder(entry.path)}
                     >
@@ -216,7 +217,7 @@ export function FileTreeItem({
               {showAddButton && (
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="icon"
                   className="opacity-0 group-hover:opacity-100 h-auto p-0.5 w-4 h-4"
                   onClick={handleAddToChatInput}
                 >
@@ -226,7 +227,7 @@ export function FileTreeItem({
               {onRemoveFromChat && (
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="icon"
                   className="opacity-0 group-hover:opacity-100 h-auto p-0.5 w-4 h-4 text-destructive hover:text-destructive/80"
                   onClick={() => onRemoveFromChat(entry.path)}
                 >
