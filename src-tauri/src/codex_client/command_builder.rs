@@ -111,9 +111,10 @@ impl CommandBuilder {
     async fn configure_provider(cmd: &mut Command, config: &CodexConfig) -> Result<()> {
         // Handle provider configuration
         if !config.provider.is_empty() && config.provider != "openai" {
-            // Special case for ollama - use --oss flag instead of model_provider config
+            // Special case for ollama - use model_provider=oss config instead of --oss flag 
+            // because --oss is not available for proto subcommand
             if config.provider.to_lowercase() == "ollama" {
-                cmd.arg("--oss");
+                cmd.arg("-c").arg("model_provider=oss");
                 
                 // Still set model if specified
                 if !config.model.is_empty() {
@@ -172,7 +173,7 @@ impl CommandBuilder {
         } else {
             // Original logic for OSS and default cases
             if config.use_oss {
-                cmd.arg("--oss");
+                cmd.arg("-c").arg("model_provider=oss");
             }
 
             if !config.model.is_empty() {
