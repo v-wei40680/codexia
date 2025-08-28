@@ -59,14 +59,15 @@ export function CodeEditor({
   const [editedContent, setEditedContent] = useState(content);
   const [isSaving, setIsSaving] = useState(false);
   const [aceEditor, setAceEditor] = useState<any>(null);
-  const [selectedText, setSelectedText] = useState<string>("");
-  const [selectionPosition, setSelectionPosition] = useState<{ x: number; y: number } | null>(null);
+  const [selection, setSelection] = useState<{
+    text: string;
+    position: { x: number; y: number };
+  } | null>(null);
   const editorContainerRef = useRef<HTMLDivElement>(null);
   
   // Zustand stores
   const { theme } = useThemeStore();
   const {
-    isDarkTheme,
     showLineNumbers,
     fontSize,
     tabSize,
@@ -140,7 +141,17 @@ export function CodeEditor({
       });
     };
 
-    aceEditor.on('changeSelection', handleCursorChange);
+    const handleSelectionAndCursor = () => {
+      handleCursorChange();
+      // Handle text selection for floating toolbar with a small delay
+      setTimeout(() => {
+        if (aceEditor && typeof aceEditor.getSelectedText === 'function') {
+          handleAceSelection(aceEditor);
+        }
+      }, 10);
+    };
+
+    aceEditor.on('changeSelection', handleSelectionAndCursor);
     aceEditor.on('changeCursor', handleCursorChange);
 
     return () => {
@@ -154,7 +165,7 @@ export function CodeEditor({
       }
       
       // Clean up listeners
-      aceEditor.off('changeSelection', handleCursorChange);
+      aceEditor.off('changeSelection', handleSelectionAndCursor);
       aceEditor.off('changeCursor', handleCursorChange);
     };
   }, [aceEditor, filePath, getCursorPosition, setCursorPosition]);
@@ -194,7 +205,6 @@ export function CodeEditor({
     }
 
     const selectedText = aceEditor.getSelectedText();
-    setSelectedText(selectedText);
     
     if (selectedText.trim()) {
       // Get selection position for floating button using ACE's coordinate system
@@ -224,15 +234,15 @@ export function CodeEditor({
             y: Math.max(10, Math.min(y, maxY))
           };
           
-          setSelectionPosition(position);
+          setSelection({ text: selectedText, position });
         }
       } catch (error) {
         console.warn('Could not calculate selection position:', error);
         // Fallback to a simple position
-        setSelectionPosition({ x: 100, y: 50 });
+        setSelection({ text: selectedText, position: { x: 100, y: 50 } });
       }
     } else {
-      setSelectionPosition(null);
+      setSelection(null);
     }
     
     if (onSelectionChange) {
@@ -329,10 +339,9 @@ export function CodeEditor({
         return;
       }
       
-      if (selectionPosition && editorContainerRef.current && 
+      if (selection && editorContainerRef.current && 
           !editorContainerRef.current.contains(target)) {
-        setSelectionPosition(null);
-        setSelectedText("");
+        setSelection(null);
       }
     };
 
@@ -340,32 +349,8 @@ export function CodeEditor({
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [selectionPosition]);
+  }, [selection]);
 
-  // Also hide floating button when ACE editor loses selection
-  useEffect(() => {
-    if (aceEditor && typeof aceEditor.on === 'function') {
-      const handleSelectionChange = () => {
-        // Small delay to allow ACE to process the selection
-        setTimeout(() => {
-          if (aceEditor && typeof aceEditor.getSelectedText === 'function') {
-            const currentSelection = aceEditor.getSelectedText();
-            if (!currentSelection.trim()) {
-              setSelectionPosition(null);
-              setSelectedText("");
-            }
-          }
-        }, 50);
-      };
-
-      aceEditor.on('changeSelection', handleSelectionChange);
-      return () => {
-        if (aceEditor && typeof aceEditor.off === 'function') {
-          aceEditor.off('changeSelection', handleSelectionChange);
-        }
-      };
-    }
-  }, [aceEditor]);
 
 
   const currentContent = editedContent;
@@ -462,7 +447,7 @@ export function CodeEditor({
       {/* Editor Content */}
       <div className="flex-1 overflow-hidden relative" ref={editorContainerRef}>
         {/* Floating Selection Actions */}
-        {selectedText.trim() && selectionPosition && (onSendToAI || onAddToNote) && (
+        {selection?.text.trim() && selection.position && (onSendToAI || onAddToNote) && (
           <div 
             data-floating-selection-toolbar
             className={`absolute z-10 flex items-center gap-1 p-1 rounded shadow-lg border ${
@@ -471,8 +456,8 @@ export function CodeEditor({
                 : 'bg-white border-gray-200'
             }`}
             style={{
-              left: selectionPosition.x,
-              top: selectionPosition.y,
+              left: selection.position.x,
+              top: selection.position.y,
               transform: 'translateX(-50%)'
             }}
           >
@@ -481,9 +466,8 @@ export function CodeEditor({
                 variant="ghost"
                 size="sm"
                 onClick={() => {
-                  onSendToAI(selectedText);
-                  setSelectionPosition(null);
-                  setSelectedText("");
+                  onSendToAI(selection.text);
+                  setSelection(null);
                 }}
                 className="p-1 h-auto"
                 title="Send selected text to AI"
@@ -496,9 +480,8 @@ export function CodeEditor({
                 variant="ghost"
                 size="sm"
                 onClick={() => {
-                  onAddToNote(selectedText);
-                  setSelectionPosition(null);
-                  setSelectedText("");
+                  onAddToNote(selection.text);
+                  setSelection(null);
                 }}
                 className="p-1 h-auto"
                 title="Add selected text to note"
@@ -511,7 +494,7 @@ export function CodeEditor({
         
         <AceEditor
           mode={getAceMode}
-          theme={isDarkTheme ? "monokai" : "github"}
+          theme={theme === 'dark' ? "monokai" : "github"}
           value={currentContent}
           readOnly={isReadOnly || !isEditableFile}
           fontSize={fontSize}
@@ -524,7 +507,6 @@ export function CodeEditor({
             enableBasicAutocompletion: !isReadOnly && isEditableFile,
             enableLiveAutocompletion: false,
             enableSnippets: false,
-            showLineNumbers: showLineNumbers,
             tabSize: tabSize,
             wrap: true,
             useWorker: false, // Disable worker to avoid console errors
@@ -534,10 +516,9 @@ export function CodeEditor({
               handleContentChange(value);
             }
           }}
-          onSelectionChange={() => {
-            // The editor instance should be available via aceEditor state
-            if (aceEditor) {
-              handleAceSelection(aceEditor);
+          onSelectionChange={(_, editorInstance) => {
+            if (editorInstance && typeof editorInstance.getSelectedText === 'function') {
+              handleAceSelection(editorInstance);
             }
           }}
           onLoad={handleAceLoad}

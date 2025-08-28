@@ -1,10 +1,9 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { Button } from "@/components/ui/button";
-import { X, Copy, Check, Sun, Moon, Send, FileText, GitBranch, Code } from "lucide-react";
+import { X, Copy, Check, Send, FileText, GitBranch, Code } from "lucide-react";
 import { CodeEditor } from "./CodeEditor";
 import { DiffViewer } from "./DiffViewer";
-import { useEditorStore } from "@/stores/EditorStore";
 import { useThemeStore } from "@/stores/ThemeStore";
 import { useConversationStore } from "@/stores/ConversationStore";
 import { useLayoutStore } from "@/stores/layoutStore";
@@ -33,7 +32,6 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
   const [viewMode, setViewMode] = useState<'code' | 'diff'>('code');
   const [gitDiff, setGitDiff] = useState<GitDiff | null>(null);
   const [diffLoading, setDiffLoading] = useState(false);
-  const { isDarkTheme, setIsDarkTheme } = useEditorStore();
   const { theme } = useThemeStore();
   const {} = useConversationStore();
   const { setActiveTab } = useLayoutStore();
@@ -242,21 +240,6 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
               <GitBranch className="w-4 h-4" />
             ) : (
               <Code className="w-4 h-4" />
-            )}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setIsDarkTheme(!isDarkTheme)}
-            className="p-1 h-auto"
-            title={
-              isDarkTheme ? "Switch to light theme" : "Switch to dark theme"
-            }
-          >
-            {isDarkTheme ? (
-              <Sun className="w-4 h-4" />
-            ) : (
-              <Moon className="w-4 h-4" />
             )}
           </Button>
           <Button
