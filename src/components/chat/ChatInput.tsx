@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
-import { Send, Square } from 'lucide-react';
+import { ArrowUp, Square } from 'lucide-react';
 import { useChatInputStore } from '@/stores/chatInputStore';
 import { MediaSelector } from './MediaSelector';
 import { ModelSelector } from './ModelSelector';
@@ -135,7 +135,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           {isLoading ? (
             <Button
               onClick={handleStopStreaming}
-              size="sm"
+              size="icon"
               className="bg-destructive hover:bg-destructive/90 text-destructive-foreground h-8 w-8 p-0"
               variant="default"
             >
@@ -145,10 +145,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             <Button
               onClick={handleSendMessage}
               disabled={!inputValue.trim() || disabled}
-              size="sm"
-              className="h-8 w-8 p-0"
+              size="icon"
+              className="rounded-full"
             >
-              <Send className="w-4 h-4" />
+              <ArrowUp />
             </Button>
           )}
         </div>

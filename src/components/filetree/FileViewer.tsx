@@ -7,6 +7,8 @@ import { DiffViewer } from "./DiffViewer";
 import { useEditorStore } from "@/stores/EditorStore";
 import { useThemeStore } from "@/stores/ThemeStore";
 import { useConversationStore } from "@/stores/ConversationStore";
+import { useLayoutStore } from "@/stores/layoutStore";
+import { useChatInputStore } from "@/stores/chatInputStore";
 
 interface FileViewerProps {
   filePath: string | null;
@@ -33,7 +35,9 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
   const [diffLoading, setDiffLoading] = useState(false);
   const { isDarkTheme, setIsDarkTheme } = useEditorStore();
   const { theme } = useThemeStore();
-  const { createConversation, addMessage, currentConversationId } = useConversationStore();
+  const {} = useConversationStore();
+  const { setActiveTab } = useLayoutStore();
+  const { setInputValue } = useChatInputStore();
 
   const getFileName = () => {
     if (!filePath) return "";
@@ -158,24 +162,13 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
 
   const handleSendToAI = () => {
     if (currentContent) {
-      const fileName = getFileName();
       const textToAdd = selectedText || currentContent;
-      const prefix = selectedText
-        ? `Selected content from ${fileName}:`
-        : `File content from ${fileName}:`;
-      const message = `${prefix}\n\n${textToAdd}`;
       
-      let conversationId = currentConversationId;
-      if (!conversationId) {
-        conversationId = createConversation();
-      }
+      // Set the text directly in chat input
+      setInputValue(textToAdd);
       
-      addMessage(conversationId, {
-        id: Date.now().toString(),
-        role: 'user',
-        content: message,
-        timestamp: Date.now(),
-      });
+      // Switch to chat tab
+      setActiveTab('chat');
     }
   };
 
@@ -352,6 +345,19 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
                   onContentChange={handleContentChange}
                   onSave={handleSave}
                   onSelectionChange={handleSelectionChange}
+                  onSendToAI={(text) => {
+                    // Set the selected text directly in chat input
+                    setInputValue(text);
+                    
+                    // Switch to chat tab
+                    setActiveTab('chat');
+                  }}
+                  onAddToNote={(text) => {
+                    if (addToNotepad) {
+                      const fileName = getFileName();
+                      addToNotepad(text, `File: ${fileName}`);
+                    }
+                  }}
                   className="flex-1"
                 />
                 {isLargeFile && !showFullContent && (

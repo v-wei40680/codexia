@@ -1,7 +1,7 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Save, Search, ChevronUp, ChevronDown, X } from "lucide-react";
+import { Save, Search, ChevronUp, ChevronDown, X, Send, FileText } from "lucide-react";
 import AceEditor from "react-ace";
 import { useEditorStore } from "@/stores/EditorStore";
 import { useThemeStore } from "@/stores/ThemeStore";
@@ -39,6 +39,8 @@ interface CodeEditorProps {
   onContentChange?: (content: string) => void;
   onSave?: (content: string) => Promise<void>;
   onSelectionChange?: (selectedText: string) => void;
+  onSendToAI?: (selectedText: string) => void;
+  onAddToNote?: (selectedText: string) => void;
   className?: string;
 }
 
@@ -49,12 +51,17 @@ export function CodeEditor({
   onContentChange,
   onSave,
   onSelectionChange,
+  onSendToAI,
+  onAddToNote,
   className = "",
 }: CodeEditorProps) {
   // Local state
   const [editedContent, setEditedContent] = useState(content);
   const [isSaving, setIsSaving] = useState(false);
   const [aceEditor, setAceEditor] = useState<any>(null);
+  const [selectedText, setSelectedText] = useState<string>("");
+  const [selectionPosition, setSelectionPosition] = useState<{ x: number; y: number } | null>(null);
+  const editorContainerRef = useRef<HTMLDivElement>(null);
   
   // Zustand stores
   const { theme } = useThemeStore();
@@ -180,7 +187,54 @@ export function CodeEditor({
   }, []);
 
   const handleAceSelection = (aceEditor: any) => {
+    // Check if aceEditor and its methods exist
+    if (!aceEditor || typeof aceEditor.getSelectedText !== 'function') {
+      console.warn('ACE Editor not properly initialized');
+      return;
+    }
+
     const selectedText = aceEditor.getSelectedText();
+    setSelectedText(selectedText);
+    
+    if (selectedText.trim()) {
+      // Get selection position for floating button using ACE's coordinate system
+      try {
+        const selection = aceEditor.getSelection();
+        const range = selection.getRange();
+        const renderer = aceEditor.renderer;
+        
+        // Get pixel position relative to the editor
+        const pixelPos = renderer.textToScreenCoordinates(range.end.row, range.end.column);
+        
+        if (editorContainerRef.current && pixelPos) {
+          const containerRect = editorContainerRef.current.getBoundingClientRect();
+          const editorElement = aceEditor.container;
+          const editorRect = editorElement.getBoundingClientRect();
+          
+          // Calculate position relative to the container
+          const x = pixelPos.pageX - editorRect.left + 10;
+          const y = pixelPos.pageY - editorRect.top - 40;
+          
+          // Make sure the button stays within bounds
+          const maxX = containerRect.width - 100;
+          const maxY = containerRect.height - 40;
+          
+          const position = {
+            x: Math.min(Math.max(10, x), maxX),
+            y: Math.max(10, Math.min(y, maxY))
+          };
+          
+          setSelectionPosition(position);
+        }
+      } catch (error) {
+        console.warn('Could not calculate selection position:', error);
+        // Fallback to a simple position
+        setSelectionPosition({ x: 100, y: 50 });
+      }
+    } else {
+      setSelectionPosition(null);
+    }
+    
     if (onSelectionChange) {
       onSelectionChange(selectedText);
     }
@@ -264,6 +318,54 @@ export function CodeEditor({
       }
     }
   }, [aceEditor, searchResults, currentSearchIndex, searchTerm, showSearch]);
+
+  // Hide floating button when clicking elsewhere or when selection changes
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      
+      // Don't hide if clicking on the floating button itself
+      if (target.closest('[data-floating-selection-toolbar]')) {
+        return;
+      }
+      
+      if (selectionPosition && editorContainerRef.current && 
+          !editorContainerRef.current.contains(target)) {
+        setSelectionPosition(null);
+        setSelectedText("");
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [selectionPosition]);
+
+  // Also hide floating button when ACE editor loses selection
+  useEffect(() => {
+    if (aceEditor && typeof aceEditor.on === 'function') {
+      const handleSelectionChange = () => {
+        // Small delay to allow ACE to process the selection
+        setTimeout(() => {
+          if (aceEditor && typeof aceEditor.getSelectedText === 'function') {
+            const currentSelection = aceEditor.getSelectedText();
+            if (!currentSelection.trim()) {
+              setSelectionPosition(null);
+              setSelectedText("");
+            }
+          }
+        }, 50);
+      };
+
+      aceEditor.on('changeSelection', handleSelectionChange);
+      return () => {
+        if (aceEditor && typeof aceEditor.off === 'function') {
+          aceEditor.off('changeSelection', handleSelectionChange);
+        }
+      };
+    }
+  }, [aceEditor]);
 
 
   const currentContent = editedContent;
@@ -358,7 +460,55 @@ export function CodeEditor({
       )}
 
       {/* Editor Content */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden relative" ref={editorContainerRef}>
+        {/* Floating Selection Actions */}
+        {selectedText.trim() && selectionPosition && (onSendToAI || onAddToNote) && (
+          <div 
+            data-floating-selection-toolbar
+            className={`absolute z-10 flex items-center gap-1 p-1 rounded shadow-lg border ${
+              theme === 'dark' 
+                ? 'bg-card border-border' 
+                : 'bg-white border-gray-200'
+            }`}
+            style={{
+              left: selectionPosition.x,
+              top: selectionPosition.y,
+              transform: 'translateX(-50%)'
+            }}
+          >
+            {onSendToAI && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  onSendToAI(selectedText);
+                  setSelectionPosition(null);
+                  setSelectedText("");
+                }}
+                className="p-1 h-auto"
+                title="Send selected text to AI"
+              >
+                <Send className="w-4 h-4" />
+              </Button>
+            )}
+            {onAddToNote && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  onAddToNote(selectedText);
+                  setSelectionPosition(null);
+                  setSelectedText("");
+                }}
+                className="p-1 h-auto"
+                title="Add selected text to note"
+              >
+                <FileText className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+        )}
+        
         <AceEditor
           mode={getAceMode}
           theme={isDarkTheme ? "monokai" : "github"}
@@ -384,9 +534,10 @@ export function CodeEditor({
               handleContentChange(value);
             }
           }}
-          onSelectionChange={(_, event) => {
-            if (event?.editor) {
-              handleAceSelection(event.editor);
+          onSelectionChange={() => {
+            // The editor instance should be available via aceEditor state
+            if (aceEditor) {
+              handleAceSelection(aceEditor);
             }
           }}
           onLoad={handleAceLoad}

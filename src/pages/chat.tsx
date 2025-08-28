@@ -5,6 +5,7 @@ import { useFolderStore } from "@/stores/FolderStore";
 import { FileTree } from "@/components/filetree/FileTreeView";
 import { FileTreeItem } from "@/components/filetree/FileTreeItem";
 import { FileViewer } from "@/components/filetree/FileViewer";
+import { useNoteStore } from "@/stores/NoteStore";
 import { GitStatusView } from "@/components/filetree/GitStatusView";
 import { DiffViewer } from "@/components/filetree/DiffViewer";
 import { useState } from "react";
@@ -210,7 +211,20 @@ export default function ChatPage() {
                 />
               </div>
             ) : selectedFile ? (
-              <FileViewer filePath={selectedFile} onClose={closeFile} />
+              <FileViewer 
+                filePath={selectedFile} 
+                onClose={closeFile} 
+                addToNotepad={(content: string, source?: string) => {
+                  const { getCurrentNote, addContentToNote, createNoteFromContent } = useNoteStore.getState();
+                  const currentNote = getCurrentNote();
+                  
+                  if (currentNote) {
+                    addContentToNote(currentNote.id, content, source);
+                  } else {
+                    createNoteFromContent(content, source);
+                  }
+                }}
+              />
             ) : null}
           </div>
         ) : null}
