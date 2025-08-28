@@ -1,4 +1,5 @@
 import { MediaAttachment } from '@/types/chat';
+import { readFile } from '@tauri-apps/plugin-fs';
 
 // Supported image formats
 export const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg'];
@@ -94,9 +95,7 @@ export const createMediaAttachment = async (filePath: string): Promise<MediaAtta
  */
 export const readFileAsBase64 = async (filePath: string): Promise<string> => {
   try {
-    // Dynamic import of Tauri API - use plugin-fs for Tauri v2
-    const fs = await import('@tauri-apps/plugin-fs');
-    const bytes = await fs.readFile(filePath);
+    const bytes = await readFile(filePath);
     const base64 = btoa(String.fromCharCode(...new Uint8Array(bytes)));
     const mimeType = getMimeType(filePath);
     return `data:${mimeType};base64,${base64}`;

@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useChatInputStore } from '@/stores/chatInputStore';
 import { createMediaAttachment } from '@/utils/mediaUtils';
 import { writeFile, BaseDirectory } from '@tauri-apps/plugin-fs';
+import { appCacheDir } from '@tauri-apps/api/path';
 
 interface ClipboardImagePasteProps {
   children: React.ReactNode;
@@ -40,7 +41,6 @@ export const ClipboardImagePaste: React.FC<ClipboardImagePasteProps> = ({ childr
             await writeFile(tempPath, uint8Array, { baseDir: BaseDirectory.AppCache });
             
             // Get the full path for the media attachment
-            const { appCacheDir } = await import('@tauri-apps/api/path');
             const fullPath = `${await appCacheDir()}/temp/${fileName}`;
             
             // Create media attachment

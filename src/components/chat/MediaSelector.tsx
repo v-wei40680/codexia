@@ -11,6 +11,7 @@ import { useChatInputStore } from '@/stores/chatInputStore';
 import { isMediaFile, createMediaAttachment } from '@/utils/mediaUtils';
 import { open } from '@tauri-apps/plugin-dialog';
 import { writeFile, BaseDirectory } from '@tauri-apps/plugin-fs';
+import { appCacheDir } from '@tauri-apps/api/path';
 
 export const MediaSelector: React.FC = () => {
   const { addMediaAttachment } = useChatInputStore();
@@ -39,7 +40,6 @@ export const MediaSelector: React.FC = () => {
             await writeFile(tempPath, uint8Array, { baseDir: BaseDirectory.AppCache });
             
             // Get the full path for the media attachment
-            const { appCacheDir } = await import('@tauri-apps/api/path');
             const fullPath = `${await appCacheDir()}/temp/${fileName}`;
             
             // Create media attachment
