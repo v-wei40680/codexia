@@ -8,6 +8,7 @@ import { ModelSelector } from './ModelSelector';
 import { ReasoningEffortSelector } from './ReasoningEffortSelector';
 import { FileReferenceList } from './FileReferenceList';
 import { MediaAttachmentList } from './MediaAttachmentList';
+import { ClipboardImagePaste } from './ClipboardImagePaste';
 
 interface ChatInputProps {
   inputValue: string;
@@ -87,7 +88,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   return (
-    <div className="flex-shrink-0 border-t p-4 bg-background">
+    <ClipboardImagePaste>
+      <div className="flex-shrink-0 border-t p-4 bg-background">
       <div className="relative">
         {/* File references and media attachments inside textarea */}
         {(fileReferences.length > 0 || mediaAttachments.length > 0) && (
@@ -153,6 +155,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           )}
         </div>
       </div>
-    </div>
+      </div>
+    </ClipboardImagePaste>
   );
 };

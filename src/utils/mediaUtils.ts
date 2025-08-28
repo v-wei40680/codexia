@@ -75,7 +75,8 @@ export const createMediaAttachment = async (filePath: string): Promise<MediaAtta
   const type = isImageFile(filename) ? 'image' : 'audio';
   const mimeType = getMimeType(filename);
   
-  // Simple handling for local file paths
+  // For images, we'll let the backend handle the base64 conversion
+  // Just store the file path - the Rust backend will read and encode it
   const dataUrl = `file://${filePath}`;
   
   return {

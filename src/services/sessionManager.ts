@@ -6,19 +6,10 @@ import { useSettingsStore } from '@/stores/SettingsStore';
 class SessionManager {
   private sessionConfigs: Map<string, CodexConfig> = new Map();
   private runningSessions: Set<string> = new Set();
-  private readonly MAX_CONCURRENT_SESSIONS = 2; // Limit concurrent sessions
-
   async ensureSessionRunning(sessionId: string, config: CodexConfig): Promise<void> {
     // If session is already running, do nothing
     if (this.runningSessions.has(sessionId)) {
       return;
-    }
-
-    // If we're at the limit, stop the oldest session
-    if (this.runningSessions.size >= this.MAX_CONCURRENT_SESSIONS) {
-      const oldestSession = Array.from(this.runningSessions)[0];
-      console.log(`Session limit reached (${this.MAX_CONCURRENT_SESSIONS}), stopping oldest session: ${oldestSession}`);
-      await this.stopSession(oldestSession);
     }
 
     try {
