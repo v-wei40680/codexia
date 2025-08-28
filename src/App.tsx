@@ -7,6 +7,7 @@ import DxtPage from "./pages/dxt";
 import SettingsPage from "./pages/settings";
 import UsagePage from "./pages/usage";
 import { useLayoutStore } from "./stores/layoutStore";
+import { ThemeProvider } from "@/components/common/ThemeProvider";
 import "./App.css";
 
 export default function App() {
@@ -47,5 +48,9 @@ export default function App() {
     }
   }, []);
 
-  return <RouterProvider router={router} />;
+  return (
+    <ThemeProvider>
+      <RouterProvider router={router} />
+    </ThemeProvider>
+  );
 }

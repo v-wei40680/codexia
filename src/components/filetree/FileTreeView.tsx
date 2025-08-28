@@ -117,12 +117,12 @@ export function FileTree({
 
   if (loading && entries.length === 0) {
     return (
-      <div className="p-4 text-center text-gray-500">Loading files...</div>
+      <div className="p-4 text-center text-muted-foreground">Loading files...</div>
     );
   }
 
   if (error) {
-    return <div className="p-4 text-center text-red-500">Error: {error}</div>;
+    return <div className="p-4 text-center text-destructive">Error: {error}</div>;
   }
 
   return (

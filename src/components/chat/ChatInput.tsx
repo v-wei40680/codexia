@@ -87,7 +87,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   return (
-    <div className="flex-shrink-0 border-t p-4 bg-white">
+    <div className="flex-shrink-0 border-t p-4 bg-background">
       <div className="relative">
         {/* File references and media attachments inside textarea */}
         {(fileReferences.length > 0 || mediaAttachments.length > 0) && (
@@ -111,7 +111,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           onChange={(e) => onInputChange(e.target.value)}
           onKeyDown={handleKeyPress}
           placeholder={placeholderOverride || "Ask Codex to do anything"}
-          className={`min-h-[60px] max-h-[200px] pr-32 bg-gray-100 resize-none overflow-y-auto pb-8 ${
+          className={`min-h-[60px] max-h-[200px] pr-32 bg-muted/50 resize-none overflow-y-auto pb-8 ${
             (fileReferences.length > 0 || mediaAttachments.length > 0) ? 'pt-8' : ''
           }`}
           disabled={false}
@@ -136,7 +136,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             <Button
               onClick={handleStopStreaming}
               size="sm"
-              className="bg-red-500 hover:bg-red-600 text-white h-8 w-8 p-0"
+              className="bg-destructive hover:bg-destructive/90 text-destructive-foreground h-8 w-8 p-0"
               variant="default"
             >
               <Square className="w-4 h-4" />

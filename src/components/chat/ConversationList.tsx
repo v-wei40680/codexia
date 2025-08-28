@@ -25,7 +25,7 @@ export function ConversationList({
 
   if (conversations.length === 0) {
     return (
-      <div className="p-4 text-center text-gray-500 text-sm">
+      <div className="p-4 text-center text-muted-foreground text-sm">
         {isFav ? (
           <>
             <p>No favorite conversations</p>
@@ -46,7 +46,7 @@ export function ConversationList({
   }
 
   return (
-    <div className="space-y-1 p-2 overflow-y-auto">
+    <div className="space-y-1 p-2 overflow-y-auto conversation-list-scroll">
       {conversations.map((conversation: Conversation, index: number) => {
         const isCurrentlySelected = currentConversationId === conversation.id;
         const isFavorited = isFav ? true : favoriteStatuses[conversation.id] || false;

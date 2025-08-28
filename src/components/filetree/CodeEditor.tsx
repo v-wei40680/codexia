@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Save, Search, ChevronUp, ChevronDown, X } from "lucide-react";
 import AceEditor from "react-ace";
 import { useEditorStore } from "@/stores/EditorStore";
+import { useThemeStore } from "@/stores/ThemeStore";
 // Import Ace Editor modes
 import "ace-builds/src-noconflict/mode-javascript";
 import "ace-builds/src-noconflict/mode-typescript";
@@ -55,7 +56,8 @@ export function CodeEditor({
   const [isSaving, setIsSaving] = useState(false);
   const [aceEditor, setAceEditor] = useState<any>(null);
   
-  // Zustand store
+  // Zustand stores
+  const { theme } = useThemeStore();
   const {
     isDarkTheme,
     showLineNumbers,
@@ -269,7 +271,7 @@ export function CodeEditor({
   return (
     <div className={`flex flex-col h-full ${className}`}>
       {/* Toolbar */}
-      <div className="flex items-center gap-1 p-2 border-b border-gray-200 bg-gray-50">
+      <div className={`flex items-center gap-1 p-2 border-b ${theme === 'dark' ? 'border-border bg-card' : 'border-gray-200 bg-gray-50'}`}>
         {!isReadOnly && isEditableFile && (
           <Button
             variant="ghost"
@@ -296,8 +298,8 @@ export function CodeEditor({
 
       {/* Search Bar */}
       {showSearch && (
-        <div className="flex items-center gap-2 p-2 border-b border-gray-200 bg-gray-50">
-          <Search className="w-4 h-4 text-gray-400" />
+        <div className={`flex items-center gap-2 p-2 border-b ${theme === 'dark' ? 'border-border bg-card' : 'border-gray-200 bg-gray-50'}`}>
+          <Search className={`w-4 h-4 ${theme === 'dark' ? 'text-muted-foreground' : 'text-gray-400'}`} />
           <Input
             type="text"
             placeholder="Search in file..."
@@ -320,7 +322,7 @@ export function CodeEditor({
           />
           {searchResults.length > 0 && (
             <div className="flex items-center gap-1">
-              <span className="text-xs text-gray-600">
+              <span className={`text-xs ${theme === 'dark' ? 'text-muted-foreground' : 'text-gray-600'}`}>
                 {currentSearchIndex + 1} of {searchResults.length}
               </span>
               <Button

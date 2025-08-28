@@ -30,13 +30,13 @@ interface MessageProps {
 const getMessageStyle = (role: string) => {
   switch (role) {
     case 'user':
-      return 'bg-blue-50 border-blue-200';
+      return 'bg-primary/10 border-primary/30';
     case 'assistant':
-      return 'bg-white border-gray-200';
+      return 'bg-card border-border';
     case 'system':
-      return 'bg-gray-50 border-gray-300';
+      return 'bg-muted/50 border-muted-foreground/30';
     default:
-      return 'bg-gray-50 border-gray-200';
+      return 'bg-muted/50 border-border';
   }
 };
 
@@ -89,15 +89,15 @@ export const Message = memo<MessageProps>(({
               {isEnvironmentContext ? (
                 <Collapsible open={!isCollapsed} onOpenChange={(open) => setIsCollapsed(!open)}>
                   <CollapsibleTrigger asChild>
-                    <div className="flex items-center gap-2 w-full text-left hover:bg-gray-100 px-2 py-1 rounded cursor-pointer">
+                    <div className="flex items-center gap-2 w-full text-left hover:bg-accent px-2 py-1 rounded cursor-pointer">
                     {isCollapsed ? (
                       <ChevronRight className="w-4 h-4" />
                     ) : (
                       <ChevronDown className="w-4 h-4" />
                     )}
-                    <span className="text-sm text-gray-600 font-mono">Environment Context</span>
+                    <span className="text-sm text-muted-foreground font-mono">Environment Context</span>
                     {getWorkingDirectory() && (
-                      <span className="text-xs text-gray-500 ml-2">
+                      <span className="text-xs text-muted-foreground/70 ml-2">
                         {getWorkingDirectory()}
                       </span>
                     )}
@@ -130,7 +130,7 @@ export const Message = memo<MessageProps>(({
           {/* Header */}
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2">
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-muted-foreground">
                 {formatTime(normalized.timestamp)}
               </span>
             </div>
@@ -139,13 +139,13 @@ export const Message = memo<MessageProps>(({
             <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
                 onClick={handleCopy}
-                className="p-1 hover:bg-gray-200 rounded transition-colors"
+                className="p-1 hover:bg-accent rounded transition-colors"
                 title={copied ? "Copied!" : "Copy message"}
               >
                 {copied ? (
                   <Check className="w-4 h-4 text-green-600" />
                 ) : (
-                  <Copy className="w-4 h-4 text-gray-600" />
+                  <Copy className="w-4 h-4 text-muted-foreground" />
                 )}
               </button>
               <MessageNoteActions

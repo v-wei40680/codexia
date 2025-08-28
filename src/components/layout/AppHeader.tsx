@@ -1,4 +1,4 @@
-import { PartyPopper, Usb, PanelLeft, Settings, MessageCircleCode, BarChart3 } from "lucide-react";
+import { PartyPopper, Usb, PanelLeft, Settings, MessageCircleCode, BarChart3, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link, useLocation } from "react-router-dom";
@@ -6,9 +6,11 @@ import { useLayoutStore } from "@/stores/layoutStore";
 import { invoke } from "@tauri-apps/api/core";
 import { useState, useEffect } from "react";
 import { McpDialog } from "../dialogs/McpDialog";
+import { useThemeStore } from "@/stores/ThemeStore";
 
 export function AppHeader() {
   const { showFileTree, toggleFileTree } = useLayoutStore();
+  const { theme, toggleTheme } = useThemeStore();
   const [codexVersion, setCodexVersion] = useState<string>("");
   const [isCodexAvailable, setIsCodexAvailable] = useState<boolean>(false);
   const location = useLocation();
@@ -32,15 +34,15 @@ export function AppHeader() {
     <div data-tauri-drag-region className="flex justify-between px-2">
       <span className="flex gap-2 items-center">
         <div
-          className={`w-2 h-2 rounded-full ${isCodexAvailable ? "bg-green-500" : "bg-red-500"}`}
+          className={`w-2 h-2 rounded-full ${isCodexAvailable ? "bg-green-500" : "bg-destructive"}`}
         ></div>
         <Badge>{codexVersion}</Badge>
         {/* Welcome button to projects page */}
-        <Link to="/" className="flex hover:text-blue-500 items-center gap-1">
+        <Link to="/" className="flex hover:text-primary items-center gap-1">
           <PartyPopper className="w-5 h-5" /> Projects
         </Link>
 
-        <Link to="/chat" className="flex hover:text-blue-500 items-center gap-1">
+        <Link to="/chat" className="flex hover:text-primary items-center gap-1">
           <MessageCircleCode className="w-5 h-5" /> Chat
         </Link>
 
@@ -66,11 +68,19 @@ export function AppHeader() {
           </McpDialog>
         )}
 
-        <Link to="/usage" className="flex hover:text-blue-500 items-center gap-1">
+        <Link to="/usage" className="flex hover:text-primary items-center gap-1">
           <BarChart3 className="w-4 h-4" /> Usage
         </Link>
 
-        <Link to="/settings" className="flex items-center gap-1">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleTheme}
+        >
+          {theme === 'dark' ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />}
+        </Button>
+
+        <Link to="/settings" className="flex hover:text-primary items-center gap-1">
           <Settings className="w-4 h-4" />
           Settings
         </Link>

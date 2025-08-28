@@ -2,7 +2,9 @@ import { memo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypePrism from 'rehype-prism-plus';
+import { useThemeStore } from '@/stores/ThemeStore';
 import 'prismjs/themes/prism.css';
+import 'prismjs/themes/prism-dark.css';
 
 interface MarkdownRendererProps {
   content: string;
@@ -14,8 +16,10 @@ export const MarkdownRenderer = memo<MarkdownRendererProps>(({
   content, 
   className = "" 
 }) => {
+  const { theme } = useThemeStore();
+  
   return (
-    <div className={`text-sm text-gray-800 leading-relaxed prose prose-sm max-w-full break-words overflow-hidden ${className}`}>
+    <div className={`text-sm text-foreground leading-relaxed prose prose-sm ${theme === 'dark' ? 'prose-invert' : ''} max-w-full break-words overflow-hidden ${className}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[rehypePrism]}
@@ -25,7 +29,7 @@ export const MarkdownRenderer = memo<MarkdownRendererProps>(({
           code: ({ inline, className, children, ...props }: any) => {
             if (inline) {
               return (
-                <code className="bg-gray-100 px-1 py-0.5 rounded text-sm font-mono text-red-600 select-text" {...props}>
+                <code className={`px-1 py-0.5 rounded text-sm font-mono select-text ${theme === 'dark' ? 'bg-muted text-primary' : 'bg-gray-100 text-gray-800'}`} {...props}>
                   {children}
                 </code>
               );
@@ -38,13 +42,13 @@ export const MarkdownRenderer = memo<MarkdownRendererProps>(({
           },
           
           pre: ({ children }) => (
-            <pre className="bg-gray-50 border rounded-md p-3 overflow-x-auto my-2 select-text max-w-full">
+            <pre className={`border rounded-md p-3 overflow-x-auto my-2 select-text max-w-full ${theme === 'dark' ? 'bg-muted/50' : 'bg-gray-50'}`}>
               {children}
             </pre>
           ),
           
           blockquote: ({ children }) => (
-            <blockquote className="border-l-4 border-gray-300 pl-4 italic my-2 select-text">
+            <blockquote className={`border-l-4 pl-4 italic my-2 select-text ${theme === 'dark' ? 'border-muted-foreground/30' : 'border-gray-300'}`}>
               {children}
             </blockquote>
           ),
@@ -59,27 +63,27 @@ export const MarkdownRenderer = memo<MarkdownRendererProps>(({
           
           table: ({ children }) => (
             <div className="overflow-x-auto my-2 max-w-full">
-              <table className="w-full border-collapse border border-gray-300 select-text">
+              <table className={`w-full border-collapse border select-text ${theme === 'dark' ? 'border-border' : 'border-gray-300'}`}>
                 {children}
               </table>
             </div>
           ),
           
           th: ({ children }) => (
-            <th className="border border-gray-300 px-2 py-1 bg-gray-100 font-medium text-left select-text">
+            <th className={`border px-2 py-1 font-medium text-left select-text ${theme === 'dark' ? 'border-border bg-muted/50' : 'border-gray-300 bg-gray-100'}`}>
               {children}
             </th>
           ),
           
           td: ({ children }) => (
-            <td className="border border-gray-300 px-2 py-1 select-text">{children}</td>
+            <td className={`border px-2 py-1 select-text ${theme === 'dark' ? 'border-border' : 'border-gray-300'}`}>{children}</td>
           ),
           
           // Make links selectable
           a: ({ href, children, ...props }) => (
             <a 
               href={href} 
-              className="text-blue-600 hover:text-blue-800 underline select-text" 
+              className={`underline select-text ${theme === 'dark' ? 'text-primary hover:text-primary/80' : 'text-blue-600 hover:text-blue-800'}`} 
               target="_blank" 
               rel="noopener noreferrer" 
               {...props}

@@ -152,7 +152,7 @@ export function FileTreeItem({
           className={`group indent-${level * 2}`}
           onMouseEnter={handleMouseEnter}
         >
-          <div className="flex items-center gap-0.5 py-1 px-1 hover:bg-gray-100 rounded">
+          <div className="flex items-center gap-0.5 py-1 px-1 hover:bg-accent rounded">
             {entry.is_directory && (
               <Button
                 variant="ghost"
@@ -171,7 +171,7 @@ export function FileTreeItem({
             {getFileIcon(entry)}
 
             <span
-              className="flex-1 text-sm cursor-pointer hover:text-blue-600"
+              className="flex-1 text-sm cursor-pointer hover:text-primary"
               onClick={handleFileClickWithInput}
             >
               {entry.name}
@@ -227,7 +227,7 @@ export function FileTreeItem({
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="opacity-0 group-hover:opacity-100 h-auto p-0.5 w-4 h-4 text-red-500 hover:text-red-700"
+                  className="opacity-0 group-hover:opacity-100 h-auto p-0.5 w-4 h-4 text-destructive hover:text-destructive/80"
                   onClick={() => onRemoveFromChat(entry.path)}
                 >
                   <X className="w-3 h-3" />

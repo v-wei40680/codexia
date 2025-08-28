@@ -135,7 +135,7 @@ export default function ChatPage() {
             >
               <div className="h-full overflow-auto p-2">
                 {fileReferences.length === 0 ? (
-                  <div className="text-center text-gray-500 mt-8">
+                  <div className="text-center text-muted-foreground mt-8">
                     <Files size={32} className="mx-auto mb-2 opacity-50" />
                     <p className="text-sm">No files added yet</p>
                     <p className="text-xs mt-1">
@@ -144,7 +144,7 @@ export default function ChatPage() {
                   </div>
                 ) : (
                   <div className="space-y-0">
-                    <div className="text-xs text-gray-500 mb-2 px-2">
+                    <div className="text-xs text-muted-foreground mb-2 px-2">
                       {fileReferences.length} file
                       {fileReferences.length !== 1 ? "s" : ""} added to chat
                     </div>
@@ -192,13 +192,13 @@ export default function ChatPage() {
           <div className="flex-1 min-w-0 border-r overflow-hidden">
             {diffFile ? (
               <div className="h-full flex flex-col">
-                <div className="p-2 border-b bg-gray-50 flex items-center justify-between">
+                <div className="p-2 border-b bg-muted/50 flex items-center justify-between">
                   <span className="text-sm font-medium">
                     Diff: {diffFile.fileName}
                   </span>
                   <button
                     onClick={() => setDiffFile(null)}
-                    className="text-gray-500 hover:text-gray-700"
+                    className="text-muted-foreground hover:text-foreground"
                   >
                     ×
                   </button>

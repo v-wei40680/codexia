@@ -5,6 +5,7 @@ import { X, Copy, Check, Sun, Moon, Send, FileText, GitBranch, Code } from "luci
 import { CodeEditor } from "./CodeEditor";
 import { DiffViewer } from "./DiffViewer";
 import { useEditorStore } from "@/stores/EditorStore";
+import { useThemeStore } from "@/stores/ThemeStore";
 import { useConversationStore } from "@/stores/ConversationStore";
 
 interface FileViewerProps {
@@ -31,6 +32,7 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
   const [gitDiff, setGitDiff] = useState<GitDiff | null>(null);
   const [diffLoading, setDiffLoading] = useState(false);
   const { isDarkTheme, setIsDarkTheme } = useEditorStore();
+  const { theme } = useThemeStore();
   const { createConversation, addMessage, currentConversationId } = useConversationStore();
 
   const getFileName = () => {
@@ -209,8 +211,8 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
   if (!filePath) return null;
 
   return (
-    <div className="flex flex-col h-full border-l border-gray-200 min-w-0">
-      <div className="flex items-center justify-between p-3 border-b border-gray-200 bg-gray-50">
+    <div className={`flex flex-col h-full border-l min-w-0 ${theme === 'dark' ? 'border-border' : 'border-gray-200'}`}>
+      <div className={`flex items-center justify-between p-3 border-b ${theme === 'dark' ? 'border-border bg-card' : 'border-gray-200 bg-gray-50'}`}>
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-sm font-medium truncate" title={filePath}>
             {getFileName()}
@@ -218,7 +220,7 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
         </div>
         <div className="flex items-center gap-1">
           {selectedText && (
-            <span className="text-xs text-blue-600 mr-2">
+            <span className={`text-xs mr-2 ${theme === 'dark' ? 'text-primary' : 'text-blue-600'}`}>
               {selectedText.length} chars selected
             </span>
           )}
@@ -321,9 +323,9 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
 
       <div className="flex-1 overflow-hidden">
         {loading ? (
-          <div className="p-4 text-center text-gray-500">Loading file...</div>
+          <div className={`p-4 text-center ${theme === 'dark' ? 'text-muted-foreground' : 'text-gray-500'}`}>Loading file...</div>
         ) : error ? (
-          <div className="p-4 text-center text-red-500">{error}</div>
+          <div className={`p-4 text-center ${theme === 'dark' ? 'text-destructive' : 'text-red-500'}`}>{error}</div>
         ) : (
           <div className="h-full flex flex-col">
             {viewMode === 'diff' && gitDiff ? (
@@ -336,8 +338,8 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
                   />
                 </div>
               ) : (
-                <div className="p-8 text-center text-gray-500">
-                  <GitBranch className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+                <div className={`p-8 text-center ${theme === 'dark' ? 'text-muted-foreground' : 'text-gray-500'}`}>
+                  <GitBranch className={`w-12 h-12 mx-auto mb-4 ${theme === 'dark' ? 'text-muted-foreground/50' : 'text-gray-300'}`} />
                   <p className="text-lg font-medium mb-2">No changes detected</p>
                   <p className="text-sm">This file is identical to the version in git HEAD</p>
                 </div>
@@ -353,8 +355,8 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
                   className="flex-1"
                 />
                 {isLargeFile && !showFullContent && (
-                  <div className="p-4 text-center border-t border-gray-200 bg-gray-50">
-                    <p className="text-sm text-gray-600 mb-2">
+                  <div className={`p-4 text-center border-t ${theme === 'dark' ? 'border-border bg-card' : 'border-gray-200 bg-gray-50'}`}>
+                    <p className={`text-sm mb-2 ${theme === 'dark' ? 'text-muted-foreground' : 'text-gray-600'}`}>
                       Showing first {MAX_LINES} lines of{" "}
                       {content.split("\n").length} total lines
                     </p>

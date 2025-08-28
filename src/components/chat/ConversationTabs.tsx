@@ -94,8 +94,8 @@ export function ConversationTabs({
         key={`sessions-${conversation.id}-${index}`}
         className={`group relative p-3 rounded-lg cursor-pointer border transition-all hover:shadow-sm ${
           isCurrentlySelected 
-            ? 'bg-blue-50 border-blue-300 shadow-sm' 
-            : 'bg-white border-gray-200 hover:bg-white'
+            ? 'bg-primary/10 border-primary/30 shadow-sm' 
+            : 'bg-card border-border hover:bg-accent'
         }`}
         onClick={() => onSelectConversation(conversation)}
       >
@@ -104,22 +104,22 @@ export function ConversationTabs({
             <div className="flex items-center gap-2 mb-1">
               <Circle className="h-3 w-3 text-green-500 fill-current flex-shrink-0" />
               <h4 className={`text-sm font-medium ${
-                isCurrentlySelected ? 'text-blue-900' : 'text-gray-900'
+                isCurrentlySelected ? 'text-primary' : 'text-foreground'
               }`}>
                 {conversation.title}
                 {isCurrentlySelected && (
-                  <span className="ml-1 text-xs text-blue-600 font-normal">
+                  <span className="ml-1 text-xs text-primary/80 font-normal">
                     (Current)
                   </span>
                 )}
               </h4>
             </div>
-            <p className="text-xs text-gray-500 font-mono truncate">
+            <p className="text-xs text-muted-foreground font-mono truncate">
               {conversation.id}
             </p>
             <div className="flex items-center justify-between mt-2">
               <span className="text-xs text-green-600">Active</span>
-              <span className="text-xs text-gray-400">
+              <span className="text-xs text-muted-foreground/70">
                 {conversation.messages.length} messages
               </span>
             </div>
@@ -129,7 +129,7 @@ export function ConversationTabs({
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 w-6 p-0 text-red-600 hover:text-red-700"
+              className="h-6 w-6 p-0 text-destructive hover:text-destructive/80"
               onClick={(e) => {
                 e.stopPropagation();
                 onKillSession?.(conversation.id);
@@ -160,10 +160,10 @@ export function ConversationTabs({
       </TabsList>
 
       <TabsContent value="all" className="flex-1 overflow-y-auto mt-0">
-        <div className="p-3 bg-white border-b">
+        <div className="p-3 bg-background border-b">
           <div className="flex gap-2">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
               <Input
                 placeholder="Search all conversations..."
                 value={searchQueries.all}
@@ -195,9 +195,9 @@ export function ConversationTabs({
       </TabsContent>
 
       <TabsContent value="favorites" className="flex-1 overflow-y-auto mt-0">
-        <div className="p-3 bg-white border-b">
+        <div className="p-3 bg-background border-b">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
             <Input
               placeholder="Search favorite conversations..."
               value={searchQueries.favorites}
@@ -219,9 +219,9 @@ export function ConversationTabs({
       </TabsContent>
 
       <TabsContent value="sessions" className="flex-1 overflow-y-auto mt-0">
-        <div className="p-3 bg-white border-b">
+        <div className="p-3 bg-background border-b">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 text-muted-foreground" />
             <Input
               placeholder="Search active sessions..."
               value={searchQueries.sessions}
@@ -231,7 +231,7 @@ export function ConversationTabs({
           </div>
         </div>
         {filteredConversations.length === 0 ? (
-          <div className="p-4 text-center text-gray-500 text-sm">
+          <div className="p-4 text-center text-muted-foreground text-sm">
             <p>No active sessions</p>
             <p className="text-xs mt-1">
               Send a message to create a session

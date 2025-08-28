@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNoteStore } from "@/stores/NoteStore";
+import { useThemeStore } from "@/stores/ThemeStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Save, Edit3, Eye, Code } from "lucide-react";
@@ -19,6 +20,8 @@ export function NoteEditor() {
     getCurrentNote,
     updateNote,
   } = useNoteStore();
+  
+  const theme = useThemeStore((state) => state.theme);
 
   const currentNote = getCurrentNote();
   const [title, setTitle] = useState("");
@@ -77,7 +80,7 @@ export function NoteEditor() {
   return (
     <div className="flex flex-col h-full">
       {/* Note Header */}
-      <div className="flex items-center gap-3 p-4 border-b bg-white">
+      <div className="flex items-center gap-3 p-4 border-b bg-white dark:bg-gray-800 dark:border-gray-700">
         <div className="flex-1 min-w-0">
           {isEditing ? (
             <Input
@@ -95,7 +98,7 @@ export function NoteEditor() {
             />
           ) : (
             <h1 
-              className="text-lg font-medium text-gray-900 truncate cursor-text hover:bg-gray-50 px-2 py-1 rounded"
+              className="text-lg font-medium text-gray-900 dark:text-gray-100 truncate cursor-text hover:bg-gray-50 dark:hover:bg-gray-700 px-2 py-1 rounded"
               onClick={() => setIsEditing(true)}
               title="Click to edit title"
             >
@@ -109,7 +112,7 @@ export function NoteEditor() {
           <NoteToChat content={content} title={title} />
           
           {/* View Mode Toggle */}
-          <div className="flex rounded-md border">
+          <div className="flex rounded-md border dark:border-gray-600">
             <Button
               variant={viewMode === 'edit' ? 'default' : 'outline'}
               size="sm"
@@ -157,7 +160,7 @@ export function NoteEditor() {
           <div className="h-full p-0">
             <AceEditor
               mode="markdown"
-              theme="github"
+              theme={theme === 'dark' ? 'monokai' : 'github'}
               value={content}
               onChange={handleContentChange}
               width="100%"
@@ -258,7 +261,7 @@ export function NoteEditor() {
             <div className="flex-1 border-r">
               <AceEditor
                 mode="markdown"
-                theme="github"
+                theme={theme === 'dark' ? 'monokai' : 'github'}
                 value={content}
                 onChange={handleContentChange}
                 width="100%"
@@ -280,7 +283,7 @@ export function NoteEditor() {
             </div>
             
             {/* Preview Panel */}
-            <div className="flex-1 p-4 overflow-y-auto bg-gray-50">
+            <div className="flex-1 p-4 overflow-y-auto bg-gray-50 dark:bg-gray-900">
               <div className="max-w-none prose prose-sm">
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
@@ -355,7 +358,7 @@ export function NoteEditor() {
       </div>
 
       {/* Footer with metadata */}
-      <div className="px-4 py-2 border-t bg-gray-50 text-xs text-gray-500 flex justify-between items-center">
+      <div className="px-4 py-2 border-t bg-gray-50 dark:bg-gray-800 dark:border-gray-700 text-xs text-gray-500 dark:text-gray-400 flex justify-between items-center">
         <span>
           Created: {new Date(currentNote.createdAt).toLocaleDateString()}
         </span>

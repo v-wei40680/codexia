@@ -71,28 +71,28 @@ export function NoteList() {
     <div
       key={note.id}
       className={cn(
-        "group relative p-3 rounded-lg cursor-pointer border transition-all hover:bg-white hover:shadow-sm",
+        "group relative p-3 rounded-lg cursor-pointer border transition-all hover:bg-white dark:hover:bg-gray-800 hover:shadow-sm",
         currentNoteId === note.id
-          ? "bg-blue-50 border-blue-200 shadow-sm"
-          : "bg-white border-transparent hover:border-gray-200"
+          ? "bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700 shadow-sm"
+          : "bg-white dark:bg-gray-900 border-transparent hover:border-gray-200 dark:hover:border-gray-700"
       )}
       onClick={() => setCurrentNote(note.id)}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <h4 className="text-sm font-medium text-gray-900 truncate flex-1">
+            <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate flex-1">
               {note.title}
             </h4>
             {note.isFavorited && (
               <Star className="h-3 w-3 text-yellow-500 fill-current" />
             )}
           </div>
-          <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
             {note.content || "Empty note"}
           </p>
           <div className="flex items-center justify-between mt-2">
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-gray-400 dark:text-gray-500">
               {formatDate(note.updatedAt)}
             </span>
           </div>
@@ -147,16 +147,16 @@ export function NoteList() {
   );
 
   return (
-    <div className="flex flex-col h-full bg-gray-50">
+    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b bg-white">
-        <h3 className="text-sm font-medium text-gray-900">Notes</h3>
+      <div className="flex items-center justify-between p-3 border-b bg-white dark:bg-gray-800 dark:border-gray-700">
+        <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Notes</h3>
       </div>
 
       {/* Search */}
-      <div className="p-3 bg-white border-b">
+      <div className="p-3 bg-white dark:bg-gray-800 border-b dark:border-gray-700">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400 dark:text-gray-500" />
           <Input
             placeholder="Search notes..."
             value={searchQuery}
@@ -175,7 +175,7 @@ export function NoteList() {
         
         <TabsContent value="all" className="flex-1 overflow-y-auto mt-0">
           {filteredNotes.length === 0 ? (
-            <div className="p-4 text-center text-gray-500 text-sm">
+            <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
               {searchQuery ? (
                 <p>No notes match your search</p>
               ) : notes.length === 0 ? (
@@ -196,7 +196,7 @@ export function NoteList() {
         
         <TabsContent value="favorites" className="flex-1 overflow-y-auto mt-0">
           {filteredNotes.length === 0 ? (
-            <div className="p-4 text-center text-gray-500 text-sm">
+            <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
               {searchQuery ? (
                 <p>No favorite notes match your search</p>
               ) : (

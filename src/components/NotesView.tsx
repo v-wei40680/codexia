@@ -8,7 +8,7 @@ export const NotesView: React.FC = () => {
   return (
     <div className="flex h-full min-h-0">
       {showNotesList && (
-        <div className="w-64 border-r h-full flex-shrink-0">
+        <div className="w-64 border-r h-full flex-shrink-0 dark:border-gray-700">
           <NoteList />
         </div>
       )}

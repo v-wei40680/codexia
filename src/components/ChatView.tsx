@@ -183,7 +183,7 @@ export const ChatView: React.FC = () => {
     <div className="flex h-full min-h-0">
       {showSessionList && (
         <div className="w-64 border-r h-full overflow-y-auto flex-shrink-0">
-          <div className="flex flex-col h-full bg-gray-50">
+          <div className="flex flex-col h-full bg-background">
             
             <DebugInfo
               conversationListTab={conversationListTab}

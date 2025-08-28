@@ -67,40 +67,40 @@ export function ConversationItem({
     <div
       key={`${tabPrefix}-${conversation.id}-${index}`}
       className={cn(
-        "group relative p-3 rounded-lg cursor-pointer border transition-all hover:bg-white hover:shadow-sm",
+        "group relative p-3 rounded-lg cursor-pointer border transition-all hover:bg-accent hover:shadow-sm",
         isCurrentlySelected
-          ? "bg-blue-100 border-blue-300 shadow-sm"
-          : "bg-white border-transparent hover:border-gray-200",
+          ? "bg-primary/10 border-primary/30 shadow-sm"
+          : "bg-card border-transparent hover:border-border",
       )}
       onClick={() => onSelectConversation(conversation)}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <MessageSquare className="h-3 w-3 text-gray-400 flex-shrink-0" />
-            <h4 className="text-sm font-medium truncate flex-1 text-gray-900">
+            <MessageSquare className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+            <h4 className="text-sm font-medium truncate flex-1 text-foreground">
               {conversation.title}
             </h4>
             {isFavorited && (
               <Star className="h-3 w-3 text-yellow-500 fill-current" />
             )}
           </div>
-          <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+          <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
             {getPreviewText(conversation)}
           </p>
           {showSessionId && (
             <div className="mt-1 mb-1">
-              <span className="text-xs text-blue-600 font-mono bg-blue-50 px-1 py-0.5 rounded">
+              <span className="text-xs text-primary font-mono bg-primary/10 px-1 py-0.5 rounded">
                 ID: {conversation.id.substring(0, 8)}...
               </span>
             </div>
           )}
           
           <div className="flex items-center justify-between mt-2">
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-muted-foreground/70">
               {formatDate(conversation.updatedAt)}
             </span>
-            <span className="text-xs text-gray-400">
+            <span className="text-xs text-muted-foreground/70">
               {conversation.messages.length} messages
             </span>
           </div>
@@ -134,7 +134,7 @@ export function ConversationItem({
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
                   onClick={(e) => onDeleteConversation(conversation.id, e)}
-                  className="text-red-600 hover:text-red-700"
+                  className="text-destructive hover:text-destructive/80"
                 >
                   <Trash2 className="h-3 w-3 mr-2" />
                   Delete
