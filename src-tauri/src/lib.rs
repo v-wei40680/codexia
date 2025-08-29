@@ -11,7 +11,7 @@ mod utils;
 use commands::{
     approve_execution, approve_patch, check_codex_version, close_session, delete_session_file,
     get_latest_session_id, get_running_sessions, get_session_files, load_sessions_from_disk,
-    pause_session, read_history_file, read_session_file, send_message, send_message_with_media,
+    pause_session, read_history_file, read_session_file, send_message,
     start_codex_session, stop_session,
 };
 use config::{
@@ -55,7 +55,6 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             start_codex_session,
             send_message,
-            send_message_with_media,
             approve_execution,
             approve_patch,
             stop_session,

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-type ReasoningEffort = 'high' | 'medium' | 'low';
+type ReasoningEffort = 'high' | 'medium' | 'low' | 'minimal';
 
 interface ModelStore {
   currentModel: string;

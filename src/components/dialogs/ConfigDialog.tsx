@@ -121,27 +121,6 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
                 ))}
               </div>
             </div>
-
-            {/* Sandbox Mode */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Sandbox Mode</label>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { value: 'read-only', label: 'Read Only' },
-                  { value: 'workspace-write', label: 'Workspace Write' },
-                  { value: 'danger-full-access', label: 'Full Access' },
-                ].map((mode) => (
-                  <Button
-                    key={mode.value}
-                    variant={localConfig.sandboxMode === mode.value ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => updateConfig('sandboxMode', mode.value)}
-                  >
-                    {mode.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
           </div>
 
           {/* Custom Arguments */}

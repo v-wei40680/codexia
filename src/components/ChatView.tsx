@@ -25,7 +25,6 @@ export const ChatView: React.FC = () => {
   >({});
 
   const {
-    config,
     currentConversationId,
     conversations: activeConversations,
     createConversationWithLatestSession,
@@ -214,7 +213,6 @@ export const ChatView: React.FC = () => {
       <div className="flex-1 min-h-0 h-full min-w-0">
         <ChatInterface
           sessionId={currentConversationId || ''}
-          config={config}
           activeSessionId={currentConversationId || ''}
           onCreateSession={handleCreateNewConversation}
           onSelectSession={handleSelectSession}

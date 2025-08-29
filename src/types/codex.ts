@@ -59,8 +59,26 @@ export interface CodexConfig {
   approvalPolicy: 'untrusted' | 'on-failure' | 'on-request' | 'never';
   sandboxMode: 'read-only' | 'workspace-write' | 'danger-full-access';
   codexPath?: string;
-  reasoningEffort?: 'high' | 'medium' | 'low';
+  reasoningEffort?: 'high' | 'medium' | 'low' | 'minimal';
 }
+
+export const SANDBOX_MODES = {
+  'read-only': {
+    label: 'Read Only',
+    shortLabel: 'Chat',
+    description: 'View files only, requires approval for edits/commands'
+  },
+  'workspace-write': {
+    label: 'Workspace Write', 
+    shortLabel: 'Agent',
+    description: 'Edit project files, approval for network/external access'
+  },
+  'danger-full-access': {
+    label: 'Full Access',
+    shortLabel: 'Agent (Full)',
+    description: 'System-wide access without restrictions'
+  }
+} as const;
 
 export const DEFAULT_CONFIG: CodexConfig = {
   workingDirectory: '',

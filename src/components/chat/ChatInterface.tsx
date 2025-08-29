@@ -1,20 +1,22 @@
 import React, { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { ApprovalRequest, CodexConfig } from "@/types/codex";
+import { ApprovalRequest } from "@/types/codex";
 import type { Conversation } from "@/types/chat";
-import { useConversationStore } from "../../stores/ConversationStore";
-import { useChatInputStore } from "../../stores/chatInputStore";
-import { useModelStore } from "../../stores/ModelStore";
+import { useConversationStore } from "@/stores/ConversationStore";
+import { useCodexStore } from "@/stores/CodexStore";
+import { useChatInputStore } from "@/stores/chatInputStore";
+import { useModelStore } from "@/stores/ModelStore";
 import { sessionManager } from "@/services/sessionManager";
 import { SessionManager } from "./SessionManager";
 import { ChatInput } from "./ChatInput";
 import { MessageList } from "./MessageList";
 import { ApprovalDialog } from "../dialogs/ApprovalDialog";
 import { useCodexEvents } from "../../hooks/useCodexEvents";
+import { ReasoningEffortSelector } from './ReasoningEffortSelector';
+import { Sandbox } from "./Sandbox";
 
 interface ChatInterfaceProps {
   sessionId: string;
-  config: CodexConfig;
   activeSessionId?: string;
   onCreateSession?: () => void;
   onSelectSession?: (sessionId: string) => void;
@@ -25,7 +27,6 @@ interface ChatInterfaceProps {
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   sessionId,
-  config,
   activeSessionId: propActiveSessionId = "",
   onCreateSession,
   onSelectSession,
@@ -42,6 +43,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const [activeSessionId, setActiveSessionId] = useState<string>(sessionId);
   const [sessionStarting, setSessionStarting] = useState(false);
 
+  const { config, updateConfig } = useCodexStore();
   const {
     conversations,
     currentConversationId,
@@ -52,6 +54,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     setPendingNewConversation,
     setCurrentConversation,
   } = useConversationStore();
+  
+  const setSandboxMode = (mode: typeof config.sandboxMode) => {
+    updateConfig({ sandboxMode: mode });
+  };
 
   // Simplified: Use session_id to find conversation data
   // Priority: selectedConversation (from disk/history) > conversations (from store)
@@ -59,17 +65,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     selectedConversation ||
     conversations.find((conv) => conv.id === currentConversationId) ||
     conversations.find((conv) => conv.id === sessionId);
-
-  // Debug log to track conversation changes
-  /*
-   console.log("🔍 ChatInterface: currentConversation:", {
-    selectedConversationId: selectedConversation?.id,
-    currentConversationId,
-    sessionId,
-    finalConversationId: currentConversation?.id,
-    messageCount: currentConversation?.messages.length || 0
-  });
-  */
 
   // Convert conversation messages to chat messages format
   const sessionMessages = currentConversation
@@ -187,18 +182,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     sessionStarting,
   ]);
 
-  const handleSendMessage = async (
-    messageData: string | { text: string; mediaAttachments?: any[] },
-  ) => {
+  const handleSendMessage = async (message: string) => {
     console.log("isConnected", isConnected);
 
-    // Extract message content and media attachments
-    const messageContent =
-      typeof messageData === "string" ? messageData : messageData.text;
-    const mediaAttachments =
-      typeof messageData === "object"
-        ? messageData.mediaAttachments
-        : undefined;
+    // NEW: Simple text message - view_image tool will handle any image paths
+    const messageContent = message;
 
     if (!messageContent.trim() || isLoading) {
       return;
@@ -314,26 +302,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         ? actualSessionId.replace("codex-event-", "")
         : actualSessionId;
 
-      if (mediaAttachments && mediaAttachments.length > 0) {
-        // Send message with media attachments
-        const mediaPaths = mediaAttachments.map(
-          (attachment) => attachment.path,
-        );
-        const messageData = {
-          sessionId: rawSessionId,
-          message: messageContent,
-          mediaPaths,
-        };
-        console.log("📤 ChatInterface: Sending message with media:", messageData);
-        console.log("📸 Media paths:", mediaPaths);
-        await invoke("send_message_with_media", messageData);
-      } else {
-        // Send regular text message
-        await invoke("send_message", {
-          sessionId: rawSessionId,
-          message: messageContent,
-        });
-      }
+      // NEW: Always send as regular text message - view_image tool handles images
+      await invoke("send_message", {
+        sessionId: rawSessionId,
+        message: messageContent,
+      });
+      console.log("📤 ChatInterface: Sending text message:", messageContent);
     } catch (error) {
       console.error("Failed to send message:", error);
       const errorMessage = {
@@ -436,6 +410,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           disabled={!!selectedConversation}
           isLoading={isLoading}
         />
+        
+        <div className="flex px-2 pt-0.5">
+          <Sandbox 
+            sandboxMode={config.sandboxMode}
+            onModeChange={setSandboxMode}
+          />
+          <ReasoningEffortSelector />
+        </div>
       </div>
     </div>
   );

@@ -1,13 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Conversation, ChatMessage, ChatMode } from "@/types/chat";
-import { CodexConfig, DEFAULT_CONFIG } from "@/types/codex";
 
 interface ConversationStore {
-  // Configuration
-  config: CodexConfig;
-  setConfig: (config: CodexConfig) => void;
-  
   // Conversations
   conversations: Conversation[];
   currentConversationId: string | null;
@@ -64,17 +59,12 @@ export const useConversationStore = create<ConversationStore>()(
   persist(
     (set, get) => ({
       // Initial state
-      config: DEFAULT_CONFIG,
       conversations: [],
       currentConversationId: null,
       sessionDisconnected: false,
       pendingUserInput: null,
       pendingNewConversation: false,
 
-      // Configuration
-      setConfig: (config) => {
-        set({ config });
-      },
 
       createConversation: (title?: string, mode: ChatMode = "agent", sessionId?: string) => {
         // Use provided sessionId or generate a codex-event-{uuid} format for the conversation
@@ -301,20 +291,11 @@ export const useConversationStore = create<ConversationStore>()(
     }),
     {
       name: "conversation-storage", 
-      version: 4,
+      version: 5,
       partialize: (state) => ({
-        config: state.config,
         conversations: state.conversations,
         currentConversationId: state.currentConversationId,
       }),
-      migrate: (persistedState: any, version: number) => {
-        if (version < 4) {
-          // Migrate from version 3: add config field
-          persistedState.config = persistedState.config || DEFAULT_CONFIG;
-        }
-
-        return persistedState;
-      },
     },
   ),
 );

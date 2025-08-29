@@ -1,5 +1,4 @@
 import React from "react";
-import { Badge } from "../ui/badge";
 import { Button } from "../ui/button";
 import {
   Settings,
@@ -22,7 +21,7 @@ export const AppToolbar: React.FC<AppToolbarProps> = ({
   onOpenConfig,
   onCreateNewSession,
 }) => {
-  const { config, setPendingNewConversation, setCurrentConversation } =
+  const { setPendingNewConversation, setCurrentConversation } =
     useConversationStore();
   const { createNote, setCurrentNote } = useNoteStore();
   const {
@@ -35,19 +34,6 @@ export const AppToolbar: React.FC<AppToolbarProps> = ({
     toggleNotesList,
     setActiveTab,
   } = useLayoutStore();
-
-  const getSandboxColor = (mode: string) => {
-    switch (mode) {
-      case "read-only":
-        return "bg-green-100 text-green-800";
-      case "workspace-write":
-        return "bg-yellow-100 text-yellow-800";
-      case "danger-full-access":
-        return "bg-red-100 text-red-800";
-      default:
-        return "bg-gray-100 text-gray-800";
-    }
-  };
 
   const handleToggleLeftPanel = () => {
     if (activeTab === "chat") {
@@ -126,15 +112,6 @@ export const AppToolbar: React.FC<AppToolbarProps> = ({
 
       {activeTab == "chat" && (
         <div className="flex items-center gap-1 shrink-0">
-
-          {/* Sandbox */}
-          <Badge
-            className={`text-xs px-1.5 hidden md:inline-flex ${getSandboxColor(config.sandboxMode)}`}
-          >
-            {config.sandboxMode.replace("-", " ").toUpperCase()}
-          </Badge>
-
-
           {/* Create Conversation Button */}
           <Button
             onClick={handleCreateConversation}

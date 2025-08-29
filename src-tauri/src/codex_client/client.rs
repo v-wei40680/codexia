@@ -67,35 +67,6 @@ impl CodexClient {
         self.send_submission(submission).await
     }
 
-    pub async fn send_user_input_with_media(
-        &self,
-        message: String,
-        media_paths: Vec<String>,
-    ) -> Result<()> {
-        log::debug!("🎯 [CodexClient] send_user_input_with_media called:");
-        log::debug!("  💬 message: {}", message);
-        log::debug!("  📸 media_paths: {:?}", media_paths);
-        log::debug!("  📊 media_paths count: {}", media_paths.len());
-
-        let mut items = vec![InputItem::Text { text: message }];
-
-        // Add media files as LocalImage items - codex will convert to base64 automatically
-        for path in media_paths {
-            let path_buf = std::path::PathBuf::from(path.clone());
-            log::debug!("  🔗 Adding local image path: {}", path);
-            items.push(InputItem::LocalImage { path: path_buf });
-        }
-
-        log::debug!("  📦 Total items in submission: {}", items.len());
-
-        let submission = Submission {
-            id: Uuid::new_v4().to_string(),
-            op: Op::UserInput { items },
-        };
-
-        log::debug!("  🚀 Sending submission to codex");
-        self.send_submission(submission).await
-    }
 
     pub async fn send_exec_approval(&self, approval_id: String, approved: bool) -> Result<()> {
         let decision = if approved { "approved" } else { "denied" }.to_string();

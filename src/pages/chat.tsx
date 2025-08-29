@@ -12,6 +12,7 @@ import { useState } from "react";
 import { ConfigDialog } from "@/components/dialogs/ConfigDialog";
 import { AppToolbar } from "@/components/layout/AppToolbar";
 import { useConversationStore } from "@/stores/ConversationStore";
+import { useCodexStore } from "@/stores/CodexStore";
 import { useChatInputStore } from "@/stores/chatInputStore";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { invoke } from "@tauri-apps/api/core";
@@ -27,8 +28,8 @@ export default function ChatPage() {
     closeFile,
   } = useLayoutStore();
 
-  const { config, setConfig, createConversationWithLatestSession } =
-    useConversationStore();
+  const { config, setConfig } = useCodexStore();
+  const { createConversationWithLatestSession } = useConversationStore();
 
   const { currentFolder } = useFolderStore();
   const { fileReferences, removeFileReference } = useChatInputStore();

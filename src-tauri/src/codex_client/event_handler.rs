@@ -20,11 +20,11 @@ impl EventHandler {
                     continue;
                 }
 
-                log::debug!("📥 Received line from codex: {}", line);
+                // log::debug!("📥 Received line from codex: {}", line);
 
                 // Try to parse as the structured Event format first
                 if let Ok(event) = serde_json::from_str::<Event>(&line) {
-                    log::debug!("📨 Parsed structured event: {:?}", event);
+                    // log::debug!("📨 Parsed structured event: {:?}", event);
 
                     // Log the event for debugging
                     if let Some(event_session_id) = Self::get_session_id_from_event(&event) {

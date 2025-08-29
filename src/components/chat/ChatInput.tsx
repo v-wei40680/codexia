@@ -5,15 +5,13 @@ import { ArrowUp, Square } from 'lucide-react';
 import { useChatInputStore } from '@/stores/chatInputStore';
 import { MediaSelector } from './MediaSelector';
 import { ModelSelector } from './ModelSelector';
-import { ReasoningEffortSelector } from './ReasoningEffortSelector';
 import { FileReferenceList } from './FileReferenceList';
 import { MediaAttachmentList } from './MediaAttachmentList';
-import { ClipboardImagePaste } from './ClipboardImagePaste';
 
 interface ChatInputProps {
   inputValue: string;
   onInputChange: (value: string) => void;
-  onSendMessage: (messageData: string | { text: string; mediaAttachments?: any[] }) => void;
+  onSendMessage: (message: string) => void;
   onStopStreaming?: () => void;
   disabled?: boolean;
   isLoading?: boolean;
@@ -38,7 +36,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     clearMediaAttachments,
   } = useChatInputStore();
 
-
   const generateSmartPrompt = (): string => {
     if (fileReferences.length === 0) return '';
     return fileReferences.map(ref => ref.relativePath).join(' ');
@@ -54,16 +51,24 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       messageContent = `${smartPrompt}\n\n${inputValue}`;
     }
 
-    // Pass media attachments along with the message
-    const messageParts = {
-      text: messageContent,
-      mediaAttachments: mediaAttachments.length > 0 ? mediaAttachments : undefined
-    };
+    // NEW: Include image paths directly in the text message for view_image tool
+    if (mediaAttachments.length > 0) {
+      const imagePaths = mediaAttachments
+        .filter(media => media.type === 'image')
+        .map(media => media.path)
+        .join(' ');
+      
+      if (imagePaths) {
+        messageContent = `${messageContent}\n\nImages to analyze: ${imagePaths}`;
+      }
+      
+      console.log("📸 Including image paths in text:", imagePaths);
+    }
 
-    console.log("📤 ChatInput: Sending message parts:", messageParts);
-    console.log("📸 Media attachments count:", mediaAttachments.length);
+    // Send as simple text message - Agent will use view_image tool automatically
+    console.log("📤 ChatInput: Sending text message with image paths:", messageContent);
     
-    onSendMessage(messageParts);
+    onSendMessage(messageContent);
     onInputChange('');
     clearFileReferences();
     clearMediaAttachments();
@@ -88,8 +93,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   return (
-    <ClipboardImagePaste>
-      <div className="flex-shrink-0 border-t p-4 bg-background">
+    <div className="flex-shrink-0 border-t px-4 bg-background">
       <div className="relative">
         {/* File references and media attachments inside textarea */}
         {(fileReferences.length > 0 || mediaAttachments.length > 0) && (
@@ -125,15 +129,16 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           }}
         />
         
-        {/* Media Selector - bottom left inside textarea */}
-        <div className="absolute left-2 bottom-2">
+        {/* Media Selector and Sandbox Selector - bottom left inside textarea */}
+        <div className="flex absolute left-2 bottom-2 items-center gap-1">
           <MediaSelector />
         </div>
         
-        {/* Reasoning Effort, Model Selector and Send Button - bottom right inside textarea */}
+        
+        
+        {/* Model Selector and Send Button - bottom right inside textarea */}
         <div className="absolute right-2 bottom-2 flex items-center gap-1">
           <ModelSelector />
-          <ReasoningEffortSelector />
           {isLoading ? (
             <Button
               onClick={handleStopStreaming}
@@ -148,14 +153,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               onClick={handleSendMessage}
               disabled={!inputValue.trim() || disabled}
               size="icon"
-              className="rounded-full"
+              className="rounded-full w-6 h-6"
             >
               <ArrowUp />
             </Button>
           )}
         </div>
       </div>
-      </div>
-    </ClipboardImagePaste>
+    </div>
   );
 };
