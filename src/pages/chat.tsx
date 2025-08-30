@@ -16,20 +16,24 @@ import { useCodexStore } from "@/stores/CodexStore";
 import { useChatInputStore } from "@/stores/chatInputStore";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { invoke } from "@tauri-apps/api/core";
-import { GitBranch, Files } from "lucide-react";
+import { GitBranch, Files, Bot, NotebookPen } from "lucide-react";
+import { NoteList } from "@/components/notes";
 
 export default function ChatPage() {
   const {
     showFileTree,
     showFilePanel,
-    activeTab,
     selectedFile,
+    selectedLeftPanelTab,
     openFile,
     closeFile,
+    setSelectedLeftPanelTab,
   } = useLayoutStore();
 
   const { config, setConfig } = useCodexStore();
-  const { createConversationWithLatestSession } = useConversationStore();
+  const {
+    createConversationWithLatestSession,
+  } = useConversationStore();
 
   const { currentFolder } = useFolderStore();
   const { fileReferences, removeFileReference } = useChatInputStore();
@@ -105,14 +109,20 @@ export default function ChatPage() {
       {/* Left Panel - File Tree and Git Status */}
       {showFileTree && (
         <div className="w-64 border-r h-full flex-shrink-0">
-          <Tabs defaultValue="files" className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-3">
+          <Tabs value={selectedLeftPanelTab} onValueChange={setSelectedLeftPanelTab} className="h-full flex flex-col">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="files">Files</TabsTrigger>
               <TabsTrigger value="git">
-                <GitBranch /> Git
+                <GitBranch />
               </TabsTrigger>
               <TabsTrigger value="attached">
-                <Files /> Added
+                <Files />
+              </TabsTrigger>
+              <TabsTrigger value="chat">
+                <Bot />
+              </TabsTrigger>
+              <TabsTrigger value="notes">
+                <NotebookPen />
               </TabsTrigger>
             </TabsList>
             <TabsContent value="files" className="flex-1 overflow-hidden mt-0">
@@ -183,6 +193,12 @@ export default function ChatPage() {
                 )}
               </div>
             </TabsContent>
+            <TabsContent value="chat" className="flex-1 overflow-y-auto mt-0">
+              <ChatView showChatTabs={true} />
+            </TabsContent>
+            <TabsContent value="notes">
+              <NoteList />
+            </TabsContent>
           </Tabs>
         </div>
       )}
@@ -235,12 +251,14 @@ export default function ChatPage() {
           <AppToolbar
             onOpenConfig={() => setIsConfigOpen(true)}
             onCreateNewSession={createConversationWithLatestSession}
+            currentTab={selectedLeftPanelTab}
+            onSwitchToTab={setSelectedLeftPanelTab}
           />
-          {activeTab === "chat" ? (
-            <ChatView />
-          ) : activeTab === "notes" ? (
+          {selectedLeftPanelTab === "notes" ? (
             <NotesView />
-          ) : null}
+          ) : (
+            <ChatView />
+          )}
         </div>
       </div>
 

@@ -10,6 +10,7 @@ interface ConversationListProps {
   onSelectConversation: (conversation: Conversation) => void;
   onToggleFavorite: (conversationId: string, e: React.MouseEvent) => void;
   onDeleteConversation: (conversationId: string, e: React.MouseEvent) => void;
+  onSelectSession?: (sessionId: string) => void;
 }
 
 export function ConversationList({
@@ -20,6 +21,7 @@ export function ConversationList({
   onSelectConversation,
   onToggleFavorite,
   onDeleteConversation,
+  onSelectSession,
 }: ConversationListProps) {
   const tabPrefix = isFav ? "favorites" : "all";
 
@@ -46,7 +48,7 @@ export function ConversationList({
   }
 
   return (
-    <div className="space-y-1 p-2 overflow-y-auto conversation-list-scroll">
+    <div className="space-y-1 p-2">
       {conversations.map((conversation: Conversation, index: number) => {
         const isCurrentlySelected = currentConversationId === conversation.id;
         const isFavorited = isFav ? true : favoriteStatuses[conversation.id] || false;
@@ -63,6 +65,7 @@ export function ConversationList({
             onSelectConversation={onSelectConversation}
             onToggleFavorite={onToggleFavorite}
             onDeleteConversation={onDeleteConversation}
+            onSelectSession={onSelectSession}
           />
         );
       })}

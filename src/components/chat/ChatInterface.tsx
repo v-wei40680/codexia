@@ -7,7 +7,6 @@ import { useCodexStore } from "@/stores/CodexStore";
 import { useChatInputStore } from "@/stores/chatInputStore";
 import { useModelStore } from "@/stores/ModelStore";
 import { sessionManager } from "@/services/sessionManager";
-import { SessionManager } from "./SessionManager";
 import { ChatInput } from "./ChatInput";
 import { MessageList } from "./MessageList";
 import { ApprovalDialog } from "../dialogs/ApprovalDialog";
@@ -17,21 +16,11 @@ import { Sandbox } from "./Sandbox";
 
 interface ChatInterfaceProps {
   sessionId: string;
-  activeSessionId?: string;
-  onCreateSession?: () => void;
-  onSelectSession?: (sessionId: string) => void;
-  onCloseSession?: (sessionId: string) => void;
-  isSessionListVisible?: boolean;
   selectedConversation?: Conversation | null;
 }
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   sessionId,
-  activeSessionId: propActiveSessionId = "",
-  onCreateSession,
-  onSelectSession,
-  onCloseSession,
-  isSessionListVisible = false,
   selectedConversation = null,
 }) => {
   const { inputValue, setInputValue } = useChatInputStore();
@@ -223,7 +212,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           console.log(
             `Closing ${runningSessions.length} existing sessions before creating new one`,
           );
-          await sessionManager.stopAllSessions();
+          await sessionManager.closeAllSessions();
         }
 
         actualSessionId = `codex-event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -373,23 +362,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   return (
     <div className="flex h-full min-h-0">
-      {/* Session Manager - conditionally visible */}
-      {isSessionListVisible &&
-        onCreateSession &&
-        onSelectSession &&
-        onCloseSession && (
-          <div className="w-64 flex-shrink-0 border-r bg-white">
-            <SessionManager
-              conversations={conversations}
-              activeSessionId={propActiveSessionId}
-              onCreateSession={onCreateSession}
-              onSelectSession={onSelectSession}
-              onCloseSession={onCloseSession}
-            />
-          </div>
-        )}
-
-      {/* Chat Interface */}
       <div className="flex flex-col flex-1 min-h-0 min-w-0">
         <MessageList
           messages={messages}

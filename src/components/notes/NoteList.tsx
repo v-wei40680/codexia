@@ -148,11 +148,6 @@ export function NoteList() {
 
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b bg-white dark:bg-gray-800 dark:border-gray-700">
-        <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">Notes</h3>
-      </div>
-
       {/* Search */}
       <div className="p-3 bg-white dark:bg-gray-800 border-b dark:border-gray-700">
         <div className="relative">
@@ -168,7 +163,7 @@ export function NoteList() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1">
-        <TabsList className="grid w-full grid-cols-2 mt-2">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="favorites">Favorites</TabsTrigger>
         </TabsList>

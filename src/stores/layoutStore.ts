@@ -18,6 +18,9 @@ interface LayoutState {
   // Chat conversation list tab
   conversationListTab: string;
   
+  // Left panel tab selection
+  selectedLeftPanelTab: string;
+  
   // Last route
   lastRoute: string;
   
@@ -35,6 +38,7 @@ interface LayoutState {
   closeFile: () => void;
   setActiveTab: (tab: string) => void;
   setConversationListTab: (tab: string) => void;
+  setSelectedLeftPanelTab: (tab: string) => void;
   setLastRoute: (route: string) => void;
 }
 
@@ -49,7 +53,8 @@ export const useLayoutStore = create<LayoutState>()(
       showNotesList: true,
       selectedFile: null,
       activeTab: 'chat',
-      conversationListTab: 'all',
+      conversationListTab: 'sessions',
+      selectedLeftPanelTab: 'files',
       lastRoute: '/',
       
       // Actions
@@ -87,6 +92,8 @@ export const useLayoutStore = create<LayoutState>()(
       
       setConversationListTab: (tab) => set({ conversationListTab: tab }),
       
+      setSelectedLeftPanelTab: (tab) => set({ selectedLeftPanelTab: tab }),
+      
       setLastRoute: (route) => set({ lastRoute: route }),
     }),
     {
@@ -98,6 +105,7 @@ export const useLayoutStore = create<LayoutState>()(
         showNotesList: state.showNotesList,
         activeTab: state.activeTab,
         conversationListTab: state.conversationListTab,
+        selectedLeftPanelTab: state.selectedLeftPanelTab,
         lastRoute: state.lastRoute,
       }),
     }

@@ -56,29 +56,6 @@ class SessionManager {
     }
   }
 
-  async stopSession(sessionId: string): Promise<void> {
-    console.log(`🛑 SessionManager: Stopping session ${sessionId}`);
-    
-    // Extract raw session ID for backend process management
-    const rawSessionId = sessionId.startsWith('codex-event-') 
-      ? sessionId.replace('codex-event-', '') 
-      : sessionId;
-    
-    console.log(`🔧 Stopping backend session: ${rawSessionId} (from frontend: ${sessionId})`);
-    
-    try {
-      await invoke('stop_session', { sessionId: rawSessionId });
-    } catch (error) {
-      console.error('Failed to stop session:', error);
-      // Continue to clean up local state even if backend call fails
-    }
-    
-    // Always clean up local state regardless of backend success/failure
-    this.sessionConfigs.delete(sessionId);
-    this.runningSessions.delete(sessionId);
-    console.log(`✅ SessionManager: Session ${sessionId} removed from local state`);
-    console.log(`📊 Remaining sessions:`, Array.from(this.runningSessions));
-  }
 
   async closeSession(sessionId: string): Promise<void> {
     try {
@@ -101,9 +78,9 @@ class SessionManager {
     try {
       console.log('Restarting session:', sessionId, 'with config:', config);
       
-      // Stop the existing session
+      // Close the existing session
       if (this.runningSessions.has(sessionId)) {
-        await this.stopSession(sessionId);
+        await this.closeSession(sessionId);
       }
       
       // Add a small delay to ensure cleanup is complete
@@ -127,17 +104,17 @@ class SessionManager {
     return Array.from(this.runningSessions);
   }
   
-  async stopAllSessions(): Promise<void> {
+  async closeAllSessions(): Promise<void> {
     const sessions = Array.from(this.runningSessions);
     const promises = sessions.map(sessionId => 
-      this.stopSession(sessionId).catch(error => {
-        console.error(`Failed to stop session ${sessionId}:`, error);
-        return null; // Don't let one failure stop the others
+      this.closeSession(sessionId).catch(error => {
+        console.error(`Failed to close session ${sessionId}:`, error);
+        return null; // Don't let one failure close the others
       })
     );
     
     await Promise.all(promises);
-    console.log(`Stopped ${sessions.length} sessions`);
+    console.log(`Closed ${sessions.length} sessions`);
   }
 
 

@@ -25,6 +25,7 @@ interface ConversationItemProps {
   onSelectConversation: (conversation: Conversation) => void;
   onToggleFavorite: (conversationId: string, e: React.MouseEvent) => void;
   onDeleteConversation: (conversationId: string, e: React.MouseEvent) => void;
+  onSelectSession?: (sessionId: string) => void;
 }
 
 export function ConversationItem({
@@ -37,6 +38,7 @@ export function ConversationItem({
   onSelectConversation,
   onToggleFavorite,
   onDeleteConversation,
+  onSelectSession,
 }: ConversationItemProps) {
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
@@ -72,7 +74,14 @@ export function ConversationItem({
           ? "bg-primary/10 border-primary/30 shadow-sm"
           : "bg-card border-transparent hover:border-border",
       )}
-      onClick={() => onSelectConversation(conversation)}
+      onClick={() => {
+        // For active sessions, we need to switch to that session
+        if (onSelectSession && conversation.id.startsWith('codex-event-')) {
+          onSelectSession(conversation.id);
+        }
+        // Also select the conversation for UI state
+        onSelectConversation(conversation);
+      }}
     >
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
@@ -110,8 +119,8 @@ export function ConversationItem({
           <div className="flex gap-1">
             <Button
               variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0"
+              size="icon"
+              className="h-6 w-6"
               onClick={(e) => onToggleFavorite(conversation.id, e)}
             >
               {isFavorited ? (
@@ -124,7 +133,7 @@ export function ConversationItem({
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  size="sm"
+                  size="icon"
                   className="h-6 w-6 p-0"
                   onClick={(e) => e.stopPropagation()}
                 >
