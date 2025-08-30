@@ -19,7 +19,7 @@ on:
 
 jobs:
   build-linux:
-    runs-on: ubuntu-latest-arm
+    runs-on: ubuntu-24.04-arm
     name: Build Linux ARM64
 
     steps:
