@@ -112,7 +112,7 @@ export const TextSelectionMenu: React.FC<TextSelectionMenuProps> = () => {
         pointerEvents: 'auto'
       }}
     >
-      <div className="bg-white rounded-lg shadow-lg border border-gray-200 p-1 flex items-center gap-1">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-1 flex items-center gap-1">
         <Button
           variant="ghost"
           size="sm"
@@ -123,7 +123,7 @@ export const TextSelectionMenu: React.FC<TextSelectionMenuProps> = () => {
           Copy
         </Button>
         
-        <div className="w-px h-4 bg-gray-300" />
+        <div className="w-px h-4 bg-gray-300 dark:bg-gray-600" />
         
         <Popover open={isOpen} onOpenChange={setIsOpen}>
           <PopoverTrigger asChild>
@@ -195,8 +195,8 @@ export const TextSelectionMenu: React.FC<TextSelectionMenuProps> = () => {
       
       {/* Arrow pointing down to selection */}
       <div className="absolute top-full left-1/2 transform -translate-x-1/2">
-        <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-200"></div>
-        <div className="w-0 h-0 border-l-3 border-r-3 border-t-3 border-l-transparent border-r-transparent border-t-white absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-px"></div>
+        <div className="w-0 h-0 border-l-4 border-r-4 border-t-4 border-l-transparent border-r-transparent border-t-gray-200 dark:border-t-gray-700"></div>
+        <div className="w-0 h-0 border-l-3 border-r-3 border-t-3 border-l-transparent border-r-transparent border-t-white dark:border-t-gray-800 absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-px"></div>
       </div>
     </div>
   );
