@@ -31,6 +31,7 @@ export interface Conversation {
   isFavorite?: boolean;
   filePath?: string;
   isLoading?: boolean;
+  projectRealpath?: string;
 }
 
 export interface ChatRequest {

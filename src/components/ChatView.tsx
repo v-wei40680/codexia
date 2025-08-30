@@ -12,13 +12,16 @@ interface ChatViewProps {
 export const ChatView: React.FC<ChatViewProps> = ({ selectedConversation, showChatTabs = false }) => {
   const {
     currentConversationId,
-    conversations: activeConversations,
+    getCurrentProjectConversations,
     deleteConversation,
     setCurrentConversation,
     selectHistoryConversation,
     pendingNewConversation,
     toggleFavorite,
   } = useConversationStore();
+  
+  // Get conversations filtered by current project
+  const activeConversations = getCurrentProjectConversations();
 
   const [searchQuery, setSearchQuery] = useState("");
   const [internalSelectedConversation, setInternalSelectedConversation] = useState<Conversation | null>(null);

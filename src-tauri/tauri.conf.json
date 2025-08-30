@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "Codexia - AI Chat Interface",
+        "title": "Codexia",
         "width": 1200,
         "height": 800,
         "minWidth": 800,

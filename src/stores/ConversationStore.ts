@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Conversation, ChatMessage, ChatMode } from "@/types/chat";
+import { useFolderStore } from "./FolderStore";
 
 interface ConversationStore {
   // Conversations
@@ -19,6 +20,9 @@ interface ConversationStore {
   updateConversationTitle: (id: string, title: string) => void;
   updateConversationMode: (id: string, mode: ChatMode) => void;
   toggleFavorite: (id: string) => void;
+
+  // Filtered getters
+  getCurrentProjectConversations: () => Conversation[];
 
   // Session management
   setSessionDisconnected: (disconnected: boolean) => void;
@@ -52,6 +56,7 @@ export const createConversationWithLatestSession = async (title?: string, mode: 
   
   // Always create a new conversation with timestamp format for consistency
   // This prevents UUID session IDs from being used
+  // The createConversation function will automatically capture the current projectRealpath
   return store.createConversation(title, mode);
 };
 
@@ -79,6 +84,9 @@ export const useConversationStore = create<ConversationStore>()(
           return id;
         }
 
+        // Get current folder from FolderStore
+        const currentFolder = useFolderStore.getState().currentFolder;
+
         const now = Date.now();
         const newConversation: Conversation = {
           id,
@@ -88,6 +96,7 @@ export const useConversationStore = create<ConversationStore>()(
           createdAt: now,
           updatedAt: now,
           isFavorite: false,
+          projectRealpath: currentFolder || undefined,
         };
 
         set((state) => ({
@@ -287,6 +296,16 @@ export const useConversationStore = create<ConversationStore>()(
       getCurrentMessages: () => {
         const current = get().getCurrentConversation();
         return current?.messages || [];
+      },
+
+      getCurrentProjectConversations: () => {
+        const { conversations } = get();
+        const currentFolder = useFolderStore.getState().currentFolder;
+        
+        // Filter conversations that belong to the current project
+        return conversations.filter(conv => 
+          conv.projectRealpath === currentFolder
+        );
       },
     }),
     {

@@ -34,7 +34,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const { config, updateConfig } = useCodexStore();
   const {
-    conversations,
+    getCurrentProjectConversations,
     currentConversationId,
     addMessage,
     setSessionLoading,
@@ -43,6 +43,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     setPendingNewConversation,
     setCurrentConversation,
   } = useConversationStore();
+  
+  // Get conversations filtered by current project
+  const conversations = getCurrentProjectConversations();
   
   const setSandboxMode = (mode: typeof config.sandboxMode) => {
     updateConfig({ sandboxMode: mode });
