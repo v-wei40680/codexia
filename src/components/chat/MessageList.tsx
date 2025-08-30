@@ -133,6 +133,8 @@ export function MessageList({ messages, className = "", isLoading = false, isPen
               index={index}
               isLastMessage={index === messages.length - 1}
               selectedText={selectedText}
+              previousMessage={index > 0 ? normalizedMessages[index - 1] : undefined}
+              nextMessage={index < normalizedMessages.length - 1 ? normalizedMessages[index + 1] : undefined}
             />
           ))}
           

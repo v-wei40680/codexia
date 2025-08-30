@@ -138,6 +138,15 @@ export const useCodexEvents = ({
         break;
         
       case 'exec_approval_request':
+        // Add chat message for exec request
+        const execMessage: ChatMessage = {
+          id: `${sessionId}-exec-request-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+          type: 'system',
+          content: `🔧 Requesting approval to execute: \`${Array.isArray(msg.command) ? msg.command.join(' ') : msg.command}\`\n\nWorking directory: ${msg.cwd}`,
+          timestamp: new Date(),
+        };
+        addMessageToStore(execMessage);
+        
         onApprovalRequest({
           id: event.id,
           type: 'exec',
@@ -148,6 +157,15 @@ export const useCodexEvents = ({
         break;
         
       case 'patch_approval_request':
+        // Add chat message for patch request
+        const patchMessage: ChatMessage = {
+          id: `${sessionId}-patch-request-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+          type: 'system',
+          content: `📝 Requesting approval to apply patch to files: ${msg.files?.join(', ') || 'unknown files'}`,
+          timestamp: new Date(),
+        };
+        addMessageToStore(patchMessage);
+        
         onApprovalRequest({
           id: event.id,
           type: 'patch',
@@ -157,6 +175,15 @@ export const useCodexEvents = ({
         break;
         
       case 'apply_patch_approval_request':
+        // Add chat message for apply patch request
+        const applyPatchMessage: ChatMessage = {
+          id: `${sessionId}-apply-patch-request-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+          type: 'system',
+          content: `🔄 Requesting approval to apply patch changes`,
+          timestamp: new Date(),
+        };
+        addMessageToStore(applyPatchMessage);
+        
         onApprovalRequest({
           id: event.id,
           type: 'apply_patch',
@@ -194,6 +221,14 @@ export const useCodexEvents = ({
         
       case 'exec_command_begin':
         console.log('Command execution started');
+        // Add chat message for command begin
+        const cmdBeginMessage: ChatMessage = {
+          id: `${sessionId}-cmd-begin-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+          type: 'system',
+          content: `▶️ Executing: \`${Array.isArray(msg.command) ? msg.command.join(' ') : msg.command}\``,
+          timestamp: new Date(),
+        };
+        addMessageToStore(cmdBeginMessage);
         break;
         
       case 'exec_command_output_delta':
@@ -202,6 +237,14 @@ export const useCodexEvents = ({
         
       case 'exec_command_end':
         console.log('Command execution completed');
+        // Add chat message for command completion
+        const cmdEndMessage: ChatMessage = {
+          id: `${sessionId}-cmd-end-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+          type: 'system',
+          content: `✅ Command completed with exit code: ${msg.exit_code}${msg.stdout ? `\n\nOutput:\n\`\`\`\n${msg.stdout}\`\`\`` : ''}${msg.stderr ? `\n\nErrors:\n\`\`\`\n${msg.stderr}\`\`\`` : ''}`,
+          timestamp: new Date(),
+        };
+        addMessageToStore(cmdEndMessage);
         break;
         
       default:
