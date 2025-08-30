@@ -59,9 +59,28 @@ pub fn discover_codex_command() -> Option<PathBuf> {
         }
     }
 
+    // Windows npm global installation paths
+    if cfg!(windows) {
+        if let Ok(appdata) = std::env::var("APPDATA") {
+            let npm_paths = [
+                format!("{}/npm/codex.cmd", appdata),
+                format!("{}/npm/codex.ps1", appdata),
+                format!("{}/npm/codex", appdata),
+            ];
+            for path in &npm_paths {
+                let path_buf = PathBuf::from(path);
+                if path_buf.exists() {
+                    log::debug!("Found npm codex at {}", path);
+                    return Some(path_buf);
+                }
+            }
+        }
+    }
+
     // Second priority: Check if there are native rust/cargo installations
     let native_paths = [
         format!("{}/.cargo/bin/codex", home),
+        format!("{}/.cargo/bin/codex.exe", home),
         "/usr/local/bin/codex".to_string(),
         "/opt/homebrew/bin/codex".to_string(),
     ];
@@ -82,32 +101,36 @@ pub fn discover_codex_command() -> Option<PathBuf> {
         }
     }
 
-    // Final fallback: Check PATH for native binaries; prefer non-wrappers, but accept wrappers as last resort
     if let Ok(path_env) = std::env::var("PATH") {
         let separator = if cfg!(windows) { ';' } else { ':' };
         let mut wrapper_candidate: Option<PathBuf> = None;
+        let candidate_names: &[&str] = if cfg!(windows) {
+            &["codex.exe", "codex.cmd", "codex.ps1", "codex"]
+        } else {
+            &["codex"]
+        };
         for dir in path_env.split(separator) {
             if dir.is_empty() {
                 continue;
             }
-            let exe_name = if cfg!(windows) { "codex.exe" } else { "codex" };
-            let candidate = PathBuf::from(dir).join(exe_name);
-            if candidate.exists() {
-                // Try to verify if it's a wrapper
-                if let Ok(content) = std::fs::read_to_string(&candidate) {
-                    let is_wrapper = content.contains("codex.js")
-                        || content.starts_with("#!/usr/bin/env node")
-                        || content.contains("import");
-                    if is_wrapper {
-                        // Keep as last-resort fallback
-                        wrapper_candidate = Some(candidate.clone());
-                        log::debug!("Found wrapper script candidate at {} (will use only if no native binary is found)", candidate.display());
-                        continue;
+            for name in candidate_names {
+                let candidate = PathBuf::from(dir).join(name);
+                if candidate.exists() {
+                    if let Ok(content) = std::fs::read_to_string(&candidate) {
+                        let is_wrapper = content.contains("codex.js")
+                            || content.starts_with("#!/usr/bin/env node")
+                            || content.contains("import");
+                        if is_wrapper {
+                            if wrapper_candidate.is_none() {
+                                wrapper_candidate = Some(candidate.clone());
+                                log::debug!("Found wrapper script candidate at {} (will use only if no native binary is found)", candidate.display());
+                            }
+                            continue;
+                        }
                     }
+                    log::debug!("Found codex in PATH at {}", candidate.display());
+                    return Some(candidate);
                 }
-                // Looks like a native binary
-                log::debug!("Found native codex in PATH at {}", candidate.display());
-                return Some(candidate);
             }
         }
         if let Some(wrapper) = wrapper_candidate {
