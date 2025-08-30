@@ -27,16 +27,16 @@ jobs:
             name: Linux ARM64
             artifact-name: linux-arm64
             artifact-path: |
-              src-tauri/target/aarch64-unknown-linux-gnu/{release,debug}/**/*.deb
-              src-tauri/target/aarch64-unknown-linux-gnu/{release,debug}/**/*.rpm
-              src-tauri/target/aarch64-unknown-linux-gnu/{release,debug}/**/*.AppImage
+              src-tauri/target/aarch64-unknown-linux-gnu/debug/**/*.deb
+              src-tauri/target/aarch64-unknown-linux-gnu/debug/**/*.rpm
+              src-tauri/target/aarch64-unknown-linux-gnu/debug/**/*.AppImage
           - os: windows-latest
             target: x86_64-pc-windows-msvc
             name: Windows x86_64
             artifact-name: Windows_x64
             artifact-path: |
-              src-tauri/target/{release,debug}/bundle/**/*.exe
-              src-tauri/target/{release,debug}/bundle/**/*.msi
+              src-tauri/target/debug/bundle/**/*.exe
+              src-tauri/target/debug/bundle/**/*.msi
 
     runs-on: ${{ matrix.platform.os }}
     name: Build ${{ matrix.platform.name }}
