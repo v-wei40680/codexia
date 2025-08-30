@@ -19,8 +19,8 @@ on:
 
 jobs:
   build-linux:
-    runs-on: ubuntu-latest
-    name: Build Linux x86_64
+    runs-on: ubuntu-latest-arm
+    name: Build Linux ARM64
 
     steps:
       - uses: actions/checkout@v4
@@ -39,7 +39,7 @@ jobs:
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: x86_64-unknown-linux-gnu
+          targets: aarch64-unknown-linux-gnu
       
       - name: Setup Rust cache
         uses: Swatinem/rust-cache@v2
@@ -53,20 +53,63 @@ jobs:
         run: bun install
       
       - name: Build Tauri app
-        run: bun run tauri build --target x86_64-unknown-linux-gnu
+        run: bun run tauri build --target aarch64-unknown-linux-gnu
       
       - name: Create artifacts directory
         run: |
-          mkdir -p dist/linux-x86_64
-          cp src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/deb/*.deb dist/linux-x86_64/ || true
-          cp src-tauri/target/x86_64-unknown-linux-gnu/release/bundle/appimage/*.AppImage dist/linux-x86_64/ || true
+          mkdir -p dist/linux-arm64
+          cp src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/deb/*.deb dist/linux-arm64/ || true
+          cp src-tauri/target/aarch64-unknown-linux-gnu/release/bundle/appimage/*.AppImage dist/linux-arm64/ || true
           
           # Generate checksums
-          cd dist/linux-x86_64
+          cd dist/linux-arm64
           sha256sum * > checksums.txt
       
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: linux-x86_64
-          path: dist/linux-x86_64/*
+          name: linux-arm64
+          path: dist/linux-arm64/*
+
+  build-windows:
+    runs-on: windows-latest
+    name: Build Windows x86_64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+      
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+      
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+      
+      - name: Install dependencies
+        run: bun install
+      
+      - name: Build Tauri app
+        run: bun run tauri build
+      
+      - name: Create artifacts directory
+        run: |
+          New-Item -ItemType Directory -Force -Path dist\windows-x86_64
+          Copy-Item -Path "src-tauri\target\x86_64-pc-windows-msvc\release\bundle\msi\*.msi" -Destination "dist\windows-x86_64\" -ErrorAction SilentlyContinue
+          Copy-Item -Path "src-tauri\target\x86_64-pc-windows-msvc\release\bundle\nsis\*.exe" -Destination "dist\windows-x86_64\" -ErrorAction SilentlyContinue
+          
+          # Generate checksums
+          cd dist\windows-x86_64
+          Get-ChildItem | ForEach-Object { Get-FileHash $_.Name -Algorithm SHA256 | Select-Object Hash, @{Name="File";Expression={$_.Path | Split-Path -Leaf}} } | Format-Table -HideTableHeaders | Out-File -Encoding UTF8 checksums.txt
+        shell: pwsh
+      
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x86_64
+          path: dist/windows-x86_64/*
