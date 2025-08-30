@@ -78,7 +78,7 @@ jobs:
         run: bun install
 
       - name: Build Tauri App
-        run: bun tauri build ${{ runner.os == 'Linux' && format('--target {0}', matrix.platform.target) || '' }}
+        run: bun tauri build ${{ runner.os == 'Linux' && format('--target {0}', matrix.platform.target) || '' }} --debug
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
