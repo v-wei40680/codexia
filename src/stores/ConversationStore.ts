@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { Conversation, ChatMessage, ChatMode } from "@/types/chat";
 import { useFolderStore } from "./FolderStore";
+import { generateUniqueId } from "@/utils/genUniqueId";
 
 interface ConversationStore {
   // Conversations
@@ -73,7 +74,7 @@ export const useConversationStore = create<ConversationStore>()(
 
       createConversation: (title?: string, mode: ChatMode = "agent", sessionId?: string) => {
         // Use provided sessionId or generate a codex-event-{uuid} format for the conversation
-        const id = sessionId || `codex-event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        const id = sessionId || `codex-event-${generateUniqueId()}`;
         const state = get();
         
         // Check if conversation with this ID already exists (unlikely but possible)

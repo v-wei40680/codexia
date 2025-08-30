@@ -17,6 +17,7 @@ export interface ChatMessage {
   isStreaming?: boolean;
   model?: string;
   workingDirectory?: string;
+  approvalRequest?: any; // Support for approval requests
 }
 
 export type ChatMode = "chat" | "agent";

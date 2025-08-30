@@ -1,5 +1,6 @@
 import { MediaAttachment } from '@/types/chat';
 import { readFile } from '@tauri-apps/plugin-fs';
+import { generateUniqueId } from './genUniqueId';
 
 // Supported image formats
 export const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg'];
@@ -81,7 +82,7 @@ export const createMediaAttachment = async (filePath: string): Promise<MediaAtta
   const dataUrl = `file://${filePath}`;
   
   return {
-    id: `${type}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    id: `${type}_${generateUniqueId()}`,
     type,
     path: filePath,
     name: filename,

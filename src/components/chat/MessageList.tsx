@@ -1,7 +1,7 @@
 import { useRef, useEffect, useMemo, useCallback, useState } from 'react';
 import { Bot, ChevronUp, ChevronDown } from 'lucide-react';
 import type { ChatMessage as ChatMessageType } from '@/types/chat';
-import type { ChatMessage as CodexMessageType } from '@/types/codex';
+import type { ChatMessage as CodexMessageType, ApprovalRequest } from '@/types/codex';
 import { TextSelectionMenu } from './TextSelectionMenu';
 import { Message } from './Message';
 import { useTextSelection } from '../../hooks/useTextSelection';
@@ -14,9 +14,10 @@ interface MessageListProps {
   className?: string;
   isLoading?: boolean;
   isPendingNewConversation?: boolean;
+  onApproval?: (approved: boolean, approvalRequest: ApprovalRequest) => void;
 }
 
-export function MessageList({ messages, className = "", isLoading = false, isPendingNewConversation = false }: MessageListProps) {
+export function MessageList({ messages, className = "", isLoading = false, isPendingNewConversation = false, onApproval }: MessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollButtons, setShowScrollButtons] = useState(false);
@@ -65,12 +66,13 @@ export function MessageList({ messages, className = "", isLoading = false, isPen
     if ('type' in msg) {
       return {
         id: msg.id,
-        role: msg.type === 'user' ? 'user' : msg.type === 'agent' ? 'assistant' : 'system',
+        role: msg.type === 'user' ? 'user' : msg.type === 'agent' ? 'assistant' : msg.type === 'approval' ? 'approval' : 'system',
         content: msg.content,
         timestamp: msg.timestamp instanceof Date ? msg.timestamp.getTime() : new Date().getTime(),
         isStreaming: msg.isStreaming || false,
         model: 'model' in msg ? (msg.model as string) : undefined,
-        workingDirectory: 'workingDirectory' in msg ? (msg.workingDirectory as string) : undefined
+        workingDirectory: 'workingDirectory' in msg ? (msg.workingDirectory as string) : undefined,
+        approvalRequest: (msg as any).approvalRequest || undefined
       };
     }
     // It's a chat message (has 'role' property)
@@ -81,7 +83,8 @@ export function MessageList({ messages, className = "", isLoading = false, isPen
       timestamp: typeof msg.timestamp === 'number' ? msg.timestamp : new Date().getTime(),
       isStreaming: false,
       model: msg.model as string | undefined,
-      workingDirectory: msg.workingDirectory as string | undefined
+      workingDirectory: msg.workingDirectory as string | undefined,
+      approvalRequest: (msg as any).approvalRequest
     };
   }, []);
 
@@ -135,6 +138,7 @@ export function MessageList({ messages, className = "", isLoading = false, isPen
               selectedText={selectedText}
               previousMessage={index > 0 ? normalizedMessages[index - 1] : undefined}
               nextMessage={index < normalizedMessages.length - 1 ? normalizedMessages[index + 1] : undefined}
+              onApproval={onApproval}
             />
           ))}
           

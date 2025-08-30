@@ -23,10 +23,11 @@ export type EventMsg =
 
 export interface ChatMessage {
   id: string;
-  type: 'user' | 'agent' | 'system';
+  type: 'user' | 'agent' | 'system' | 'approval';
   content: string;
   timestamp: Date;
   isStreaming?: boolean;
+  approvalRequest?: ApprovalRequest;
 }
 
 export interface ApprovalRequest {

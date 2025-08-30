@@ -9,10 +9,10 @@ import { useModelStore } from "@/stores/ModelStore";
 import { sessionManager } from "@/services/sessionManager";
 import { ChatInput } from "./ChatInput";
 import { MessageList } from "./MessageList";
-import { ApprovalDialog } from "../dialogs/ApprovalDialog";
 import { useCodexEvents } from "../../hooks/useCodexEvents";
 import { ReasoningEffortSelector } from './ReasoningEffortSelector';
 import { Sandbox } from "./Sandbox";
+import { generateUniqueId } from "@/utils/genUniqueId";
 
 interface ChatInterfaceProps {
   sessionId: string;
@@ -25,8 +25,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 }) => {
   const { inputValue, setInputValue } = useChatInputStore();
   const { currentModel, currentProvider, reasoningEffort } = useModelStore();
-  const [pendingApproval, setPendingApproval] =
-    useState<ApprovalRequest | null>(null);
   const [isConnected, setIsConnected] = useState(false);
   const [tempSessionId, setTempSessionId] = useState<string | null>(null);
   const [activeSessionId, setActiveSessionId] = useState<string>(sessionId);
@@ -79,7 +77,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   useCodexEvents({
     sessionId: activeSessionId,
-    onApprovalRequest: setPendingApproval,
   });
 
   const messages = [...sessionMessages];
@@ -150,7 +147,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               } catch (error) {
                 console.error("Failed to auto-start session:", error);
                 const errorMessage = {
-                  id: `${sessionId}-auto-start-error-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+                  id: `${sessionId}-auto-start-error-${generateUniqueId()}`,
                   role: "system" as const,
                   content: `Failed to start Codex session: ${error}`,
                   timestamp: Date.now(),
@@ -218,7 +215,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           await sessionManager.closeAllSessions();
         }
 
-        actualSessionId = `codex-event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        actualSessionId = `codex-event-${generateUniqueId()}`;
         setTempSessionId(actualSessionId);
         setPendingNewConversation(false);
         isPendingSession = true;
@@ -230,7 +227,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       );
       if (!conversationExists) {
         // Always use timestamp format for consistency
-        actualSessionId = `codex-event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        actualSessionId = `codex-event-${generateUniqueId()}`;
         createConversation("New Chat", "agent", actualSessionId);
       }
     }
@@ -268,7 +265,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       console.error("Failed to start session:", error);
       setSessionStarting(false);
       const errorMessage = {
-        id: `${actualSessionId}-startup-error-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+        id: `${actualSessionId}-startup-error-${generateUniqueId()}`,
         role: "system" as const,
         content: `Failed to start Codex session: ${error}`,
         timestamp: Date.now(),
@@ -280,7 +277,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
     // Add user message to conversation store
     const userMessage = {
-      id: `${actualSessionId}-user-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+      id: `${actualSessionId}-user-${generateUniqueId()}`,
       role: "user" as const,
       content: messageContent,
       timestamp: Date.now(),
@@ -303,7 +300,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     } catch (error) {
       console.error("Failed to send message:", error);
       const errorMessage = {
-        id: `${actualSessionId}-send-error-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`,
+        id: `${actualSessionId}-send-error-${generateUniqueId()}`,
         role: "system" as const,
         content: `Failed to send message: ${error}`,
         timestamp: Date.now(),
@@ -313,33 +310,64 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
-  const handleApproval = async (approved: boolean) => {
-    if (!pendingApproval) return;
-
+  const handleApproval = async (approved: boolean, approvalRequest: ApprovalRequest) => {
     try {
       // Extract raw session ID for backend communication
       const rawSessionId = sessionId.startsWith("codex-event-")
         ? sessionId.replace("codex-event-", "")
         : sessionId;
 
-      if (pendingApproval.type === 'apply_patch') {
-        // For apply_patch, use event.id (stored in pendingApproval.id)
-        await invoke("approve_patch", {
+      // Handle different approval types with appropriate backend calls
+      switch (approvalRequest.type) {
+        case 'exec':
+          await invoke("approve_execution", {
+            sessionId: rawSessionId,
+            approvalId: approvalRequest.id,
+            approved,
+          });
+          break;
+          
+        case 'patch':
+          await invoke("approve_patch", {
+            sessionId: rawSessionId,
+            approvalId: approvalRequest.id,
+            approved,
+          });
+          break;
+          
+        case 'apply_patch':
+          await invoke("approve_patch", {
+            sessionId: rawSessionId,
+            approvalId: approvalRequest.id,
+            approved,
+          });
+          break;
+          
+        default:
+          console.error('Unknown approval request type:', approvalRequest.type);
+          return;
+      }
+      
+      console.log(`✅ Approval ${approved ? 'granted' : 'denied'} for ${approvalRequest.type} request ${approvalRequest.id}`);
+      
+      // If denied, pause the session to stop further execution
+      if (!approved) {
+        console.log('🛑 Pausing session due to denied approval');
+        await invoke("pause_session", {
           sessionId: rawSessionId,
-          approvalId: pendingApproval.id,
-          approved,
-        });
-      } else {
-        // For exec, use call_id (stored in pendingApproval.id)  
-        await invoke("approve_execution", {
-          sessionId: rawSessionId,
-          approvalId: pendingApproval.id,
-          approved,
         });
       }
-      setPendingApproval(null);
     } catch (error) {
       console.error("Failed to send approval:", error);
+      
+      // Add error message to conversation
+      const errorMessage = {
+        id: `${sessionId}-approval-error-${generateUniqueId()}`,
+        role: "system" as const,
+        content: `Failed to process approval: ${error}`,
+        timestamp: Date.now(),
+      };
+      addMessage(sessionId, errorMessage);
     }
   };
 
@@ -370,10 +398,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           messages={messages}
           isLoading={isLoading}
           isPendingNewConversation={pendingNewConversation || !sessionId.trim()}
-        />
-
-        <ApprovalDialog
-          pendingApproval={pendingApproval}
           onApproval={handleApproval}
         />
 
