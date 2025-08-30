@@ -11,7 +11,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/milisp/codexia/actions/workflows/ci.yml/badge.svg)](https://github.com/milisp/codexia/actions/workflows/ci.yml)
 
-A modern, multi-session GUI application for the [Codex CLI](https://github.com/openai/codex) built with Tauri v2, React, and TypeScript. 
+A powerfull GUI application for the [Codex CLI](https://github.com/openai/codex) built with Tauri v2, React
 
 TLDR: Notepad + @file from FileTree + git diff + streaming chat + agent + mcp
 
@@ -23,6 +23,10 @@ TLDR: Notepad + @file from FileTree + git diff + streaming chat + agent + mcp
 ## Disclaimer
 
 Codexia is an independent open-source project and is not built by OpenAI or any company.
+
+## News
+
+- [2025-08-29] support image input, codex can read image now
 
 ## ✨ Features
 
@@ -191,7 +195,9 @@ cd src-tauri && cargo fmt --all
 cp docs/pre-commit .git/hooks/pre-commit
 ```
 
-## tauri llm.txt
+## learn tauri v2
+
+https://v2.tauri.app/start/
 
 https://tauri.app/llms.txt
 
