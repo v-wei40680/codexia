@@ -15,9 +15,9 @@ use commands::{
     start_codex_session,
 };
 use config::{
-    add_or_update_model_provider, add_or_update_profile, delete_profile, get_profile_config,
-    get_project_name, get_provider_config, read_codex_config, read_model_providers, read_profiles,
-    update_profile_model,
+    add_or_update_model_provider, add_or_update_profile, delete_profile, ensure_default_providers,
+    get_profile_config, get_project_name, get_provider_config, read_codex_config,
+    read_model_providers, read_profiles, update_profile_model,
 };
 use filesystem::{
     directory_ops::{get_default_directories, read_directory},
@@ -90,7 +90,14 @@ pub fn run() {
             add_or_update_profile,
             delete_profile,
             add_or_update_model_provider,
+            ensure_default_providers,
         ])
+        .setup(|_app| {
+            tauri::async_runtime::spawn(async {
+                let _ = ensure_default_providers().await;
+            });
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
