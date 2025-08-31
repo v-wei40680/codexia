@@ -59,7 +59,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         .join(' ');
       
       if (imagePaths) {
-        messageContent = `${messageContent}\n\nImages to analyze: ${imagePaths}`;
+        messageContent = `${messageContent}\n\n${imagePaths}`;
       }
       
       console.log("📸 Including image paths in text:", imagePaths);
@@ -117,7 +117,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           onChange={(e) => onInputChange(e.target.value)}
           onKeyDown={handleKeyPress}
           placeholder={placeholderOverride || "Ask Codex to do anything"}
-          className={`min-h-[60px] max-h-[200px] pr-32 bg-muted/50 resize-none overflow-y-auto pb-8 ${
+          className={`min-h-20 max-h-96 pr-32 bg-muted/50 resize-none overflow-y-auto pb-8 ${
             (fileReferences.length > 0 || mediaAttachments.length > 0) ? 'pt-8' : ''
           }`}
           disabled={false}
@@ -133,11 +133,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         <div className="flex absolute left-2 bottom-2 items-center gap-1">
           <MediaSelector />
         </div>
-        
-        
-        
+
         {/* Model Selector and Send Button - bottom right inside textarea */}
-        <div className="absolute right-2 bottom-2 flex items-center gap-1">
+        <div className="absolute right-4 bottom-2 flex items-center gap-1">
           <ModelSelector />
           {isLoading ? (
             <Button
