@@ -1,7 +1,7 @@
 import React from 'react';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
-import { ArrowUp, Square } from 'lucide-react';
+import { ArrowUp, Square, AudioLines } from 'lucide-react';
 import { useChatInputStore } from '@/stores/chatInputStore';
 import { MediaSelector } from './MediaSelector';
 import { ModelSelector } from './ModelSelector';
@@ -157,7 +157,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
               size="icon"
               className="rounded-full w-6 h-6"
             >
-              <ArrowUp />
+              {inputValue.trim() ? <ArrowUp /> : <AudioLines />}
             </Button>
           )}
         </div>
