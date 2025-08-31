@@ -14,6 +14,7 @@ export default function SettingsPage() {
     "google",
     "ollama",
     "openrouter",
+    "xai"
   ];
 
   return (

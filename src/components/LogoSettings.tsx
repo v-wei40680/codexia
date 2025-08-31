@@ -8,12 +8,10 @@ import { Upload } from "lucide-react";
 import { useSettingsStore } from "@/stores/SettingsStore";
 import { open } from "@tauri-apps/plugin-dialog";
 import { readFile } from "@tauri-apps/plugin-fs";
-import { getCurrentWindow } from '@tauri-apps/api/window';
 
 export default function LogoSettings() {
-  const { logoSettings, setUseCustomLogo, setCustomLogoPath } = useSettingsStore();
+  const { logoSettings, setUseCustomLogo, setCustomLogoPath, toggleWindowTitle } = useSettingsStore();
   const [uploading, setUploading] = useState(false);
-  const [title, setTitle] = useState<string>("Codexia");
 
   const handleFileUpload = async () => {
     try {
@@ -57,12 +55,6 @@ export default function LogoSettings() {
     setUseCustomLogo(false);
   };
 
-  async function changeWindowTitle() {
-    const customTitle = title === 'Codexia' ? "Grok" : "Codexia"
-    await getCurrentWindow().setTitle(customTitle);
-    setTitle(customTitle)
-  }
-
   return (
     <div className="space-y-6">
       <div>
@@ -77,7 +69,7 @@ export default function LogoSettings() {
           <CardTitle>Logo Configuration</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button onClick={changeWindowTitle}>Chaneg Title</Button>
+          <Button onClick={toggleWindowTitle}>Chaneg Title</Button>
           <div className="flex items-center space-x-2">
             <Switch
               id="use-custom-logo"

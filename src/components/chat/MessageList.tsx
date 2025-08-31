@@ -1,10 +1,11 @@
 import { useRef, useEffect, useMemo, useCallback, useState } from 'react';
-import { Bot, ChevronUp, ChevronDown } from 'lucide-react';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 import type { ChatMessage as ChatMessageType } from '@/types/chat';
 import type { ChatMessage as CodexMessageType, ApprovalRequest } from '@/types/codex';
 import { TextSelectionMenu } from './TextSelectionMenu';
 import { Message } from './Message';
 import { useTextSelection } from '../../hooks/useTextSelection';
+import { useSettingsStore } from '@/stores/SettingsStore';
 
 // Unified message type
 type UnifiedMessage = ChatMessageType | CodexMessageType;
@@ -17,11 +18,12 @@ interface MessageListProps {
   onApproval?: (approved: boolean, approvalRequest: ApprovalRequest) => void;
 }
 
-export function MessageList({ messages, className = "", isLoading = false, isPendingNewConversation = false, onApproval }: MessageListProps) {
+export function MessageList({ messages, className = "", isLoading = false, onApproval }: MessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollButtons, setShowScrollButtons] = useState(false);
   const { selectedText } = useTextSelection();
+  const { windowTitle } = useSettingsStore()
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -97,22 +99,7 @@ export function MessageList({ messages, className = "", isLoading = false, isPen
     return (
       <div className={`flex-1 min-h-0 flex items-center justify-center ${className}`}>
         <div className="text-center space-y-4 max-w-md">
-          <Bot className="w-12 h-12 text-gray-400 mx-auto" />
-          {isPendingNewConversation ? (
-            <>
-              <h3 className="text-lg font-medium text-gray-800">Ready to start</h3>
-              <p className="text-gray-600">
-                Type a message below to start your new conversation with the AI assistant.
-              </p>
-            </>
-          ) : (
-            <>
-              <h3 className="text-lg font-medium text-gray-800">No messages</h3>
-              <p className="text-gray-600">
-                This conversation doesn't have any messages yet.
-              </p>
-            </>
-          )}
+          {windowTitle === "Grok" && <img src="/grok.png" alt="grok logo" />}
         </div>
       </div>
     );

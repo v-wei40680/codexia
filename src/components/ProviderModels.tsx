@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Provider, useSettingsStore } from "@/stores/SettingsStore";
+import { Provider, useProvidersStore } from "@/stores/ProvidersStore";
 
 interface ProviderModelsProps {
   selectedProvider: string;
@@ -14,7 +14,7 @@ export default function ProviderModels({ selectedProvider }: ProviderModelsProps
     setProviderApiKey,
     setProviderBaseUrl,
     setProviderModels,
-  } = useSettingsStore();
+  } = useProvidersStore();
   const [newModelName, setNewModelName] = useState("");
   const [editingModelIdx, setEditingModelIdx] = useState<number | null>(null);
   const [editingModelValue, setEditingModelValue] = useState("");

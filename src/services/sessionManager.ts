@@ -1,7 +1,7 @@
 import { invoke } from '@tauri-apps/api/core';
 import { CodexConfig } from '@/types/codex';
 import { useFolderStore } from '@/stores/FolderStore';
-import { useSettingsStore } from '@/stores/SettingsStore';
+import { useProvidersStore } from '@/stores/ProvidersStore';
 
 class SessionManager {
   private sessionConfigs: Map<string, CodexConfig> = new Map();
@@ -25,9 +25,9 @@ class SessionManager {
       
       console.log(`📁 currentFolder: ${currentFolder})`);
 
-      // Get API key from settings store
-      const settingsStore = useSettingsStore.getState();
-      const providerConfig = settingsStore.providers[config.provider as keyof typeof settingsStore.providers];
+      // Get API key from providers store
+      const providersStore = useProvidersStore.getState();
+      const providerConfig = providersStore.providers[config.provider as keyof typeof providersStore.providers];
       const apiKey = providerConfig?.apiKey || null;
       
       console.log(`🔑 API key debug - Provider: ${config.provider}, Has API key: ${!!apiKey}, Length: ${apiKey?.length || 0}`);

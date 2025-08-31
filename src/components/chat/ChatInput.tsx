@@ -7,6 +7,7 @@ import { MediaSelector } from './MediaSelector';
 import { ModelSelector } from './ModelSelector';
 import { FileReferenceList } from './FileReferenceList';
 import { MediaAttachmentList } from './MediaAttachmentList';
+import { useSettingsStore } from '@/stores/SettingsStore';
 
 interface ChatInputProps {
   inputValue: string;
@@ -35,6 +36,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     clearFileReferences,
     clearMediaAttachments,
   } = useChatInputStore();
+  const { windowTitle } = useSettingsStore()
 
   const generateSmartPrompt = (): string => {
     if (fileReferences.length === 0) return '';
@@ -116,7 +118,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           value={inputValue}
           onChange={(e) => onInputChange(e.target.value)}
           onKeyDown={handleKeyPress}
-          placeholder={placeholderOverride || "Ask Codex to do anything"}
+          placeholder={placeholderOverride || `Ask ${windowTitle == 'Codexia' ? "Codex" : windowTitle} to do anything`}
           className={`min-h-20 max-h-96 pr-32 bg-muted/50 resize-none overflow-y-auto pb-8 ${
             (fileReferences.length > 0 || mediaAttachments.length > 0) ? 'pt-8' : ''
           }`}
@@ -135,8 +137,10 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         </div>
 
         {/* Model Selector and Send Button - bottom right inside textarea */}
-        <div className="absolute right-4 bottom-2 flex items-center gap-1">
-          <ModelSelector />
+        <div className="absolute right-4 bottom-2 flex items-center gap-1 group">
+          <div className="opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+            <ModelSelector />
+          </div>
           {isLoading ? (
             <Button
               onClick={handleStopStreaming}

@@ -8,16 +8,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '../ui/popover';
-import { useSettingsStore } from '@/stores/SettingsStore';
+import { useProvidersStore } from '@/stores/ProvidersStore';
 import { useModelStore } from '@/stores/ModelStore';
 import { ConfigService } from '@/services/configService';
 
 export const ModelSelector: React.FC = () => {
-  const { providers } = useSettingsStore();
+  const { providers } = useProvidersStore();
   const { currentModel, currentProvider, setCurrentModel } = useModelStore();
   const [modelsByProvider, setModelsByProvider] = useState<Record<string, Array<{model: string, source: 'settings' | 'config'}>>>({});
   const [isModelPopoverOpen, setIsModelPopoverOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedProvider, setSelectedProvider] = useState(currentProvider.toLowerCase());
 
   // Load available models grouped by provider
   useEffect(() => {
@@ -78,35 +79,31 @@ export const ModelSelector: React.FC = () => {
     return provider.toLowerCase() === 'ollama';
   };
 
-  // Filter models based on search term
-  const filteredModelsByProvider = useMemo(() => {
-    if (!searchTerm.trim()) {
-      return modelsByProvider;
+  // Get available providers
+  const availableProviders = useMemo(() => {
+    return Object.keys(modelsByProvider).sort();
+  }, [modelsByProvider]);
+
+  // Update selectedProvider when modelsByProvider changes
+  useEffect(() => {
+    if (availableProviders.length > 0 && !availableProviders.includes(selectedProvider)) {
+      setSelectedProvider(availableProviders[0]);
     }
+  }, [availableProviders, selectedProvider]);
 
-    const filtered: typeof modelsByProvider = {};
-    const lowerSearchTerm = searchTerm.toLowerCase();
-
-    Object.entries(modelsByProvider).forEach(([providerName, models]) => {
-      // Check if provider name matches search term
-      const providerMatches = providerName.toLowerCase().includes(lowerSearchTerm);
-      
-      // Filter models that match search term
-      const matchingModels = models.filter(modelInfo => 
-        modelInfo.model.toLowerCase().includes(lowerSearchTerm)
-      );
-
-      // Include provider if provider name matches OR if it has matching models
-      if (providerMatches || matchingModels.length > 0) {
-        filtered[providerName] = providerMatches ? models : matchingModels;
-      }
-    });
-
-    return filtered;
-  }, [modelsByProvider, searchTerm]);
+  // Get models for selected provider
+  const selectedProviderModels = useMemo(() => {
+    const models = modelsByProvider[selectedProvider] || [];
+    if (!searchTerm.trim()) {
+      return models;
+    }
+    return models.filter(modelInfo => 
+      modelInfo.model.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [modelsByProvider, selectedProvider, searchTerm]);
 
   return (
-    <div className="flex items-center justify-between border-t border-gray-100">
+    <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-800">
       <Popover open={isModelPopoverOpen} onOpenChange={(open) => {
         setIsModelPopoverOpen(open);
         if (!open) {
@@ -114,76 +111,91 @@ export const ModelSelector: React.FC = () => {
         }
       }}>
         <PopoverTrigger asChild>
-          <div className="flex items-center gap-2 text-xs text-gray-500">
-            <Badge variant="outline" className="text-xs cursor-pointer hover:bg-gray-100 h-6 px-2">
-              {currentProvider}/{currentModel}
+          <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
+            <Badge variant="outline" className="text-xs cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 h-6 px-2">
+              {currentProvider} • {currentModel}
             </Badge>
           </div>
         </PopoverTrigger>
-        <PopoverContent className="w-96 p-3" align="end">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h4 className="font-medium text-sm">Select Model</h4>
-            </div>
-            <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-3 w-3 text-gray-500" />
-              <Input
-                placeholder="Search models..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-7 h-8 text-xs"
-              />
-            </div>
-            <div className="max-h-64 overflow-y-auto space-y-3">
-              {Object.keys(filteredModelsByProvider).length === 0 ? (
-                <p className="text-xs text-gray-500 py-2">
-                  {searchTerm.trim() ? 'No models found matching your search' : 'No models available'}
-                </p>
-              ) : (
-                Object.entries(filteredModelsByProvider).map(([providerName, models]) => (
-                  <div key={providerName} className="space-y-1">
-                    <div className="flex items-center gap-2 px-2 py-1">
-                      <h5 className="font-medium text-xs text-gray-700 uppercase tracking-wide">
-                        {providerName}
-                      </h5>
-                      <div className="flex-1 border-t border-gray-200"></div>
+        <PopoverContent className="w-[500px] p-0 bg-white dark:bg-gray-950 border-gray-200 dark:border-gray-800" align="end">
+          <div className="flex h-80">
+            {/* Left Provider Sidebar */}
+            <div className="w-36 border-r border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
+              <div className="p-3 border-b border-gray-200 dark:border-gray-800">
+                <h4 className="font-medium text-xs text-gray-700 dark:text-gray-300 uppercase tracking-wide">Providers</h4>
+              </div>
+              <div className="p-1">
+                {availableProviders.map((providerName) => (
+                  <button
+                    key={providerName}
+                    onClick={() => setSelectedProvider(providerName)}
+                    className={`w-full text-left px-2 py-1.5 text-xs rounded transition-colors ${
+                      selectedProvider === providerName
+                        ? 'bg-blue-100 dark:bg-blue-900/50 text-blue-800 dark:text-blue-200'
+                        : 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium">{providerName}</span>
                       {shouldUseOss(providerName) && (
-                        <Badge variant="outline" className="text-xs">
-                          --oss
-                        </Badge>
+                        <span className="text-xs text-gray-400">OSS</span>
                       )}
                     </div>
-                    <div className="space-y-1">
-                      {models.map((modelInfo, index) => (
-                        <Button
-                          key={`${providerName}-${modelInfo.model}-${index}`}
-                          variant={currentModel === modelInfo.model && currentProvider.toLowerCase() === providerName ? "default" : "ghost"}
-                          className="w-full justify-start text-left h-auto p-2"
-                          onClick={() => {
-                            setCurrentModel(modelInfo.model, providerName);
-                            setIsModelPopoverOpen(false);
-                          }}
-                        >
-                          <div className="flex items-center justify-between w-full">
-                            <span className="font-medium text-sm">{modelInfo.model}</span>
-                            <Badge 
-                              variant={modelInfo.source === 'config' ? 'default' : 'secondary'} 
-                              className="text-xs"
-                            >
-                              {modelInfo.source === 'config' ? 'config' : 'settings'}
-                            </Badge>
-                          </div>
-                        </Button>
-                      ))}
-                    </div>
-                  </div>
-                ))
-              )}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="pt-2 border-t">
-              <p className="text-xs text-gray-500">
-                💡 Add more models in Settings or edit ~/.codex/config.toml
-              </p>
+
+            {/* Right Model List */}
+            <div className="flex-1 flex flex-col">
+              <div className="p-3 border-b border-gray-200 dark:border-gray-800">
+                <h4 className="font-medium text-sm text-gray-900 dark:text-gray-100 mb-2">Models for {selectedProvider}</h4>
+                <div className="relative">
+                  <Search className="absolute left-2 top-2.5 h-3 w-3 text-gray-500 dark:text-gray-400" />
+                  <Input
+                    placeholder="Search models..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-7 h-8 text-xs"
+                  />
+                </div>
+              </div>
+              <div className="flex-1 overflow-y-auto p-2">
+                {selectedProviderModels.length === 0 ? (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 p-2 text-center">
+                    {searchTerm.trim() ? 'No models found matching your search' : 'No models available'}
+                  </p>
+                ) : (
+                  <div className="space-y-1">
+                    {selectedProviderModels.map((modelInfo, index) => (
+                      <Button
+                        key={`${selectedProvider}-${modelInfo.model}-${index}`}
+                        variant={currentModel === modelInfo.model && currentProvider.toLowerCase() === selectedProvider ? "default" : "ghost"}
+                        className="w-full justify-start text-left h-auto p-2"
+                        onClick={() => {
+                          setCurrentModel(modelInfo.model, selectedProvider);
+                          setIsModelPopoverOpen(false);
+                        }}
+                      >
+                        <div className="flex items-center justify-between w-full">
+                          <span className="font-medium text-sm">{modelInfo.model}</span>
+                          <Badge 
+                            variant={modelInfo.source === 'config' ? 'default' : 'secondary'} 
+                            className="text-xs"
+                          >
+                            {modelInfo.source === 'config' ? 'config' : 'settings'}
+                          </Badge>
+                        </div>
+                      </Button>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <div className="p-3 border-t border-gray-200 dark:border-gray-700">
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  💡 Add more providers in Settings or edit ~/.codex/config.toml
+                </p>
+              </div>
             </div>
           </div>
         </PopoverContent>

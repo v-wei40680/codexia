@@ -1,4 +1,4 @@
-import { PartyPopper, Usb, PanelLeft, Settings, MessageCircleCode, BarChart3, Sun, Moon, Brain } from "lucide-react";
+import { PartyPopper, Usb, PanelLeft, Settings, BarChart3, Sun, Moon, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link, useLocation } from "react-router-dom";
@@ -35,27 +35,27 @@ export function AppHeader() {
   return (
     <div data-tauri-drag-region className="flex justify-between px-2">
       <span className="flex gap-2 items-center">
-        {logoSettings.useCustomLogo && logoSettings.customLogoPath ? (
-          <img 
-            src={logoSettings.customLogoPath} 
-            alt="Custom Logo" 
-            className="h-6 w-auto object-contain"
-          />
-        ) : (
-          <span className="flex gap-2 items-center">
-            <div
-              className={`w-2 h-2 rounded-full ${isCodexAvailable ? "bg-green-500" : "bg-destructive"}`}
-            ></div>
-            <Badge>{codexVersion}</Badge>
-          </span>
-        )}
+        <Link to="/chat" className="flex hover:text-primary items-center gap-1">
+          {logoSettings.useCustomLogo && logoSettings.customLogoPath ? (
+            <img 
+              src={logoSettings.customLogoPath} 
+              alt="Custom Logo" 
+              className="h-6 w-auto object-contain"
+            />
+          ) : (
+            <span className="flex gap-2 items-center">
+              <div
+                className={`w-2 h-2 rounded-full ${isCodexAvailable ? "bg-green-500" : "bg-destructive"}`}
+              ></div>
+              <Badge>{codexVersion}</Badge>
+            </span>
+          )}
+          Chat
+        </Link>
+
         {/* Welcome button to projects page */}
         <Link to="/" className="flex hover:text-primary items-center gap-1">
           <PartyPopper className="w-5 h-5" /> Projects
-        </Link>
-
-        <Link to="/chat" className="flex hover:text-primary items-center gap-1">
-          <MessageCircleCode className="w-5 h-5" /> Chat
         </Link>
 
         {location.pathname === "/chat" && (
@@ -70,10 +70,10 @@ export function AppHeader() {
         )}
       </span>
 
-      <span className="flex gap-0.1">
+      <span className="flex gap-0 h-6">
         {location.pathname === "/chat" && (
           <McpDialog>
-            <Button variant="ghost" className="flex gap-1">
+            <Button variant="ghost" className="flex gap-1 h-6">
               <Usb />
               MCP
             </Button>
@@ -86,18 +86,18 @@ export function AppHeader() {
 
         <Button
           variant="ghost"
-          size="icon"
-          onClick={toggleTheme}
+          onClick={toggleChatPane}
+          className="h-6 w-6"
         >
-          {theme === 'dark' ? <Sun /> : <Moon />}
+          <Brain />
         </Button>
 
         <Button
           variant="ghost"
-          size="icon"
-          onClick={toggleChatPane}
+          className="h-6 w-6"
+          onClick={toggleTheme}
         >
-          <Brain />
+          {theme === 'dark' ? <Sun /> : <Moon />}
         </Button>
 
         <Link to="/settings" className="flex hover:text-primary items-center gap-1">
