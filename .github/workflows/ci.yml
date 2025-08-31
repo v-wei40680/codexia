@@ -72,8 +72,7 @@ jobs:
         run: bun install
 
       - name: Build Tauri App
-        run: bun tauri build --bundles ${{ runner.os == 'Linux' && 'deb' || 'exe' }} --debug
-
+        run: bun tauri build --bundles ${{ runner.os == 'Linux' && 'deb' || 'nsis' }} --debug
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
