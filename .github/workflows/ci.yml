@@ -72,7 +72,7 @@ jobs:
         run: bun install
 
       - name: Build Tauri App
-        run:  |
+        run: |
           if [ "${{ runner.os }}" == "Linux" ]; then
             bun tauri build --bundles deb --debug
           else
