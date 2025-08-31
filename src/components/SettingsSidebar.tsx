@@ -39,6 +39,13 @@ export default function SettingsSidebar({
       >
         Exclude Folders
       </Button>
+      <Button
+        variant={activeSection === "logo" ? "default" : "ghost"}
+        className="w-full justify-start"
+        onClick={() => onSectionChange("logo")}
+      >
+        Logo Settings
+      </Button>
     </div>
   );
 }

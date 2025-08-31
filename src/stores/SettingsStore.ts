@@ -24,6 +24,12 @@ interface SettingsStore {
   setDefaultProvider: (provider: Provider) => void;
   activeSection: string;
   setActiveSection: (section: string) => void;
+  logoSettings: {
+    useCustomLogo: boolean;
+    customLogoPath: string;
+  };
+  setUseCustomLogo: (use: boolean) => void;
+  setCustomLogoPath: (path: string) => void;
 }
 
 const DEFAULT_EXCLUDE_FOLDERS = [
@@ -78,6 +84,10 @@ export const useSettingsStore = create<SettingsStore>()(
       providers: { ...DEFAULT_PROVIDERS },
       defaultProvider: "openai",
       activeSection: "provider",
+      logoSettings: {
+        useCustomLogo: false,
+        customLogoPath: "",
+      },
       addExcludeFolder: (folder: string) =>
         set((state) => ({
           excludeFolders: [...state.excludeFolders, folder],
@@ -113,6 +123,14 @@ export const useSettingsStore = create<SettingsStore>()(
         set({ defaultProvider: provider }),
       setActiveSection: (section: string) =>
         set({ activeSection: section }),
+      setUseCustomLogo: (use: boolean) =>
+        set((state) => ({
+          logoSettings: { ...state.logoSettings, useCustomLogo: use },
+        })),
+      setCustomLogoPath: (path: string) =>
+        set((state) => ({
+          logoSettings: { ...state.logoSettings, customLogoPath: path },
+        })),
     }),
     {
       name: "settings-storage",

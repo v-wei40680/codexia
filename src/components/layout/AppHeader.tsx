@@ -1,4 +1,4 @@
-import { PartyPopper, Usb, PanelLeft, Settings, MessageCircleCode, BarChart3, Sun, Moon } from "lucide-react";
+import { PartyPopper, Usb, PanelLeft, Settings, MessageCircleCode, BarChart3, Sun, Moon, Brain } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link, useLocation } from "react-router-dom";
@@ -7,10 +7,12 @@ import { invoke } from "@tauri-apps/api/core";
 import { useState, useEffect } from "react";
 import { McpDialog } from "../dialogs/McpDialog";
 import { useThemeStore } from "@/stores/ThemeStore";
+import { useSettingsStore } from "@/stores/SettingsStore";
 
 export function AppHeader() {
-  const { showFileTree, toggleFileTree } = useLayoutStore();
+  const { showFileTree, toggleFileTree, toggleChatPane } = useLayoutStore();
   const { theme, toggleTheme } = useThemeStore();
+  const { logoSettings } = useSettingsStore();
   const [codexVersion, setCodexVersion] = useState<string>("");
   const [isCodexAvailable, setIsCodexAvailable] = useState<boolean>(false);
   const location = useLocation();
@@ -33,10 +35,20 @@ export function AppHeader() {
   return (
     <div data-tauri-drag-region className="flex justify-between px-2">
       <span className="flex gap-2 items-center">
-        <div
-          className={`w-2 h-2 rounded-full ${isCodexAvailable ? "bg-green-500" : "bg-destructive"}`}
-        ></div>
-        <Badge>{codexVersion}</Badge>
+        {logoSettings.useCustomLogo && logoSettings.customLogoPath ? (
+          <img 
+            src={logoSettings.customLogoPath} 
+            alt="Custom Logo" 
+            className="h-6 w-auto object-contain"
+          />
+        ) : (
+          <span className="flex gap-2 items-center">
+            <div
+              className={`w-2 h-2 rounded-full ${isCodexAvailable ? "bg-green-500" : "bg-destructive"}`}
+            ></div>
+            <Badge>{codexVersion}</Badge>
+          </span>
+        )}
         {/* Welcome button to projects page */}
         <Link to="/" className="flex hover:text-primary items-center gap-1">
           <PartyPopper className="w-5 h-5" /> Projects
@@ -58,7 +70,7 @@ export function AppHeader() {
         )}
       </span>
 
-      <span className="flex gap-2">
+      <span className="flex gap-0.1">
         {location.pathname === "/chat" && (
           <McpDialog>
             <Button variant="ghost" className="flex gap-1">
@@ -77,7 +89,15 @@ export function AppHeader() {
           size="icon"
           onClick={toggleTheme}
         >
-          {theme === 'dark' ? <Sun className="w-3 h-3" /> : <Moon className="w-3 h-3" />}
+          {theme === 'dark' ? <Sun /> : <Moon />}
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleChatPane}
+        >
+          <Brain />
         </Button>
 
         <Link to="/settings" className="flex hover:text-primary items-center gap-1">

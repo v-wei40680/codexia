@@ -3,6 +3,7 @@ import SettingsSidebar from "@/components/SettingsSidebar";
 import ProviderList from "@/components/ProviderList";
 import ProviderModels from "@/components/ProviderModels";
 import ExcludeFolders from "@/components/ExcludeFolders";
+import LogoSettings from "@/components/LogoSettings";
 import { useSettingsStore } from "@/stores/SettingsStore";
 
 export default function SettingsPage() {
@@ -38,6 +39,7 @@ export default function SettingsPage() {
         {activeSection === "security" && <p>Security Settings</p>}
         {activeSection === "working" && <p>Working Directory Settings</p>}
         {activeSection === "exclude" && <ExcludeFolders />}
+        {activeSection === "logo" && <LogoSettings />}
       </div>
     </div>
   );

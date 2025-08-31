@@ -16,11 +16,12 @@ import { useCodexStore } from "@/stores/CodexStore";
 import { useChatInputStore } from "@/stores/chatInputStore";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { invoke } from "@tauri-apps/api/core";
-import { GitBranch, Files, Bot, NotebookPen } from "lucide-react";
+import { GitBranch, Files, Bot, NotebookPen, Image } from "lucide-react";
 import { NoteList } from "@/components/notes";
 
 export default function ChatPage() {
   const {
+    showChatPane,
     showFileTree,
     showFilePanel,
     selectedFile,
@@ -110,7 +111,7 @@ export default function ChatPage() {
       {showFileTree && (
         <div className="w-64 border-r h-full flex-shrink-0">
           <Tabs value={selectedLeftPanelTab} onValueChange={setSelectedLeftPanelTab} className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="files">Files</TabsTrigger>
               <TabsTrigger value="git">
                 <GitBranch />
@@ -123,6 +124,9 @@ export default function ChatPage() {
               </TabsTrigger>
               <TabsTrigger value="notes">
                 <NotebookPen />
+              </TabsTrigger>
+              <TabsTrigger value="image">
+                <Image />
               </TabsTrigger>
             </TabsList>
             <TabsContent value="files" className="flex-1 overflow-hidden mt-0">
@@ -199,13 +203,33 @@ export default function ChatPage() {
             <TabsContent value="notes">
               <NoteList />
             </TabsContent>
+            <TabsContent value="image">
+              image
+            </TabsContent>
           </Tabs>
         </div>
       )}
 
       {/* Main Content Area */}
       <div className="flex-1 min-h-0 h-full flex min-w-0 overflow-hidden">
-        {/* Middle Panel - FileViewer or DiffViewer */}
+        {/* Middle Panel - Chat/Notes */}
+        {showChatPane &&
+          <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
+            <AppToolbar
+              onOpenConfig={() => setIsConfigOpen(true)}
+              onCreateNewSession={createConversationWithLatestSession}
+              currentTab={selectedLeftPanelTab}
+              onSwitchToTab={setSelectedLeftPanelTab}
+            />
+            {selectedLeftPanelTab === "notes" ? (
+              <NotesView />
+            ) : (
+              <ChatView />
+            )}
+          </div>
+        }
+
+        {/* Right Panel - FileViewer or DiffViewer */}
         {(showFilePanel && selectedFile) || diffFile ? (
           <div className="flex-1 min-w-0 border-r overflow-hidden">
             {diffFile ? (
@@ -245,21 +269,6 @@ export default function ChatPage() {
             ) : null}
           </div>
         ) : null}
-
-        {/* Right Panel - Chat/Notes */}
-        <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-          <AppToolbar
-            onOpenConfig={() => setIsConfigOpen(true)}
-            onCreateNewSession={createConversationWithLatestSession}
-            currentTab={selectedLeftPanelTab}
-            onSwitchToTab={setSelectedLeftPanelTab}
-          />
-          {selectedLeftPanelTab === "notes" ? (
-            <NotesView />
-          ) : (
-            <ChatView />
-          )}
-        </div>
       </div>
 
       <ConfigDialog
