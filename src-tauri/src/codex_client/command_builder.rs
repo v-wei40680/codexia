@@ -180,6 +180,7 @@ impl CommandBuilder {
                 cmd.arg("-c").arg(format!("model={}", config.model));
             }
         }
+        cmd.arg("-c").arg(format!("model_reasoning_summary={}", "auto"));
 
         Ok(())
     }
