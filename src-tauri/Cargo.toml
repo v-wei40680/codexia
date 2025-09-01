@@ -18,8 +18,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-tauri = { version = "2", features = [] }
-tauri-plugin-opener = "2"
+tauri = { version = "2", features = ["protocol-asset"] }
 tauri-plugin-shell = "2"
 tauri-plugin-dialog = "2"
 serde = { version = "1", features = ["derive"] }
@@ -38,3 +37,4 @@ tauri-plugin-fs = "2"
 walkdir = "2.3"
 chrono = { version = "0.4", features = ["serde"] }
 tauri-plugin-log = "2"
+tauri-plugin-screenshots = "2.2.0"

@@ -8,6 +8,7 @@ import { ModelSelector } from './ModelSelector';
 import { FileReferenceList } from './FileReferenceList';
 import { MediaAttachmentList } from './MediaAttachmentList';
 import { useSettingsStore } from '@/stores/SettingsStore';
+import { ScreenshotPopover } from './ScreenshotPopover';
 
 interface ChatInputProps {
   inputValue: string;
@@ -131,9 +132,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           }}
         />
         
-        {/* Media Selector and Sandbox Selector - bottom left inside textarea */}
+        {/* Media Selector and Screenshot Selector - bottom left inside textarea */}
         <div className="flex absolute left-2 bottom-2 items-center gap-1">
           <MediaSelector />
+          <ScreenshotPopover onScreenshotTaken={(path) => {
+            onInputChange(inputValue + (inputValue ? '\n\n' : '') + path);
+          }} />
         </div>
 
         {/* Model Selector and Send Button - bottom right inside textarea */}

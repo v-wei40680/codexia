@@ -78,7 +78,10 @@ export function FileTreeItem({
     // Remove current folder path to get relative path
     if (fullPath.startsWith(currentFolder)) {
       const relativePath = fullPath.slice(currentFolder.length);
-      return relativePath.startsWith('/') ? relativePath.slice(1) : relativePath;
+      // Handle both Unix (/) and Windows (\) path separators
+      return (relativePath.startsWith('/') || relativePath.startsWith('\\')) 
+        ? relativePath.slice(1) 
+        : relativePath;
     }
     return fullPath;
   };
