@@ -11,9 +11,8 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/milisp/codexia/actions/workflows/ci.yml/badge.svg)](https://github.com/milisp/codexia/actions/workflows/ci.yml)
 
-A powerfull GUI application for the [Codex CLI](https://github.com/openai/codex) built with Tauri v2, React
-
-TLDR: Notepad + @file from FileTree + git diff + streaming chat + agent + mcp
+🚀 The missing GUI/IDE for the [Codex CLI](https://github.com/openai/codex) — multi-session chat, live streaming responses, file-tree integration, notepad, and git diff support.
+Cross-platform desktop app built with Tauri v2 + React + TypeScript.
 
 > [!TIP]
 > **⭐ Star the repo and follow [milisp](https://x.com/lisp_mi) on X and [github](https://github.com/milisp) for more**.
@@ -68,10 +67,7 @@ Codexia is an independent open-source project and is not built by OpenAI or any 
 
 ### Prerequisites
 
-- [Rust](https://rustup.rs/) (latest stable)
-- [Node.js](https://nodejs.org/) (v18+)
-- [Bun](https://bun.sh/) (recommended) or npm/yarn
-- [Codex CLI](https://github.com/openai/codex) installed and configured
+- [Tauri Prerequisites](https://v2.tauri.app/start/prerequisites/)
 
 ### Installation
 
@@ -94,7 +90,6 @@ Codexia is an independent open-source project and is not built by OpenAI or any 
 ### Building for Production
 
 ```bash
-bun run build
 bun tauri build
 ```
 
@@ -195,6 +190,8 @@ cd src-tauri && cargo fmt --all
 cp docs/pre-commit .git/hooks/pre-commit
 ```
 
+**Delete node_modules and bun.lock to fix some issue** [#10](https://github.com/milisp/codexia/issues/10)
+
 ## learn tauri v2
 
 https://v2.tauri.app/start/
@@ -211,6 +208,14 @@ https://tauri.app/llms.txt
   - test command `bun run build` and `cargo check` at src-tauri folder
 5. Open a Pull Request
 
+## 💖 Contributors
+
+Thanks to all our wonderful contributors!
+
+<a href="https://github.com/milisp/codexia/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=milisp/codexia" />
+</a>
+
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
@@ -218,10 +223,11 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - [Plux](https://github.com/milisp/plux) one click @files from FileTree & notepad
-- [Claude code](https://www.anthropic.com/claude-code) Build by Claude code
+- [Claude code](https://www.anthropic.com/claude-code) Co-Authored-By Claude code
 - [codex](https://chatgpt.com/codex) for the Codex CLI
 - [Tauri](https://tauri.app/) for the excellent desktop app framework
 - [shadcn/ui](https://ui.shadcn.com/) for the beautiful UI components
+- [ChatGPT](https://chatgpt.com) Some code suggest by ChatGPT
 - The open source community for the amazing tools and libraries
 
 ---
