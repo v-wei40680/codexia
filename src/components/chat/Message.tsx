@@ -2,6 +2,7 @@ import { memo } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { MessageFooter } from './MessageFooter';
 import { MarkdownRenderer } from './MarkdownRenderer';
+import { VirtualizedTextRenderer } from './VirtualizedTextRenderer';
 import { StreamingMessage } from './StreamingMessage';
 import { ApprovalMessage } from './ApprovalMessage';
 import { useState } from 'react';
@@ -116,6 +117,23 @@ export const Message = memo<MessageProps>(({
     return normalized.content;
   };
   
+  // Check if content should use virtualized rendering (for very large outputs)
+  const shouldUseVirtualizedRenderer = () => {
+    const contentToRender = getCleanExecutionContent();
+    const lineCount = contentToRender.split('\n').length;
+    const charCount = contentToRender.length;
+    
+    // Use virtualized renderer for:
+    // - Content with more than 100 lines
+    // - Content with more than 10,000 characters
+    // - Commands that typically produce large output (ls -R, find, etc.)
+    return lineCount > 100 || charCount > 10000 || 
+           normalized.content.includes('ls -R') ||
+           normalized.content.includes('find ') ||
+           normalized.content.includes('tree ') ||
+           normalized.content.includes('grep -r');
+  };
+
   // Get preview text for collapsed messages
   const getPreviewText = () => {
     if (isEnvironmentContext) return 'Environment Context';
@@ -342,6 +360,8 @@ export const Message = memo<MessageProps>(({
                               isStreaming: normalized.isStreaming
                             }}
                           />
+                        ) : shouldUseVirtualizedRenderer() ? (
+                          <VirtualizedTextRenderer content={getCleanExecutionContent()} />
                         ) : (
                           <MarkdownRenderer content={getCleanExecutionContent()} />
                         )}
@@ -367,6 +387,8 @@ export const Message = memo<MessageProps>(({
                             isStreaming: normalized.isStreaming
                           }}
                         />
+                      ) : shouldUseVirtualizedRenderer() ? (
+                        <VirtualizedTextRenderer content={normalized.content} />
                       ) : (
                         <MarkdownRenderer content={normalized.content} />
                       )}
