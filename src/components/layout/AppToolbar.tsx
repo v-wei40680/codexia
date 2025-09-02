@@ -4,9 +4,13 @@ import {
   Settings,
   PencilIcon,
   History,
+  Globe,
 } from "lucide-react";
 import { useConversationStore } from "@/stores/ConversationStore";
 import { useNoteStore } from "@/stores/NoteStore";
+import { useLayoutStore } from "@/stores/layoutStore";
+import { useFolderStore } from "@/stores/FolderStore";
+import { detectWebFramework } from "@/utils/webFrameworkDetection";
 
 interface AppToolbarProps {
   onOpenConfig: () => void;
@@ -24,6 +28,8 @@ export const AppToolbar: React.FC<AppToolbarProps> = ({
   const { setPendingNewConversation, setCurrentConversation } =
     useConversationStore();
   const { createNote, setCurrentNote } = useNoteStore();
+  const { showWebPreview, setWebPreviewUrl } = useLayoutStore();
+  const { currentFolder } = useFolderStore();
 
   const handleToggleLeftPanel = () => {
     if (!onSwitchToTab) return;
@@ -52,6 +58,28 @@ export const AppToolbar: React.FC<AppToolbarProps> = ({
       // Clear current conversation to show new chat interface
       // The actual session ID will be created when user sends first message
       setCurrentConversation('');
+    }
+  };
+
+  const handleToggleWebPreview = async () => {
+    if (showWebPreview) {
+      setWebPreviewUrl(null);
+    } else {
+      let defaultUrl = 'http://localhost:3000';
+      
+      // Try to detect web framework and use appropriate URL
+      if (currentFolder) {
+        try {
+          const frameworkInfo = await detectWebFramework(currentFolder);
+          if (frameworkInfo) {
+            defaultUrl = frameworkInfo.devUrl;
+          }
+        } catch (error) {
+          console.error('Failed to detect web framework:', error);
+        }
+      }
+      
+      setWebPreviewUrl(defaultUrl);
     }
   };
 
@@ -84,6 +112,17 @@ export const AppToolbar: React.FC<AppToolbarProps> = ({
           </Button>
 
           <PanelToggleButton />
+
+          {/* Web Preview Button */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleToggleWebPreview}
+            className={`h-7 w-7 shrink-0 ${showWebPreview ? 'bg-accent' : ''}`}
+            title="Toggle Web Preview"
+          >
+            <Globe />
+          </Button>
 
           {/* Settings Button */}
           <Button

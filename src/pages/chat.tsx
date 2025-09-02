@@ -18,17 +18,21 @@ import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { invoke } from "@tauri-apps/api/core";
 import { GitBranch, Files, Bot, NotebookPen, Image } from "lucide-react";
 import { NoteList } from "@/components/notes";
+import { WebPreview } from "@/components/WebPreview";
 
 export default function ChatPage() {
   const {
     showChatPane,
     showFileTree,
     showFilePanel,
+    showWebPreview,
     selectedFile,
     selectedLeftPanelTab,
+    webPreviewUrl,
     openFile,
     closeFile,
     setSelectedLeftPanelTab,
+    setWebPreviewUrl,
   } = useLayoutStore();
 
   const { config, setConfig } = useCodexStore();
@@ -229,8 +233,8 @@ export default function ChatPage() {
           </div>
         }
 
-        {/* Right Panel - FileViewer or DiffViewer */}
-        {(showFilePanel && selectedFile) || diffFile ? (
+        {/* Right Panel - FileViewer, DiffViewer, or WebPreview */}
+        {((showFilePanel && selectedFile) || diffFile || (showWebPreview && webPreviewUrl)) && (
           <div className="flex-1 min-w-0 border-r overflow-hidden">
             {diffFile ? (
               <div className="h-full flex flex-col">
@@ -251,6 +255,12 @@ export default function ChatPage() {
                   fileName={diffFile.fileName}
                 />
               </div>
+            ) : showWebPreview && webPreviewUrl ? (
+              <WebPreview
+                url={webPreviewUrl}
+                onClose={() => setWebPreviewUrl(null)}
+                onUrlChange={(url) => setWebPreviewUrl(url)}
+              />
             ) : selectedFile ? (
               <FileViewer 
                 filePath={selectedFile} 
@@ -268,7 +278,7 @@ export default function ChatPage() {
               />
             ) : null}
           </div>
-        ) : null}
+        )}
       </div>
 
       <ConfigDialog

@@ -8,9 +8,13 @@ interface LayoutState {
   showChatPane: boolean;
   showFileTree: boolean;
   showNotesList: boolean;
+  showWebPreview: boolean;
   
   // Selected file
   selectedFile: string | null;
+  
+  // Web preview
+  webPreviewUrl: string | null;
   
   // Active tab
   activeTab: string;
@@ -30,10 +34,13 @@ interface LayoutState {
   setNotesList: (visible: boolean) => void;
   setChatPane: (visible: boolean) => void;
   setFileTree: (visible: boolean) => void;
+  setWebPreview: (visible: boolean) => void;
   toggleSessionList: () => void;
   toggleNotesList: () => void;
   toggleChatPane: () => void;
   toggleFileTree: () => void;
+  toggleWebPreview: () => void;
+  setWebPreviewUrl: (url: string | null) => void;
   openFile: (filePath: string) => void;
   closeFile: () => void;
   setActiveTab: (tab: string) => void;
@@ -51,7 +58,9 @@ export const useLayoutStore = create<LayoutState>()(
       showChatPane: true,
       showFileTree: true,
       showNotesList: true,
+      showWebPreview: false,
       selectedFile: null,
+      webPreviewUrl: null,
       activeTab: 'chat',
       conversationListTab: 'sessions',
       selectedLeftPanelTab: 'files',
@@ -63,6 +72,7 @@ export const useLayoutStore = create<LayoutState>()(
       setNotesList: (visible) => set({ showNotesList: visible }),
       setChatPane: (visible) => set({ showChatPane: visible }),
       setFileTree: (visible) => set({ showFileTree: visible }),
+      setWebPreview: (visible) => set({ showWebPreview: visible }),
       
       toggleSessionList: () => set((state) => ({ 
         showSessionList: !state.showSessionList 
@@ -74,6 +84,12 @@ export const useLayoutStore = create<LayoutState>()(
       
       toggleChatPane: () => set((state) => ({ showChatPane: !state.showChatPane })),
       toggleFileTree: () => set((state) => ({ showFileTree: !state.showFileTree })),
+      toggleWebPreview: () => set((state) => ({ showWebPreview: !state.showWebPreview })),
+      
+      setWebPreviewUrl: (url) => set({ 
+        webPreviewUrl: url,
+        showWebPreview: url !== null 
+      }),
       
       openFile: (filePath) => {
         console.log('layoutStore: openFile called with', filePath);

@@ -145,3 +145,4 @@ pub async fn read_history_file() -> Result<String, String> {
     
     fs::read_to_string(&history_path).map_err(|e| format!("Failed to read history file: {}", e))
 }
+
