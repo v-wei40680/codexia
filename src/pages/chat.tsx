@@ -205,8 +205,8 @@ export default function ChatPage() {
             <TabsContent value="notes">
               <NoteList />
             </TabsContent>
-            <TabsContent value="image">
-              image
+            <TabsContent value="image" className="px-2">
+              Create your first image and video
             </TabsContent>
           </Tabs>
         </div>
