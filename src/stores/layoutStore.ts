@@ -16,6 +16,13 @@ interface LayoutState {
   // Web preview
   webPreviewUrl: string | null;
   
+  // Diff file
+  diffFile: {
+    original: string;
+    current: string;
+    fileName: string;
+  } | null;
+  
   // Active tab
   activeTab: string;
   
@@ -43,6 +50,8 @@ interface LayoutState {
   setWebPreviewUrl: (url: string | null) => void;
   openFile: (filePath: string) => void;
   closeFile: () => void;
+  setDiffFile: (diffFile: { original: string; current: string; fileName: string } | null) => void;
+  closeDiffFile: () => void;
   setActiveTab: (tab: string) => void;
   setConversationListTab: (tab: string) => void;
   setSelectedLeftPanelTab: (tab: string) => void;
@@ -51,7 +60,7 @@ interface LayoutState {
 
 export const useLayoutStore = create<LayoutState>()(
   persist(
-    (set, _get) => ({
+    (set, get) => ({
       // Initial state
       showFilePanel: false,
       showSessionList: true,
@@ -61,6 +70,7 @@ export const useLayoutStore = create<LayoutState>()(
       showWebPreview: false,
       selectedFile: null,
       webPreviewUrl: null,
+      diffFile: null,
       activeTab: 'chat',
       conversationListTab: 'sessions',
       selectedLeftPanelTab: 'files',
@@ -88,20 +98,39 @@ export const useLayoutStore = create<LayoutState>()(
       
       setWebPreviewUrl: (url) => set({ 
         webPreviewUrl: url,
-        showWebPreview: url !== null 
+        showWebPreview: url !== null,
+        selectedFile: url !== null ? null : get().selectedFile,
+        showFilePanel: url !== null ? false : get().showFilePanel,
+        diffFile: url !== null ? null : get().diffFile
       }),
       
       openFile: (filePath) => {
         console.log('layoutStore: openFile called with', filePath);
         set({ 
           selectedFile: filePath, 
-          showFilePanel: true 
+          showFilePanel: true,
+          webPreviewUrl: null,
+          showWebPreview: false,
+          diffFile: null
         });
       },
       
       closeFile: () => set({ 
         selectedFile: null, 
         showFilePanel: false 
+      }),
+      
+      setDiffFile: (diffFile) => set({ 
+        diffFile,
+        selectedFile: null,
+        webPreviewUrl: null,
+        showWebPreview: false,
+        showFilePanel: diffFile !== null
+      }),
+      
+      closeDiffFile: () => set({ 
+        diffFile: null,
+        showFilePanel: false
       }),
       
       setActiveTab: (tab) => set({ activeTab: tab }),

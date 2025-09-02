@@ -33,6 +33,9 @@ export default function ChatPage() {
     closeFile,
     setSelectedLeftPanelTab,
     setWebPreviewUrl,
+    diffFile,
+    setDiffFile,
+    closeDiffFile,
   } = useLayoutStore();
 
   const { config, setConfig } = useCodexStore();
@@ -43,11 +46,6 @@ export default function ChatPage() {
   const { currentFolder } = useFolderStore();
   const { fileReferences, removeFileReference } = useChatInputStore();
   const [isConfigOpen, setIsConfigOpen] = useState(false);
-  const [diffFile, setDiffFile] = useState<{
-    original: string;
-    current: string;
-    fileName: string;
-  } | null>(null);
   const [expandedAddedFolders, setExpandedAddedFolders] = useState<Set<string>>(
     new Set(),
   );
@@ -138,7 +136,7 @@ export default function ChatPage() {
                 currentFolder={currentFolder || undefined}
                 onFileClick={(path) => {
                   console.log("ChatPage: opening file from FileTree", path);
-                  setDiffFile(null); // Clear any existing diff view
+                  closeDiffFile(); // Clear any existing diff view
                   openFile(path);
                 }}
               />
@@ -184,7 +182,7 @@ export default function ChatPage() {
                         }
                         onFileClick={(path, isDirectory) => {
                           if (!isDirectory) {
-                            setDiffFile(null);
+                            closeDiffFile();
                             openFile(path);
                           }
                         }}
@@ -243,7 +241,7 @@ export default function ChatPage() {
                     Diff: {diffFile.fileName}
                   </span>
                   <button
-                    onClick={() => setDiffFile(null)}
+                    onClick={() => closeDiffFile()}
                     className="text-muted-foreground hover:text-foreground"
                   >
                     ×
