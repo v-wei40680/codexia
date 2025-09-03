@@ -7,21 +7,12 @@ import { generateUniqueId } from '@/utils/genUniqueId';
 
 interface UseCodexEventsProps {
   sessionId: string;
+  onStopStreaming?: () => void;
 }
 
-// Helper function to extract session ID from codex events
-const getEventSessionId = (event: CodexEvent): string | null => {
-  const { msg } = event;
-  switch (msg.type) {
-    case 'session_configured':
-      return msg.session_id;
-    default:
-      return null; // For other events, we can't determine session ID, so process them
-  }
-};
-
 export const useCodexEvents = ({ 
-  sessionId
+  sessionId,
+  onStopStreaming
 }: UseCodexEventsProps) => {
   const { addMessage, updateMessage, setSessionLoading, createConversation, conversations } = useConversationStore();
   const streamController = useRef<StreamController>(new StreamController());
@@ -40,12 +31,16 @@ export const useCodexEvents = ({
     // Convert message format and add to store
     const conversationMessage = {
       id: message.id,
-      role: message.type === 'user' ? 'user' as const : message.type === 'agent' ? 'assistant' as const : 'system' as const,
+      role: message.type === 'user' ? 'user' as const : 
+            message.type === 'agent' ? 'assistant' as const : 
+            message.type === 'approval' ? 'approval' as const : 'system' as const,
       content: message.content,
+      title: message.title,
       timestamp: message.timestamp.getTime(),
       // Preserve approval request data if present
       ...(message.approvalRequest && { approvalRequest: message.approvalRequest }),
     };
+    
     addMessage(sessionId, conversationMessage);
   };
 
@@ -76,11 +71,6 @@ export const useCodexEvents = ({
   const handleCodexEvent = (event: CodexEvent) => {
     const { msg } = event;
     
-    // Debug: log current streaming state for important events
-    if (['task_started', 'agent_message', 'agent_message_delta', 'task_complete'].includes(msg.type)) {
-      console.log(`🔍 Event ${msg.type}, streaming state:`, currentStreamingMessageId.current);
-    }
-    
     switch (msg.type) {
       case 'session_configured':
         // Session is now configured and ready
@@ -89,9 +79,6 @@ export const useCodexEvents = ({
       case 'task_started':
         setSessionLoading(sessionId, true);
         // Clear any previous streaming state
-        if (currentStreamingMessageId.current) {
-          console.log('🧹 Clearing previous streaming state on task_started:', currentStreamingMessageId.current);
-        }
         streamController.current.clearAll();
         currentStreamingMessageId.current = null;
         break;
@@ -110,21 +97,115 @@ export const useCodexEvents = ({
         if (msg.message) {
           // Clean up any streaming state silently - complete message takes precedence
           if (currentStreamingMessageId.current) {
-            console.log('🔄 Replacing streaming message with complete message');
             streamController.current.finalize(false); // Don't commit partial content
             currentStreamingMessageId.current = null;
           }
-          
-          console.log('💬 Processing complete agent_message');
-          // dont add message becaude avoid dup message
+          // dont add message because avoid dup message
         }
+        break;
+        
+      case 'agent_reasoning':
+      case 'agent_reasoning_raw_content':
+        // Handle reasoning content
+        const reasoningContent = 'reasoning' in msg ? msg.reasoning : msg.content;
+        if (reasoningContent) {
+          const reasoningMessage: ChatMessage = {
+            id: `${sessionId}-reasoning-${generateUniqueId()}`,
+            type: 'system',
+            content: reasoningContent,
+            timestamp: new Date(),
+          };
+          addMessageToStore(reasoningMessage);
+        }
+        break;
+        
+      case 'agent_reasoning_delta':
+      case 'agent_reasoning_raw_content_delta':
+        // Handle reasoning deltas - similar to message deltas but for reasoning
+        if (!currentStreamingMessageId.current || !currentStreamingMessageId.current.includes('reasoning')) {
+          // Start new reasoning streaming
+          const messageId = `${sessionId}-reasoning-stream-${generateUniqueId()}`;
+          currentStreamingMessageId.current = messageId;
+          
+          const reasoningMessage: ChatMessage = {
+            id: messageId,
+            type: 'system',
+            content: '',
+            timestamp: new Date(),
+            isStreaming: true,
+          };
+          addMessageToStore(reasoningMessage);
+          
+          const sink = createStreamSink(messageId);
+          streamController.current.begin(sink);
+        }
+        
+        if (currentStreamingMessageId.current && msg.delta) {
+          streamController.current.pushAndMaybeCommit(msg.delta);
+        }
+        break;
+        
+      case 'plan_update':
+        // Handle plan updates
+        const planSteps = msg.plan?.map(step => `- ${step.status === 'completed' ? '✅' : step.status === 'in_progress' ? '🔄' : '⏳'} ${step.step}`).join('\n') || '';
+        
+        const planMessage: ChatMessage = {
+          id: `${sessionId}-plan-${generateUniqueId()}`,
+          type: 'system',
+          title: `📋 ${msg.explanation || 'Plan Updated'}`,
+          content: planSteps,
+          timestamp: new Date(),
+        };
+        addMessageToStore(planMessage);
+        break;
+        
+      case 'mcp_tool_call_begin':
+        // Only show important tool calls like Read/Edit/Write, skip internal tools
+        const toolName = msg.invocation?.tool || 'Unknown Tool';
+        if (['read', 'edit', 'write', 'glob', 'grep'].some(t => toolName.toLowerCase().includes(t))) {
+          const toolCallMessage: ChatMessage = {
+            id: `${sessionId}-mcp-${generateUniqueId()}`,
+            type: 'system',
+            title: `🔧 ${toolName}`,
+            content: '',
+            timestamp: new Date(),
+          };
+          addMessageToStore(toolCallMessage);
+        }
+        break;
+        
+      case 'mcp_tool_call_end':
+        // Skip tool call end messages - they're too noisy
+        break;
+        
+      case 'patch_apply_begin':
+        // Skip patch begin - too noisy, turn_diff will show the changes
+        break;
+        
+      case 'patch_apply_end':
+        // Skip patch end - turn_diff shows what actually changed
+        break;
+        
+      case 'web_search_begin':
+        // Show web search activity
+        const searchBeginMessage: ChatMessage = {
+          id: `${sessionId}-search-begin-${generateUniqueId()}`,
+          type: 'system',
+          title: `🔍 ${msg.query}`,
+          content: 'Searching web...',
+          timestamp: new Date(),
+        };
+        addMessageToStore(searchBeginMessage);
+        break;
+        
+      case 'web_search_end':
+        // Skip search end - begin is enough
         break;
         
       case 'agent_message_delta':
         // Handle streaming delta
         if (!currentStreamingMessageId.current) {
           // Start new streaming message
-          console.log('🚀 Starting new streaming message');
           const messageId = `${sessionId}-stream-${generateUniqueId()}`;
           currentStreamingMessageId.current = messageId;
           
@@ -151,7 +232,7 @@ export const useCodexEvents = ({
       case 'exec_approval_request':
         // Add approval message to chat
         const execApprovalRequest: ApprovalRequest = {
-          id: msg.call_id, // Use call_id for exec approvals
+          id: msg.call_id || event.id, // Use call_id if available, otherwise event.id
           type: 'exec',
           command: Array.isArray(msg.command) ? msg.command.join(' ') : msg.command,
           cwd: msg.cwd,
@@ -161,9 +242,11 @@ export const useCodexEvents = ({
         const execMessage: ChatMessage = {
           id: event.id, // Use the original event ID, not a generated one
           type: 'approval',
-          content: `🔧 Requesting approval to execute: \`${execApprovalRequest.command}\`\n\nWorking directory: ${execApprovalRequest.cwd}`,
+          title: `🔧 Execute: ${execApprovalRequest.command}`,
+          content: `Working directory: ${execApprovalRequest.cwd}`,
           timestamp: new Date(),
           approvalRequest: execApprovalRequest,
+          eventType: 'exec_approval_request',
         };
         addMessageToStore(execMessage);
         break;
@@ -180,9 +263,11 @@ export const useCodexEvents = ({
         const patchMessage: ChatMessage = {
           id: event.id, // Use the original event ID, not a generated one
           type: 'approval',
-          content: `📝 Requesting approval to apply patch to files: ${msg.files?.join(', ') || 'unknown files'}`,
+          title: `📝 Patch: ${msg.files?.join(', ') || 'unknown files'}`,
+          content: `Requesting approval to apply patch`,
           timestamp: new Date(),
           approvalRequest: patchApprovalRequest,
+          eventType: 'patch_approval_request',
         };
         addMessageToStore(patchMessage);
         break;
@@ -212,9 +297,11 @@ export const useCodexEvents = ({
         const applyPatchMessage: ChatMessage = {
           id: event.id, // Use the original event ID, not a generated one
           type: 'approval',
-          content: `🔄 Requesting approval to apply patch changes\n\nChanges:\n${changesText}`,
+          title: `🔄 Apply Patch Changes`,
+          content: `Changes:\n${changesText}`,
           timestamp: new Date(),
           approvalRequest: applyPatchApprovalRequest,
+          eventType: 'apply_patch_approval_request',
         };
         addMessageToStore(applyPatchMessage);
         break;
@@ -247,11 +334,16 @@ export const useCodexEvents = ({
         break;
         
       case 'turn_diff':
-        // Add diff message to chat
+        // Show file changes made by AI
+        // Extract file names from diff for title
+        const fileMatches = msg.unified_diff.match(/\+\+\+\s+([^\s]+)/g);
+        const fileNames = fileMatches ? fileMatches.map(m => m.replace(/\+\+\+\s+/, '')).join(', ') : 'files';
+        
         const diffMessage: ChatMessage = {
           id: `${sessionId}-diff-${generateUniqueId()}`,
           type: 'system',
-          content: `📝 Code changes:\n\`\`\`diff\n${msg.unified_diff}\n\`\`\``,
+          title: `✏️ Edit: ${fileNames}`,
+          content: `\`\`\`diff\n${msg.unified_diff}\n\`\`\``,
           timestamp: new Date(),
         };
         addMessageToStore(diffMessage);
@@ -264,7 +356,8 @@ export const useCodexEvents = ({
         const cmdBeginMessage: ChatMessage = {
           id: cmdMessageId,
           type: 'system',
-          content: `▶️ Executing: \`${command}\``,
+          title: command,
+          content: `⏳ Running...`,
           timestamp: new Date(),
         };
         currentCommandMessageId.current = cmdMessageId;
@@ -280,15 +373,59 @@ export const useCodexEvents = ({
         // Update the existing command message with completion info
         if (currentCommandMessageId.current && currentCommandInfo.current) {
           const command = currentCommandInfo.current.command.join(' ');
-          const completedContent = `▶️ Executing: \`${command}\`\n\n✅ Command completed with exit code: ${msg.exit_code}${msg.stdout ? `\n\nOutput:\n\`\`\`\n${msg.stdout}\`\`\`` : ''}${msg.stderr ? `\n\nErrors:\n\`\`\`\n${msg.stderr}\`\`\`` : ''}`;
           
-          updateMessage(sessionId, currentCommandMessageId.current, {
-            content: completedContent,
-            timestamp: new Date().getTime(),
-          });
+          const status = msg.exit_code === 0 ? '✅' : '❌';
+          const statusText = msg.exit_code === 0 ? '' : ` (exit ${msg.exit_code})`;
+          
+          // For successful commands (exit code 0) with no output, just show success
+          if (msg.exit_code === 0 && !msg.stdout?.trim() && !msg.stderr?.trim()) {
+            updateMessage(sessionId, currentCommandMessageId.current, {
+              title: `${status} ${command}`,
+              content: '',
+              timestamp: new Date().getTime(),
+            });
+          } else {
+            // For commands with output or errors, show details
+            const outputContent = `${msg.stdout?.trim() ? `Output:\n\`\`\`\n${msg.stdout}\`\`\`` : ''}${msg.stderr?.trim() ? `${msg.stdout?.trim() ? '\n\n' : ''}Errors:\n\`\`\`\n${msg.stderr}\`\`\`` : ''}`;
+            
+            updateMessage(sessionId, currentCommandMessageId.current, {
+              title: `${status} ${command}${statusText}`,
+              content: outputContent,
+              timestamp: new Date().getTime(),
+            });
+          }
           
           currentCommandMessageId.current = null;
           currentCommandInfo.current = null;
+        }
+        break;
+
+      case 'turn_aborted':
+        // Handle turn abortion - add system message to indicate the turn was stopped
+        const abortMessage: ChatMessage = {
+          id: `${sessionId}-aborted-${generateUniqueId()}`,
+          type: 'system',
+          title: '🛑 Turn Stopped',
+          content: msg.reason ? `Reason: ${msg.reason}` : 'The current turn has been aborted.',
+          timestamp: new Date(),
+        };
+        addMessageToStore(abortMessage);
+        
+        // Clean up any ongoing streaming
+        if (currentStreamingMessageId.current) {
+          streamController.current.finalize();
+          currentStreamingMessageId.current = null;
+        }
+        
+        // Clean up any ongoing command execution tracking
+        if (currentCommandMessageId.current) {
+          currentCommandMessageId.current = null;
+          currentCommandInfo.current = null;
+        }
+        
+        // Signal that streaming should be stopped (handled by ChatInterface)
+        if (onStopStreaming) {
+          onStopStreaming();
         }
         break;
         
@@ -300,29 +437,38 @@ export const useCodexEvents = ({
   useEffect(() => {
     if (!sessionId) return;
 
-    // Listen to the global codex-events channel
+    // Listen to the global codex-events channel - process all events for approval to work
     const eventUnlisten = listen<CodexEvent>("codex-events", (event) => {
       const codexEvent = event.payload;
       
-      // Check if this event is for our session
-      const eventSessionId = getEventSessionId(codexEvent);
-      const ourSessionId = sessionId.replace('codex-event-', '');
-      
-      if (eventSessionId && eventSessionId !== ourSessionId) {
-        // This event is for a different session, ignore it
-        return;
-      }
-      
       // Log non-delta events for debugging
       if (codexEvent.msg.type !== "agent_message_delta") {
-        console.log(`📨 Codex event [${sessionId}]:`, codexEvent.msg.type);
+        console.log(`📨 Codex structured event [${sessionId}]:`, codexEvent.msg.type);
       }
       handleCodexEvent(codexEvent);
+    });
+    
+    // Listen to raw events that failed structured parsing - process all events for approval to work
+    const rawEventUnlisten = listen<{type: string, session_id: string, data: any}>("codex-raw-events", (event) => {
+      const rawEvent = event.payload;
+      
+      console.log(`📨 Raw codex event [${sessionId}]:`, rawEvent.data);
+      
+      // Try to convert raw event to structured event
+      if (rawEvent.data && typeof rawEvent.data === 'object') {
+        const convertedEvent: CodexEvent = {
+          id: rawEvent.data.id || `raw-${Date.now()}`,
+          msg: rawEvent.data.msg || rawEvent.data
+        };
+        
+        handleCodexEvent(convertedEvent);
+      }
     });
     
     // Cleanup function
     return () => {
       eventUnlisten.then(fn => fn());
+      rawEventUnlisten.then(fn => fn());
       // Clear streaming state when component unmounts or sessionId changes
       streamController.current.clearAll();
       currentStreamingMessageId.current = null;

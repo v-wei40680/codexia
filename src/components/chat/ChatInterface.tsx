@@ -65,18 +65,43 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             ? "user"
             : msg.role === "assistant"
               ? "agent"
-              : "system") as "user" | "agent" | "system",
+              : msg.role === "approval"
+                ? "approval"
+                : "system") as "user" | "agent" | "system" | "approval",
           content: msg.content,
+          title: msg.title,
           timestamp: new Date(
             typeof msg.timestamp === "number" ? msg.timestamp : Date.now(),
           ),
           model: msg.role === "assistant" ? currentModel : undefined,
+          approvalRequest: msg.approvalRequest,
         };
       })
     : [];
 
+  const handleStopStreaming = async () => {
+    try {
+      // Extract raw session ID for backend communication
+      const rawSessionId = sessionId.startsWith("codex-event-")
+        ? sessionId.replace("codex-event-", "")
+        : sessionId;
+
+      await invoke("pause_session", {
+        sessionId: rawSessionId,
+      });
+
+      // Immediately set loading to false after successful pause
+      setSessionLoading(sessionId, false);
+    } catch (error) {
+      console.error("Failed to pause streaming:", error);
+      // On error, also set loading to false
+      setSessionLoading(sessionId, false);
+    }
+  };
+
   useCodexEvents({
     sessionId: activeSessionId,
+    onStopStreaming: handleStopStreaming,
   });
 
   const messages = [...sessionMessages];
@@ -368,26 +393,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         timestamp: Date.now(),
       };
       addMessage(sessionId, errorMessage);
-    }
-  };
-
-  const handleStopStreaming = async () => {
-    try {
-      // Extract raw session ID for backend communication
-      const rawSessionId = sessionId.startsWith("codex-event-")
-        ? sessionId.replace("codex-event-", "")
-        : sessionId;
-
-      await invoke("pause_session", {
-        sessionId: rawSessionId,
-      });
-
-      // Immediately set loading to false after successful pause
-      setSessionLoading(sessionId, false);
-    } catch (error) {
-      console.error("Failed to pause streaming:", error);
-      // On error, also set loading to false
-      setSessionLoading(sessionId, false);
     }
   };
 

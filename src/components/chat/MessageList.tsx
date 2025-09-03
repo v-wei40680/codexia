@@ -4,11 +4,22 @@ import type { ChatMessage as ChatMessageType } from '@/types/chat';
 import type { ChatMessage as CodexMessageType, ApprovalRequest } from '@/types/codex';
 import { TextSelectionMenu } from './TextSelectionMenu';
 import { Message } from './Message';
+import { StatusBar } from './StatusBar';
 import { useTextSelection } from '../../hooks/useTextSelection';
 import { useSettingsStore } from '@/stores/SettingsStore';
+import { open } from "@tauri-apps/plugin-shell"
+import { Button } from '../ui/button';
 
 // Unified message type
 type UnifiedMessage = ChatMessageType | CodexMessageType;
+
+interface TokenUsage {
+  input_tokens?: number;
+  output_tokens?: number;
+  total_tokens?: number;
+  cached_input_tokens?: number;
+  reasoning_output_tokens?: number;
+}
 
 interface MessageListProps {
   messages: UnifiedMessage[];
@@ -16,9 +27,20 @@ interface MessageListProps {
   isLoading?: boolean;
   isPendingNewConversation?: boolean;
   onApproval?: (approved: boolean, approvalRequest: ApprovalRequest) => void;
+  tokenUsage?: TokenUsage;
+  sessionId?: string;
+  model?: string;
 }
 
-export function MessageList({ messages, className = "", isLoading = false, onApproval }: MessageListProps) {
+export function MessageList({ 
+  messages, 
+  className = "", 
+  isLoading = false, 
+  onApproval,
+  tokenUsage,
+  sessionId,
+  model 
+}: MessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollButtons, setShowScrollButtons] = useState(false);
@@ -62,33 +84,101 @@ export function MessageList({ messages, className = "", isLoading = false, onApp
     return () => window.removeEventListener('resize', handleResize);
   }, [checkScrollButtons]);
 
+  // Helper to detect message type from content
+  const detectMessageType = useCallback((msg: UnifiedMessage): 'reasoning' | 'tool_call' | 'plan_update' | 'exec_command' | 'normal' => {
+    const content = msg.content || '';
+    const title = ('title' in msg ? msg.title : '') || '';
+    const id = msg.id || '';
+    
+    // Plan updates - check title first, then content patterns
+    if (title.includes('📋') && title.includes('Plan') ||
+        content.includes('📋 Plan Updated') || 
+        (content.includes('✅') && content.includes('🔄') && content.includes('⏳')) ||
+        id.includes('-plan-')) {
+      return 'plan_update';
+    }
+    
+    // Reasoning messages - check ID pattern and content patterns
+    if (id.includes('-reasoning-') || id.includes('reasoning-stream')) {
+      return 'reasoning';
+    }
+    
+    // Tool calls - MCP tools or file operations
+    if (content.includes('🔧') || 
+        content.includes('Web Search:') || 
+        (content.toLowerCase().includes('read') && content.includes('.'))) {
+      return 'tool_call';
+    }
+    
+    // File changes - diff output
+    if (content.includes('✏️ File Changes') || content.includes('```diff')) {
+      return 'tool_call';
+    }
+    
+    // Command execution
+    if (content.includes('▶️ Executing') || content.includes('✅ Command completed')) {
+      return 'exec_command';
+    }
+    
+    // AI reasoning - check if it's an agent message with reasoning patterns
+    if ('type' in msg && msg.type === 'agent') {
+      const lowerContent = content.toLowerCase();
+      if (lowerContent.includes('let me') ||
+          lowerContent.includes('i\'ll') ||
+          lowerContent.includes('first,') ||
+          lowerContent.includes('analyzing') ||
+          lowerContent.includes('planning')) {
+        return 'reasoning';
+      }
+    }
+    
+    // System messages with reasoning content (fallback)
+    if ('type' in msg && msg.type === 'system' && content.length > 100) {
+      // Check for reasoning patterns in system messages
+      const lowerContent = content.toLowerCase();
+      if (lowerContent.includes('analyzing') ||
+          lowerContent.includes('considering') ||
+          lowerContent.includes('planning') ||
+          lowerContent.includes('approach')) {
+        return 'reasoning';
+      }
+    }
+    
+    return 'normal';
+  }, []);
+
   // Helper to normalize message data - memoized to prevent re-calculations
   const normalizeMessage = useCallback((msg: UnifiedMessage) => {
+    let content = msg.content;
+    let role: string;
+    
     // Check if it's a codex message (has 'type' property)
     if ('type' in msg) {
-      return {
-        id: msg.id,
-        role: msg.type === 'user' ? 'user' : msg.type === 'agent' ? 'assistant' : msg.type === 'approval' ? 'approval' : 'system',
-        content: msg.content,
-        timestamp: msg.timestamp instanceof Date ? msg.timestamp.getTime() : new Date().getTime(),
-        isStreaming: msg.isStreaming || false,
-        model: 'model' in msg ? (msg.model as string) : undefined,
-        workingDirectory: 'workingDirectory' in msg ? (msg.workingDirectory as string) : undefined,
-        approvalRequest: (msg as any).approvalRequest || undefined
-      };
+      role = msg.type === 'user' ? 'user' : msg.type === 'agent' ? 'assistant' : msg.type === 'approval' ? 'approval' : 'system';
+    } else {
+      // It's a chat message (has 'role' property)
+      role = msg.role;
     }
-    // It's a chat message (has 'role' property)
-    return {
+    
+    const messageType = detectMessageType(msg);
+    
+    const baseMessage = {
       id: msg.id,
-      role: msg.role,
-      content: msg.content,
-      timestamp: typeof msg.timestamp === 'number' ? msg.timestamp : new Date().getTime(),
-      isStreaming: false,
-      model: msg.model as string | undefined,
-      workingDirectory: msg.workingDirectory as string | undefined,
-      approvalRequest: (msg as any).approvalRequest
+      role,
+      content,
+      timestamp: 'timestamp' in msg ? 
+        (msg.timestamp instanceof Date ? msg.timestamp.getTime() : 
+         typeof msg.timestamp === 'number' ? msg.timestamp : new Date().getTime()) : 
+        new Date().getTime(),
+      isStreaming: ('isStreaming' in msg ? msg.isStreaming : false) || false,
+      model: ('model' in msg ? (msg.model as string) : undefined),
+      workingDirectory: ('workingDirectory' in msg ? (msg.workingDirectory as string) : undefined),
+      approvalRequest: (msg as any).approvalRequest || undefined,
+      messageType
     };
-  }, []);
+    
+    return baseMessage;
+  }, [detectMessageType]);
 
   // Memoize normalized messages to avoid re-computation
   const normalizedMessages = useMemo(() => {
@@ -98,8 +188,15 @@ export function MessageList({ messages, className = "", isLoading = false, onApp
   if (messages.length === 0) {
     return (
       <div className={`flex-1 min-h-0 flex items-center justify-center ${className}`}>
-        <div className="text-center space-y-4 max-w-md">
+        <div className="text-center flex flex-col space-y-4 max-w-md">
           {windowTitle === "Grok" && <img src="/grok.png" alt="grok logo" />}
+          <Button
+            variant='link'
+            className="text-blue-600 hover:text-blue-800 visited:text-purple-600 underline"
+            onClick={() => open('https://grok-code.pages.dev')}
+          >
+            https://grok-code.pages.dev
+          </Button>
         </div>
       </div>
     );
@@ -165,6 +262,17 @@ export function MessageList({ messages, className = "", isLoading = false, onApp
             <ChevronDown className="w-4 h-4 text-gray-600" />
           </button>
         </div>
+      )}
+      
+      {/* Status Bar */}
+      {(tokenUsage || sessionId || model || isLoading) && (
+        <StatusBar
+          tokenUsage={tokenUsage}
+          sessionId={sessionId}
+          model={model}
+          isTaskRunning={isLoading}
+          lastActivity={new Date()}
+        />
       )}
     </div>
   );

@@ -26,7 +26,7 @@ export const ApprovalMessage: React.FC<ApprovalMessageProps> = ({
         <div className="flex-1">
           <h3 className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">
             {approvalRequest.type === 'exec' 
-              ? 'Command Execution Request' 
+              ? '' 
               : approvalRequest.type === 'apply_patch' 
               ? 'Apply Code Changes Request' 
               : 'Code Patch Request'
@@ -39,9 +39,6 @@ export const ApprovalMessage: React.FC<ApprovalMessageProps> = ({
               <code className="block bg-yellow-100 dark:bg-yellow-800/30 p-2 rounded text-sm mb-2">
                 {approvalRequest.command}
               </code>
-              <p className="text-xs text-yellow-600 dark:text-yellow-400">
-                Working directory: {approvalRequest.cwd}
-              </p>
             </div>
           ) : approvalRequest.type === 'apply_patch' ? (
             <div>

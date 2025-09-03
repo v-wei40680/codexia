@@ -9,6 +9,11 @@ export type EventMsg =
   | { type: 'task_complete'; response_id?: string; last_agent_message?: string }
   | { type: 'agent_message'; message?: string; last_agent_message?: string }
   | { type: 'agent_message_delta'; delta: string }
+  | { type: 'agent_reasoning'; reasoning: string }
+  | { type: 'agent_reasoning_delta'; delta: string }
+  | { type: 'agent_reasoning_raw_content'; content: string }
+  | { type: 'agent_reasoning_raw_content_delta'; delta: string }
+  | { type: 'agent_reasoning_section_break' }
   | { type: 'exec_approval_request'; call_id: string; command: string[]; cwd: string }
   | { type: 'patch_approval_request'; patch: string; files: string[] }
   | { type: 'apply_patch_approval_request'; call_id: string; changes: any }
@@ -17,17 +22,28 @@ export type EventMsg =
   | { type: 'exec_command_begin'; call_id: string; command: string[]; cwd: string }
   | { type: 'exec_command_output_delta'; call_id: string; stream: string; chunk: number[] }
   | { type: 'exec_command_end'; call_id: string; stdout: string; stderr: string; exit_code: number }
+  | { type: 'mcp_tool_call_begin'; invocation: any }
+  | { type: 'mcp_tool_call_end'; invocation: any; result?: any; duration?: number }
+  | { type: 'web_search_begin'; query: string }
+  | { type: 'web_search_end'; query: string; results?: any }
+  | { type: 'patch_apply_begin'; changes: any; auto_approved?: boolean }
+  | { type: 'patch_apply_end'; success: boolean; stdout?: string; stderr?: string }
+  | { type: 'plan_update'; explanation?: string; plan: Array<{ step: string; status: 'pending' | 'in_progress' | 'completed' }> }
   | { type: 'shutdown_complete' }
   | { type: 'background_event'; message: string }
-  | { type: 'turn_diff'; unified_diff: string };
+  | { type: 'turn_diff'; unified_diff: string }
+  | { type: 'stream_error'; message: string }
+  | { type: 'turn_aborted'; reason: string };
 
 export interface ChatMessage {
   id: string;
   type: 'user' | 'agent' | 'system' | 'approval';
   content: string;
+  title?: string;
   timestamp: Date;
   isStreaming?: boolean;
   approvalRequest?: ApprovalRequest;
+  eventType?: string;
 }
 
 export interface ApprovalRequest {

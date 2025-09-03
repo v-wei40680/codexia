@@ -138,6 +138,74 @@ pub enum EventMsg {
     TurnDiff {
         unified_diff: String,
     },
+    // AI reasoning events
+    AgentReasoning {
+        reasoning: String,
+    },
+    AgentReasoningDelta {
+        delta: String,
+    },
+    AgentReasoningRawContent {
+        content: String,
+    },
+    AgentReasoningRawContentDelta {
+        delta: String,
+    },
+    AgentReasoningSectionBreak,
+    // Plan updates
+    PlanUpdate {
+        explanation: Option<String>,
+        plan: Vec<PlanStep>,
+    },
+    // MCP tool calls
+    McpToolCallBegin {
+        invocation: serde_json::Value,
+    },
+    McpToolCallEnd {
+        invocation: serde_json::Value,
+        result: Option<serde_json::Value>,
+        duration: Option<u64>,
+    },
+    // Web search
+    WebSearchBegin {
+        query: String,
+    },
+    WebSearchEnd {
+        query: String,
+        results: Option<serde_json::Value>,
+    },
+    // Patch operations
+    PatchApplyBegin {
+        changes: serde_json::Value,
+        auto_approved: Option<bool>,
+    },
+    PatchApplyEnd {
+        success: bool,
+        stdout: Option<String>,
+        stderr: Option<String>,
+    },
+    // Stream errors
+    StreamError {
+        message: String,
+    },
+    // Turn aborted
+    TurnAborted {
+        reason: String,
+    },
+    // Token usage
+    TokenCount {
+        input_tokens: Option<u64>,
+        output_tokens: Option<u64>,
+        total_tokens: Option<u64>,
+        cached_input_tokens: Option<u64>,
+        reasoning_output_tokens: Option<u64>,
+    },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct PlanStep {
+    pub step: String,
+    pub status: String, // "pending", "in_progress", "completed"
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

@@ -9,8 +9,9 @@ export interface MediaAttachment {
 
 export interface ChatMessage {
   id: string;
-  role: "user" | "assistant" | "system";
+  role: "user" | "assistant" | "system" | "approval";
   content: string;
+  title?: string;
   timestamp: number;
   image?: string; // deprecated, use attachments
   attachments?: MediaAttachment[];
