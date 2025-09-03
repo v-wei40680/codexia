@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -8,39 +8,53 @@ import { Upload } from "lucide-react";
 import { useSettingsStore } from "@/stores/SettingsStore";
 import { open } from "@tauri-apps/plugin-dialog";
 import { readFile } from "@tauri-apps/plugin-fs";
+import { getCurrentWindow } from '@tauri-apps/api/window';
 
 export default function LogoSettings() {
-  const { logoSettings, setUseCustomLogo, setCustomLogoPath, toggleWindowTitle } = useSettingsStore();
+  const { logoSettings, setUseCustomLogo, setCustomLogoPath, setWindowTitle } =
+    useSettingsStore();
+    const windowTitle = useSettingsStore(state => state.windowTitle);
+
+    useEffect(() => {
+      const updateWindowTitle = async () => {
+        const window = getCurrentWindow();
+        await window.setTitle(windowTitle);
+      };
+    
+      updateWindowTitle();
+    }, [windowTitle]);
   const [uploading, setUploading] = useState(false);
 
   const handleFileUpload = async () => {
     try {
       setUploading(true);
-      
+
       const selected = await open({
         multiple: false,
-        filters: [{
-          name: 'Image',
-          extensions: ['png', 'jpg', 'jpeg', 'gif', 'svg', 'webp']
-        }]
+        filters: [
+          {
+            name: "Image",
+            extensions: ["png", "jpg", "jpeg", "gif", "svg", "webp"],
+          },
+        ],
       });
 
-      if (selected && typeof selected === 'string') {
+      if (selected && typeof selected === "string") {
         // Read the file and convert to base64 data URL
         const fileContents = await readFile(selected);
         const blob = new Blob([fileContents]);
         const reader = new FileReader();
-        
+
         reader.onload = () => {
           const dataUrl = reader.result as string;
           setCustomLogoPath(dataUrl);
           setUseCustomLogo(true);
         };
-        
+
         reader.readAsDataURL(blob);
       }
     } catch (error) {
-      console.error('Failed to upload logo:', error);
+      console.error("Failed to upload logo:", error);
     } finally {
       setUploading(false);
     }
@@ -69,7 +83,28 @@ export default function LogoSettings() {
           <CardTitle>Logo Configuration</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button onClick={toggleWindowTitle}>Chaneg Title</Button>
+          <div className="flex space-x-2">
+            <Input
+              id="window-title"
+              placeholder="Enter window title..."
+              value={windowTitle}
+              onChange={(e) => setWindowTitle(e.target.value)}
+            />
+          </div>
+          <div className="flex space-x-2 mt-2">
+            {["Codexia", "ChatGPT", "Grok"].map((example) => (
+              <Button
+                key={example}
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setWindowTitle(example);
+                }}
+              >
+                {example}
+              </Button>
+            ))}
+          </div>
           <div className="flex items-center space-x-2">
             <Switch
               id="use-custom-logo"
@@ -90,8 +125,8 @@ export default function LogoSettings() {
                     placeholder="Select a logo file..."
                     readOnly
                   />
-                  <Button 
-                    onClick={handleFileUpload} 
+                  <Button
+                    onClick={handleFileUpload}
                     disabled={uploading}
                     variant="outline"
                   >
@@ -105,9 +140,9 @@ export default function LogoSettings() {
                 <div className="space-y-2">
                   <Label>Logo Preview</Label>
                   <div className="flex items-center space-x-4">
-                    <img 
-                      src={logoSettings.customLogoPath} 
-                      alt="Custom Logo Preview" 
+                    <img
+                      src={logoSettings.customLogoPath}
+                      alt="Custom Logo Preview"
                       className="h-8 w-auto object-contain border rounded"
                     />
                     <Button onClick={clearLogo} variant="destructive" size="sm">

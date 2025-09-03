@@ -17,7 +17,6 @@ interface SettingsStore {
   setCustomLogoPath: (path: string) => void;
   windowTitle: string;
   setWindowTitle: (title: string) => void;
-  toggleWindowTitle: () => void;
 }
 
 const DEFAULT_EXCLUDE_FOLDERS = [
@@ -37,7 +36,7 @@ const DEFAULT_EXCLUDE_FOLDERS = [
 
 export const useSettingsStore = create<SettingsStore>()(
   persist(
-    (set, get) => ({
+    (set, _get) => ({
       excludeFolders: DEFAULT_EXCLUDE_FOLDERS,
       activeSection: "provider",
       logoSettings: {
@@ -65,15 +64,12 @@ export const useSettingsStore = create<SettingsStore>()(
         set((state) => ({
           logoSettings: { ...state.logoSettings, customLogoPath: path },
         })),
-      setWindowTitle: async (title: string) => {
+      setWindowTitle: (title: string) => {
         set({ windowTitle: title });
-        const window = await getCurrentWindow();
-        await window.setTitle(title);
-      },
-      toggleWindowTitle: async () => {
-        const currentTitle = get().windowTitle;
-        const newTitle = currentTitle === "Codexia" ? "Grok" : "Codexia";
-        await get().setWindowTitle(newTitle);
+        (async () => {
+          const win = getCurrentWindow();
+          await win.setTitle(title);
+        })();
       },
     }),
     {
