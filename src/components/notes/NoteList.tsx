@@ -104,7 +104,6 @@ export function NoteList() {
             <div onClick={(e) => e.stopPropagation()}>
               <NoteToChat 
                 content={note.content} 
-                title={note.title} 
               />
             </div>
             <Button

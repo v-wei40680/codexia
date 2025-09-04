@@ -11,22 +11,17 @@ import { useChatInputStore } from '../../stores/chatInputStore';
 
 interface NoteToChatProps {
   content: string;
-  title?: string;
   onSuccess?: () => void;
 }
 
 export const NoteToChat: React.FC<NoteToChatProps> = ({
   content,
-  title,
   onSuccess,
 }) => {
   const { appendToInput } = useChatInputStore();
 
   const handleAddToChat = () => {
-    const prefix = title ? `From note "${title}":\n` : 'From notepad:\n';
-    const formattedContent = `${prefix}${content}`;
-    
-    appendToInput(formattedContent);
+    appendToInput(content);
     onSuccess?.();
   };
 

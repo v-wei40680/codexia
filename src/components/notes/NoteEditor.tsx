@@ -109,7 +109,7 @@ export function NoteEditor() {
         
         <div className="flex items-center gap-2">
           {/* Add to Chat Button */}
-          <NoteToChat content={content} title={title} />
+          <NoteToChat content={content} />
           
           {/* View Mode Toggle */}
           <div className="flex rounded-md border dark:border-gray-600">
