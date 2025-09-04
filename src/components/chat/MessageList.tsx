@@ -46,6 +46,7 @@ export function MessageList({
   const [showScrollButtons, setShowScrollButtons] = useState(false);
   const { selectedText } = useTextSelection();
   const { windowTitle } = useSettingsStore()
+  const homepage = "https://milisp.vercel.app/"
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -193,9 +194,9 @@ export function MessageList({
           <Button
             variant='link'
             className="text-blue-600 hover:text-blue-800 visited:text-purple-600 underline"
-            onClick={() => open('https://grok-code.pages.dev')}
+            onClick={() => open(homepage)}
           >
-            https://grok-code.pages.dev
+            {homepage}
           </Button>
         </div>
       </div>

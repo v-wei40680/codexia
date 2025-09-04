@@ -13,6 +13,7 @@
     "shell:default",
     "fs:default",
     "screenshots:default",
-    "log:default"
+    "log:default",
+    "deep-link:default"
   ]
 }

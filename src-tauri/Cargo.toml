@@ -38,3 +38,4 @@ walkdir = "2.3"
 chrono = { version = "0.4", features = ["serde"] }
 tauri-plugin-log = "2"
 tauri-plugin-screenshots = "2.2.0"
+tauri-plugin-deep-link = "2"

@@ -28,8 +28,10 @@
     }
   },
   "plugins": {
-    "shell": {
-      "open": true
+    "deep-link": {
+      "desktop": {
+        "schemes": ["codexia"]
+      }
     }
   },
   "bundle": {

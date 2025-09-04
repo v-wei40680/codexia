@@ -1,4 +1,13 @@
-import { PartyPopper, Usb, PanelLeft, Settings, BarChart3, Sun, Moon, Brain } from "lucide-react";
+import {
+  PartyPopper,
+  Usb,
+  PanelLeft,
+  Settings,
+  BarChart3,
+  Sun,
+  Moon,
+  Brain,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link, useLocation } from "react-router-dom";
@@ -8,6 +17,7 @@ import { useState, useEffect } from "react";
 import { McpDialog } from "../dialogs/McpDialog";
 import { useThemeStore } from "@/stores/ThemeStore";
 import { useSettingsStore } from "@/stores/SettingsStore";
+import { useAuth } from "@/hooks/useAuth";
 
 export function AppHeader() {
   const { showFileTree, toggleFileTree, toggleChatPane } = useLayoutStore();
@@ -16,6 +26,7 @@ export function AppHeader() {
   const [codexVersion, setCodexVersion] = useState<string>("");
   const [isCodexAvailable, setIsCodexAvailable] = useState<boolean>(false);
   const location = useLocation();
+  const { user } = useAuth();
 
   useEffect(() => {
     const checkVersion = async () => {
@@ -37,9 +48,9 @@ export function AppHeader() {
       <span className="flex gap-2 items-center">
         <Link to="/chat" className="flex hover:text-primary items-center gap-1">
           {logoSettings.useCustomLogo && logoSettings.customLogoPath ? (
-            <img 
-              src={logoSettings.customLogoPath} 
-              alt="Custom Logo" 
+            <img
+              src={logoSettings.customLogoPath}
+              alt="Custom Logo"
               className="h-6 w-auto object-contain"
             />
           ) : (
@@ -80,30 +91,42 @@ export function AppHeader() {
           </McpDialog>
         )}
 
-        <Link to="/usage" className="flex hover:text-primary items-center gap-1">
+        <Link
+          to="/usage"
+          className="flex hover:text-primary items-center gap-1"
+        >
           <BarChart3 className="w-4 h-4" /> Usage
         </Link>
 
-        <Button
-          variant="ghost"
-          onClick={toggleChatPane}
-          className="h-6 w-6"
-        >
+        <Button variant="ghost" onClick={toggleChatPane} className="h-6 w-6">
           <Brain />
         </Button>
 
-        <Button
-          variant="ghost"
-          className="h-6 w-6"
-          onClick={toggleTheme}
-        >
-          {theme === 'dark' ? <Sun /> : <Moon />}
+        <Button variant="ghost" className="h-6 w-6" onClick={toggleTheme}>
+          {theme === "dark" ? <Sun /> : <Moon />}
         </Button>
 
-        <Link to="/settings" className="flex hover:text-primary items-center gap-1">
+        <Link
+          to="/settings"
+          className="flex hover:text-primary items-center gap-1"
+        >
           <Settings className="w-4 h-4" />
           Settings
         </Link>
+
+        {user?.user_metadata.avatar_url ? (
+          <img
+            src={user.user_metadata.avatar_url}
+            className="rounded-full w-6 h-6"
+          />
+        ) : (
+          <Link
+            to="/login"
+            className="flex hover:text-primary items-center gap-1 px-2"
+          >
+            login
+          </Link>
+        )}
       </span>
     </div>
   );

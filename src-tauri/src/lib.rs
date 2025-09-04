@@ -11,8 +11,7 @@ mod utils;
 use commands::{
     approve_execution, approve_patch, check_codex_version, close_session, delete_session_file,
     get_latest_session_id, get_running_sessions, get_session_files, load_sessions_from_disk,
-    pause_session, read_history_file, read_session_file, send_message,
-    start_codex_session,
+    pause_session, read_history_file, read_session_file, send_message, start_codex_session,
 };
 use config::{
     add_or_update_model_provider, add_or_update_profile, delete_profile, ensure_default_providers,
@@ -33,6 +32,7 @@ use state::CodexState;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_deep_link::init())
         .plugin(
             tauri_plugin_log::Builder::new()
                 .level(if cfg!(debug_assertions) {
