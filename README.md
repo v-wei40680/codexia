@@ -20,6 +20,8 @@ Cross-platform desktop app built with Tauri v2 + React + TypeScript.
 
 ![demo](public/codexia.png)
 
+▶️ [Watch the video on Twitter](https://x.com/lisp_mi/status/1963596193449255288)
+
 ## Disclaimer
 
 Codexia is an independent open-source project and is not built by OpenAI or any company.
