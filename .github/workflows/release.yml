@@ -6,6 +6,11 @@ on:
       - "v*"
   workflow_dispatch:
 
+env:
+  VITE_REDIRECT_URL: ${{ secrets.VITE_REDIRECT_URL }}
+  VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+  VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+
 jobs:
   build:
     strategy:
