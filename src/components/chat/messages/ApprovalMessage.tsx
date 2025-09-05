@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Button } from '../ui/button';
+import { Button } from '../../ui/button';
 import { AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
 import { ApprovalRequest } from '@/types/codex';
 
@@ -24,15 +24,6 @@ export const ApprovalMessage: React.FC<ApprovalMessageProps> = ({
       <div className="flex items-start gap-3">
         <AlertTriangle className="w-5 h-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
         <div className="flex-1">
-          <h3 className="font-medium text-yellow-800 dark:text-yellow-200 mb-2">
-            {approvalRequest.type === 'exec' 
-              ? '' 
-              : approvalRequest.type === 'apply_patch' 
-              ? 'Apply Code Changes Request' 
-              : 'Code Patch Request'
-            }
-          </h3>
-          
           {approvalRequest.type === 'exec' ? (
             <div>
               <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-1">Command:</p>
@@ -42,7 +33,7 @@ export const ApprovalMessage: React.FC<ApprovalMessageProps> = ({
             </div>
           ) : approvalRequest.type === 'apply_patch' ? (
             <div>
-              <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-1">Changes to be applied:</p>
+              <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-1">update:</p>
               <div className="bg-yellow-100 dark:bg-yellow-800/30 p-2 rounded text-sm max-h-40 overflow-y-auto">
                 {approvalRequest.changes ? (
                   typeof approvalRequest.changes === 'string' ? (

@@ -443,7 +443,7 @@ export const useCodexEvents = ({
       
       // Log non-delta events for debugging
       if (codexEvent.msg.type !== "agent_message_delta") {
-        console.log(`📨 Codex structured event [${sessionId}]:`, codexEvent.msg.type);
+        console.log(`📨 Codex structured event [${sessionId}]:`, codexEvent.msg);
       }
       handleCodexEvent(codexEvent);
     });

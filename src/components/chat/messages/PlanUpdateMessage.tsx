@@ -1,5 +1,5 @@
 import React from 'react';
-import { PlanDisplay } from '../PlanDisplay';
+import { PlanDisplay } from './PlanDisplay';
 import { MarkdownRenderer } from '../MarkdownRenderer';
 import type { NormalizedMessage } from '../Message';
 

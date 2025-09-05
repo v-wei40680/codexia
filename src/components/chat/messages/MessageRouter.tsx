@@ -1,5 +1,5 @@
 import React from 'react';
-import { ApprovalMessage } from '../ApprovalMessage';
+import { ApprovalMessage } from './ApprovalMessage';
 import { ReasoningDisplay } from '../ReasoningDisplay';
 import { AgentMessage } from './AgentMessage';
 import { CommandExecutionMessage } from './CommandExecutionMessage';
