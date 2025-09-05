@@ -106,10 +106,10 @@ export const Message = memo<MessageProps>(({
   
   // Never collapse approval messages - they need to be immediately visible
   
-  // Keep important messages visible: approvals, reasoning, plans
-  // Collapse only: tool calls and long execution output
+  // Keep important messages visible: approvals, plans
+  // Collapse all collapsible messages except plan_update
   const [isCollapsed, setIsCollapsed] = useState(
-    shouldBeCollapsible && !isApprovalMessage && (isToolCallMessage || (isExecutionMessage && hasLongOutput))
+    shouldBeCollapsible && !isApprovalMessage && !isPlanUpdateMessage
   );
   
   // Check if this message is part of a continuous assistant conversation
