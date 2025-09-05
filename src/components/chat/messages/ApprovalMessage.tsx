@@ -20,12 +20,12 @@ export const ApprovalMessage: React.FC<ApprovalMessageProps> = ({
   };
 
   return (
-    <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-lg border border-yellow-200 dark:border-yellow-800/50 my-2">
+    <div className="bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-800/50">
       <div className="flex items-start gap-3">
         <div className="flex-1">
           {approvalRequest.type === 'exec' ? (
             <div>
-              <code className="block bg-yellow-100 dark:bg-yellow-800/30 p-2 rounded text-sm mb-2">
+              <code className="block bg-yellow-100 dark:bg-yellow-800/30 px-2 rounded text-sm">
                 {approvalRequest.command}
               </code>
             </div>
@@ -96,23 +96,13 @@ export const ApprovalMessage: React.FC<ApprovalMessageProps> = ({
             </div>
           )}
           
-          <div className="flex gap-2 mt-3">
+          <div className="flex gap-2">
             {decision ? (
-              <div className="flex items-center gap-2">
+              <div className="flex items-center">
                 {decision === 'approved' ? (
-                  <>
-                    <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
-                    <span className="text-sm font-medium text-green-800 dark:text-green-200">
-                      Request Approved
-                    </span>
-                  </>
+                  <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
                 ) : (
-                  <>
-                    <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
-                    <span className="text-sm font-medium text-red-800 dark:text-red-200">
-                      Request Denied
-                    </span>
-                  </>
+                  <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
                 )}
               </div>
             ) : (
@@ -128,7 +118,7 @@ export const ApprovalMessage: React.FC<ApprovalMessageProps> = ({
                   size="sm"
                   onClick={() => handleApproval(true)}
                 >
-                  Allow
+                  Approve
                 </Button>
               </>
             )}
