@@ -85,69 +85,21 @@ export function MessageList({
     return () => window.removeEventListener('resize', handleResize);
   }, [checkScrollButtons]);
 
-  // Helper to detect message type from content
-  const detectMessageType = useCallback((msg: UnifiedMessage): 'reasoning' | 'tool_call' | 'plan_update' | 'exec_command' | 'normal' => {
-    console.log("msg", msg)
-    const content = msg.content || '';
-    const title = ('title' in msg ? msg.title : '') || '';
-    console.log("msg title", title)
+  // Prefer upstream messageType; provide minimal fallback for plan_update only
+  const getMessageType = useCallback((msg: UnifiedMessage): 'reasoning' | 'tool_call' | 'plan_update' | 'exec_command' | 'normal' | undefined => {
+    const provided = (msg as any).messageType as any;
+    if (provided) return provided;
+    const eventType = (msg as any).eventType as string | undefined;
+    if (eventType === 'plan_update') return 'plan_update';
+    const title = ('title' in msg ? (msg as any).title : '') || '';
+    if (title.includes('📋')) return 'plan_update';
     const id = msg.id || '';
-    
-    // Plan updates - check title first, then content patterns
-    if (title.includes('📋') && title.includes('Plan') ||
-        content.includes('📋 Plan Updated') || 
-        (content.includes('✅') && content.includes('🔄') && content.includes('⏳')) ||
-        id.includes('-plan-')) {
+    if (id.includes('-plan-')) return 'plan_update';
+    const content = msg.content || '';
+    if ((content.includes('✅') || content.includes('🔄') || content.includes('⏳')) && content.includes('\n- ')) {
       return 'plan_update';
     }
-    
-    // Reasoning messages - check ID pattern and content patterns
-    if (id.includes('-reasoning-') || id.includes('reasoning-stream')) {
-      return 'reasoning';
-    }
-    
-    // Tool calls - MCP tools or file operations
-    if (content.includes('🔧') || 
-        content.includes('Web Search:') || 
-        (content.toLowerCase().includes('read') && content.includes('.'))) {
-      return 'tool_call';
-    }
-    
-    // File changes - diff output
-    if (content.includes('✏️ File Changes') || content.includes('```diff')) {
-      return 'tool_call';
-    }
-    
-    // Command execution
-    if (content.includes('▶️ Executing') || content.includes('✅ Command completed')) {
-      return 'exec_command';
-    }
-    
-    // AI reasoning - check if it's an agent message with reasoning patterns
-    if ('type' in msg && msg.type === 'agent') {
-      const lowerContent = content.toLowerCase();
-      if (lowerContent.includes('let me') ||
-          lowerContent.includes('i\'ll') ||
-          lowerContent.includes('first,') ||
-          lowerContent.includes('analyzing') ||
-          lowerContent.includes('planning')) {
-        return 'reasoning';
-      }
-    }
-    
-    // System messages with reasoning content (fallback)
-    if ('type' in msg && msg.type === 'system' && content.length > 100) {
-      // Check for reasoning patterns in system messages
-      const lowerContent = content.toLowerCase();
-      if (lowerContent.includes('analyzing') ||
-          lowerContent.includes('considering') ||
-          lowerContent.includes('planning') ||
-          lowerContent.includes('approach')) {
-        return 'reasoning';
-      }
-    }
-    
-    return 'normal';
+    return undefined;
   }, []);
 
   // Helper to normalize message data - memoized to prevent re-calculations
@@ -163,7 +115,8 @@ export function MessageList({
       role = msg.role;
     }
     
-    const messageType = detectMessageType(msg);
+    // Use provided messageType; fallback only for plan_update
+    const messageType = getMessageType(msg);
     
     const ts: any = (msg as any).timestamp;
     const normalizedTimestamp = ts instanceof Date
@@ -189,7 +142,7 @@ export function MessageList({
     };
     
     return baseMessage;
-  }, [detectMessageType]);
+  }, [getMessageType]);
 
   // Memoize normalized messages to avoid re-computation
   const normalizedMessages = useMemo(() => {
