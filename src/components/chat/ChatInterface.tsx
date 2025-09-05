@@ -67,6 +67,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           timestamp: typeof msg.timestamp === "number" ? msg.timestamp : Date.now(),
           model: msg.role === "assistant" ? currentModel : undefined,
           approvalRequest: msg.approvalRequest,
+          // Preserve optional rendering metadata
+          ...(msg as any).messageType && { messageType: (msg as any).messageType },
+          ...(msg as any).eventType && { eventType: (msg as any).eventType },
         };
       })
     : [];

@@ -176,12 +176,16 @@ export function MessageList({
       id: msg.id,
       role,
       content,
+      // Preserve optional title for preview/header rendering
+      title: ('title' in msg ? (msg as any).title : undefined),
       timestamp: normalizedTimestamp,
       isStreaming: ('isStreaming' in msg ? msg.isStreaming : false) || false,
       model: ('model' in msg ? (msg.model as string) : undefined),
       workingDirectory: ('workingDirectory' in msg ? (msg.workingDirectory as string) : undefined),
       approvalRequest: (msg as any).approvalRequest || undefined,
-      messageType
+      messageType,
+      // Pass through raw event type from codex when present
+      eventType: (msg as any).eventType || undefined,
     };
     
     return baseMessage;
