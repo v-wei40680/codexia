@@ -108,6 +108,10 @@ pub enum EventMsg {
     ApplyPatchApprovalRequest {
         call_id: String,
         changes: serde_json::Value,
+        #[serde(default)]
+        reason: Option<String>,
+        #[serde(default)]
+        grant_root: Option<std::path::PathBuf>,
     },
     Error {
         message: String,

@@ -99,6 +99,10 @@ impl CodexClient {
 
     pub async fn send_apply_patch_approval(&self, approval_id: String, approved: bool) -> Result<()> {
         let decision = if approved { "approved" } else { "denied" }.to_string();
+        log::debug!(
+            "📤 Sending apply_patch approval: id={}, decision={}",
+            approval_id, decision
+        );
 
         let submission = Submission {
             id: Uuid::new_v4().to_string(),

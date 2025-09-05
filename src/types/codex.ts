@@ -18,7 +18,7 @@ export type EventMsg =
   | { type: 'agent_reasoning_section_break' }
   | { type: 'exec_approval_request'; call_id: string; command: string[]; cwd: string }
   | { type: 'patch_approval_request'; patch: string; files: string[] }
-  | { type: 'apply_patch_approval_request'; call_id: string; changes: any }
+  | { type: 'apply_patch_approval_request'; call_id: string; changes: any; reason?: string; grant_root?: string }
   | { type: 'error'; message: string }
   | { type: 'turn_complete'; response_id?: string }
   | { type: 'exec_command_begin'; call_id: string; command: string[]; cwd: string }
@@ -48,6 +48,8 @@ export interface ApprovalRequest {
   files?: string[];
   call_id?: string;
   changes?: any;
+  reason?: string;
+  grant_root?: string;
 }
 
 export interface CodexConfig {

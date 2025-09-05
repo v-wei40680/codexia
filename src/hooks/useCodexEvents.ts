@@ -245,8 +245,8 @@ export const useCodexEvents = ({
       case 'exec_approval_request':
         // Add approval message to chat
         const execApprovalRequest: ApprovalRequest = {
-          // Prefer call_id if present for approval round-trips
-          id: (msg as any).call_id || event.id,
+          // Backend expects the Task sub_id for approvals (the Event.id)
+          id: event.id,
           type: 'exec',
           command: Array.isArray(msg.command) ? msg.command.join(' ') : msg.command,
           cwd: msg.cwd,
@@ -289,31 +289,70 @@ export const useCodexEvents = ({
       case 'apply_patch_approval_request':
         // Add approval message to chat
         const applyPatchApprovalRequest: ApprovalRequest = {
-          // Use call_id for apply_patch approvals so backend can match
-          id: (msg as any).call_id || event.id,
+          // Use Task sub_id (Event.id); core matches approvals by sub_id
+          id: event.id,
           type: 'apply_patch',
           call_id: (msg as any).call_id,
           changes: (msg as any).changes,
+          reason: (msg as any).reason,
+          grant_root: (msg as any).grant_root,
         };
-        
-        // Create detailed content with changes info
-        const changesText = msg.changes ? 
-          Object.entries(msg.changes).map(([file, change]: [string, any]) => {
+
+        // Create detailed content with changes info across schemas
+        const makeChangeSummary = (file: string, change: any): string => {
+          try {
+            // Support multiple backend schemas: add/remove/modify, update{unified_diff,move_path}
             if (change.add) {
-              return `Add to ${file}:\n${change.add.content}`;
-            } else if (change.remove) {
-              return `Remove from ${file}:\n${change.remove.content}`;
-            } else if (change.modify) {
-              return `Modify ${file}:\n${change.modify.content}`;
+              const content = change.add.content || change.add.unified_diff || JSON.stringify(change.add, null, 2);
+              return `Add ${file}\n${content}`;
             }
+            if (change.remove) {
+              const content = change.remove.content || change.remove.unified_diff || JSON.stringify(change.remove, null, 2);
+              return `Remove ${file}\n${content}`;
+            }
+            if (change.modify) {
+              const content = change.modify.content || change.modify.unified_diff || JSON.stringify(change.modify, null, 2);
+              return `Modify ${file}\n${content}`;
+            }
+            if (change.update) {
+              const mv = change.update.move_path ? `Move to: ${change.update.move_path}\n` : '';
+              const diff = change.update.unified_diff || change.update.content || '';
+              return `Update ${file}\n${mv}${diff}`.trim();
+            }
+            // Fallback: show JSON
+            return `${file}\n${JSON.stringify(change, null, 2)}`;
+          } catch {
             return `Change ${file}`;
-          }).join('\n\n') : 'No change details available';
-        
+          }
+        };
+
+        // Determine files and build summary
+        let changesText = 'No change details available';
+        let titleFiles = '';
+        if (msg.changes && typeof msg.changes === 'object' && !Array.isArray(msg.changes)) {
+          const entries = Object.entries(msg.changes as Record<string, any>);
+          if (entries.length > 0) {
+            const rel = (p: string) => {
+              const root = (msg as any).grant_root as string | undefined;
+              if (root && p.startsWith(root)) {
+                const trimmed = p.slice(root.length);
+                return trimmed.startsWith('/') ? trimmed.slice(1) : trimmed;
+              }
+              return p;
+            };
+            changesText = entries.map(([file, change]) => makeChangeSummary(rel(file), change)).join('\n\n');
+            titleFiles = entries.map(([file]) => rel(file)).join(', ');
+          }
+        } else if (Array.isArray(msg.changes)) {
+          // If changes come as an array, stringify concisely
+          changesText = (msg.changes as any[]).map((c, idx) => makeChangeSummary(`change #${idx + 1}`, c)).join('\n\n');
+        }
+
         const applyPatchMessage: EventMessage = {
           id: event.id, // Use the original event ID, not a generated one
           type: 'approval',
-          title: `🔄 Apply Patch Changes`,
-          content: `Changes:\n${changesText}`,
+          title: `🔄 Apply Patch${titleFiles ? `: ${titleFiles}` : ''}`,
+          content: `${(msg as any).reason ? `Reason: ${(msg as any).reason}\n\n` : ''}Changes:\n${changesText}`,
           timestamp: new Date(),
           approvalRequest: applyPatchApprovalRequest,
           eventType: msg.type,
@@ -408,7 +447,7 @@ export const useCodexEvents = ({
             const outputContent = `${msg.stdout?.trim() ? `Read:\n\`\`\`\n${msg.stdout}\`\`\`` : ''}${msg.stderr?.trim() ? `${msg.stdout?.trim() ? '\n\n' : ''}Errors:\n\`\`\`\n${msg.stderr}\`\`\`` : ''}`;
             
             updateMessage(sessionId, currentCommandMessageId.current, {
-              title: `${status} ${command}${statusText}`,
+              title: `${statusText} Read`,
               content: outputContent,
               timestamp: new Date().getTime(),
             });
@@ -462,7 +501,7 @@ export const useCodexEvents = ({
       const codexEvent = event.payload;
       
       // Log non-delta events for debugging
-      if (codexEvent.msg.type !== "agent_message_delta") {
+      if (codexEvent.msg.type !== "agent_message_delta" && codexEvent.msg.type !== "agent_reasoning_delta") {
         console.log(`📨 Codex structured event [${sessionId}]:`, codexEvent.msg);
       }
       handleCodexEvent(codexEvent);

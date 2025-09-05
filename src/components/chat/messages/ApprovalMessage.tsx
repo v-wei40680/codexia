@@ -31,8 +31,11 @@ export const ApprovalMessage: React.FC<ApprovalMessageProps> = ({
             </div>
           ) : approvalRequest.type === 'apply_patch' ? (
             <div>
-              <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-1">update:</p>
-              <div className="bg-yellow-100 dark:bg-yellow-800/30 p-2 rounded text-sm max-h-40 overflow-y-auto">
+              {approvalRequest.reason && (
+                <p className="text-xs text-yellow-700 dark:text-yellow-300 mb-1">Reason: {approvalRequest.reason}</p>
+              )}
+              <p className="text-sm text-yellow-700 dark:text-yellow-300 mb-1">Changes:</p>
+              <div className="bg-yellow-100 dark:bg-yellow-800/30 p-2 rounded text-sm max-h-64 overflow-y-auto">
                 {approvalRequest.changes ? (
                   typeof approvalRequest.changes === 'string' ? (
                     <pre className="text-xs whitespace-pre-wrap">
@@ -40,19 +43,41 @@ export const ApprovalMessage: React.FC<ApprovalMessageProps> = ({
                     </pre>
                   ) : (
                     <div className="space-y-2">
-                      {Object.entries(approvalRequest.changes).map(([file, change]: [string, any], idx) => (
-                        <div key={idx} className="border-l-2 border-yellow-300 pl-2">
-                          <div className="font-mono text-xs font-medium text-yellow-700 dark:text-yellow-300">
-                            {file}
+                      {Object.entries(approvalRequest.changes).map(([file, change]: [string, any], idx) => {
+                        const rel = (p: string) => {
+                          const root = approvalRequest.grant_root as string | undefined;
+                          if (root && p.startsWith(root)) {
+                            const trimmed = p.slice(root.length);
+                            return trimmed.startsWith('/') ? trimmed.slice(1) : trimmed;
+                          }
+                          return p;
+                        };
+                        const header = rel(file);
+                        let body = '';
+                        if (change.update) {
+                          const mv = change.update.move_path ? `Move to: ${rel(change.update.move_path)}\n` : '';
+                          const diff = change.update.unified_diff || change.update.content || '';
+                          body = `${mv}${diff}`.trim();
+                        } else if (change.add) {
+                          body = change.add.content || change.add.unified_diff || JSON.stringify(change.add, null, 2);
+                        } else if (change.remove) {
+                          body = change.remove.content || change.remove.unified_diff || JSON.stringify(change.remove, null, 2);
+                        } else if (change.modify) {
+                          body = change.modify.content || change.modify.unified_diff || JSON.stringify(change.modify, null, 2);
+                        } else {
+                          body = JSON.stringify(change, null, 2);
+                        }
+                        return (
+                          <div key={idx} className="border-l-2 border-yellow-300 pl-2">
+                            <div className="font-mono text-xs font-medium text-yellow-700 dark:text-yellow-300">
+                              {header}
+                            </div>
+                            <pre className="text-[11px] mt-1 whitespace-pre-wrap text-yellow-700 dark:text-yellow-300">
+                              {body}
+                            </pre>
                           </div>
-                          <pre className="text-xs mt-1 whitespace-pre-wrap text-yellow-600 dark:text-yellow-400">
-                            {change.add ? `+ ${change.add.content}` : 
-                             change.remove ? `- ${change.remove.content}` :
-                             change.modify ? `~ ${change.modify.content}` :
-                             JSON.stringify(change, null, 2)}
-                          </pre>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   )
                 ) : (

@@ -80,6 +80,10 @@ pub async fn approve_patch(
     approval_id: String,
     approved: bool,
 ) -> Result<(), String> {
+    log::debug!(
+        "approve_patch: session_id={}, approval_id={}, approved={}",
+        session_id, approval_id, approved
+    );
     let mut sessions = state.sessions.lock().await;
     if let Some(client) = sessions.get_mut(&session_id) {
         client

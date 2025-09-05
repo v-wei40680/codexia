@@ -24,7 +24,7 @@ const DEFAULT_PROVIDERS: Providers = {
   openai: {
     apiKey: "",
     baseUrl: "",
-    models: ["gpt-5", "gpt-5-mini", "gpt-5-nano", "gpt-4o", "gpt-4o-mini"],
+    models: ["gpt-5", "gpt-4o", "gpt-4o-mini"],
   },
   ollama: {
     apiKey: "",
