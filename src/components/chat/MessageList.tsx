@@ -1,7 +1,7 @@
 import { useRef, useEffect, useMemo, useCallback, useState } from 'react';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 import type { ChatMessage as ChatMessageType } from '@/types/chat';
-import type { ChatMessage as CodexMessageType, ApprovalRequest } from '@/types/codex';
+import type { ApprovalRequest } from '@/types/codex';
 import { TextSelectionMenu } from './TextSelectionMenu';
 import { Message } from './Message';
 import { StatusBar } from './StatusBar';
@@ -11,7 +11,7 @@ import { open } from "@tauri-apps/plugin-shell"
 import { Button } from '../ui/button';
 
 // Unified message type
-type UnifiedMessage = ChatMessageType | CodexMessageType;
+type UnifiedMessage = ChatMessageType;
 
 interface TokenUsage {
   input_tokens?: number;
@@ -87,8 +87,10 @@ export function MessageList({
 
   // Helper to detect message type from content
   const detectMessageType = useCallback((msg: UnifiedMessage): 'reasoning' | 'tool_call' | 'plan_update' | 'exec_command' | 'normal' => {
+    console.log("msg", msg)
     const content = msg.content || '';
     const title = ('title' in msg ? msg.title : '') || '';
+    console.log("msg title", title)
     const id = msg.id || '';
     
     // Plan updates - check title first, then content patterns
@@ -163,14 +165,18 @@ export function MessageList({
     
     const messageType = detectMessageType(msg);
     
+    const ts: any = (msg as any).timestamp;
+    const normalizedTimestamp = ts instanceof Date
+      ? ts.getTime()
+      : typeof ts === 'number'
+        ? ts
+        : new Date().getTime();
+
     const baseMessage = {
       id: msg.id,
       role,
       content,
-      timestamp: 'timestamp' in msg ? 
-        (msg.timestamp instanceof Date ? msg.timestamp.getTime() : 
-         typeof msg.timestamp === 'number' ? msg.timestamp : new Date().getTime()) : 
-        new Date().getTime(),
+      timestamp: normalizedTimestamp,
       isStreaming: ('isStreaming' in msg ? msg.isStreaming : false) || false,
       model: ('model' in msg ? (msg.model as string) : undefined),
       workingDirectory: ('workingDirectory' in msg ? (msg.workingDirectory as string) : undefined),

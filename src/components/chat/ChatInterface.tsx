@@ -61,18 +61,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     ? currentConversation.messages.map((msg, index) => {
         return {
           id: msg.id || `${currentConversation.id}-msg-${index}`,
-          type: (msg.role === "user"
-            ? "user"
-            : msg.role === "assistant"
-              ? "agent"
-              : msg.role === "approval"
-                ? "approval"
-                : "system") as "user" | "agent" | "system" | "approval",
+          role: msg.role,
           content: msg.content,
           title: msg.title,
-          timestamp: new Date(
-            typeof msg.timestamp === "number" ? msg.timestamp : Date.now(),
-          ),
+          timestamp: typeof msg.timestamp === "number" ? msg.timestamp : Date.now(),
           model: msg.role === "assistant" ? currentModel : undefined,
           approvalRequest: msg.approvalRequest,
         };

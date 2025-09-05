@@ -7,6 +7,9 @@ export interface MediaAttachment {
   dataUrl?: string; // base64 data URL
 }
 
+// Import ApprovalRequest from codex types to avoid duplication
+import type { ApprovalRequest } from './codex';
+
 export interface ChatMessage {
   id: string;
   role: "user" | "assistant" | "system" | "approval";
@@ -18,7 +21,34 @@ export interface ChatMessage {
   isStreaming?: boolean;
   model?: string;
   workingDirectory?: string;
-  approvalRequest?: any; // Support for approval requests
+  approvalRequest?: ApprovalRequest; // Use proper ApprovalRequest type
+  // Optional metadata for rendering
+  messageType?: 'reasoning' | 'tool_call' | 'plan_update' | 'exec_command' | 'normal';
+  eventType?: string; // raw event msg.type from codex events
+  toolInfo?: {
+    name: string;
+    status: 'running' | 'completed' | 'failed';
+    duration?: number;
+  };
+}
+
+// Normalized message interface for UI components
+export interface NormalizedMessage {
+  id: string;
+  role: string;
+  content: string;
+  title?: string;
+  timestamp: number;
+  isStreaming: boolean;
+  model?: string;
+  approvalRequest?: ApprovalRequest;
+  messageType?: 'reasoning' | 'tool_call' | 'plan_update' | 'exec_command' | 'normal';
+  eventType?: string;
+  toolInfo?: {
+    name: string;
+    status: 'running' | 'completed' | 'failed';
+    duration?: number;
+  };
 }
 
 export type ChatMode = "chat" | "agent";
@@ -36,12 +66,6 @@ export interface Conversation {
   projectRealpath?: string;
 }
 
-export interface ChatRequest {
-  message: string;
-  provider: string;
-  model: string;
-}
-
 export type Provider =
   | "anthropic"
   | "openai"
@@ -49,20 +73,9 @@ export type Provider =
   | "google"
   | "ollama";
 
-
 export interface ProviderConfig {
-    value: Provider;
-    label: string;
-    models: string[];
-    defaultBaseUrl?: string;
-  }
-  
-
-export interface AppConfig {
-  provider?: string;
-  api_key?: string;
-  chat_url?: string;
-  model_name?: string;
-  proxy?: boolean;
-  support_tool?: boolean;
+  value: Provider;
+  label: string;
+  models: string[];
+  defaultBaseUrl?: string;
 }

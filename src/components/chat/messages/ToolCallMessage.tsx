@@ -1,7 +1,7 @@
 import React from 'react';
 import { MarkdownRenderer } from '../MarkdownRenderer';
 import { ToolExecutionIndicator } from '../ToolExecutionIndicator';
-import type { NormalizedMessage } from '../Message';
+import type { NormalizedMessage } from '@/types/chat';
 
 interface ToolCallMessageProps {
   message: NormalizedMessage;

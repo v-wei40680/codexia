@@ -7,24 +7,8 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import type { NormalizedMessage } from '@/types/chat';
 import type { ApprovalRequest } from '@/types/codex';
-
-export interface NormalizedMessage {
-  id: string;
-  role: string;
-  content: string;
-  title?: string;
-  timestamp: number;
-  isStreaming: boolean;
-  model?: string;
-  approvalRequest?: ApprovalRequest;
-  messageType?: 'reasoning' | 'tool_call' | 'plan_update' | 'exec_command' | 'normal';
-  toolInfo?: {
-    name: string;
-    status: 'running' | 'completed' | 'failed';
-    duration?: number;
-  };
-}
 
 interface MessageProps {
   message: NormalizedMessage;
@@ -67,10 +51,6 @@ const getMessageStyle = (role: string, messageType?: string) => {
 
 // Get preview text for collapsed messages
 const getPreviewText = (normalized: NormalizedMessage) => {
-  const isEnvironmentContext = normalized.content.startsWith('<environment_context>');
-  
-  if (isEnvironmentContext) return 'Environment Context';
-  
   // Use title if available - much simpler!
   if (normalized.title) {
     return normalized.title;
@@ -78,6 +58,10 @@ const getPreviewText = (normalized: NormalizedMessage) => {
   
   // Fallback to content-based detection for messages without titles
   const content = normalized.content;
+  
+  if (normalized.messageType === 'plan_update') {
+    return 'Todos'
+  }
   
   // Reasoning content
   if (normalized.messageType === 'reasoning') {
@@ -104,8 +88,6 @@ export const Message = memo<MessageProps>(({
   nextMessage,
   onApproval
 }) => {
-  const isEnvironmentContext = normalized.content.startsWith('<environment_context>');
-  
   // Detect message types that should be collapsible
   const isSystemMessage = normalized.role === 'system';
   const isReasoningMessage = normalized.messageType === 'reasoning';
@@ -117,16 +99,12 @@ export const Message = memo<MessageProps>(({
   const hasLongOutput = normalized.content.length > 500;
   
   // Determine if this message should be collapsible and initially collapsed
-  const shouldBeCollapsible = isEnvironmentContext || 
-                              isReasoningMessage ||
+  const shouldBeCollapsible = isReasoningMessage ||
                               isToolCallMessage ||
                               isPlanUpdateMessage ||
                               (isSystemMessage && (isExecutionMessage || (isCodeContent && hasLongOutput)));
   
   // Never collapse approval messages - they need to be immediately visible
-  if (isApprovalMessage) {
-    // Approval messages are never collapsible
-  }
   
   // Keep important messages visible: approvals, reasoning, plans
   // Collapse only: tool calls and long execution output
@@ -194,6 +172,8 @@ export const Message = memo<MessageProps>(({
                       messageContent={normalized.content}
                       messageRole={normalized.role}
                       timestamp={normalized.timestamp}
+                      messageType={normalized.messageType}
+                      eventType={normalized.eventType}
                       selectedText={selectedText}
                     />
                   </CollapsibleContent>
@@ -217,6 +197,8 @@ export const Message = memo<MessageProps>(({
               messageContent={normalized.content}
               messageRole={normalized.role}
               timestamp={normalized.timestamp}
+              messageType={normalized.messageType}
+              eventType={normalized.eventType}
               selectedText={selectedText}
             />
           )}

@@ -1,6 +1,8 @@
 export interface CodexEvent {
   id: string;
   msg: EventMsg;
+  // Present when backend attaches session routing info
+  session_id?: string;
 }
 
 export type EventMsg = 
@@ -35,16 +37,7 @@ export type EventMsg =
   | { type: 'stream_error'; message: string }
   | { type: 'turn_aborted'; reason: string };
 
-export interface ChatMessage {
-  id: string;
-  type: 'user' | 'agent' | 'system' | 'approval';
-  content: string;
-  title?: string;
-  timestamp: Date;
-  isStreaming?: boolean;
-  approvalRequest?: ApprovalRequest;
-  eventType?: string;
-}
+// Note: ChatMessage is now defined in ./chat.ts to avoid duplication
 
 export interface ApprovalRequest {
   id: string;
@@ -55,16 +48,6 @@ export interface ApprovalRequest {
   files?: string[];
   call_id?: string;
   changes?: any;
-}
-
-export interface ChatSession {
-  id: string;
-  name: string;
-  messages: ChatMessage[];
-  isActive: boolean;
-  pendingApproval?: ApprovalRequest;
-  config: CodexConfig;
-  isLoading?: boolean;
 }
 
 export interface CodexConfig {
@@ -107,13 +90,13 @@ export const DEFAULT_CONFIG: CodexConfig = {
 };
 
 export type McpServerConfig = 
-  | {
-      type: 'stdio';
-      command: string;
-      args: string[];
-      env?: Record<string, string>;
-    }
-  | {
-      type: 'http';
-      url: string;
-    };
+| {
+    type: 'stdio';
+    command: string;
+    args: string[];
+    env?: Record<string, string>;
+  }
+| {
+    type: 'http';
+    url: string;
+  };

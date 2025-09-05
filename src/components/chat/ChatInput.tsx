@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
 import { ArrowUp, Square, AudioLines } from 'lucide-react';
@@ -36,8 +36,20 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     removeMediaAttachment,
     clearFileReferences,
     clearMediaAttachments,
+    focusSignal,
   } = useChatInputStore();
   const { windowTitle } = useSettingsStore()
+
+  // Ref for the textarea to allow programmatic focus
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+  // Focus textarea when a focus is requested (signal increments)
+  useEffect(() => {
+    if (textareaRef.current) {
+      // Slight delay to ensure UI updates (e.g., new conversation selection)
+      setTimeout(() => textareaRef.current?.focus(), 0);
+    }
+  }, [focusSignal]);
 
   const generateSmartPrompt = (): string => {
     if (fileReferences.length === 0) return '';
@@ -116,6 +128,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         )}
         
         <Textarea
+          ref={textareaRef}
           value={inputValue}
           onChange={(e) => onInputChange(e.target.value)}
           onKeyDown={handleKeyPress}

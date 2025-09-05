@@ -8,6 +8,8 @@ interface MessageFooterProps {
   messageRole: string;
   timestamp: number;
   selectedText: string;
+  messageType?: 'reasoning' | 'tool_call' | 'plan_update' | 'exec_command' | 'normal';
+  eventType?: string;
 }
 
 const formatTime = (timestamp: number) => {
@@ -22,7 +24,9 @@ export const MessageFooter = ({
   messageContent, 
   messageRole, 
   timestamp, 
-  selectedText 
+  selectedText,
+  messageType,
+  eventType
 }: MessageFooterProps) => {
   const [copied, setCopied] = useState(false);
 
@@ -42,6 +46,16 @@ export const MessageFooter = ({
         <span className="text-xs text-muted-foreground">
           {formatTime(timestamp)}
         </span>
+        {messageType && (
+          <span className="text-[10px] px-1 py-0.5 rounded bg-accent/40 text-muted-foreground border border-border/40">
+            {messageType}
+          </span>
+        )}
+        {eventType && (
+          <span className="text-[10px] px-1 py-0.5 rounded bg-accent/30 text-muted-foreground/80 border border-border/30">
+            {eventType}
+          </span>
+        )}
       </div>
       
       <div className="flex items-center gap-1">

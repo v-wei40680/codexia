@@ -34,6 +34,10 @@ interface ChatInputStore {
   setInputValue: (value: string) => void;
   appendToInput: (value: string) => void;
   
+  // Focus control
+  focusSignal: number;
+  requestFocus: () => void;
+  
   // Clear all
   clearAll: () => void;
   
@@ -48,6 +52,9 @@ export const useChatInputStore = create<ChatInputStore>()(
       fileReferences: [],
       mediaAttachments: [],
       inputValue: "",
+      
+      // Focus control (increments to trigger effects)
+      focusSignal: 0,
 
       // File reference actions
       addFileReference: (path: string, relativePath: string, name: string, isDirectory: boolean) => {
@@ -106,6 +113,11 @@ export const useChatInputStore = create<ChatInputStore>()(
         const { inputValue } = get();
         const separator = inputValue.trim() ? '\n\n' : '';
         set({ inputValue: inputValue + separator + value });
+      },
+      
+      // Focus control: bump signal to notify listeners
+      requestFocus: () => {
+        set((state) => ({ focusSignal: state.focusSignal + 1 }));
       },
 
       // Clear all

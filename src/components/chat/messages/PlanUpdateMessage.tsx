@@ -1,7 +1,7 @@
 import React from 'react';
 import { PlanDisplay } from './PlanDisplay';
 import { MarkdownRenderer } from '../MarkdownRenderer';
-import type { NormalizedMessage } from '../Message';
+import type { NormalizedMessage } from '@/types/chat';
 
 interface PlanUpdateMessageProps {
   message: NormalizedMessage;

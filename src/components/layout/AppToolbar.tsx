@@ -11,6 +11,7 @@ import { useNoteStore } from "@/stores/NoteStore";
 import { useLayoutStore } from "@/stores/layoutStore";
 import { useFolderStore } from "@/stores/FolderStore";
 import { detectWebFramework } from "@/utils/webFrameworkDetection";
+import { useChatInputStore } from "@/stores/chatInputStore";
 
 interface AppToolbarProps {
   onOpenConfig: () => void;
@@ -30,6 +31,7 @@ export const AppToolbar: React.FC<AppToolbarProps> = ({
   const { createNote, setCurrentNote } = useNoteStore();
   const { showWebPreview, setWebPreviewUrl } = useLayoutStore();
   const { currentFolder } = useFolderStore();
+  const { requestFocus } = useChatInputStore();
 
   const handleToggleLeftPanel = () => {
     if (!onSwitchToTab) return;
@@ -59,6 +61,8 @@ export const AppToolbar: React.FC<AppToolbarProps> = ({
       // The actual session ID will be created when user sends first message
       setCurrentConversation('');
     }
+    // After creating/selecting a new conversation, focus the chat input
+    requestFocus();
   };
 
   const handleToggleWebPreview = async () => {

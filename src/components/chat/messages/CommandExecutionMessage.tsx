@@ -1,7 +1,7 @@
 import React from 'react';
 import { MarkdownRenderer } from '../MarkdownRenderer';
 import { VirtualizedTextRenderer } from '../VirtualizedTextRenderer';
-import type { NormalizedMessage } from '../Message';
+import type { NormalizedMessage } from '@/types/chat';
 
 interface CommandExecutionMessageProps {
   message: NormalizedMessage;
@@ -13,11 +13,11 @@ export const CommandExecutionMessage: React.FC<CommandExecutionMessageProps> = (
       // Extract only the output and error parts
       let cleanContent = '';
       
-      const outputMatch = message.content.match(/Output:\n```\n([\s\S]*?)\n```/);
+      const outputMatch = message.content.match(/Read:\n```\n([\s\S]*?)\n```/);
       const errorMatch = message.content.match(/Errors:\n```\n([\s\S]*?)\n```/);
       
       if (outputMatch) {
-        cleanContent += `**Output:**\n\`\`\`\n${outputMatch[1]}\n\`\`\``;
+        cleanContent += `**Read:**\n\`\`\`\n${outputMatch[1]}\n\`\`\``;
       }
       
       if (errorMatch) {
@@ -42,11 +42,7 @@ export const CommandExecutionMessage: React.FC<CommandExecutionMessageProps> = (
     const lineCount = contentToRender.split('\n').length;
     const charCount = contentToRender.length;
     
-    return lineCount > 100 || charCount > 10000 || 
-           message.content.includes('ls -R') ||
-           message.content.includes('find ') ||
-           message.content.includes('tree ') ||
-           message.content.includes('grep -r');
+    return lineCount > 100 || charCount > 10000
   };
 
   const content = getCleanExecutionContent();

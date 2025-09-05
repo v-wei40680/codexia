@@ -2,7 +2,7 @@ import React from 'react';
 import { MarkdownRenderer } from '../MarkdownRenderer';
 import { VirtualizedTextRenderer } from '../VirtualizedTextRenderer';
 import { StreamingMessage } from '../StreamingMessage';
-import type { NormalizedMessage } from '../Message';
+import type { NormalizedMessage } from '@/types/chat';
 
 interface AgentMessageProps {
   message: NormalizedMessage;

@@ -31,8 +31,13 @@ impl EventHandler {
                         log::debug!("Event for session: {}", event_session_id);
                     }
 
-                    // Emit structured event
-                    if let Err(e) = app.emit("codex-events", &event) {
+                    // Emit structured event with attached session_id for routing in the UI
+                    let wrapped = serde_json::json!({
+                        "id": event.id,
+                        "msg": event.msg,
+                        "session_id": session_id
+                    });
+                    if let Err(e) = app.emit("codex-events", &wrapped) {
                         log::error!("Failed to emit structured event: {}", e);
                     }
                 } else {

@@ -1,6 +1,6 @@
 import React from 'react';
 import { MarkdownRenderer } from '../MarkdownRenderer';
-import type { NormalizedMessage } from '../Message';
+import type { NormalizedMessage } from '@/types/chat';
 
 interface SystemMessageProps {
   message: NormalizedMessage;

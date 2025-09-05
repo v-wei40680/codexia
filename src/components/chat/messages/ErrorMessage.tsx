@@ -1,7 +1,7 @@
 import React from 'react';
 import { AlertCircle } from 'lucide-react';
 import { MarkdownRenderer } from '../MarkdownRenderer';
-import type { NormalizedMessage } from '../Message';
+import type { NormalizedMessage } from '@/types/chat';
 
 interface ErrorMessageProps {
   message: NormalizedMessage;
