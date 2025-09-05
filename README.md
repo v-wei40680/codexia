@@ -20,7 +20,7 @@ Cross-platform desktop app built with Tauri v2 + React + TypeScript.
 
 ![demo](public/codexia.png)
 
-▶️ [Watch the video on Twitter](https://x.com/lisp_mi/status/1963596193449255288)
+▶️ [Watch the automation video on Twitter](https://x.com/lisp_mi/status/1963633403368280221)
 
 ## Disclaimer
 
@@ -28,7 +28,8 @@ Codexia is an independent open-source project and is not built by OpenAI or any 
 
 ## News
 
-- [2025-08-29] support image input, codex can read image now
+- [2025-09-03] show the plan message
+- [2025-08-29] support image input, codexia can read image now
 
 ## ✨ Features
 
@@ -89,6 +90,10 @@ Codexia is an independent open-source project and is not built by OpenAI or any 
    ```bash
    bun tauri dev
    ```
+
+### Before building
+
+[auth-codexia](docs/auth-codexia.md)
 
 ### Building for Production
 
@@ -193,7 +198,22 @@ cd src-tauri && cargo fmt --all
 cp docs/pre-commit .git/hooks/pre-commit
 ```
 
-**Delete node_modules and bun.lock to fix some issue** [#10](https://github.com/milisp/codexia/issues/10)
+## ❓ Troubleshooting / FAQ
+
+### 1. App fails to start after dependency changes
+- **Fix**: Delete `node_modules` and `bun.lock` and reinstall.  
+  ```bash
+  rm -rf node_modules bun.lock
+  bun install
+  ```
+
+### 2. Can I use ChatGPT Plus or Pro tier account instead of API
+
+- Yes, You can use codex login ChatGPT first
+
+```sh
+codex # then choose ChatGPT
+```
 
 ## learn tauri v2
 
