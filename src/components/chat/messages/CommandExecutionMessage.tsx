@@ -13,7 +13,7 @@ export const CommandExecutionMessage: React.FC<CommandExecutionMessageProps> = (
       // Extract only the output and error parts
       let cleanContent = '';
       
-      const outputMatch = message.content.match(/Read:\n```\n([\s\S]*?)\n```/);
+      const outputMatch = message.title && message.title.match(/.*?Read/);
       const errorMatch = message.content.match(/Errors:\n```\n([\s\S]*?)\n```/);
       
       if (outputMatch) {

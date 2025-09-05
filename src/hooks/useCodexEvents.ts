@@ -444,7 +444,7 @@ export const useCodexEvents = ({
             });
           } else {
             // For commands with output or errors, show details
-            const outputContent = `${msg.stdout?.trim() ? `Read:\n\`\`\`\n${msg.stdout}\`\`\`` : ''}${msg.stderr?.trim() ? `${msg.stdout?.trim() ? '\n\n' : ''}Errors:\n\`\`\`\n${msg.stderr}\`\`\`` : ''}`;
+            const outputContent = `${msg.stdout?.trim() ? `\n\`\`\`\n${msg.stdout}\`\`\`` : ''}${msg.stderr?.trim() ? `${msg.stdout?.trim() ? '\n\n' : ''}Errors:\n\`\`\`\n${msg.stderr}\`\`\`` : ''}`;
             
             updateMessage(sessionId, currentCommandMessageId.current, {
               title: `${statusText} Read`,
