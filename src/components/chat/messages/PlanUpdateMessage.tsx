@@ -1,10 +1,10 @@
 import React from 'react';
 import { PlanDisplay } from './PlanDisplay';
 import { MarkdownRenderer } from '../MarkdownRenderer';
-import type { NormalizedMessage } from '@/types/chat';
+import type { ChatMessage } from '@/types/chat';
 
 interface PlanUpdateMessageProps {
-  message: NormalizedMessage;
+  message: ChatMessage;
 }
 
 export const PlanUpdateMessage: React.FC<PlanUpdateMessageProps> = ({ message }) => {

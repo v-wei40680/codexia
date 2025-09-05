@@ -1,10 +1,10 @@
 import React from 'react';
 import { MarkdownRenderer } from '../MarkdownRenderer';
 import { VirtualizedTextRenderer } from '../VirtualizedTextRenderer';
-import type { NormalizedMessage } from '@/types/chat';
+import type { ChatMessage } from '@/types/chat';
 
 interface CommandExecutionMessageProps {
-  message: NormalizedMessage;
+  message: ChatMessage;
 }
 
 export const CommandExecutionMessage: React.FC<CommandExecutionMessageProps> = ({ message }) => {

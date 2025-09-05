@@ -127,7 +127,7 @@ export function MessageList({
 
     const baseMessage = {
       id: msg.id,
-      role,
+      role: role as "user" | "assistant" | "system" | "approval",
       content,
       // Preserve optional title for preview/header rendering
       title: ('title' in msg ? (msg as any).title : undefined),

@@ -1,10 +1,10 @@
 import React from 'react';
 import { AlertCircle } from 'lucide-react';
 import { MarkdownRenderer } from '../MarkdownRenderer';
-import type { NormalizedMessage } from '@/types/chat';
+import type { ChatMessage } from '@/types/chat';
 
 interface ErrorMessageProps {
-  message: NormalizedMessage;
+  message: ChatMessage;
 }
 
 export const ErrorMessage: React.FC<ErrorMessageProps> = ({ message }) => {

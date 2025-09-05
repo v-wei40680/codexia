@@ -1,9 +1,9 @@
 import React from 'react';
 import { MarkdownRenderer } from '../MarkdownRenderer';
-import type { NormalizedMessage } from '@/types/chat';
+import type { ChatMessage } from '@/types/chat';
 
 interface SystemMessageProps {
-  message: NormalizedMessage;
+  message: ChatMessage;
 }
 
 export const SystemMessage: React.FC<SystemMessageProps> = ({ message }) => {

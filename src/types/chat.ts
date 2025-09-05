@@ -20,30 +20,10 @@ export interface ChatMessage {
   attachments?: MediaAttachment[];
   isStreaming?: boolean;
   model?: string;
-  workingDirectory?: string;
   approvalRequest?: ApprovalRequest; // Use proper ApprovalRequest type
   // Optional metadata for rendering
   messageType?: 'reasoning' | 'tool_call' | 'plan_update' | 'exec_command' | 'normal';
   eventType?: string; // raw event msg.type from codex events
-  toolInfo?: {
-    name: string;
-    status: 'running' | 'completed' | 'failed';
-    duration?: number;
-  };
-}
-
-// Normalized message interface for UI components
-export interface NormalizedMessage {
-  id: string;
-  role: string;
-  content: string;
-  title?: string;
-  timestamp: number;
-  isStreaming: boolean;
-  model?: string;
-  approvalRequest?: ApprovalRequest;
-  messageType?: 'reasoning' | 'tool_call' | 'plan_update' | 'exec_command' | 'normal';
-  eventType?: string;
   toolInfo?: {
     name: string;
     status: 'running' | 'completed' | 'failed';

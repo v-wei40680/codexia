@@ -7,11 +7,11 @@ import { ToolCallMessage } from './ToolCallMessage';
 import { PlanUpdateMessage } from './PlanUpdateMessage';
 import { SystemMessage } from './SystemMessage';
 import { ErrorMessage } from './ErrorMessage';
-import type { NormalizedMessage } from '@/types/chat';
+import type { ChatMessage } from '@/types/chat';
 import type { ApprovalRequest } from '@/types/codex';
 
 interface MessageRouterProps {
-  message: NormalizedMessage;
+  message: ChatMessage;
   selectedText?: string;
   onApproval?: (approved: boolean, approvalRequest: ApprovalRequest) => void;
 }

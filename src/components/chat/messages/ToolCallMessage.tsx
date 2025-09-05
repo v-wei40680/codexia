@@ -1,10 +1,10 @@
 import React from 'react';
 import { MarkdownRenderer } from '../MarkdownRenderer';
 import { ToolExecutionIndicator } from '../ToolExecutionIndicator';
-import type { NormalizedMessage } from '@/types/chat';
+import type { ChatMessage } from '@/types/chat';
 
 interface ToolCallMessageProps {
-  message: NormalizedMessage;
+  message: ChatMessage;
 }
 
 export const ToolCallMessage: React.FC<ToolCallMessageProps> = ({ message }) => {

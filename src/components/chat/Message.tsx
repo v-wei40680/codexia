@@ -7,16 +7,16 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import type { NormalizedMessage } from '@/types/chat';
+import type { ChatMessage } from '@/types/chat';
 import type { ApprovalRequest } from '@/types/codex';
 
 interface MessageProps {
-  message: NormalizedMessage;
+  message: ChatMessage;
   index: number;
   isLastMessage: boolean;
   selectedText: string;
-  previousMessage?: NormalizedMessage;
-  nextMessage?: NormalizedMessage;
+  previousMessage?: ChatMessage;
+  nextMessage?: ChatMessage;
   onApproval?: (approved: boolean, approvalRequest: ApprovalRequest) => void;
 }
 
@@ -50,7 +50,7 @@ const getMessageStyle = (role: string, messageType?: string) => {
 };
 
 // Get preview text for collapsed messages
-const getPreviewText = (normalized: NormalizedMessage) => {
+const getPreviewText = (normalized: ChatMessage) => {
   // Use title if available - much simpler!
   if (normalized.title) {
     return normalized.title;
@@ -129,7 +129,6 @@ export const Message = memo<MessageProps>(({
         <div className="flex flex-col items-center min-w-0 pt-2 relative">
           {/* Timeline dot */}
           <div className={`w-4 h-4 rounded-full border-2 bg-gradient-to-br from-white to-gray-100 dark:from-gray-800 dark:to-gray-900 shadow-md z-10 ${
-            normalized.role === 'user' ? 'border-primary-400 dark:border-primary-500 bg-primary-100 dark:bg-primary-900/50' :
             normalized.role === 'assistant' ? 'border-blue-400 dark:border-blue-500 bg-blue-100 dark:bg-blue-900/50' : 'border-gray-400 dark:border-gray-500 bg-gray-200 dark:bg-gray-700'
           }`} />
           

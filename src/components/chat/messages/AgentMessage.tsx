@@ -2,10 +2,10 @@ import React from 'react';
 import { MarkdownRenderer } from '../MarkdownRenderer';
 import { VirtualizedTextRenderer } from '../VirtualizedTextRenderer';
 import { StreamingMessage } from '../StreamingMessage';
-import type { NormalizedMessage } from '@/types/chat';
+import type { ChatMessage } from '@/types/chat';
 
 interface AgentMessageProps {
-  message: NormalizedMessage;
+  message: ChatMessage;
   selectedText?: string;
 }
 
