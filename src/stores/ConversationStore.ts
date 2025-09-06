@@ -13,6 +13,12 @@ interface ConversationStore {
 
   // Conversation management
   createConversation: (title?: string, sessionId?: string) => string;
+  createForkConversation: (
+    fromConversationId: string,
+    parentMessageId: string,
+    history: ChatMessage[],
+    title?: string,
+  ) => string;
   selectHistoryConversation: (conversation: Conversation) => void;
   deleteConversation: (id: string) => void;
   setCurrentConversation: (id: string) => void;
@@ -26,6 +32,7 @@ interface ConversationStore {
   setPendingUserInput: (input: string | null) => void;
   setSessionLoading: (sessionId: string, loading: boolean) => void;
   setPendingNewConversation: (pending: boolean) => void;
+  setForkMetaApplied: (conversationId: string) => void;
 
   // Message management
   addMessage: (conversationId: string, message: ChatMessage) => void;
@@ -81,6 +88,44 @@ export const useConversationStore = create<ConversationStore>()(
           updatedAt: now,
           isFavorite: false,
           projectRealpath: currentFolder || undefined,
+        };
+
+        set((state) => ({
+          conversations: [newConversation, ...state.conversations],
+          currentConversationId: id,
+          pendingNewConversation: true,
+        }));
+
+        return id;
+      },
+
+      // Create a new empty conversation that is a fork of a parent conversation
+      createForkConversation: (
+        fromConversationId: string,
+        parentMessageId: string,
+        history: ChatMessage[],
+        title?: string,
+      ) => {
+        const id = `codex-event-${generateUniqueId()}`;
+        const now = Date.now();
+        const currentFolder = useFolderStore.getState().currentFolder;
+
+        const forkTitle = title || `Fork: ${generateTitle(history)}`;
+
+        const newConversation: Conversation = {
+          id,
+          title: forkTitle,
+          messages: [],
+          createdAt: now,
+          updatedAt: now,
+          isFavorite: false,
+          projectRealpath: currentFolder || undefined,
+          forkMeta: {
+            fromConversationId,
+            parentMessageId,
+            history,
+            applied: false,
+          },
         };
 
         set((state) => ({
@@ -164,6 +209,22 @@ export const useConversationStore = create<ConversationStore>()(
               ? { ...conv, isLoading: loading }
               : conv
           )
+        }));
+      },
+
+      setForkMetaApplied: (conversationId: string) => {
+        set((state) => ({
+          conversations: state.conversations.map((conv) =>
+            conv.id === conversationId
+              ? {
+                  ...conv,
+                  forkMeta: conv.forkMeta
+                    ? { ...conv.forkMeta, applied: true }
+                    : conv.forkMeta,
+                  updatedAt: Date.now(),
+                }
+              : conv,
+          ),
         }));
       },
 

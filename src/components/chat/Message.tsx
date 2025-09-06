@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/collapsible";
 import type { ChatMessage } from '@/types/chat';
 import type { ApprovalRequest } from '@/types/codex';
+import { useConversationStore } from '@/stores/ConversationStore';
 
 interface MessageProps {
   message: ChatMessage;
@@ -18,6 +19,7 @@ interface MessageProps {
   previousMessage?: ChatMessage;
   nextMessage?: ChatMessage;
   onApproval?: (approved: boolean, approvalRequest: ApprovalRequest) => void;
+  allMessages: ChatMessage[];
 }
 
 const getMessageStyle = (role: string, messageType?: string) => {
@@ -86,8 +88,10 @@ export const Message = memo<MessageProps>(({
   isLastMessage, 
   selectedText,
   nextMessage,
-  onApproval
+  onApproval,
+  allMessages
 }) => {
+  const { createForkConversation, currentConversationId } = useConversationStore();
   // Detect message types that should be collapsible
   const isSystemMessage = normalized.role === 'system';
   const isReasoningMessage = normalized.messageType === 'reasoning';
@@ -116,6 +120,14 @@ export const Message = memo<MessageProps>(({
   const isCurrentAssistant = normalized.role === 'assistant';
   const isNextAssistant = nextMessage?.role === 'assistant';
   const showBottomConnector = isCurrentAssistant && isNextAssistant;
+
+  const handleFork = () => {
+    if (normalized.role !== 'user') return;
+    // Build history up to and including this message index
+    const history = allMessages.slice(0, index + 1);
+    const fromConversationId = currentConversationId || '';
+    createForkConversation(fromConversationId, normalized.id, history);
+  };
   
   return (
     <div
@@ -174,6 +186,7 @@ export const Message = memo<MessageProps>(({
                       messageType={normalized.messageType}
                       eventType={normalized.eventType}
                       selectedText={selectedText}
+                      onFork={handleFork}
                     />
                   </CollapsibleContent>
                 </Collapsible>
@@ -199,6 +212,7 @@ export const Message = memo<MessageProps>(({
               messageType={normalized.messageType}
               eventType={normalized.eventType}
               selectedText={selectedText}
+              onFork={handleFork}
             />
           )}
         </div>

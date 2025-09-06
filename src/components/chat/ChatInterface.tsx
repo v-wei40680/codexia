@@ -195,7 +195,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     console.log("isConnected", isConnected);
 
     // NEW: Simple text message - view_image tool will handle any image paths
-    const messageContent = message;
+    let messageContent = message;
 
     if (!messageContent.trim() || isLoading) {
       return;
@@ -295,11 +295,27 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       return;
     }
 
+    // If this is a forked conversation and not yet applied, prepend context
+    if (currentConversation?.forkMeta && !currentConversation.forkMeta.applied) {
+      try {
+        const meta = currentConversation.forkMeta;
+        const historyText = meta.history
+          .map((m, idx) => `${idx + 1}. ${m.role.toUpperCase()}:\n${m.content}`)
+          .join("\n\n");
+        const forkHeader = `parentId: ${meta.parentMessageId}\nsourceSession: ${meta.fromConversationId}`;
+        const combined = `[[fork]]\n${forkHeader}\n[[/fork]]\n\n[[context]]\n${historyText}\n[[/context]]\n\n[[user]]\n${messageContent}`;
+        messageContent = combined;
+      } catch (e) {
+        console.error('Failed to build fork context:', e);
+      }
+    }
+
     // Add user message to conversation store
     const userMessage = {
       id: `${actualSessionId}-user-${generateUniqueId()}`,
       role: "user" as const,
-      content: messageContent,
+      // Keep UI clean: store only the typed message
+      content: message,
       timestamp: Date.now(),
     };
     addMessage(actualSessionId, userMessage);
@@ -317,6 +333,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         message: messageContent,
       });
       console.log("📤 ChatInterface: Sending text message:", messageContent);
+
+      // Mark fork context as applied so future sends don't include it
+      if (currentConversation?.forkMeta && !currentConversation.forkMeta.applied) {
+        useConversationStore.getState().setForkMetaApplied(actualSessionId);
+      }
     } catch (error) {
       console.error("Failed to send message:", error);
       const errorMessage = {

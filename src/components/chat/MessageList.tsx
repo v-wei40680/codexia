@@ -187,6 +187,7 @@ export function MessageList({
               previousMessage={index > 0 ? normalizedMessages[index - 1] : undefined}
               nextMessage={index < normalizedMessages.length - 1 ? normalizedMessages[index + 1] : undefined}
               onApproval={onApproval}
+              allMessages={normalizedMessages}
             />
           ))}
           

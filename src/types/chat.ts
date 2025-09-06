@@ -41,6 +41,13 @@ export interface Conversation {
   filePath?: string;
   isLoading?: boolean;
   projectRealpath?: string;
+  // Fork metadata for branching conversations
+  forkMeta?: {
+    fromConversationId: string;
+    parentMessageId: string;
+    history: ChatMessage[];
+    applied?: boolean; // whether the fork context has been sent to backend
+  };
 }
 
 export type Provider =
