@@ -39,6 +39,8 @@ export const ChatView: React.FC<ChatViewProps> = ({ selectedConversation, showCh
   const [resumeCandidates, setResumeCandidates] = useState<Conversation[]>([]);
   const [resumeLoading, setResumeLoading] = useState(false);
   const [resumeOnlyProject, setResumeOnlyProject] = useState(true);
+  const [resumeSelectMode, setResumeSelectMode] = useState(false);
+  const [resumeSelected, setResumeSelected] = useState<Record<string, boolean>>({});
   const [categoryOpen, setCategoryOpen] = useState(false);
   const [newCategoryName, setNewCategoryName] = useState("");
 
@@ -251,14 +253,69 @@ export const ChatView: React.FC<ChatViewProps> = ({ selectedConversation, showCh
             <DialogHeader>
               <div className="flex items-center justify-between gap-2">
                 <DialogTitle>Resume a previous session</DialogTitle>
-                <label className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <input
-                    type="checkbox"
-                    checked={resumeOnlyProject}
-                    onChange={(e) => setResumeOnlyProject(e.target.checked)}
-                  />
-                  Only current project
-                </label>
+                <div className="flex items-center gap-2">
+                  <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <input
+                      type="checkbox"
+                      checked={resumeSelectMode}
+                      onChange={(e) => {
+                        const enabled = e.target.checked;
+                        setResumeSelectMode(enabled);
+                        if (!enabled) setResumeSelected({});
+                      }}
+                    />
+                    Select mode
+                  </label>
+                  {resumeSelectMode && (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          if (resumeCandidates.length === 0) return;
+                          const allSelected: Record<string, boolean> = {};
+                          for (const c of resumeCandidates) {
+                            const fp = (c as any).filePath as string | undefined;
+                            if (fp) allSelected[fp] = true;
+                          }
+                          setResumeSelected(allSelected);
+                        }}
+                      >
+                        Select all
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        disabled={Object.values(resumeSelected).filter(Boolean).length === 0}
+                        onClick={async () => {
+                          const selectedPaths = resumeCandidates
+                            .map((c) => (c as any).filePath as string | undefined)
+                            .filter((fp): fp is string => !!fp && resumeSelected[fp]);
+                          if (selectedPaths.length === 0) return;
+                          try {
+                            // Delete files in parallel
+                            await Promise.all(
+                              selectedPaths.map((filePath) =>
+                                invoke("delete_session_file", { filePath })
+                                  .catch((err) => {
+                                    console.error("Failed to delete session file:", filePath, err);
+                                  })
+                              )
+                            );
+                            const selectedSet = new Set(selectedPaths);
+                            setResumeCandidates((prev) => prev.filter((c) => !selectedSet.has((c as any).filePath)));
+                            setResumeSelected({});
+                            setResumeSelectMode(false);
+                          } catch (err) {
+                            console.error("Bulk delete failed:", err);
+                          }
+                        }}
+                      >
+                        Delete ({Object.values(resumeSelected).filter(Boolean).length})
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
               <div className="text-xs text-muted-foreground">
                 Current project: {useFolderStore.getState().currentFolder || '(none)'}
@@ -278,20 +335,44 @@ export const ChatView: React.FC<ChatViewProps> = ({ selectedConversation, showCh
                   )}
                 </div>
               ) : (
-                resumeCandidates.map((c) => (
-                  <button
-                    key={c.id + (c.filePath || "")}
-                    className="w-full text-left p-3 hover:bg-accent"
-                    onClick={() => {
-                      // Route through existing handler which also sets resumePath via store
-                      handleConversationSelect(c);
-                      setResumeOpen(false);
-                    }}
-                  >
-                    <div className="text-sm font-medium truncate">{c.title}</div>
-                    <div className="text-xs text-muted-foreground truncate">{c.projectRealpath || "(unknown project)"}</div>
-                  </button>
-                ))
+                resumeCandidates.map((c) => {
+                  const fp = (c as any).filePath as string | undefined;
+                  const selected = fp ? !!resumeSelected[fp] : false;
+                  return (
+                    <div
+                      key={c.id + (fp || "")}
+                      className={`w-full text-left p-3 hover:bg-accent flex items-center gap-3 ${selected ? 'bg-accent/50' : ''}`}
+                      onClick={() => {
+                        if (resumeSelectMode) {
+                          if (!fp) return;
+                          setResumeSelected((prev) => ({ ...prev, [fp]: !prev[fp] }));
+                          return;
+                        }
+                        // Route through existing handler which also sets resumePath via store
+                        handleConversationSelect(c);
+                        setResumeOpen(false);
+                      }}
+                    >
+                      {resumeSelectMode && (
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={(e) => {
+                            e.stopPropagation();
+                            if (!fp) return;
+                            const checked = e.target.checked;
+                            setResumeSelected((prev) => ({ ...prev, [fp]: checked }));
+                          }}
+                          onClick={(e) => e.stopPropagation()}
+                        />
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-medium truncate">{c.title}</div>
+                        <div className="text-xs text-muted-foreground truncate">{c.projectRealpath || "(unknown project)"}</div>
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </div>
           </DialogContent>
