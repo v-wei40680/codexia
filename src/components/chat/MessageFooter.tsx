@@ -1,4 +1,4 @@
-import { Copy, Check, GitFork } from 'lucide-react';
+import { Copy, Check, GitFork, Pencil } from 'lucide-react';
 import { useState } from 'react';
 import { MessageNoteActions } from './MessageNoteActions';
 
@@ -11,6 +11,7 @@ interface MessageFooterProps {
   messageType?: 'reasoning' | 'tool_call' | 'plan_update' | 'exec_command' | 'normal';
   eventType?: string;
   onFork?: () => void;
+  onEdit?: () => void;
 }
 
 const formatTime = (timestamp: number) => {
@@ -28,7 +29,8 @@ export const MessageFooter = ({
   selectedText,
   messageType,
   eventType,
-  onFork
+  onFork,
+  onEdit,
 }: MessageFooterProps) => {
   const [copied, setCopied] = useState(false);
 
@@ -61,6 +63,15 @@ export const MessageFooter = ({
       </div>
       
       <div className="flex items-center gap-1">
+        {messageRole === 'user' && onEdit && (
+          <button
+            onClick={onEdit}
+            className="p-1 hover:bg-accent rounded transition-colors"
+            title="Edit and resend from here"
+          >
+            <Pencil className="w-4 h-4 text-muted-foreground" />
+          </button>
+        )}
         {messageRole === 'user' && onFork && (
           <button
             onClick={onFork}

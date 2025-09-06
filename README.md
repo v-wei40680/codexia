@@ -29,7 +29,7 @@ Codexia is an independent open-source project and is not built by OpenAI or any 
 
 ## News
 
-- [2025-09-05] fork chat(preview)
+- [2025-09-05] fork chat + edit chat
 - [2025-09-03] show the plan message
 - [2025-08-29] support image input, codexia can read image now
 

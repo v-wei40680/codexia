@@ -10,6 +10,7 @@ import {
 import type { ChatMessage } from '@/types/chat';
 import type { ApprovalRequest } from '@/types/codex';
 import { useConversationStore } from '@/stores/ConversationStore';
+import { useChatInputStore } from '@/stores/chatInputStore';
 
 interface MessageProps {
   message: ChatMessage;
@@ -91,7 +92,8 @@ export const Message = memo<MessageProps>(({
   onApproval,
   allMessages
 }) => {
-  const { createForkConversation, currentConversationId } = useConversationStore();
+  const { createForkConversation, currentConversationId, setCurrentConversation } = useConversationStore();
+  const { setInputValue, requestFocus } = useChatInputStore();
   // Detect message types that should be collapsible
   const isSystemMessage = normalized.role === 'system';
   const isReasoningMessage = normalized.messageType === 'reasoning';
@@ -126,7 +128,18 @@ export const Message = memo<MessageProps>(({
     // Build history up to and including this message index
     const history = allMessages.slice(0, index + 1);
     const fromConversationId = currentConversationId || '';
-    createForkConversation(fromConversationId, normalized.id, history);
+    const newId = createForkConversation(fromConversationId, normalized.id, history);
+    if (newId) {
+      setCurrentConversation(newId);
+      requestFocus();
+    }
+  };
+
+  const handleEditResend = () => {
+    if (normalized.role !== 'user') return;
+    // Prefill composer and focus for edit & resend (never fork here)
+    setInputValue(normalized.content || '');
+    requestFocus();
   };
   
   return (
@@ -187,6 +200,7 @@ export const Message = memo<MessageProps>(({
                       eventType={normalized.eventType}
                       selectedText={selectedText}
                       onFork={handleFork}
+                      onEdit={handleEditResend}
                     />
                   </CollapsibleContent>
                 </Collapsible>
@@ -213,6 +227,7 @@ export const Message = memo<MessageProps>(({
               eventType={normalized.eventType}
               selectedText={selectedText}
               onFork={handleFork}
+              onEdit={handleEditResend}
             />
           )}
         </div>
