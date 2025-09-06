@@ -69,6 +69,7 @@ Codexia is an independent open-source project and is not built by OpenAI or any 
 - fork chat
 - Persistent UI state and preferences
 - **WebPreview** Click WebPreview icon Auto detect web port to show WebPreview, eg. Next.js project will show WebPreview `http://localhost:3000`
+- Theme & Accent Selection
 
 ### 🛡️ **Security & Control**
 - Sandbox execution modes for safe code running
@@ -122,6 +123,11 @@ bun tauri build
 - Click the **Settings** icon to open the configuration dialog
 - Changes apply to the currently active session
 - Configurations are automatically saved and restored
+
+### Theme & Accent Selection
+- Toggle light/dark with the sun/moon button in the header.
+- Pick an accent color from the palette button next to the theme toggle.
+- Defaults: dark mode with a pink accent. Choices persist via Zustand.
 
 ### Monitoring
 - Use the **Debug** panel (bottom-right) to monitor running sessions

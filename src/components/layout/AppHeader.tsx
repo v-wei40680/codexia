@@ -7,6 +7,7 @@ import {
   Sun,
   Moon,
   Brain,
+  Palette,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,13 +16,21 @@ import { useLayoutStore } from "@/stores/layoutStore";
 import { invoke } from "@tauri-apps/api/core";
 import { useState, useEffect } from "react";
 import { McpDialog } from "../dialogs/McpDialog";
-import { useThemeStore } from "@/stores/ThemeStore";
+import { useThemeStore, type Accent } from "@/stores/ThemeStore";
 import { useSettingsStore } from "@/stores/SettingsStore";
 import { useAuth } from "@/hooks/useAuth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLabel,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function AppHeader() {
   const { showFileTree, toggleFileTree, toggleChatPane } = useLayoutStore();
-  const { theme, toggleTheme } = useThemeStore();
+  const { theme, toggleTheme, accent, setAccent } = useThemeStore();
   const { logoSettings } = useSettingsStore();
   const [codexVersion, setCodexVersion] = useState<string>("");
   const [isCodexAvailable, setIsCodexAvailable] = useState<boolean>(false);
@@ -105,6 +114,45 @@ export function AppHeader() {
         <Button variant="ghost" className="h-6 w-6" onClick={toggleTheme}>
           {theme === "dark" ? <Sun /> : <Moon />}
         </Button>
+
+        {/* Accent color selector */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="h-6 w-6">
+              <Palette />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Accent Color</DropdownMenuLabel>
+            <DropdownMenuRadioGroup value={accent} onValueChange={(val) => setAccent(val as Accent)}>
+              <DropdownMenuRadioItem value="pink">
+                <span className="inline-flex items-center gap-2">
+                  <span className="inline-block size-3 rounded-full bg-pink-500" /> Pink
+                </span>
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="blue">
+                <span className="inline-flex items-center gap-2">
+                  <span className="inline-block size-3 rounded-full bg-blue-500" /> Blue
+                </span>
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="green">
+                <span className="inline-flex items-center gap-2">
+                  <span className="inline-block size-3 rounded-full bg-emerald-500" /> Green
+                </span>
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="purple">
+                <span className="inline-flex items-center gap-2">
+                  <span className="inline-block size-3 rounded-full bg-purple-500" /> Purple
+                </span>
+              </DropdownMenuRadioItem>
+              <DropdownMenuRadioItem value="orange">
+                <span className="inline-flex items-center gap-2">
+                  <span className="inline-block size-3 rounded-full bg-orange-500" /> Orange
+                </span>
+              </DropdownMenuRadioItem>
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <Link
           to="/settings"
