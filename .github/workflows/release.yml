@@ -87,7 +87,7 @@ jobs:
         run: |
           TAG_NAME=${GITHUB_REF#refs/tags/}
           
-          LINUX_SIG_FILE=$(find tauri-app/src-tauri/target/x86_64-unknown-linux-gnu/release/bundle -name "*.AppImage.tar.gz.sig" | head -1)
+          LINUX_SIG_FILE=$(find src-tauri/target/release/bundle -name "*.AppImage.tar.gz.sig" | head -1)
           LINUX_SIG=""
           if [ -f "$LINUX_SIG_FILE" ]; then
             LINUX_SIG=$(cat "$LINUX_SIG_FILE")
