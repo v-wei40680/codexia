@@ -18,7 +18,6 @@ interface MessageProps {
   isLastMessage: boolean;
   selectedText: string;
   previousMessage?: ChatMessage;
-  nextMessage?: ChatMessage;
   onApproval?: (approved: boolean, approvalRequest: ApprovalRequest) => void;
   allMessages: ChatMessage[];
 }
@@ -88,7 +87,6 @@ export const Message = memo<MessageProps>(({
   index, 
   isLastMessage, 
   selectedText,
-  nextMessage,
   onApproval,
   allMessages
 }) => {
@@ -117,11 +115,6 @@ export const Message = memo<MessageProps>(({
   const [isCollapsed, setIsCollapsed] = useState(
     shouldBeCollapsible && !isApprovalMessage && !isPlanUpdateMessage
   );
-  
-  // Check if this message is part of a continuous assistant conversation
-  const isCurrentAssistant = normalized.role === 'assistant';
-  const isNextAssistant = nextMessage?.role === 'assistant';
-  const showBottomConnector = isCurrentAssistant && isNextAssistant;
 
   const handleFork = () => {
     // Fork should be initiated from assistant messages, not user messages
@@ -154,17 +147,9 @@ export const Message = memo<MessageProps>(({
       {normalized.role !== 'user' && (
         <div className="flex flex-col items-center min-w-0 pt-2 relative">
           {/* Timeline dot */}
-          <div className={`w-4 h-4 rounded-full border-2 bg-gradient-to-br from-white to-gray-100 dark:from-gray-800 dark:to-gray-900 shadow-md z-10 ${
+          <div className={`w-3 h-3 rounded-full border-2 bg-gradient-to-br from-white to-gray-100 dark:from-gray-800 dark:to-gray-900 shadow-md z-10 ${
             normalized.role === 'assistant' ? 'border-blue-400 dark:border-blue-500 bg-blue-100 dark:bg-blue-900/50' : 'border-gray-400 dark:border-gray-500 bg-gray-200 dark:bg-gray-700'
           }`} />
-          
-          {/* Timeline line - extends to next message */}
-          {!isLastMessage && (
-            <div className={`absolute top-6 left-1/2 transform -translate-x-1/2 w-1 ${
-              showBottomConnector ? 'bg-gradient-to-b from-blue-300 to-blue-100 dark:from-blue-600 dark:to-blue-800 shadow-inner' : 'bg-gradient-to-b from-gray-300 to-gray-200 dark:from-gray-600 dark:to-gray-700'
-            }`} 
-                 style={{ height: 'calc(100% + 0.75rem)' }} />
-          )}
         </div>
       )}
 

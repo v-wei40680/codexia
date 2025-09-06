@@ -186,6 +186,7 @@ pub fn parse_session_file(content: &str, file_path: &Path) -> Option<Conversatio
                 file_path: file_path_str,
                 project_realpath,
             };
+            /*
             log::debug!(
                 "Parsed session file: {:?} -> id={}, project={:?}, messages={}",
                 file_path,
@@ -193,6 +194,7 @@ pub fn parse_session_file(content: &str, file_path: &Path) -> Option<Conversatio
                 convo.project_realpath,
                 convo.messages.len()
             );
+            */
             return Some(convo);
         }
     }
