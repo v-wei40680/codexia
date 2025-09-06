@@ -286,10 +286,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       try {
         const meta = currentConversation.forkMeta;
         const historyText = meta.history
-          .map((m, idx) => `${idx + 1}. ${m.role.toUpperCase()}:\n${m.content}`)
+          .filter((m) => m.role === 'user' || m.role === 'assistant')
+          .map((m) => `${m.role}:\n${m.content}`)
           .join("\n\n");
         const forkHeader = `parentId: ${meta.parentMessageId}\nsourceSession: ${meta.fromConversationId}`;
-        const combined = `[[fork]]\n${forkHeader}\n[[/fork]]\n\n[[context]]\n${historyText}\n[[/context]]\n\n[[user]]\n${messageContent}`;
+        const combined = `${forkHeader}\n\nConversation history:\n${historyText}\n\nUser:\n${messageContent}`;
         messageContent = combined;
       } catch (e) {
         console.error('Failed to build fork context:', e);
