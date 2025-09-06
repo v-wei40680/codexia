@@ -208,9 +208,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
     let actualSessionId = sessionId;
 
-    // Handle pending new conversation, temporary sessionId, or empty sessionId
+    // Establish or reuse a session only when there is no valid sessionId
     let isPendingSession = false;
-    if (pendingNewConversation || !sessionId.trim()) {
+    const hasValidSessionId = !!sessionId.trim();
+    if (!hasValidSessionId) {
       // Check if there's already a conversation waiting to be used
       const existingNewConversation = conversations.find(
         (conv) =>
@@ -226,30 +227,15 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         setActiveSessionId(actualSessionId);
         setPendingNewConversation(false);
       } else {
-        // Close any previous sessions before creating a new one
-        const runningSessions = sessionManager.getLocalRunningSessions();
-        if (runningSessions.length > 0) {
-          console.log(
-            `Closing ${runningSessions.length} existing sessions before creating new one`,
-          );
-          await sessionManager.closeAllSessions();
-        }
-
+        // Create a brand new session ID; do not close running sessions here
         actualSessionId = `codex-event-${generateUniqueId()}`;
         setTempSessionId(actualSessionId);
         setPendingNewConversation(false);
         isPendingSession = true;
       }
-    } else {
-      // If no conversation exists, create a new session with timestamp format
-      const conversationExists = conversations.find(
-        (conv) => conv.id === sessionId,
-      );
-      if (!conversationExists) {
-        // Always use timestamp format for consistency
-        actualSessionId = `codex-event-${generateUniqueId()}`;
-        createConversation("New Chat", actualSessionId);
-      }
+    } else if (pendingNewConversation) {
+      // We already have a sessionId: just clear the pending flag and reuse it
+      setPendingNewConversation(false);
     }
 
     // Ensure session is running before sending message

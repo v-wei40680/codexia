@@ -104,6 +104,15 @@ export const useCodexEvents = ({
           currentStreamingMessageId.current = null;
         }
         break;
+
+      case 'turn_complete':
+        // Some backends emit turn_complete instead of task_complete
+        setSessionLoading(sessionId, false);
+        if (currentStreamingMessageId.current) {
+          streamController.current.finalize(true);
+          currentStreamingMessageId.current = null;
+        }
+        break;
         
       case 'agent_message':
         // Handle complete message
@@ -458,6 +467,8 @@ export const useCodexEvents = ({
           eventType: msg.type,
         };
         addMessageToStore(abortMessage);
+        // Mark session idle
+        setSessionLoading(sessionId, false);
         
         // Clean up any ongoing streaming
         if (currentStreamingMessageId.current) {
