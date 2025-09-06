@@ -124,7 +124,8 @@ export const Message = memo<MessageProps>(({
   const showBottomConnector = isCurrentAssistant && isNextAssistant;
 
   const handleFork = () => {
-    if (normalized.role !== 'user') return;
+    // Fork should be initiated from assistant messages, not user messages
+    if (normalized.role !== 'assistant') return;
     // Build history up to and including this message index
     const history = allMessages.slice(0, index + 1);
     const fromConversationId = currentConversationId || '';

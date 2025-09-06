@@ -72,7 +72,7 @@ export const MessageFooter = ({
             <Pencil className="w-4 h-4 text-muted-foreground" />
           </button>
         )}
-        {messageRole === 'user' && onFork && (
+        {messageRole === 'assistant' && onFork && (
           <button
             onClick={onFork}
             className="p-1 hover:bg-accent rounded transition-colors"
