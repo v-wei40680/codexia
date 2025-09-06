@@ -8,7 +8,6 @@ interface ConversationStore {
   // Conversations
   conversations: Conversation[];
   currentConversationId: string | null;
-  sessionDisconnected: boolean;
   pendingUserInput: string | null;
   pendingNewConversation: boolean;
 
@@ -24,9 +23,7 @@ interface ConversationStore {
   getCurrentProjectConversations: () => Conversation[];
 
   // Session management
-  setSessionDisconnected: (disconnected: boolean) => void;
   setPendingUserInput: (input: string | null) => void;
-  addDisconnectionWarning: (conversationId: string) => void;
   setSessionLoading: (sessionId: string, loading: boolean) => void;
   setPendingNewConversation: (pending: boolean) => void;
 
@@ -55,7 +52,6 @@ export const useConversationStore = create<ConversationStore>()(
       // Initial state
       conversations: [],
       currentConversationId: null,
-      sessionDisconnected: false,
       pendingUserInput: null,
       pendingNewConversation: false,
 
@@ -152,10 +148,6 @@ export const useConversationStore = create<ConversationStore>()(
         }));
       },
 
-      setSessionDisconnected: (disconnected: boolean) => {
-        set({ sessionDisconnected: disconnected });
-      },
-
       setPendingUserInput: (input: string | null) => {
         set({ pendingUserInput: input });
       },
@@ -172,28 +164,6 @@ export const useConversationStore = create<ConversationStore>()(
               ? { ...conv, isLoading: loading }
               : conv
           )
-        }));
-      },
-
-      addDisconnectionWarning: (conversationId: string) => {
-        const warningMessage: ChatMessage = {
-          id: `${conversationId}-disconnection-warning-${Date.now()}`,
-          role: "system",
-          content: "⚠️ Codex session has been disconnected. Your previous conversation history cannot be resumed. Please start a new conversation to continue chatting with the AI assistant.",
-          timestamp: Date.now(),
-        };
-
-        set((state) => ({
-          conversations: state.conversations.map((conv) => {
-            if (conv.id === conversationId) {
-              return {
-                ...conv,
-                messages: [...conv.messages, warningMessage],
-                updatedAt: Date.now(),
-              };
-            }
-            return conv;
-          }),
         }));
       },
 
