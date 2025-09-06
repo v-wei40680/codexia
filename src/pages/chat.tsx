@@ -39,9 +39,7 @@ export default function ChatPage() {
   } = useLayoutStore();
 
   const { config, setConfig } = useCodexStore();
-  const {
-    createConversationWithLatestSession,
-  } = useConversationStore();
+  const {} = useConversationStore();
 
   const { currentFolder } = useFolderStore();
   const { fileReferences, removeFileReference } = useChatInputStore();
@@ -219,7 +217,6 @@ export default function ChatPage() {
           <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
             <AppToolbar
               onOpenConfig={() => setIsConfigOpen(true)}
-              onCreateNewSession={createConversationWithLatestSession}
               currentTab={selectedLeftPanelTab}
               onSwitchToTab={setSelectedLeftPanelTab}
             />

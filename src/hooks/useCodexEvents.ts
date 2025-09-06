@@ -26,7 +26,7 @@ export const useCodexEvents = ({
     const conversationExists = conversations.find(conv => conv.id === sessionId);
     if (!conversationExists) {
       console.log(`Creating conversation for session ${sessionId} from event`);
-      createConversation('New Chat', 'agent', sessionId);
+      createConversation('New Chat', sessionId);
     }
     
     // Convert message format and add to store

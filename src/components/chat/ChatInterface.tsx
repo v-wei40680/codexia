@@ -248,7 +248,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       if (!conversationExists) {
         // Always use timestamp format for consistency
         actualSessionId = `codex-event-${generateUniqueId()}`;
-        createConversation("New Chat", "agent", actualSessionId);
+        createConversation("New Chat", actualSessionId);
       }
     }
 
@@ -272,7 +272,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         setIsConnected(true);
 
         if (isPendingSession) {
-          createConversation("New Chat", "agent", actualSessionId);
+          createConversation("New Chat", actualSessionId);
           setCurrentConversation(actualSessionId);
           setActiveSessionId(actualSessionId);
           setTempSessionId(null);

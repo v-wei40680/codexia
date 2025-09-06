@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { Conversation, ChatMessage, ChatMode } from "@/types/chat";
+import type { Conversation, ChatMessage } from "@/types/chat";
 import { useFolderStore } from "./FolderStore";
 import { generateUniqueId } from "@/utils/genUniqueId";
 
@@ -13,13 +13,11 @@ interface ConversationStore {
   pendingNewConversation: boolean;
 
   // Conversation management
-  createConversation: (title?: string, mode?: ChatMode, sessionId?: string) => string;
-  createConversationWithLatestSession: (title?: string, mode?: ChatMode) => Promise<string>;
+  createConversation: (title?: string, sessionId?: string) => string;
   selectHistoryConversation: (conversation: Conversation) => void;
   deleteConversation: (id: string) => void;
   setCurrentConversation: (id: string) => void;
   updateConversationTitle: (id: string, title: string) => void;
-  updateConversationMode: (id: string, mode: ChatMode) => void;
   toggleFavorite: (id: string) => void;
 
   // Filtered getters
@@ -51,16 +49,6 @@ const generateTitle = (messages: ChatMessage[]): string => {
   return "New Conversation";
 };
 
-// Export function to create conversation with latest running session or create new one
-export const createConversationWithLatestSession = async (title?: string, mode: ChatMode = "agent"): Promise<string> => {
-  const store = useConversationStore.getState();
-  
-  // Always create a new conversation with timestamp format for consistency
-  // This prevents UUID session IDs from being used
-  // The createConversation function will automatically capture the current projectRealpath
-  return store.createConversation(title, mode);
-};
-
 export const useConversationStore = create<ConversationStore>()(
   persist(
     (set, get) => ({
@@ -72,7 +60,7 @@ export const useConversationStore = create<ConversationStore>()(
       pendingNewConversation: false,
 
 
-      createConversation: (title?: string, mode: ChatMode = "agent", sessionId?: string) => {
+      createConversation: (title?: string, sessionId?: string) => {
         // Use provided sessionId or generate a codex-event-{uuid} format for the conversation
         const id = sessionId || `codex-event-${generateUniqueId()}`;
         const state = get();
@@ -93,7 +81,6 @@ export const useConversationStore = create<ConversationStore>()(
           id,
           title: title || "New Conversation",
           messages: [],
-          mode,
           createdAt: now,
           updatedAt: now,
           isFavorite: false,
@@ -109,8 +96,6 @@ export const useConversationStore = create<ConversationStore>()(
         return id;
       },
 
-  // Expose helper that creates/selects a conversation using the latest running session
-  createConversationWithLatestSession: createConversationWithLatestSession,
 
       // Select conversation from history (disk) - simplified for session_id only
       selectHistoryConversation: (conversation: Conversation) => {
@@ -153,14 +138,6 @@ export const useConversationStore = create<ConversationStore>()(
         set((state) => ({
           conversations: state.conversations.map((conv) =>
             conv.id === id ? { ...conv, title, updatedAt: Date.now() } : conv,
-          ),
-        }));
-      },
-
-      updateConversationMode: (id: string, mode: ChatMode) => {
-        set((state) => ({
-          conversations: state.conversations.map((conv) =>
-            conv.id === id ? { ...conv, mode, updatedAt: Date.now() } : conv,
           ),
         }));
       },

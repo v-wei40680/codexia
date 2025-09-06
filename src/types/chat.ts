@@ -31,13 +31,10 @@ export interface ChatMessage {
   };
 }
 
-export type ChatMode = "chat" | "agent";
-
 export interface Conversation {
   id: string;
   title: string;
   messages: ChatMessage[];
-  mode: ChatMode;
   createdAt: number;
   updatedAt: number;
   isFavorite?: boolean;
