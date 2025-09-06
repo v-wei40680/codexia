@@ -115,6 +115,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/v')
         with:
-          files: ${{ matrix.platform.artifact-path }}
+          files: |
+            ${{ matrix.platform.artifact-path }}
+            ${{ runner.os == 'Linux' && 'updater.json' || '' }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
