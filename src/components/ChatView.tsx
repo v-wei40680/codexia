@@ -5,6 +5,7 @@ import { useConversationStore } from "@/stores/ConversationStore";
 import type { Conversation } from "@/types/chat";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { invoke } from "@tauri-apps/api/core";
 import { useFolderStore } from "@/stores/FolderStore";
 
@@ -22,6 +23,11 @@ export const ChatView: React.FC<ChatViewProps> = ({ selectedConversation, showCh
     selectHistoryConversation,
     pendingNewConversation,
     toggleFavorite,
+    categories,
+    selectedCategoryId,
+    addCategory,
+    deleteCategory,
+    setSelectedCategory,
   } = useConversationStore();
   
   // Get conversations filtered by current project
@@ -33,6 +39,8 @@ export const ChatView: React.FC<ChatViewProps> = ({ selectedConversation, showCh
   const [resumeCandidates, setResumeCandidates] = useState<Conversation[]>([]);
   const [resumeLoading, setResumeLoading] = useState(false);
   const [resumeOnlyProject, setResumeOnlyProject] = useState(true);
+  const [categoryOpen, setCategoryOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
 
   // Generate favorite statuses from the persisted store data
   const favoriteStatuses = useMemo(() => {
@@ -104,7 +112,11 @@ export const ChatView: React.FC<ChatViewProps> = ({ selectedConversation, showCh
     return (
       <div className="flex flex-col h-full">
         <div className="flex items-center justify-between px-2 py-1">
-          <div className="text-xs text-muted-foreground">Sessions</div>
+          <div className="flex items-center gap-2">
+            <Button size="sm" variant="outline" onClick={() => setCategoryOpen(true)}>
+              Category: {selectedCategoryId ? (categories.find(c => c.id === selectedCategoryId)?.name || "Unknown") : "All"}
+            </Button>
+          </div>
           <div className="flex items-center gap-2">
             <Button
               size="sm"
@@ -163,6 +175,76 @@ export const ChatView: React.FC<ChatViewProps> = ({ selectedConversation, showCh
           onDeleteConversation={handleDeleteConversation}
           onSelectSession={handleSelectSession}
         />
+
+        {/* Category selection & management */}
+        <Dialog open={categoryOpen} onOpenChange={setCategoryOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>Categories</DialogTitle>
+            </DialogHeader>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <Input
+                  placeholder="New category name"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && newCategoryName.trim()) {
+                      addCategory(newCategoryName.trim());
+                      setNewCategoryName("");
+                    }
+                  }}
+                />
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    const name = newCategoryName.trim();
+                    if (!name) return;
+                    addCategory(name);
+                    setNewCategoryName("");
+                  }}
+                >Add</Button>
+              </div>
+              <div className="border rounded divide-y">
+                <button
+                  className={`w-full text-left p-3 hover:bg-accent ${!selectedCategoryId ? 'bg-accent/50' : ''}`}
+                  onClick={() => {
+                    setSelectedCategory(null);
+                    setCategoryOpen(false);
+                  }}
+                >
+                  All
+                </button>
+                {categories.length === 0 ? (
+                  <div className="p-3 text-sm text-muted-foreground">No categories yet.</div>
+                ) : (
+                  categories.map((cat) => (
+                    <div key={cat.id} className="flex items-center">
+                      <button
+                        className={`flex-1 text-left p-3 hover:bg-accent ${selectedCategoryId === cat.id ? 'bg-accent/50' : ''}`}
+                        onClick={() => {
+                          setSelectedCategory(cat.id);
+                          setCategoryOpen(false);
+                        }}
+                      >
+                        {cat.name}
+                      </button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="px-2 text-muted-foreground"
+                        onClick={() => deleteCategory(cat.id)}
+                        title="Delete category"
+                      >
+                        ×
+                      </Button>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         <Dialog open={resumeOpen} onOpenChange={setResumeOpen}>
           <DialogContent className="max-w-xl">

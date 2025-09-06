@@ -61,7 +61,6 @@ export function ConversationList({
             tabPrefix={tabPrefix}
             isCurrentlySelected={isCurrentlySelected}
             isFavorited={isFavorited}
-            showSessionId={false}
             onSelectConversation={onSelectConversation}
             onToggleFavorite={onToggleFavorite}
             onDeleteConversation={onDeleteConversation}

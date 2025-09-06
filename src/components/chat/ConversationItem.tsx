@@ -5,7 +5,6 @@ import {
   Trash2,
   Star,
   StarOff,
-  MessageSquare,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -14,6 +13,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import type { Conversation } from "@/types/chat";
+import { useConversationStore } from "@/stores/ConversationStore";
+import { DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { Tag } from "lucide-react";
 
 interface ConversationItemProps {
   conversation: Conversation;
@@ -21,7 +23,6 @@ interface ConversationItemProps {
   tabPrefix: string;
   isCurrentlySelected: boolean;
   isFavorited: boolean;
-  showSessionId?: boolean;
   onSelectConversation: (conversation: Conversation) => void;
   onToggleFavorite: (conversationId: string, e: React.MouseEvent) => void;
   onDeleteConversation: (conversationId: string, e: React.MouseEvent) => void;
@@ -34,12 +35,12 @@ export function ConversationItem({
   tabPrefix,
   isCurrentlySelected,
   isFavorited,
-  showSessionId = false,
   onSelectConversation,
   onToggleFavorite,
   onDeleteConversation,
   onSelectSession,
 }: ConversationItemProps) {
+  const { categories, setConversationCategory } = useConversationStore();
   const formatDate = (timestamp: number) => {
     const date = new Date(timestamp);
     const now = new Date();
@@ -86,7 +87,6 @@ export function ConversationItem({
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
-            <MessageSquare className="h-3 w-3 text-muted-foreground flex-shrink-0" />
             <h4 className="text-sm font-medium truncate flex-1 text-foreground">
               {conversation.title}
             </h4>
@@ -97,14 +97,7 @@ export function ConversationItem({
           <p className="text-xs text-muted-foreground mt-1 line-clamp-2">
             {getPreviewText(conversation)}
           </p>
-          {showSessionId && (
-            <div className="mt-1 mb-1">
-              <span className="text-xs text-primary font-mono bg-primary/10 px-1 py-0.5 rounded">
-                ID: {conversation.id.substring(0, 8)}...
-              </span>
-            </div>
-          )}
-          
+
           <div className="flex items-center justify-between mt-2">
             <span className="text-xs text-muted-foreground/70">
               {formatDate(conversation.updatedAt)}
@@ -117,18 +110,6 @@ export function ConversationItem({
 
         <div className="opacity-0 group-hover:opacity-100 transition-opacity">
           <div className="flex gap-1">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-6 w-6"
-              onClick={(e) => onToggleFavorite(conversation.id, e)}
-            >
-              {isFavorited ? (
-                <Star className="h-3 w-3 text-yellow-500 fill-current" />
-              ) : (
-                <StarOff className="h-3 w-3" />
-              )}
-            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -141,6 +122,50 @@ export function ConversationItem({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
+                <DropdownMenuItem
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggleFavorite(conversation.id, e);
+                  }}
+                >
+                  {isFavorited ? (
+                    <>
+                      <Star className="h-3 w-3 mr-2 text-yellow-500 fill-current" />
+                      Unfavorite
+                    </>
+                  ) : (
+                    <>
+                      <StarOff className="h-3 w-3 mr-2" />
+                      Favorite
+                    </>
+                  )}
+                </DropdownMenuItem>
+                {/* Category assignment */}
+                {conversation.categoryId && (
+                  <DropdownMenuItem
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setConversationCategory(conversation.id, null);
+                    }}
+                  >
+                    <Tag className="h-3 w-3 mr-2" />
+                    Remove from category
+                  </DropdownMenuItem>
+                )}
+                {categories.length > 0 && <DropdownMenuSeparator />}
+                {categories.map((cat) => (
+                  <DropdownMenuItem
+                    key={cat.id}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setConversationCategory(conversation.id, cat.id);
+                    }}
+                  >
+                    <Tag className="h-3 w-3 mr-2" />
+                    Add to “{cat.name}”
+                  </DropdownMenuItem>
+                ))}
+
                 <DropdownMenuItem
                   onClick={(e) => onDeleteConversation(conversation.id, e)}
                   className="text-destructive hover:text-destructive/80"

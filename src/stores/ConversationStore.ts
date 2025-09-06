@@ -11,6 +11,14 @@ interface ConversationStore {
   pendingUserInput: string | null;
   pendingNewConversation: boolean;
 
+  // Categories
+  categories: { id: string; name: string }[];
+  selectedCategoryId: string | null; // null means "All"
+  addCategory: (name: string) => string;
+  deleteCategory: (categoryId: string) => void;
+  setSelectedCategory: (categoryId: string | null) => void;
+  setConversationCategory: (conversationId: string, categoryId: string | null) => void;
+
   // Conversation management
   createConversation: (title?: string, sessionId?: string) => string;
   createForkConversation: (
@@ -62,6 +70,40 @@ export const useConversationStore = create<ConversationStore>()(
       currentConversationId: null,
       pendingUserInput: null,
       pendingNewConversation: false,
+      categories: [],
+      selectedCategoryId: null,
+
+      addCategory: (name: string) => {
+        const id = `cat-${generateUniqueId()}`;
+        set((state) => ({
+          categories: [{ id, name: name.trim() || "Unnamed" }, ...state.categories],
+        }));
+        return id;
+      },
+
+      deleteCategory: (categoryId: string) => {
+        set((state) => ({
+          categories: state.categories.filter((c) => c.id !== categoryId),
+          // Clear category from conversations that used this category
+          conversations: state.conversations.map((conv) =>
+            conv.categoryId === categoryId ? { ...conv, categoryId: null, updatedAt: Date.now() } : conv,
+          ),
+          // If the deleted category is currently selected, reset to All (null)
+          selectedCategoryId: state.selectedCategoryId === categoryId ? null : state.selectedCategoryId,
+        }));
+      },
+
+      setSelectedCategory: (categoryId: string | null) => {
+        set({ selectedCategoryId: categoryId });
+      },
+
+      setConversationCategory: (conversationId: string, categoryId: string | null) => {
+        set((state) => ({
+          conversations: state.conversations.map((conv) =>
+            conv.id === conversationId ? { ...conv, categoryId, updatedAt: Date.now() } : conv,
+          ),
+        }));
+      },
 
 
       createConversation: (title?: string, sessionId?: string) => {
@@ -89,6 +131,7 @@ export const useConversationStore = create<ConversationStore>()(
           updatedAt: now,
           isFavorite: false,
           projectRealpath: currentFolder || undefined,
+          categoryId: get().selectedCategoryId ?? null,
         };
 
         set((state) => ({
@@ -343,21 +386,40 @@ export const useConversationStore = create<ConversationStore>()(
       },
 
       getCurrentProjectConversations: () => {
-        const { conversations } = get();
+        const { conversations, selectedCategoryId } = get();
         const currentFolder = useFolderStore.getState().currentFolder;
         
-        // Filter conversations that belong to the current project
-        return conversations.filter(conv => 
-          conv.projectRealpath === currentFolder
-        );
+        // Filter conversations that belong to the current project and match selected category (if any)
+        return conversations.filter((conv) => {
+          const inProject = conv.projectRealpath === currentFolder;
+          const inCategory = selectedCategoryId ? conv.categoryId === selectedCategoryId : true;
+          return inProject && inCategory;
+        });
       },
     }),
     {
       name: "conversation-storage", 
-      version: 5,
+      version: 6,
+      migrate: (persisted: any, version) => {
+        if (!persisted) return persisted;
+        if (version < 6) {
+          return {
+            ...persisted,
+            categories: [],
+            selectedCategoryId: null,
+            conversations: (persisted.conversations || []).map((c: any) => ({
+              ...c,
+              categoryId: c?.categoryId ?? null,
+            })),
+          };
+        }
+        return persisted;
+      },
       partialize: (state) => ({
         conversations: state.conversations,
         currentConversationId: state.currentConversationId,
+        categories: state.categories,
+        selectedCategoryId: state.selectedCategoryId,
       }),
     },
   ),
