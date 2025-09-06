@@ -33,13 +33,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const { config, updateConfig } = useCodexStore();
   const {
     getCurrentProjectConversations,
-    currentConversationId,
     addMessage,
     setSessionLoading,
     createConversation,
     pendingNewConversation,
     setPendingNewConversation,
     setCurrentConversation,
+    getCurrentConversation,
   } = useConversationStore();
   
   // Get conversations filtered by current project
@@ -50,11 +50,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   // Simplified: Use session_id to find conversation data
-  // Priority: selectedConversation (from disk/history) > conversations (from store)
+  // Priority: selectedConversation (from disk/history) > store currentConversation (unfiltered)
   const currentConversation =
     selectedConversation ||
-    conversations.find((conv) => conv.id === currentConversationId) ||
-    conversations.find((conv) => conv.id === sessionId);
+    getCurrentConversation();
 
   // Convert conversation messages to chat messages format
   const sessionMessages = currentConversation
@@ -414,7 +413,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           onInputChange={setInputValue}
           onSendMessage={handleSendMessage}
           onStopStreaming={handleStopStreaming}
-          disabled={!!selectedConversation}
+          disabled={!!selectedConversation && !selectedConversation.filePath}
           isLoading={isLoading}
         />
         

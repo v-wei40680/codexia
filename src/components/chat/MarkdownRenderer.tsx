@@ -22,7 +22,7 @@ export const MarkdownRenderer = memo<MarkdownRendererProps>(({
     <div className={`text-sm text-foreground leading-relaxed prose prose-sm ${theme === 'dark' ? 'prose-invert' : ''} max-w-full break-words overflow-hidden ${className}`}>
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[rehypePrism]}
+        rehypePlugins={[[rehypePrism as any, { ignoreMissing: true }]]}
         components={{
           p: ({ children }) => <p className="mb-2 last:mb-0 select-text">{children}</p>,
           
@@ -34,11 +34,12 @@ export const MarkdownRenderer = memo<MarkdownRendererProps>(({
                 </code>
               );
             }
-            return (
-              <code className={`${className} select-text`} {...props}>
-                {children}
-              </code>
-            );
+            // Sanitize unknown/invalid language class names to avoid runtime errors
+            let safeClass = className || '';
+            if (/language-\d+/.test(safeClass) || /language-[^a-z0-9+-]/i.test(safeClass)) {
+              safeClass = '';
+            }
+            return <code className={`${safeClass} select-text`} {...props}>{children}</code>;
           },
           
           pre: ({ children }) => (

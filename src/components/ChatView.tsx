@@ -3,6 +3,10 @@ import { ChatInterface } from "./chat/ChatInterface";
 import { ConversationTabs } from "@/components/chat/ConversationTabs";
 import { useConversationStore } from "@/stores/ConversationStore";
 import type { Conversation } from "@/types/chat";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { invoke } from "@tauri-apps/api/core";
+import { useFolderStore } from "@/stores/FolderStore";
 
 interface ChatViewProps {
   selectedConversation?: Conversation | null;
@@ -25,6 +29,10 @@ export const ChatView: React.FC<ChatViewProps> = ({ selectedConversation, showCh
 
   const [searchQuery, setSearchQuery] = useState("");
   const [internalSelectedConversation, setInternalSelectedConversation] = useState<Conversation | null>(null);
+  const [resumeOpen, setResumeOpen] = useState(false);
+  const [resumeCandidates, setResumeCandidates] = useState<Conversation[]>([]);
+  const [resumeLoading, setResumeLoading] = useState(false);
+  const [resumeOnlyProject, setResumeOnlyProject] = useState(true);
 
   // Generate favorite statuses from the persisted store data
   const favoriteStatuses = useMemo(() => {
@@ -94,18 +102,119 @@ export const ChatView: React.FC<ChatViewProps> = ({ selectedConversation, showCh
 
   if (showChatTabs) {
     return (
-      <ConversationTabs
-        favoriteStatuses={favoriteStatuses}
-        activeConversations={activeConversations}
-        currentConversationId={currentConversationId}
-        activeSessionId={currentConversationId || ''}
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        onSelectConversation={handleConversationSelect}
-        onToggleFavorite={handleToggleFavorite}
-        onDeleteConversation={handleDeleteConversation}
-        onSelectSession={handleSelectSession}
-      />
+      <div className="flex flex-col h-full">
+        <div className="flex items-center justify-between px-2 py-1">
+          <div className="text-xs text-muted-foreground">Sessions</div>
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={async () => {
+                try {
+                  setResumeLoading(true);
+                  const list = (await invoke<Conversation[]>("load_sessions_from_disk")) || [];
+                  console.log("[Resume] loaded sessions from disk:", list.length, list);
+                  const normalize = (p?: string | null) => {
+                    if (!p) return p || '';
+                    return p.endsWith('/') ? p.slice(0, -1) : p;
+                  };
+                  const project = normalize(useFolderStore.getState().currentFolder || '');
+                  console.log("[Resume] current project:", project);
+                  const annotated = list.map((c) => ({
+                    id: c.id,
+                    title: c.title,
+                    filePath: (c as any).filePath,
+                    projectRealpath: (c as any).projectRealpath,
+                  }));
+                  console.log("[Resume] candidates (id,title,file,project):", annotated);
+                  const filtered = resumeOnlyProject && project
+                    ? list.filter((c) => {
+                        const pr = normalize((c as any).projectRealpath || '');
+                        const match = pr === project;
+                        if (!match) {
+                          console.log("[Resume] filtered out (project mismatch)", { id: c.id, pr, project });
+                        }
+                        return match;
+                      })
+                    : list;
+                  console.log("[Resume] filtered count:", filtered.length);
+                  setResumeCandidates(filtered);
+                  setResumeOpen(true);
+                } catch (e) {
+                  console.error("Failed to load sessions:", e);
+                } finally {
+                  setResumeLoading(false);
+                }
+              }}
+            >
+              {resumeLoading ? "Loading…" : "Resume…"}
+            </Button>
+          </div>
+        </div>
+        <ConversationTabs
+          favoriteStatuses={favoriteStatuses}
+          activeConversations={activeConversations}
+          currentConversationId={currentConversationId}
+          activeSessionId={currentConversationId || ''}
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          onSelectConversation={handleConversationSelect}
+          onToggleFavorite={handleToggleFavorite}
+          onDeleteConversation={handleDeleteConversation}
+          onSelectSession={handleSelectSession}
+        />
+
+        <Dialog open={resumeOpen} onOpenChange={setResumeOpen}>
+          <DialogContent className="max-w-xl">
+            <DialogHeader>
+              <div className="flex items-center justify-between gap-2">
+                <DialogTitle>Resume a previous session</DialogTitle>
+                <label className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <input
+                    type="checkbox"
+                    checked={resumeOnlyProject}
+                    onChange={(e) => setResumeOnlyProject(e.target.checked)}
+                  />
+                  Only current project
+                </label>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Current project: {useFolderStore.getState().currentFolder || '(none)'}
+              </div>
+            </DialogHeader>
+            <div className="max-h-80 overflow-y-auto divide-y rounded border">
+              {resumeCandidates.length === 0 ? (
+                <div className="p-4 text-sm text-muted-foreground">
+                  No recorded sessions {resumeOnlyProject ? 'for this project' : ''}.
+                  {resumeOnlyProject && (
+                    <button
+                      className="ml-2 underline hover:no-underline"
+                      onClick={() => setResumeOnlyProject(false)}
+                    >
+                      Show all
+                    </button>
+                  )}
+                </div>
+              ) : (
+                resumeCandidates.map((c) => (
+                  <button
+                    key={c.id + (c.filePath || "")}
+                    className="w-full text-left p-3 hover:bg-accent"
+                    onClick={() => {
+                      // Route through existing handler which also sets resumePath via store
+                      handleConversationSelect(c);
+                      setResumeOpen(false);
+                    }}
+                  >
+                    <div className="text-sm font-medium truncate">{c.title}</div>
+                    <div className="text-xs text-muted-foreground truncate">{c.projectRealpath || "(unknown project)"}</div>
+                  </button>
+                ))
+              )}
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
     );
   }
 

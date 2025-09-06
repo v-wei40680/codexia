@@ -33,6 +33,7 @@ interface ConversationStore {
   setSessionLoading: (sessionId: string, loading: boolean) => void;
   setPendingNewConversation: (pending: boolean) => void;
   setForkMetaApplied: (conversationId: string) => void;
+  setResumeMeta: (conversationId: string, meta: { codexSessionId?: string; resumePath?: string }) => void;
 
   // Message management
   addMessage: (conversationId: string, message: ChatMessage) => void;
@@ -148,13 +149,22 @@ export const useConversationStore = create<ConversationStore>()(
       },
 
 
-      // Select conversation from history (disk) - simplified for session_id only
+      // Select a conversation imported from disk history (jsonl rollout)
+      // Ensure it exists in the store and mark resume metadata so ChatInterface can resume
       selectHistoryConversation: (conversation: Conversation) => {
-        set(() => {
-          console.log(`📁 selectHistoryConversation: ${conversation.id} (${conversation.title})`);
-          // Simply set the current conversation ID - no need to merge into store
-          // The selectedConversation prop will handle displaying the data
+        set((state) => {
+          const exists = state.conversations.some((c) => c.id === conversation.id);
+          const resumePath = conversation.filePath;
+          const updated: Conversation = {
+            ...conversation,
+            // Map filePath into resume meta for backend resume
+            ...(resumePath ? { resumePath } as any : {}),
+          } as Conversation;
+
           return {
+            conversations: exists
+              ? state.conversations.map((c) => (c.id === updated.id ? { ...c, ...updated } : c))
+              : [updated, ...state.conversations],
             currentConversationId: conversation.id,
           };
         });
@@ -231,6 +241,21 @@ export const useConversationStore = create<ConversationStore>()(
                   forkMeta: conv.forkMeta
                     ? { ...conv.forkMeta, applied: true }
                     : conv.forkMeta,
+                  updatedAt: Date.now(),
+                }
+              : conv,
+          ),
+        }));
+      },
+
+      setResumeMeta: (conversationId: string, meta: { codexSessionId?: string; resumePath?: string }) => {
+        set((state) => ({
+          conversations: state.conversations.map((conv) =>
+            conv.id === conversationId
+              ? {
+                  ...conv,
+                  codexSessionId: meta.codexSessionId ?? conv.codexSessionId,
+                  resumePath: meta.resumePath ?? conv.resumePath,
                   updatedAt: Date.now(),
                 }
               : conv,

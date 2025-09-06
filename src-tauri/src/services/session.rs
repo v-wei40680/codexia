@@ -25,6 +25,8 @@ pub struct Conversation {
     pub is_favorite: bool,
     #[serde(rename = "filePath")]
     pub file_path: Option<String>,
+    #[serde(rename = "projectRealpath")]
+    pub project_realpath: Option<String>,
 }
 
 #[derive(Debug, Deserialize)]
@@ -46,6 +48,7 @@ pub fn parse_session_file(content: &str, file_path: &Path) -> Option<Conversatio
     let mut session_id = None;
     let mut session_timestamp = None;
     let mut messages = Vec::new();
+    let mut project_realpath: Option<String> = None;
 
     for line in &lines {
         if let Ok(record) = serde_json::from_str::<SessionRecord>(line) {
@@ -85,8 +88,25 @@ pub fn parse_session_file(content: &str, file_path: &Path) -> Option<Conversatio
                     String::new()
                 };
 
+                // Capture project cwd from environment_context (may be recorded as user message)
+                if project_realpath.is_none() {
+                    if content_text.contains("<environment_context>") && content_text.contains("<cwd>") {
+                        if let (Some(start), Some(end)) = (content_text.find("<cwd>"), content_text.find("</cwd>")) {
+                            if end > start + 5 {
+                                let start_idx = start + 5;
+                                let cwd = content_text[start_idx..end].trim();
+                                if !cwd.is_empty() {
+                                    project_realpath = Some(cwd.to_string());
+                                }
+                            }
+                        }
+                    }
+                }
+
                 if !content_text.trim().is_empty() {
-                    // Don't filter environment_context messages - let frontend handle them
+                    // Filter out meta/system blocks from transcript rendering, but still use them to extract metadata
+                    let is_meta_block = content_text.contains("<user_instructions>")
+                        || content_text.contains("<environment_context>");
 
                     let timestamp = if let Some(ts) = &session_timestamp {
                         chrono::DateTime::parse_from_rfc3339(ts)
@@ -96,17 +116,19 @@ pub fn parse_session_file(content: &str, file_path: &Path) -> Option<Conversatio
                         chrono::Utc::now().timestamp_millis()
                     };
 
-                    messages.push(ChatMessage {
-                        id: format!(
-                            "{}-{}-{}",
-                            session_id.as_ref().unwrap_or(&"unknown".to_string()),
+                    if !is_meta_block {
+                        messages.push(ChatMessage {
+                            id: format!(
+                                "{}-{}-{}",
+                                session_id.as_ref().unwrap_or(&"unknown".to_string()),
+                                role,
+                                timestamp
+                            ),
                             role,
-                            timestamp
-                        ),
-                        role,
-                        content: content_text.trim().to_string(),
-                        timestamp,
-                    });
+                            content: content_text.trim().to_string(),
+                            timestamp,
+                        });
+                    }
                 }
             }
         }
@@ -153,7 +175,7 @@ pub fn parse_session_file(content: &str, file_path: &Path) -> Option<Conversatio
                 format!("codex-event-{}", id)
             };
 
-            return Some(Conversation {
+            let convo = Conversation {
                 id: full_session_id,
                 title,
                 messages,
@@ -162,7 +184,16 @@ pub fn parse_session_file(content: &str, file_path: &Path) -> Option<Conversatio
                 updated_at: timestamp,
                 is_favorite: false,
                 file_path: file_path_str,
-            });
+                project_realpath,
+            };
+            log::debug!(
+                "Parsed session file: {:?} -> id={}, project={:?}, messages={}",
+                file_path,
+                convo.id,
+                convo.project_realpath,
+                convo.messages.len()
+            );
+            return Some(convo);
         }
     }
 

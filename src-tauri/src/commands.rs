@@ -156,3 +156,35 @@ pub async fn read_history_file() -> Result<String, String> {
 
     fs::read_to_string(&history_path).map_err(|e| format!("Failed to read history file: {}", e))
 }
+
+#[tauri::command]
+pub async fn find_rollout_path_for_session(session_uuid: String) -> Result<Option<String>, String> {
+    let home = dirs::home_dir().ok_or("Could not find home directory")?;
+    let sessions_dir = home.join(".codex").join("sessions");
+    if !sessions_dir.exists() {
+        return Ok(None);
+    }
+
+    // Walk recursively year/month/day and find file ending with -<uuid>.jsonl
+    let needle = format!("-{}.jsonl", session_uuid);
+    let mut stack = vec![sessions_dir];
+    while let Some(dir) = stack.pop() {
+        if let Ok(entries) = std::fs::read_dir(&dir) {
+            for entry in entries.flatten() {
+                let path = entry.path();
+                if let Ok(ft) = entry.file_type() {
+                    if ft.is_dir() {
+                        stack.push(path);
+                    } else if ft.is_file() {
+                        if let Some(name) = path.file_name().and_then(|s| s.to_str()) {
+                            if name.ends_with(&needle) {
+                                return Ok(Some(path.to_string_lossy().to_string()));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    Ok(None)
+}

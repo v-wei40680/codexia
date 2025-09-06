@@ -41,6 +41,9 @@ export interface Conversation {
   filePath?: string;
   isLoading?: boolean;
   projectRealpath?: string;
+  // Backend session correlation and resume
+  codexSessionId?: string; // UUID from SessionConfigured
+  resumePath?: string; // Path to rollout jsonl for resume
   // Fork metadata for branching conversations
   forkMeta?: {
     fromConversationId: string;

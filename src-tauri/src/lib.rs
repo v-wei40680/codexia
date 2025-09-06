@@ -10,8 +10,9 @@ mod utils;
 
 use commands::{
     approve_execution, approve_patch, check_codex_version, close_session, delete_session_file,
-    get_latest_session_id, get_running_sessions, get_session_files, load_sessions_from_disk,
-    pause_session, read_history_file, read_session_file, send_message, start_codex_session,
+    find_rollout_path_for_session, get_latest_session_id, get_running_sessions, get_session_files,
+    load_sessions_from_disk, pause_session, read_history_file, read_session_file, send_message,
+    start_codex_session,
 };
 use config::{
     add_or_update_model_provider, add_or_update_profile, delete_profile, ensure_default_providers,
@@ -68,6 +69,7 @@ pub fn run() {
             get_session_files,
             read_session_file,
             read_history_file,
+            find_rollout_path_for_session,
             check_codex_version,
             read_directory,
             get_default_directories,

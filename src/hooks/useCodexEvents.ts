@@ -5,6 +5,7 @@ import { useConversationStore } from '../stores/ConversationStore';
 import { StreamController, StreamControllerSink } from '@/utils/streamController';
 import { generateUniqueId } from '@/utils/genUniqueId';
 import { ChatMessage } from '@/types/chat';
+import { invoke } from '@tauri-apps/api/core';
 
 interface UseCodexEventsProps {
   sessionId: string;
@@ -15,7 +16,7 @@ export const useCodexEvents = ({
   sessionId,
   onStopStreaming
 }: UseCodexEventsProps) => {
-  const { addMessage, updateMessage, setSessionLoading, createConversation, conversations } = useConversationStore();
+  const { addMessage, updateMessage, setSessionLoading, createConversation, conversations, setResumeMeta } = useConversationStore();
   const streamController = useRef<StreamController>(new StreamController());
   const currentStreamingMessageId = useRef<string | null>(null);
   const currentCommandMessageId = useRef<string | null>(null);
@@ -85,9 +86,24 @@ export const useCodexEvents = ({
     const { msg } = event;
     
     switch (msg.type) {
-      case 'session_configured':
-        // Session is now configured and ready
+      case 'session_configured': {
+        // Store backend session UUID and try to discover rollout path for resume
+        const backendSessionId = (msg as any).session_id as string;
+        if (backendSessionId) {
+          setResumeMeta(sessionId, { codexSessionId: backendSessionId });
+          // Ask backend to find the rollout path for this session UUID
+          // We do not block UI if it fails
+          // Use static import to avoid Vite dynamic import mixing warning
+          invoke<string | null>('find_rollout_path_for_session', { sessionUuid: backendSessionId })
+            .then((path) => {
+              if (path) {
+                setResumeMeta(sessionId, { resumePath: path });
+              }
+            })
+            .catch(() => {});
+        }
         break;
+      }
         
       case 'task_started':
         setSessionLoading(sessionId, true);

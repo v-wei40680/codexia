@@ -2,6 +2,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { CodexConfig } from '@/types/codex';
 import { useFolderStore } from '@/stores/FolderStore';
 import { useProvidersStore } from '@/stores/ProvidersStore';
+import { useConversationStore } from '@/stores/ConversationStore';
 
 class SessionManager {
   private sessionConfigs: Map<string, CodexConfig> = new Map();
@@ -33,6 +34,10 @@ class SessionManager {
       console.log(`🔑 API key debug - Provider: ${config.provider}, Has API key: ${!!apiKey}, Length: ${apiKey?.length || 0}`);
 
       // Start the session (backend will check if already exists)
+      // If this conversation has a resume path, include it
+      const conv = useConversationStore.getState().conversations.find(c => c.id === sessionId);
+      const resumePath = conv?.resumePath || null;
+
       await invoke('start_codex_session', {
         sessionId: rawSessionId,
         config: {
@@ -45,6 +50,7 @@ class SessionManager {
           sandbox_mode: config.sandboxMode,
           api_key: apiKey,
           reasoning_effort: config.reasoningEffort,
+          resume_path: resumePath,
         },
       });
 

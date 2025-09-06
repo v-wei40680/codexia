@@ -214,6 +214,14 @@ impl CommandBuilder {
         // This is required for agent_message_delta events to be generated
         cmd.arg("-c").arg("show_raw_agent_reasoning=true");
 
+        // Resume from prior rollout file if provided
+        if let Some(resume_path) = &config.resume_path {
+            if !resume_path.is_empty() {
+                let normalized = resume_path.replace('\\', "/");
+                cmd.arg("-c").arg(format!("experimental_resume=\"{}\"", normalized));
+            }
+        }
+
         // Set working directory for the process
         if !config.working_directory.is_empty() {
             log::debug!("working_directory: {:?}", config.working_directory);
