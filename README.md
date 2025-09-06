@@ -13,7 +13,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/milisp/codexia/actions/workflows/ci.yml/badge.svg)](https://github.com/milisp/codexia/actions/workflows/ci.yml)
 
-🚀 The missing GUI/IDE for the [Codex CLI](https://github.com/openai/codex) — multi-session chat, live streaming responses, file-tree integration, notepad, and git diff support.
+🚀 The missing GUI/IDE for the [Codex CLI](https://github.com/openai/codex) — fork chat, live streaming responses, file-tree integration, notepad, and git diff support
 Cross-platform desktop app built with Tauri v2 + React + TypeScript.
 
 > [!TIP]
@@ -29,6 +29,7 @@ Codexia is an independent open-source project and is not built by OpenAI or any 
 
 ## News
 
+- [2025-09-05] fork chat(preview)
 - [2025-09-03] show the plan message
 - [2025-08-29] support image input, codexia can read image now
 
@@ -46,21 +47,28 @@ Codexia is an independent open-source project and is not built by OpenAI or any 
 - No more waiting for complete responses - see results as they appear
 - Visual indicators for active generation and thinking states
 
+### Build-in Mutil file format support
+
+- pdf - select text from pdf
+- csv, xlsx - preview and select text
+
 ### ⚙️ **Flexible Configuration**
 - Support for multiple AI providers (OpenAI, OSS via Ollama, Custom)
-- Configurable models per session (GPT, Claude, Llama, etc.)
+- Configurable models per session (GPT, Llama, etc.)
 - Adjustable sandbox policies (read-only, workspace-write, full-access)
 - Customizable approval policies for command execution
 - Working directory selection for each session
 
 ### 🎯 **Professional UX**
 - Clean, responsive interface built with shadcn/ui components
-- Session management sidebar with visual status indicators
-- Configuration panel with live preview
-- Debug panel for monitoring session states
-- **Notepad-chat integration** for seamless note-taking during conversations
+- Configuration panel
+- **Notepad-chat integration** for seamless note-taking and send back during conversations
 - **Enhanced markdown rendering** with syntax highlighting for code blocks
+- **Todo list** Plan Display
+- Screenshot as image input
+- fork chat
 - Persistent UI state and preferences
+- **WebPreview** Click WebPreview icon Auto detect web port to show WebPreview, eg. Next.js project will show WebPreview `http://localhost:3000`
 
 ### 🛡️ **Security & Control**
 - Sandbox execution modes for safe code running
@@ -91,10 +99,6 @@ Codexia is an independent open-source project and is not built by OpenAI or any 
    ```bash
    bun tauri dev
    ```
-
-### Before building
-
-[auth-codexia](docs/auth-codexia.md)
 
 ### Building for Production
 

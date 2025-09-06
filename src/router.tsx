@@ -33,6 +33,10 @@ function RequireAuth() {
     return <Outlet />;
   }
 
+  if (!import.meta.env.EnableAuth) {
+    return <Outlet />;
+  }
+
   if (loading) {
     return null;
   }

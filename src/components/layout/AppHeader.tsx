@@ -114,19 +114,23 @@ export function AppHeader() {
           Settings
         </Link>
 
-        {user?.user_metadata.avatar_url ? (
-          <img
-            src={user.user_metadata.avatar_url}
-            className="rounded-full w-6 h-6"
-          />
-        ) : (
-          <Link
-            to="/login"
-            className="flex hover:text-primary items-center gap-1 px-2"
-          >
-            login
-          </Link>
-        )}
+        {import.meta.env.EnableAuth &&
+          <>
+          {user?.user_metadata.avatar_url ? (
+            <img
+              src={user.user_metadata.avatar_url}
+              className="rounded-full w-6 h-6"
+            />
+          ) : (
+            <Link
+              to="/login"
+              className="flex hover:text-primary items-center gap-1 px-2"
+            >
+              login
+            </Link>
+          )}
+          </>
+        }
       </span>
     </div>
   );
