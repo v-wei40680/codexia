@@ -1,9 +1,9 @@
 use anyhow::Result;
 use std::collections::HashMap;
 use std::process::Stdio;
+use tokio::io::AsyncWriteExt;
 use tokio::process::{Child, Command};
 use tokio::sync::mpsc;
-use tokio::io::AsyncWriteExt;
 
 use crate::protocol::CodexConfig;
 
@@ -33,7 +33,7 @@ impl ProcessManager {
 
         // Give the process a moment to start up and check if it's still running
         tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
-        
+
         if let Ok(Some(exit_status)) = process.try_wait() {
             return Err(anyhow::anyhow!(
                 "Codex process exited immediately with status: {}. Check if the command and arguments are correct.", 

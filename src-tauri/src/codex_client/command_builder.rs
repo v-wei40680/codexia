@@ -10,10 +10,7 @@ pub struct CommandBuilder;
 
 impl CommandBuilder {
     pub async fn build_command(config: &CodexConfig) -> Result<(Command, HashMap<String, String>)> {
-        log::debug!(
-            "Building codex command for config: {:?}",
-            config
-        );
+        log::debug!("Building codex command for config: {:?}", config);
 
         // Build codex command based on configuration
         let (command, args): (String, Vec<String>) =
@@ -58,7 +55,7 @@ impl CommandBuilder {
         if let Some(api_key) = &config.api_key {
             if !api_key.is_empty() {
                 log::debug!("API key provided, length: {}", api_key.len());
-                
+
                 // Try to get the env_key from provider configuration first
                 if let Ok(providers) = read_model_providers().await {
                     log::debug!(
@@ -111,11 +108,11 @@ impl CommandBuilder {
     async fn configure_provider(cmd: &mut Command, config: &CodexConfig) -> Result<()> {
         // Handle provider configuration
         if !config.provider.is_empty() && config.provider != "openai" {
-            // Special case for ollama - use model_provider=oss config instead of --oss flag 
+            // Special case for ollama - use model_provider=oss config instead of --oss flag
             // because --oss is not available for proto subcommand
             if config.provider.to_lowercase() == "ollama" {
                 cmd.arg("-c").arg("model_provider=oss");
-                
+
                 // Still set model if specified
                 if !config.model.is_empty() {
                     cmd.arg("-c").arg(format!("model={}", config.model));
@@ -132,9 +129,12 @@ impl CommandBuilder {
                         if let Some((provider_key, provider_config)) = providers
                             .get(&config.provider)
                             .map(|p| (config.provider.clone(), p))
-                            .or_else(|| providers
-                                .get(&config.provider.to_lowercase())
-                                .map(|p| (config.provider.to_lowercase(), p))) {
+                            .or_else(|| {
+                                providers
+                                    .get(&config.provider.to_lowercase())
+                                    .map(|p| (config.provider.to_lowercase(), p))
+                            })
+                        {
                             // Set model provider based on config - use the key (which should be lowercase)
                             cmd.arg("-c")
                                 .arg(format!("model_provider={}", provider_key.to_lowercase()));
@@ -180,7 +180,8 @@ impl CommandBuilder {
                 cmd.arg("-c").arg(format!("model={}", config.model));
             }
         }
-        cmd.arg("-c").arg(format!("model_reasoning_summary={}", "auto"));
+        cmd.arg("-c")
+            .arg(format!("model_reasoning_summary={}", "auto"));
 
         Ok(())
     }
@@ -216,7 +217,8 @@ impl CommandBuilder {
         // Set working directory for the process
         if !config.working_directory.is_empty() {
             log::debug!("working_directory: {:?}", config.working_directory);
-            cmd.arg("-c").arg(format!("cwd={}", config.working_directory));
+            cmd.arg("-c")
+                .arg(format!("cwd={}", config.working_directory));
         }
 
         // Add custom arguments

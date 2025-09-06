@@ -46,6 +46,13 @@ export default function SettingsSidebar({
       >
         Logo Settings
       </Button>
+      <Button
+        variant={activeSection === "updates" ? "default" : "ghost"}
+        className="w-full justify-start"
+        onClick={() => onSectionChange("updates")}
+      >
+        Updates
+      </Button>
     </div>
   );
 }

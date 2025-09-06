@@ -15,7 +15,9 @@ fn get_platform_binary_name() -> &'static str {
 
 pub fn discover_codex_command() -> Option<PathBuf> {
     let home = if cfg!(windows) {
-        std::env::var("USERPROFILE").or_else(|_| std::env::var("HOME")).unwrap_or_default()
+        std::env::var("USERPROFILE")
+            .or_else(|_| std::env::var("HOME"))
+            .unwrap_or_default()
     } else {
         std::env::var("HOME").unwrap_or_default()
     };
@@ -35,9 +37,13 @@ pub fn discover_codex_command() -> Option<PathBuf> {
     // First priority: Check actual binary locations in node_modules
     let binary_locations = [
         // Bun global installation
-        PathBuf::from(&home).join(".bun/install/global/node_modules/@openai/codex/bin").join(binary_name),
+        PathBuf::from(&home)
+            .join(".bun/install/global/node_modules/@openai/codex/bin")
+            .join(binary_name),
         // NPM rootless (user) global installation
-        PathBuf::from(&home).join(".local/share/npm/lib/node_modules/@openai/codex/bin").join(binary_name),
+        PathBuf::from(&home)
+            .join(".local/share/npm/lib/node_modules/@openai/codex/bin")
+            .join(binary_name),
         // NPM global installations
         PathBuf::from("/usr/local/lib/node_modules/@openai/codex/bin").join(binary_name),
         PathBuf::from("/opt/homebrew/lib/node_modules/@openai/codex/bin").join(binary_name),
@@ -123,7 +129,10 @@ pub fn discover_codex_command() -> Option<PathBuf> {
             }
         }
         if let Some(wrapper) = wrapper_candidate {
-            log::debug!("Using wrapper codex from PATH at {} as fallback", wrapper.display());
+            log::debug!(
+                "Using wrapper codex from PATH at {} as fallback",
+                wrapper.display()
+            );
             return Some(wrapper);
         }
     }

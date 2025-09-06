@@ -10,6 +10,9 @@ env:
   VITE_REDIRECT_URL: ${{ secrets.VITE_REDIRECT_URL }}
   VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
   VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+  TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+  TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+  TAURI_BUNDLE: all
 
 jobs:
   build:
@@ -78,6 +81,35 @@ jobs:
         with:
           name: ${{ matrix.platform.artifact-name }}
           path: ${{ matrix.platform.artifact-path }}
+
+      - name: Generate updater manifest
+        if: startsWith(github.ref, 'refs/tags/v') && runner.os == 'Linux'
+        run: |
+          TAG_NAME=${GITHUB_REF#refs/tags/}
+          
+          LINUX_SIG_FILE=$(find tauri-app/src-tauri/target/x86_64-unknown-linux-gnu/release/bundle -name "*.AppImage.tar.gz.sig" | head -1)
+          LINUX_SIG=""
+          if [ -f "$LINUX_SIG_FILE" ]; then
+            LINUX_SIG=$(cat "$LINUX_SIG_FILE")
+          fi
+          
+          cat > updater.json << EOF
+          {
+            "version": "$TAG_NAME",
+            "notes": "Update to version $TAG_NAME",
+            "pub_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+            "platforms": {
+              "linux-x86_64": {
+                "signature": "$LINUX_SIG",
+                "url": "https://github.com/milisp/codexia/releases/download/$TAG_NAME/linux-x64.AppImage.tar.gz"
+              },
+              "windows-x86_64": {
+                "signature": "",
+                "url": "https://github.com/milisp/codexia/releases/download/$TAG_NAME/Windows_x64.msi.zip"
+              }
+            }
+          }
+          EOF
 
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v2

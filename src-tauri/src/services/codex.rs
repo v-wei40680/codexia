@@ -33,7 +33,10 @@ pub async fn start_codex_session(
         sessions.insert(session_id.clone(), codex_client);
         log::debug!("Session {} stored successfully", session_id);
         log::debug!("Total sessions now: {}", sessions.len());
-        log::debug!("All session keys: {:?}", sessions.keys().collect::<Vec<_>>());
+        log::debug!(
+            "All session keys: {:?}",
+            sessions.keys().collect::<Vec<_>>()
+        );
     }
     Ok(())
 }
@@ -54,7 +57,6 @@ pub async fn send_message(
         Err("Session not found".to_string())
     }
 }
-
 
 pub async fn approve_execution(
     state: State<'_, CodexState>,
@@ -82,7 +84,9 @@ pub async fn approve_patch(
 ) -> Result<(), String> {
     log::debug!(
         "approve_patch: session_id={}, approval_id={}, approved={}",
-        session_id, approval_id, approved
+        session_id,
+        approval_id,
+        approved
     );
     let mut sessions = state.sessions.lock().await;
     if let Some(client) = sessions.get_mut(&session_id) {
@@ -95,7 +99,6 @@ pub async fn approve_patch(
         Err("Session not found".to_string())
     }
 }
-
 
 pub async fn pause_session(state: State<'_, CodexState>, session_id: String) -> Result<(), String> {
     let sessions = state.sessions.lock().await;
@@ -135,7 +138,10 @@ pub async fn get_running_sessions(state: State<'_, CodexState>) -> Result<Vec<St
     let session_keys: Vec<String> = sessions.keys().cloned().collect();
 
     // Debug log to see what sessions are actually stored
-    log::debug!("get_running_sessions called - stored sessions: {:?}", session_keys);
+    log::debug!(
+        "get_running_sessions called - stored sessions: {:?}",
+        session_keys
+    );
 
     Ok(session_keys)
 }

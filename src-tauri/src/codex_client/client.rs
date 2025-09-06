@@ -5,7 +5,7 @@ use uuid::Uuid;
 
 use crate::protocol::{CodexConfig, InputItem, Op, Submission};
 
-use super::{CommandBuilder, ProcessManager, EventHandler};
+use super::{CommandBuilder, EventHandler, ProcessManager};
 
 pub struct CodexClient {
     #[allow(dead_code)]
@@ -67,7 +67,6 @@ impl CodexClient {
         self.send_submission(submission).await
     }
 
-
     pub async fn send_exec_approval(&self, approval_id: String, approved: bool) -> Result<()> {
         let decision = if approved { "approved" } else { "denied" }.to_string();
 
@@ -97,11 +96,16 @@ impl CodexClient {
         self.send_submission(submission).await
     }
 
-    pub async fn send_apply_patch_approval(&self, approval_id: String, approved: bool) -> Result<()> {
+    pub async fn send_apply_patch_approval(
+        &self,
+        approval_id: String,
+        approved: bool,
+    ) -> Result<()> {
         let decision = if approved { "approved" } else { "denied" }.to_string();
         log::debug!(
             "📤 Sending apply_patch approval: id={}, decision={}",
-            approval_id, decision
+            approval_id,
+            decision
         );
 
         let submission = Submission {

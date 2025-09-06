@@ -61,12 +61,18 @@ pub enum SandboxPolicy {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum InputItem {
-    Text { text: String },
+    Text {
+        text: String,
+    },
     /// Pre‑encoded data: URI image.
-    Image { image_url: String },
+    Image {
+        image_url: String,
+    },
     /// Local image path provided by the user. This will be converted to an
     /// `Image` variant (base64 data URL) during request serialization.
-    LocalImage { path: std::path::PathBuf },
+    LocalImage {
+        path: std::path::PathBuf,
+    },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

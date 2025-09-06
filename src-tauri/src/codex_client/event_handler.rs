@@ -45,28 +45,32 @@ impl EventHandler {
                     match serde_json::from_str::<serde_json::Value>(&line) {
                         Ok(json_value) => {
                             log::debug!("📨 Parsed raw JSON event: {:?}", json_value);
-                            
+
                             // Emit raw JSON event with a wrapper structure
                             let raw_event = serde_json::json!({
                                 "type": "raw_event",
                                 "session_id": session_id,
                                 "data": json_value
                             });
-                            
+
                             if let Err(e) = app.emit("codex-raw-events", &raw_event) {
                                 log::error!("Failed to emit raw event: {}", e);
                             }
                         }
                         Err(e) => {
-                            log::warn!("Failed to parse codex output as JSON: {} - Line: {}", e, line);
-                            
+                            log::warn!(
+                                "Failed to parse codex output as JSON: {} - Line: {}",
+                                e,
+                                line
+                            );
+
                             // Emit as plain text event for debugging
                             let text_event = serde_json::json!({
                                 "type": "text_output",
                                 "session_id": session_id,
                                 "content": line
                             });
-                            
+
                             if let Err(e) = app.emit("codex-text-output", &text_event) {
                                 log::error!("Failed to emit text event: {}", e);
                             }
@@ -117,7 +121,9 @@ impl EventHandler {
 
     fn get_session_id_from_event(event: &Event) -> Option<String> {
         match &event.msg {
-            crate::protocol::EventMsg::SessionConfigured { session_id, .. } => Some(session_id.clone()),
+            crate::protocol::EventMsg::SessionConfigured { session_id, .. } => {
+                Some(session_id.clone())
+            }
             _ => None,
         }
     }
