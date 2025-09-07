@@ -13,6 +13,7 @@ import { useCodexEvents } from "../../hooks/useCodexEvents";
 import { ReasoningEffortSelector } from './ReasoningEffortSelector';
 import { Sandbox } from "./Sandbox";
 import { generateUniqueId } from "@/utils/genUniqueId";
+import { ForkOriginBanner } from './ForkOriginBanner';
 
 interface ChatInterfaceProps {
   sessionId: string;
@@ -412,6 +413,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   return (
     <div className="flex h-full min-h-0">
       <div className="flex flex-col flex-1 min-h-0 min-w-0">
+        {currentConversation?.forkMeta && (
+          <ForkOriginBanner
+            fromConversationId={currentConversation.forkMeta.fromConversationId}
+            parentMessageId={currentConversation.forkMeta.parentMessageId}
+          />
+        )}
         <MessageList
           messages={messages}
           isLoading={isLoading}

@@ -156,16 +156,9 @@ export const useConversationStore = create<ConversationStore>()(
         const currentFolder = useFolderStore.getState().currentFolder;
 
         const forkTitle = title || `Fork: ${generateTitle(history)}`;
-        // Seed the forked conversation with a visible copy of prior messages
-        // plus a small system banner so users know it’s a forked view.
-        const forkBanner: ChatMessage = {
-          id: `${id}-fork-${generateUniqueId()}`,
-          role: 'system',
-          content: `Forked from ${fromConversationId} at message ${parentMessageId}`,
-          timestamp: now,
-        };
-
-        const seededMessages: ChatMessage[] = [forkBanner, ...history];
+        // Do not add a system banner message for forks.
+        // Keep prior history visible in the fork for context only.
+        const seededMessages: ChatMessage[] = [...history];
 
         const newConversation: Conversation = {
           id,
