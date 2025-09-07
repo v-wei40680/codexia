@@ -47,6 +47,7 @@ interface ConversationStore {
   addMessage: (conversationId: string, message: ChatMessage) => void;
   updateMessage: (conversationId: string, messageId: string, updates: Partial<ChatMessage>) => void;
   updateLastMessage: (conversationId: string, content: string) => void;
+  truncateMessagesFrom: (conversationId: string, fromMessageId: string) => void;
 
   // Getters
   getCurrentConversation: () => Conversation | null;
@@ -368,6 +369,22 @@ export const useConversationStore = create<ConversationStore>()(
               };
             }
             return conv;
+          }),
+        }));
+      },
+
+      // Remove a message and everything after it (used for edit-resend)
+      truncateMessagesFrom: (conversationId: string, fromMessageId: string) => {
+        set((state) => ({
+          conversations: state.conversations.map((conv) => {
+            if (conv.id !== conversationId) return conv;
+            const idx = conv.messages.findIndex((m) => m.id === fromMessageId);
+            if (idx === -1) return conv;
+            return {
+              ...conv,
+              messages: conv.messages.slice(0, idx),
+              updatedAt: Date.now(),
+            };
           }),
         }));
       },

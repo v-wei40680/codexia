@@ -38,6 +38,11 @@ interface ChatInputStore {
   focusSignal: number;
   requestFocus: () => void;
   
+  // Edit & resend target
+  editingTarget: { conversationId: string; messageId: string } | null;
+  setEditingTarget: (conversationId: string, messageId: string) => void;
+  clearEditingTarget: () => void;
+
   // Clear all
   clearAll: () => void;
   
@@ -55,6 +60,7 @@ export const useChatInputStore = create<ChatInputStore>()(
       
       // Focus control (increments to trigger effects)
       focusSignal: 0,
+      editingTarget: null,
 
       // File reference actions
       addFileReference: (path: string, relativePath: string, name: string, isDirectory: boolean) => {
@@ -127,6 +133,14 @@ export const useChatInputStore = create<ChatInputStore>()(
           mediaAttachments: [],
           inputValue: ""
         });
+      },
+
+      // Edit target
+      setEditingTarget: (conversationId: string, messageId: string) => {
+        set({ editingTarget: { conversationId, messageId } });
+      },
+      clearEditingTarget: () => {
+        set({ editingTarget: null });
       },
 
       // Utilities

@@ -23,7 +23,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   sessionId,
   selectedConversation = null,
 }) => {
-  const { inputValue, setInputValue } = useChatInputStore();
+  const { inputValue, setInputValue, editingTarget } = useChatInputStore();
   const { currentModel, currentProvider, reasoningEffort } = useModelStore();
   const [isConnected, setIsConnected] = useState(false);
   const [tempSessionId, setTempSessionId] = useState<string | null>(null);
@@ -296,6 +296,17 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       }
     }
 
+    // If resending from an edited message, truncate messages from that point
+    try {
+      const { editingTarget, clearEditingTarget } = useChatInputStore.getState();
+      if (editingTarget && editingTarget.conversationId === actualSessionId) {
+        useConversationStore.getState().truncateMessagesFrom(actualSessionId, editingTarget.messageId);
+        clearEditingTarget();
+      }
+    } catch (e) {
+      console.error('Failed to handle edit-resend truncation:', e);
+    }
+
     // Add user message to conversation store
     const userMessage = {
       id: `${actualSessionId}-user-${generateUniqueId()}`,
@@ -415,6 +426,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           onStopStreaming={handleStopStreaming}
           disabled={!!selectedConversation && !selectedConversation.filePath}
           isLoading={isLoading}
+          placeholderOverride={editingTarget ? 'Editing message and resending from here' : undefined}
         />
         
         <div className="flex px-2 pt-0.5">

@@ -91,7 +91,7 @@ export const Message = memo<MessageProps>(({
   allMessages
 }) => {
   const { createForkConversation, currentConversationId, setCurrentConversation } = useConversationStore();
-  const { setInputValue, requestFocus } = useChatInputStore();
+  const { setInputValue, requestFocus, setEditingTarget } = useChatInputStore();
   // Detect message types that should be collapsible
   const isSystemMessage = normalized.role === 'system';
   const isReasoningMessage = normalized.messageType === 'reasoning';
@@ -134,6 +134,10 @@ export const Message = memo<MessageProps>(({
     // Prefill composer and focus for edit & resend (never fork here)
     setInputValue(normalized.content || '');
     requestFocus();
+    // Mark this message as the edit target so send will truncate from here
+    if (currentConversationId) {
+      setEditingTarget(currentConversationId, normalized.id);
+    }
   };
   
   return (
