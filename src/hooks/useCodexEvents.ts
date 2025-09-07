@@ -43,6 +43,7 @@ export const useCodexEvents = ({
       ...(message.approvalRequest && { approvalRequest: message.approvalRequest }),
       ...(message.messageType && { messageType: message.messageType }),
       ...(message.eventType && { eventType: message.eventType }),
+      ...(message.plan && { plan: message.plan }),
     };
     
     addMessage(sessionId, conversationMessage);
@@ -166,21 +167,25 @@ export const useCodexEvents = ({
         // Do not render reasoning deltas into chat to reduce noise.
         break;
         
-      case 'plan_update':
-        // Handle plan updates
-        const planSteps = msg.plan?.map(step => `- ${step.status === 'completed' ? '✅' : step.status === 'in_progress' ? '🔄' : '⏳'} ${step.step}`).join('\n') || '';
-        
+      case 'plan_update': {
+        // Use structured payload as-is; avoid altering step text
+        const planPayload: ChatMessage['plan'] = {
+          explanation: (msg as any).explanation ?? null,
+          plan: Array.isArray((msg as any).plan) ? (msg as any).plan : [],
+        };
+
         const planMessage: ChatMessage = {
           id: `${sessionId}-plan-${generateUniqueId()}`,
           role: 'system',
-          title: `📋 ${msg.explanation || 'Plan Updated'}`,
-          content: planSteps,
+          content: '', // renderer uses structured plan
           timestamp: new Date().getTime(),
           messageType: 'plan_update',
           eventType: msg.type,
+          plan: planPayload,
         };
         addMessageToStore(planMessage);
         break;
+      }
         
       case 'mcp_tool_call_begin':
         // Only show important tool calls like Read/Edit/Write, skip internal tools
@@ -423,18 +428,8 @@ export const useCodexEvents = ({
         // Create initial command message and store command info
         const cmdMessageId = `${sessionId}-cmd-${generateUniqueId()}`;
         const command = Array.isArray(msg.command) ? msg.command.join(' ') : msg.command;
-        const cmdBeginMessage: ChatMessage = {
-          id: cmdMessageId,
-          role: 'system',
-          title: command,
-          content: `⏳ Running...`,
-          timestamp: new Date().getTime(),
-          messageType: 'exec_command' as any,
-          eventType: msg.type,
-        };
+        console.log(`exec_command_begin ${command}`)
         currentCommandMessageId.current = cmdMessageId;
-        currentCommandInfo.current = { command: msg.command, cwd: msg.cwd };
-        addMessageToStore(cmdBeginMessage);
         break;
         
       case 'exec_command_output_delta':
@@ -451,17 +446,14 @@ export const useCodexEvents = ({
           
           // For successful commands (exit code 0) with no output, just show success
           if (msg.exit_code === 0 && !msg.stdout?.trim() && !msg.stderr?.trim()) {
-            updateMessage(sessionId, currentCommandMessageId.current, {
-              title: `${status} ${command}`,
-              content: '',
-              timestamp: new Date().getTime(),
-            });
+            console.log(`${command} ${status}`)
           } else {
             // For commands with output or errors, show details
             const outputContent = `${msg.stdout?.trim() ? `\n\`\`\`\n${msg.stdout}\`\`\`` : ''}${msg.stderr?.trim() ? `${msg.stdout?.trim() ? '\n\n' : ''}Errors:\n\`\`\`\n${msg.stderr}\`\`\`` : ''}`;
+            console.log("exec_command_end", msg)
             
             updateMessage(sessionId, currentCommandMessageId.current, {
-              title: `${statusText} Read`,
+              title: `${command} ${status} ${statusText}`,
               content: outputContent,
               timestamp: new Date().getTime(),
             });

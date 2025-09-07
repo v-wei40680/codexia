@@ -96,7 +96,6 @@ export const Message = memo<MessageProps>(({
   const isSystemMessage = normalized.role === 'system';
   const isReasoningMessage = normalized.messageType === 'reasoning';
   const isToolCallMessage = normalized.messageType === 'tool_call';
-  const isPlanUpdateMessage = normalized.messageType === 'plan_update';
   const isExecutionMessage = normalized.messageType === 'exec_command';
   const isApprovalMessage = normalized.role === 'approval';
   const isCodeContent = normalized.content.includes('```') && normalized.content.length > 200;
@@ -105,7 +104,6 @@ export const Message = memo<MessageProps>(({
   // Determine if this message should be collapsible and initially collapsed
   const shouldBeCollapsible = isReasoningMessage ||
                               isToolCallMessage ||
-                              isPlanUpdateMessage ||
                               (isSystemMessage && (isExecutionMessage || (isCodeContent && hasLongOutput)));
   
   // Never collapse approval messages - they need to be immediately visible
@@ -113,7 +111,7 @@ export const Message = memo<MessageProps>(({
   // Keep important messages visible: approvals, plans
   // Collapse all collapsible messages except plan_update
   const [isCollapsed, setIsCollapsed] = useState(
-    shouldBeCollapsible && !isApprovalMessage && !isPlanUpdateMessage
+    shouldBeCollapsible && !isApprovalMessage
   );
 
   const handleFork = () => {
@@ -157,7 +155,7 @@ export const Message = memo<MessageProps>(({
         </div>
       )}
 
-      {normalized.content.length !== 0 && 
+      {(normalized.content.length !== 0 || normalized.messageType === 'plan_update' || !!normalized.title) && 
         <div className="flex-1 min-w-0 relative">
           {/* Content container */}
           <div className={`relative w-full min-w-0 max-w-full ${getMessageStyle(normalized.role, normalized.messageType)} rounded-lg px-2 py-1`}>

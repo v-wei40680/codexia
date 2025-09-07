@@ -70,6 +70,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           // Preserve optional rendering metadata
           ...(msg as any).messageType && { messageType: (msg as any).messageType },
           ...(msg as any).eventType && { eventType: (msg as any).eventType },
+          // Preserve structured plan payload for plan_update messages
+          ...(msg as any).plan && { plan: (msg as any).plan },
         };
       })
     : [];

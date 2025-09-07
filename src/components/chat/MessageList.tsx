@@ -139,6 +139,8 @@ export function MessageList({
       messageType,
       // Pass through raw event type from codex when present
       eventType: (msg as any).eventType || undefined,
+      // Pass through structured plan payload when present
+      plan: (msg as any).plan || undefined,
     };
     
     return baseMessage;

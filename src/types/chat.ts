@@ -29,6 +29,11 @@ export interface ChatMessage {
     status: 'running' | 'completed' | 'failed';
     duration?: number;
   };
+  // Optional structured plan payload for plan_update messages
+  plan?: {
+    explanation?: string | null;
+    plan: Array<{ step: string; status: 'pending' | 'in_progress' | 'completed' }>;
+  };
 }
 
 export interface Conversation {

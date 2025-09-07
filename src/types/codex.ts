@@ -30,7 +30,7 @@ export type EventMsg =
   | { type: 'web_search_end'; query: string; results?: any }
   | { type: 'patch_apply_begin'; changes: any; auto_approved?: boolean }
   | { type: 'patch_apply_end'; success: boolean; stdout?: string; stderr?: string }
-  | { type: 'plan_update'; explanation?: string; plan: Array<{ step: string; status: 'pending' | 'in_progress' | 'completed' }> }
+  | { type: 'plan_update'; explanation?: string | null; plan: Array<{ step: string; status: 'pending' | 'in_progress' | 'completed' }> }
   | { type: 'shutdown_complete' }
   | { type: 'background_event'; message: string }
   | { type: 'turn_diff'; unified_diff: string }
