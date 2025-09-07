@@ -29,7 +29,7 @@ Codexia is an independent open-source project and is not built by OpenAI or any 
 
 ## News
 
-- [2025-09-05] fork chat + edit chat
+- [2025-09-05] fork chat + edit chat + theme select + category conversatin
 - [2025-09-03] show the plan message
 - [2025-08-29] support image input, codexia can read image now
 
@@ -77,82 +77,11 @@ Codexia is an independent open-source project and is not built by OpenAI or any 
 - Configurable command execution policies
 - Isolated processes per session for security
 
-## 🚀 Getting Started
+## Documentation
 
-### Prerequisites
-
-- [Tauri Prerequisites](https://v2.tauri.app/start/prerequisites/)
-
-### Installation
-
-1. **Clone the repository:**
-   ```bash
-   git clone https://github.com/milisp/codexia
-   cd codexia
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   bun install
-   ```
-
-3. **Run the development server:**
-   ```bash
-   bun tauri dev
-   ```
-
-### Building for Production
-
-```bash
-bun tauri build
-```
-
-## 🎮 Usage
-
-### Creating Sessions
-- Click the **"+"** button in the session sidebar to create a new chat session
-- Each session starts with an independent Codex process
-- Configure working directory, model, and policies per session
-
-### Managing Conversations
-- Switch between sessions by clicking on them in the sidebar
-- Sessions continue running in the background when not active
-- Close sessions using the **"×"** button (this terminates the Codex process)
-
-### Configuration
-- Click the **Settings** icon to open the configuration dialog
-- Changes apply to the currently active session
-- Configurations are automatically saved and restored
-
-### Theme & Accent Selection
-- Toggle light/dark with the sun/moon button in the header.
-- Pick an accent color from the palette button next to the theme toggle.
-- Defaults: dark mode with a pink accent. Choices persist via Zustand.
-
-### Monitoring
-- Use the **Debug** panel (bottom-right) to monitor running sessions
-- View backend process status and frontend session states
-- Sync session states between frontend and backend
-
-## 🏗️ Architecture
-
-### Frontend (React + TypeScript)
-- **Zustand** for state management with persistence
-- **shadcn/ui** for UI components
-- **Tauri** for native desktop integration
-- **Real-time event handling** for streaming responses
-
-### Backend (Rust + Tauri)
-- **Multi-process management** for concurrent Codex sessions
-- **JSON-RPC protocol** communication with Codex CLI
-- **Async event streaming** to frontend
-- **Resource cleanup** and process lifecycle management
-
-### Session Management
-- **Independent processes** per chat session
-- **Configurable startup parameters** per session
-- **Event isolation** between sessions
-- **Graceful cleanup** on session termination
+- Usage and setup: [USAGE](docs/USAGE.md)
+- Architecture overview: [ARCHITECTURE](docs/ARCHITECTURE.md)
+- Development and contributing: [CONTRIBUTING](CONTRIBUTING.md)
 
 ## 📋 Supported Codex Features
 
@@ -164,83 +93,9 @@ bun tauri build
 - ✅ **Working directory context** for project-aware assistance
 - ✅ **Streaming responses** for real-time interaction - by config show_raw_agent_reasoning=true
 
-## 🛠️ Development
+## Development & Support Docs
 
-### Project Structure
-```
-codexia/
-├── src/                    # React frontend source
-│   ├── components/         # UI components
-│   ├── hooks/              # Custom React hooks
-│   ├── store/              # Zustand state management
-│   ├── services/           # Business logic services
-│   └── types/              # TypeScript type definitions
-├── src-tauri/              # Rust backend source
-│   ├── src/
-│   │   ├── lib.rs          # Main Tauri application
-│   │   └── codex_client.rs # Codex process management
-│   └── Cargo.toml          # Rust dependencies
-├── public/                 # Static assets
-└── package.json           # Node.js dependencies
-```
-
-### Key Technologies
-- **Frontend**: React 19, TypeScript, Zustand, shadcn/ui, Vite
-- **Backend**: Rust, Tauri v2, Tokio async runtime
-- **Process Communication**: JSON-RPC, stdin/stdout streams
-- **State Management**: Zustand with persistence middleware
-- **UI Framework**: shadcn/ui built on Radix UI and Tailwind CSS
-
-### Development Commands
-```bash
-# Start development server
-bun tauri dev
-
-# Build frontend only
-bun run build
-
-# Check Rust code
-cd src-tauri && cargo check
-
-# Format code
-cd src-tauri && cargo fmt --all
-
-# Copy the pre-commit hook to prevent frontend issues.
-cp docs/pre-commit .git/hooks/pre-commit
-```
-
-## ❓ Troubleshooting / FAQ
-
-### 1. App fails to start after dependency changes
-- **Fix**: Delete `node_modules` and `bun.lock` and reinstall.  
-  ```bash
-  rm -rf node_modules bun.lock
-  bun install
-  ```
-
-### 2. Can I use ChatGPT Plus or Pro tier account instead of API
-
-- Yes, You can use codex login ChatGPT first
-
-```sh
-codex # then choose ChatGPT
-```
-
-## learn tauri v2
-
-https://v2.tauri.app/start/
-
-https://tauri.app/llms.txt
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-  - test before push
-  - test command `bun run build` and `cargo check` at src-tauri folder
-5. Open a Pull Request
+For development commands, troubleshooting/FAQ, and contribution guidance, see [CONTRIBUTING](CONTRIBUTING.md) and [USAGE](docs/USAGE.md).
 
 ## 💖 Contributors
 
