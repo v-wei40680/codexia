@@ -9,6 +9,14 @@ Prerequisites:
 - Bun package manager
 - Rust toolchain (for the Tauri backend)
 
+## Installation
+
+Clone:
+```bash
+git clone https://github.com/milisp/codexia
+cd codexia
+```
+
 Install dependencies:
 ```bash
 bun install
