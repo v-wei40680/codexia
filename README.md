@@ -13,8 +13,17 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/milisp/codexia/actions/workflows/ci.yml/badge.svg)](https://github.com/milisp/codexia/actions/workflows/ci.yml)
 
-🚀 The missing GUI/IDE for the [Codex CLI](https://github.com/openai/codex) — fork chat, live streaming responses, file-tree integration, notepad, and git diff support
-Cross-platform desktop app built with Tauri v2 + React + TypeScript.
+🚀 A powerful GUI/IDE for the [Codex CLI](https://github.com/openai/codex) — fork chat, file-tree integration, notepad, git diff, build-in pdf csv/xlsx viewer, Cross-platform desktop app built with Tauri v2.
+
+## 🌟 Vision
+
+Codexia aims to be the ultimate AI-powered development environment that seamlessly integrates coding assistance, project management, and real-time collaboration. Our vision is to empower developers with intuitive tools that leverage AI to enhance productivity and creativity.
+
+- Unified interface combining chat-based AI assistance with traditional IDE features.
+- Real-time code generation, debugging, and review powered by advanced AI models.
+- Integrated project explorer with support for multiple file formats and version control.
+- Customizable workflows and sandboxed environments for secure code execution.
+- Cross-platform desktop application that is lightweight, fast, and user-friendly.
 
 > [!TIP]
 > **⭐ Star the repo and follow [milisp](https://x.com/lisp_mi) on X and [github](https://github.com/milisp) for more**.
@@ -29,7 +38,7 @@ Codexia is an independent open-source project and is not built by OpenAI or any 
 
 ## News
 
-- [2025-09-05] fork chat + edit chat + theme select + category conversatin
+- [2025-09-05] fork chat + edit chat + (theme select + category conversatin) thanks to @rachelo3
 - [2025-09-03] show the plan message
 - [2025-08-29] support image input, codexia can read image now
 
@@ -92,6 +101,20 @@ Codexia is an independent open-source project and is not built by OpenAI or any 
 - ✅ **Multiple AI providers** (OpenAI, OSS models via Ollama)
 - ✅ **Working directory context** for project-aware assistance
 - ✅ **Streaming responses** for real-time interaction - by config show_raw_agent_reasoning=true
+
+## 🛣️ Roadmap
+
+- Enhance AI model integrations to include more open-source models.
+- Expand file format support for better project compatibility.
+- Improve UI customization and theming options.
+- Develop plugins system for third-party extensions.
+- Integrate advanced debugging and profiling tools.
+- Add collaborative coding features with real-time sharing.
+- Optimize performance and reduce resource consumption.
+
+🚀 **Call to Action**
+
+If you’re a developer, designer, or AI tinkerer — Join us on this exciting journey to redefine the developer experience with AI. Contribute to the project, share your feedback, and help build the future of intelligent coding environments. Together, we can make Codexia the go-to platform for developers worldwide!
 
 ## Development & Support Docs
 
