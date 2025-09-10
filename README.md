@@ -15,18 +15,8 @@
 
 🚀 A powerful GUI/IDE for the [Codex CLI](https://github.com/openai/codex) — fork chat, file-tree integration, notepad, git diff, build-in pdf csv/xlsx viewer, Cross-platform desktop app built with Tauri v2.
 
-## 🌟 Vision
-
-Codexia aims to be the ultimate AI-powered development environment that seamlessly integrates coding assistance, project management, and real-time collaboration. Our vision is to empower developers with intuitive tools that leverage AI to enhance productivity and creativity.
-
-- Unified interface combining chat-based AI assistance with traditional IDE features.
-- Real-time code generation, debugging, and review powered by advanced AI models.
-- Integrated project explorer with support for multiple file formats and version control.
-- Customizable workflows and sandboxed environments for secure code execution.
-- Cross-platform desktop application that is lightweight, fast, and user-friendly.
-
 > [!TIP]
-> **⭐ Star the repo and follow [milisp](https://x.com/lisp_mi) on X and [github](https://github.com/milisp) for more**.
+> **⭐ Star the repo and follow milisp on [Twitter](https://x.com/lisp_mi) and [github](https://github.com/milisp) for more**.
 
 ![demo](public/codexia.png)
 
