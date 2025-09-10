@@ -4,7 +4,6 @@ import ProviderList from "@/components/ProviderList";
 import ProviderModels from "@/components/ProviderModels";
 import ExcludeFolders from "@/components/ExcludeFolders";
 import LogoSettings from "@/components/LogoSettings";
-import UpdaterComponent from "@/components/UpdaterComponent";
 import { useSettingsStore } from "@/stores/SettingsStore";
 
 export default function SettingsPage() {
@@ -42,12 +41,6 @@ export default function SettingsPage() {
         {activeSection === "working" && <p>Working Directory Settings</p>}
         {activeSection === "exclude" && <ExcludeFolders />}
         {activeSection === "logo" && <LogoSettings />}
-        {activeSection === "updates" && (
-          <div className="py-6">
-            <h2 className="text-2xl font-bold mb-6">Application Updates</h2>
-            <UpdaterComponent />
-          </div>
-        )}
       </div>
     </div>
   );
