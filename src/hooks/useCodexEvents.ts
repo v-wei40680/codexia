@@ -6,6 +6,7 @@ import { StreamController, StreamControllerSink } from '@/utils/streamController
 import { generateUniqueId } from '@/utils/genUniqueId';
 import { ChatMessage } from '@/types/chat';
 import { invoke } from '@tauri-apps/api/core';
+import { useEphemeralStore } from '@/stores/EphemeralStore';
 
 interface UseCodexEventsProps {
   sessionId: string;
@@ -21,6 +22,7 @@ export const useCodexEvents = ({
   const currentStreamingMessageId = useRef<string | null>(null);
   const currentCommandMessageId = useRef<string | null>(null);
   const currentCommandInfo = useRef<{ command: string[], cwd: string } | null>(null);
+  const lastTurnDiffRef = useRef<string | null>(null);
 
   const addMessageToStore = (message: ChatMessage) => {
     // Ensure conversation exists
@@ -147,7 +149,10 @@ export const useCodexEvents = ({
       case 'agent_reasoning_raw_content':
         // Summarized reasoning message (TUI-like)
         {
-          const reasoningContent = 'reasoning' in msg ? msg.reasoning : msg.content;
+          const reasoningContent =
+            (msg as any).text ??
+            (msg as any).reasoning ??
+            (msg as any).content;
           if (reasoningContent) {
             const reasoningMessage: ChatMessage = {
               id: `${sessionId}-reasoning-${generateUniqueId()}`,
@@ -165,6 +170,7 @@ export const useCodexEvents = ({
       case 'agent_reasoning_delta':
       case 'agent_reasoning_raw_content_delta':
         // Do not render reasoning deltas into chat to reduce noise.
+        console.log(msg)
         break;
         
       case 'plan_update': {
@@ -407,29 +413,41 @@ export const useCodexEvents = ({
         // Background events are informational
         break;
         
-      case 'turn_diff':
-        // Show file changes made by AI
-        // Extract file names from diff for title
-        const fileMatches = msg.unified_diff.match(/\+\+\+\s+([^\s]+)/g);
-        const fileNames = fileMatches ? fileMatches.map(m => m.replace(/\+\+\+\s+/, '')).join(', ') : 'files';
-        
-        const diffMessage: ChatMessage = {
-          id: `${sessionId}-diff-${generateUniqueId()}`,
-          role: 'system',
-          title: `✏️ Edit: ${fileNames}`,
-          content: `\`\`\`diff\n${msg.unified_diff}\n\`\`\``,
-          timestamp: new Date().getTime(),
-          eventType: msg.type,
-        };
-        addMessageToStore(diffMessage);
+      case 'turn_diff': {
+        // De-duplicate identical consecutive diffs (raw + structured double delivery)
+        const diffText = msg.unified_diff || '';
+        if (lastTurnDiffRef.current === diffText) {
+          break;
+        }
+        lastTurnDiffRef.current = diffText;
+
+        // Store latest diff in ephemeral store for UI to summarize near ChatInput
+        try {
+          useEphemeralStore.getState().setTurnDiff(sessionId, diffText);
+        } catch {}
         break;
+      }
         
       case 'exec_command_begin':
         // Create initial command message and store command info
-        const cmdMessageId = `${sessionId}-cmd-${generateUniqueId()}`;
-        const command = Array.isArray(msg.command) ? msg.command.join(' ') : msg.command;
-        console.log(`exec_command_begin ${command}`)
-        currentCommandMessageId.current = cmdMessageId;
+        {
+          const cmdMessageId = `${sessionId}-cmd-${generateUniqueId()}`;
+          const commandArr = Array.isArray(msg.command) ? msg.command : [msg.command];
+          const commandStr = commandArr.join(' ');
+          currentCommandMessageId.current = cmdMessageId;
+          currentCommandInfo.current = { command: commandArr, cwd: msg.cwd };
+
+          const commandMessage: ChatMessage = {
+            id: cmdMessageId,
+            role: 'system',
+            title: `▶ ${commandStr}`,
+            content: `cwd: ${msg.cwd}`,
+            timestamp: new Date().getTime(),
+            messageType: 'exec_command',
+            eventType: msg.type,
+          };
+          addMessageToStore(commandMessage);
+        }
         break;
         
       case 'exec_command_output_delta':
@@ -438,29 +456,28 @@ export const useCodexEvents = ({
         
       case 'exec_command_end':
         // Update the existing command message with completion info
-        if (currentCommandMessageId.current && currentCommandInfo.current) {
-          const command = currentCommandInfo.current.command.join(' ');
-          
-          const status = msg.exit_code === 0 ? '✅' : '❌';
-          const statusText = msg.exit_code === 0 ? '' : ` (exit ${msg.exit_code})`;
-          
-          // For successful commands (exit code 0) with no output, just show success
-          if (msg.exit_code === 0 && !msg.stdout?.trim() && !msg.stderr?.trim()) {
-            console.log(`${command} ${status}`)
-          } else {
-            // For commands with output or errors, show details
-            const outputContent = `${msg.stdout?.trim() ? `\n\`\`\`\n${msg.stdout}\`\`\`` : ''}${msg.stderr?.trim() ? `${msg.stdout?.trim() ? '\n\n' : ''}Errors:\n\`\`\`\n${msg.stderr}\`\`\`` : ''}`;
-            console.log("exec_command_end", msg)
-            
-            updateMessage(sessionId, currentCommandMessageId.current, {
-              title: `${command} ${status} ${statusText}`,
+        {
+          const msgId = currentCommandMessageId.current;
+          const info = currentCommandInfo.current;
+          if (msgId && info) {
+            const command = info.command.join(' ');
+            const status = msg.exit_code === 0 ? '✅' : '❌';
+            const statusText = msg.exit_code === 0 ? '' : ` (exit ${msg.exit_code})`;
+
+            // Build output details when present
+            const stdoutBlock = msg.stdout?.trim() ? `\n\`\`\`\n${msg.stdout}\n\`\`\`` : '';
+            const stderrBlock = msg.stderr?.trim() ? `${msg.stdout?.trim() ? '\n\n' : ''}Errors:\n\`\`\`\n${msg.stderr}\n\`\`\`` : '';
+            const outputContent = `${stdoutBlock}${stderrBlock}`;
+
+            updateMessage(sessionId, msgId, {
+              title: `${command} ${status}${statusText}`,
               content: outputContent,
               timestamp: new Date().getTime(),
             });
+
+            currentCommandMessageId.current = null;
+            currentCommandInfo.current = null;
           }
-          
-          currentCommandMessageId.current = null;
-          currentCommandInfo.current = null;
         }
         break;
 
@@ -495,9 +512,14 @@ export const useCodexEvents = ({
           onStopStreaming();
         }
         break;
-        
+
+      case 'token_count':
+        console.log(msg)
+        break;
+
       default:
         console.log('Unhandled event type:', msg.type);
+        console.log(JSON.stringify(msg, null, 2));
     }
   };
 
@@ -519,13 +541,63 @@ export const useCodexEvents = ({
     const rawEventUnlisten = listen<{type: string, session_id: string, data: any}>("codex-raw-events", (event) => {
       const rawEvent = event.payload;
       
-      console.log(`📨 Raw codex event [${sessionId}]:`, rawEvent.data);
+      const rawMsgType = rawEvent.data.msg.type
+      if (rawMsgType !== 'exec_command_output_delta') {
+        console.log(`📨 Raw codex event [${sessionId}]:`, rawEvent.data);
+      }
       
       // Try to convert raw event to structured event
       if (rawEvent.data && typeof rawEvent.data === 'object') {
+        // Extract msg and normalize common field name differences across backends
+        const baseMsg: any = rawEvent.data.msg || rawEvent.data;
+        let normalizedMsg: any = baseMsg;
+
+        if (baseMsg && typeof baseMsg === 'object') {
+          const t = baseMsg.type;
+          switch (t) {
+            case 'agent_reasoning': {
+              // Some backends send { type, text } instead of { reasoning }
+              if (typeof baseMsg.text === 'string' && typeof baseMsg.reasoning !== 'string') {
+                normalizedMsg = { ...baseMsg, reasoning: baseMsg.text };
+              }
+              break;
+            }
+            case 'agent_reasoning_delta': {
+              // Map { text } to { delta }
+              if (typeof baseMsg.text === 'string' && typeof baseMsg.delta !== 'string') {
+                normalizedMsg = { ...baseMsg, delta: baseMsg.text };
+              }
+              break;
+            }
+            case 'agent_reasoning_raw_content': {
+              // Map { text } to { content }
+              if (typeof baseMsg.text === 'string' && typeof baseMsg.content !== 'string') {
+                normalizedMsg = { ...baseMsg, content: baseMsg.text };
+              }
+              break;
+            }
+            case 'agent_message_delta': {
+              // Map { text } to { delta }
+              if (typeof baseMsg.text === 'string' && typeof baseMsg.delta !== 'string') {
+                normalizedMsg = { ...baseMsg, delta: baseMsg.text };
+              }
+              break;
+            }
+            case 'turn_diff': {
+              // Map { diff } to { unified_diff }
+              if (typeof baseMsg.diff === 'string' && typeof baseMsg.unified_diff !== 'string') {
+                normalizedMsg = { ...baseMsg, unified_diff: baseMsg.diff };
+              }
+              break;
+            }
+            default:
+              break;
+          }
+        }
+
         const convertedEvent: CodexEvent = {
           id: rawEvent.data.id || `raw-${Date.now()}`,
-          msg: rawEvent.data.msg || rawEvent.data,
+          msg: normalizedMsg,
           session_id: rawEvent.session_id
         };
         

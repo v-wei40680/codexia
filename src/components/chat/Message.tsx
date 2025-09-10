@@ -2,6 +2,7 @@ import { memo, useState } from 'react';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { MessageFooter } from './MessageFooter';
 import { MessageRouter } from './messages/MessageRouter';
+import { ReasoningDisplay } from './ReasoningDisplay';
 import {
   Collapsible,
   CollapsibleContent,
@@ -20,6 +21,8 @@ interface MessageProps {
   previousMessage?: ChatMessage;
   onApproval?: (approved: boolean, approvalRequest: ApprovalRequest) => void;
   allMessages: ChatMessage[];
+  // Optional: inline reasoning content grouped from a preceding reasoning message
+  inlineReasoningContent?: string;
 }
 
 const getMessageStyle = (role: string, messageType?: string) => {
@@ -88,7 +91,8 @@ export const Message = memo<MessageProps>(({
   isLastMessage, 
   selectedText,
   onApproval,
-  allMessages
+  allMessages,
+  inlineReasoningContent,
 }) => {
   const { createForkConversation, currentConversationId, setCurrentConversation } = useConversationStore();
   const { setInputValue, requestFocus, setEditingTarget } = useChatInputStore();
@@ -160,6 +164,13 @@ export const Message = memo<MessageProps>(({
           {/* Content container */}
           <div className={`relative w-full min-w-0 max-w-full ${getMessageStyle(normalized.role, normalized.messageType)} rounded-lg px-2 py-1`}>
             <div className="break-words overflow-wrap-anywhere min-w-0 max-w-full overflow-hidden prose prose-sm prose-slate dark:prose-invert transition-all duration-300 ease-in-out">
+              {/* Inline Thinking (grouped reasoning) */}
+              {inlineReasoningContent && normalized.role === 'assistant' && (
+                <div className="mb-2">
+                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground pb-1">Thinking</div>
+                  <ReasoningDisplay content={inlineReasoningContent} isStreaming={false} />
+                </div>
+              )}
               {shouldBeCollapsible && !isApprovalMessage ? (
                 <Collapsible open={!isCollapsed} onOpenChange={(open) => setIsCollapsed(!open)}>
                   <CollapsibleTrigger asChild>

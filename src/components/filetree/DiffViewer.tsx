@@ -2,8 +2,9 @@ import { useMemo } from "react";
 import * as Diff from "diff";
 
 interface DiffViewerProps {
-  original: string;
-  current: string;
+  original?: string;
+  current?: string;
+  unifiedDiff?: string;
   fileName?: string;
 }
 
@@ -16,9 +17,27 @@ interface DiffLine {
   };
 }
 
-export function DiffViewer({ original, current, fileName }: DiffViewerProps) {
+export function DiffViewer({ original = '', current = '', unifiedDiff }: DiffViewerProps) {
+  // If unifiedDiff is provided, approximate split to left/right
+  const { left, right } = useMemo(() => {
+    if (!unifiedDiff) return { left: original, right: current };
+    const stripFences = (s: string) => s.replace(/^```diff\n?|```$/g, '');
+    const raw = stripFences(unifiedDiff || '');
+    const lines = raw.split('\n');
+    const orig: string[] = [];
+    const curr: string[] = [];
+    for (const line of lines) {
+      if (line.startsWith('--- ') || line.startsWith('+++ ') || line.startsWith('@@') || line.startsWith('diff --git') || line.startsWith('index ')) continue;
+      if (line.startsWith('+')) { curr.push(line.slice(1)); continue; }
+      if (line.startsWith('-')) { orig.push(line.slice(1)); continue; }
+      const ctx = line.startsWith(' ') ? line.slice(1) : line;
+      orig.push(ctx); curr.push(ctx);
+    }
+    return { left: orig.join('\n'), right: curr.join('\n') };
+  }, [unifiedDiff, original, current]);
+
   const diffLines = useMemo(() => {
-    const changes = Diff.diffLines(original, current);
+    const changes = Diff.diffLines(left, right);
     const result: DiffLine[] = [];
     let oldLineNum = 1;
     let newLineNum = 1;
@@ -54,16 +73,10 @@ export function DiffViewer({ original, current, fileName }: DiffViewerProps) {
     });
 
     return result;
-  }, [original, current]);
+  }, [left, right]);
 
   return (
     <div className="diff-viewer flex flex-col h-full bg-white dark:bg-gray-900">
-      {fileName && (
-        <div className="diff-header bg-gray-50 dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-2 text-sm font-medium flex-shrink-0 text-gray-900 dark:text-gray-100">
-          {fileName}
-        </div>
-      )}
-      
       <div className="diff-content flex-1 overflow-auto font-mono text-sm">
         <table className="w-full table-fixed">
           <tbody>

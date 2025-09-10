@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { ApprovalRequest } from "@/types/codex";
 import type { Conversation } from "@/types/chat";
@@ -14,6 +14,8 @@ import { ReasoningEffortSelector } from './ReasoningEffortSelector';
 import { Sandbox } from "./Sandbox";
 import { generateUniqueId } from "@/utils/genUniqueId";
 import { ForkOriginBanner } from './ForkOriginBanner';
+import { useEphemeralStore } from '@/stores/EphemeralStore';
+import { DiffViewer } from '@/components/filetree/DiffViewer';
 
 interface ChatInterfaceProps {
   sessionId: string;
@@ -103,6 +105,20 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const messages = [...sessionMessages];
   const isLoading = currentConversation?.isLoading || false;
+  const fileDiffMap = useEphemeralStore((s) => s.sessionFileDiffs[activeSessionId]);
+  const [expandedFiles, setExpandedFiles] = useState<Record<string, boolean>>({});
+  const parsedFiles = useMemo(() => {
+    const out: { file: string; unified: string; hunk?: string }[] = [];
+    const map = fileDiffMap || {};
+    for (const [file, obj] of Object.entries(map)) {
+      const unified = obj.unified;
+      const hunk = (unified.split('\n').find((l) => l.startsWith('@@')) || undefined);
+      out.push({ file, unified, hunk });
+    }
+    // Recent first
+    out.sort((a, b) => ((map[b.file]?.updatedAt || 0) - (map[a.file]?.updatedAt || 0)));
+    return out;
+  }, [fileDiffMap]);
 
   // Update activeSessionId when sessionId prop changes
   useEffect(() => {
@@ -427,6 +443,36 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           isPendingNewConversation={pendingNewConversation || !sessionId.trim()}
           onApproval={handleApproval}
         />
+
+        {/* Compact latest changes summary + collapsible diff */}
+        {parsedFiles.length > 0 && (
+          <div className="px-2 pb-1 space-y-1">
+            <div className="flex flex-col gap-1">
+              {parsedFiles.map(({ file, hunk, unified }) => {
+                const expanded = !!expandedFiles[file];
+                return (
+                  <div key={file} className="rounded border border-border bg-accent/20">
+                    <button
+                      className="w-full text-left px-2 py-1 text-xs text-muted-foreground hover:bg-accent/30"
+                      onClick={() => setExpandedFiles((prev) => ({ ...prev, [file]: !prev[file] }))}
+                    >
+                      <span className="font-mono">{file}</span>
+                      {hunk && (
+                        <span className="ml-2 text-muted-foreground/80">{hunk}</span>
+                      )}
+                      <span className="float-right opacity-70">{expanded ? 'Hide' : 'Show'}</span>
+                    </button>
+                    {expanded && (
+                      <div className="border-t border-border">
+                        <DiffViewer unifiedDiff={unified} fileName={file} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
         <ChatInput
           inputValue={inputValue}

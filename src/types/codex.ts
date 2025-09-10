@@ -8,12 +8,20 @@ export interface CodexEvent {
 export type EventMsg = 
   | { type: 'session_configured'; session_id: string; model: string; history_log_id?: number; history_entry_count?: number }
   | { type: 'task_started' }
+  | {
+    "cached_input_tokens": null,
+    "input_tokens": null,
+    "output_tokens": null,
+    "reasoning_output_tokens": null,
+    "total_tokens": null,
+    "type": "token_count"
+  }
   | { type: 'task_complete'; response_id?: string; last_agent_message?: string }
   | { type: 'agent_message'; message?: string; last_agent_message?: string }
   | { type: 'agent_message_delta'; delta: string }
-  | { type: 'agent_reasoning'; reasoning: string }
+  | { type: 'agent_reasoning'; reasoning?: string; text?: string }
   | { type: 'agent_reasoning_delta'; delta: string }
-  | { type: 'agent_reasoning_raw_content'; content: string }
+  | { type: 'agent_reasoning_raw_content'; content?: string; text?: string }
   | { type: 'agent_reasoning_raw_content_delta'; delta: string }
   | { type: 'agent_reasoning_section_break' }
   | { type: 'exec_approval_request'; call_id: string; command: string[]; cwd: string }

@@ -179,18 +179,36 @@ export function MessageList({
         onScroll={checkScrollButtons}
       >
         <div className="w-full max-w-full min-w-0">
-          {normalizedMessages.map((normalizedMessage, index) => (
-            <Message
-              key={`${normalizedMessage.id}-${index}`}
-              message={normalizedMessage}
-              index={index}
-              isLastMessage={index === messages.length - 1}
-              selectedText={selectedText}
-              previousMessage={index > 0 ? normalizedMessages[index - 1] : undefined}
-              onApproval={onApproval}
-              allMessages={normalizedMessages}
-            />
-          ))}
+          {normalizedMessages.map((normalizedMessage, index) => {
+            const prev = index > 0 ? normalizedMessages[index - 1] : undefined;
+            const next = index < normalizedMessages.length - 1 ? normalizedMessages[index + 1] : undefined;
+
+            // Group reasoning under the following assistant message and hide the standalone reasoning entry
+            if (normalizedMessage.messageType === 'reasoning' && next?.role === 'assistant') {
+              return null;
+            }
+
+            // Do not render turn_diff as a full message; summarized elsewhere near ChatInput
+            if ((normalizedMessage as any).eventType === 'turn_diff') {
+              return null;
+            }
+
+            const inlineReasoningContent = prev?.messageType === 'reasoning' ? prev.content : undefined;
+
+            return (
+              <Message
+                key={`${normalizedMessage.id}-${index}`}
+                message={normalizedMessage}
+                index={index}
+                isLastMessage={index === messages.length - 1}
+                selectedText={selectedText}
+                previousMessage={prev}
+                onApproval={onApproval}
+                allMessages={normalizedMessages}
+                inlineReasoningContent={inlineReasoningContent}
+              />
+            );
+          })}
           
           {/* Loading indicator */}
           {isLoading && (
