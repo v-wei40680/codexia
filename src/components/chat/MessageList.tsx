@@ -1,14 +1,13 @@
 import { useRef, useEffect, useMemo, useCallback, useState } from 'react';
-import { ChevronUp, ChevronDown } from 'lucide-react';
+import { ChevronUp, ChevronDown, Layers, Zap, SlidersHorizontal, LayoutDashboard } from 'lucide-react';
 import type { ChatMessage as ChatMessageType } from '@/types/chat';
 import type { ApprovalRequest } from '@/types/codex';
 import { TextSelectionMenu } from './TextSelectionMenu';
 import { Message } from './Message';
 import { StatusBar } from './StatusBar';
 import { useTextSelection } from '../../hooks/useTextSelection';
-import { useSettingsStore } from '@/stores/SettingsStore';
-import { open } from "@tauri-apps/plugin-shell"
-import { Button } from '../ui/button';
+import { Card, CardHeader, CardTitle, CardDescription } from '../ui/card';
+// Note: No external links or logos in empty state; show key features instead.
 
 // Unified message type
 type UnifiedMessage = ChatMessageType;
@@ -45,8 +44,29 @@ export function MessageList({
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollButtons, setShowScrollButtons] = useState(false);
   const { selectedText } = useTextSelection();
-  const { windowTitle } = useSettingsStore()
-  const homepage = "https://milisp.vercel.app/"
+  // Four feature cards based on README.md
+  const features = [
+    {
+      title: 'Multi-Session',
+      description: 'Run multiple sessions with persistent restoration.',
+      icon: Layers,
+    },
+    {
+      title: 'Streaming',
+      description: 'Live responses as they generate for instant feedback.',
+      icon: Zap,
+    },
+    {
+      title: 'Configuration',
+      description: 'Providers, models, sandbox modes, approvals, and more.',
+      icon: SlidersHorizontal,
+    },
+    {
+      title: 'Polished UX',
+      description: 'Notepad, Markdown, Plan/Todo, Themes, WebPreview.',
+      icon: LayoutDashboard,
+    },
+  ] as const;
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -154,15 +174,29 @@ export function MessageList({
   if (messages.length === 0) {
     return (
       <div className={`flex-1 min-h-0 flex items-center justify-center ${className}`}>
-        <div className="text-center flex flex-col space-y-4 max-w-md">
-          {windowTitle === "Grok" && <img src="/grok.png" alt="grok logo" />}
-          <Button
-            variant='link'
-            className="text-blue-600 hover:text-blue-800 visited:text-purple-600 underline"
-            onClick={() => open(homepage)}
-          >
-            {homepage}
-          </Button>
+        <div className="text-center flex flex-col space-y-6 max-w-3xl px-4 w-full">
+          <h2 className="text-2xl font-semibold">Welcome to Codexia</h2>
+          <p className="text-sm text-muted-foreground">
+            Powerful GUI/IDE for Codex CLI — start by sending your first message.
+          </p>
+          <div className="grid grid-cols-2 gap-4 text-left">
+            {features.map((f, i) => {
+              const Icon = f.icon;
+              return (
+                <Card key={i} className="hover:shadow-md hover:-translate-y-0.5 transition-all">
+                  <CardHeader className="flex flex-row items-start gap-3">
+                    <div className="rounded-lg p-2 bg-muted flex items-center justify-center">
+                      <Icon className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">{f.title}</CardTitle>
+                      <CardDescription>{f.description}</CardDescription>
+                    </div>
+                  </CardHeader>
+                </Card>
+              );
+            })}
+          </div>
         </div>
       </div>
     );
