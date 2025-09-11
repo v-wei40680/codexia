@@ -167,3 +167,17 @@ pub async fn search_files(
 
     Ok(results)
 }
+
+#[tauri::command]
+pub async fn canonicalize_path(path: String) -> Result<String, String> {
+    let expanded = if path.starts_with("~/") {
+        let home = dirs::home_dir().ok_or_else(|| "Cannot find home directory".to_string())?;
+        home.join(&path[2..])
+    } else {
+        Path::new(&path).to_path_buf()
+    };
+    match std::fs::canonicalize(&expanded) {
+        Ok(p) => Ok(p.to_string_lossy().to_string()),
+        Err(_) => Ok(expanded.to_string_lossy().to_string()),
+    }
+}

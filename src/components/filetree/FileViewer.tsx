@@ -35,6 +35,7 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
   const [diffLoading, setDiffLoading] = useState(false);
   const [diskChanged, setDiskChanged] = useState(false);
   const prevWatchedDirRef = useRef<string | null>(null);
+  const [canonicalFile, setCanonicalFile] = useState<string | null>(null);
   const { theme } = useThemeStore();
   const {} = useConversationStore();
   const { setActiveTab } = useLayoutStore();
@@ -103,6 +104,14 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
       return;
     }
     loadFile();
+    (async () => {
+      try {
+        const c = await invoke<string>("canonicalize_path", { path: filePath });
+        setCanonicalFile(c);
+      } catch {
+        setCanonicalFile(filePath);
+      }
+    })();
   }, [filePath]);
 
   useEffect(() => {
@@ -209,12 +218,12 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
   useEffect(() => {
     const parentDir = filePath.includes('/') ? filePath.slice(0, filePath.lastIndexOf('/')) : filePath;
     const start = async () => {
-      try { await invoke("start_watch_directory", { folder_path: parentDir }); } catch {}
+      try { await invoke("start_watch_directory", { folderPath: parentDir }); } catch {}
     };
     const stopPrev = async () => {
       const prev = prevWatchedDirRef.current;
       if (prev && prev !== parentDir) {
-        try { await invoke("stop_watch_directory", { folder_path: prev }); } catch {}
+        try { await invoke("stop_watch_directory", { folderPath: prev }); } catch {}
       }
     };
     start();
@@ -222,7 +231,7 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
     prevWatchedDirRef.current = parentDir;
     return () => {
       (async () => {
-        try { await invoke("stop_watch_directory", { folder_path: parentDir }); } catch {}
+        try { await invoke("stop_watch_directory", { folderPath: parentDir }); } catch {}
       })();
     };
   }, [filePath]);
@@ -234,7 +243,8 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
       unlisten = await listen<{ path: string; kind: string }>("fs_change", async (event) => {
         const changed = event.payload.path;
         if (!filePath) return;
-        if (changed === filePath) {
+        const target = canonicalFile || filePath;
+        if (changed === target) {
           // If user hasn’t modified content, auto-reload; otherwise show a banner
           if (currentContent === content) {
             await loadFile();
@@ -246,7 +256,7 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
     };
     setup();
     return () => { if (unlisten) unlisten(); };
-  }, [filePath, content, currentContent]);
+  }, [filePath, canonicalFile, content, currentContent]);
 
   return (
     <div className={`flex flex-col h-full border-l min-w-0 ${theme === 'dark' ? 'border-border' : 'border-gray-200'}`}>

@@ -258,6 +258,7 @@ export function FileTreeItem({
               preventFileReplace={preventFileReplace}
               shouldShowRemoveButton={shouldShowRemoveButton}
               refreshKey={refreshKeyMap ? (refreshKeyMap[entry.path] || 0) : 0}
+              refreshKeyMap={refreshKeyMap}
             />
           )}
         </div>

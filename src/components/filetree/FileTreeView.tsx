@@ -43,6 +43,9 @@ export function FileTree({
   const { calculateTokens } = useFileTokens();
   const [refreshMap, setRefreshMap] = useState<Record<string, number>>({});
   const watchedFoldersRef = useRef<Set<string>>(new Set());
+  const [canonicalCurrent, setCanonicalCurrent] = useState<string | null>(null);
+  const canonicalMapRef = useRef<Map<string, string>>(new Map()); // original -> canonical
+  const canonicalToOriginalRef = useRef<Map<string, string>>(new Map()); // canonical -> original
 
   const loadDirectory = async (path?: string) => {
     setLoading(true);
@@ -73,15 +76,27 @@ export function FileTree({
     if (expandedFolders.has(folderPath)) {
       newExpanded.delete(folderPath);
       // Stop watching when collapsing
-      try { await invoke("stop_watch_directory", { folder_path: folderPath }); } catch {}
+      try { await invoke("stop_watch_directory", { folderPath }); } catch {}
       watchedFoldersRef.current.delete(folderPath);
+      // Drop canonical mapping for this folder
+      const canonical = canonicalMapRef.current.get(folderPath);
+      if (canonical) {
+        canonicalMapRef.current.delete(folderPath);
+        canonicalToOriginalRef.current.delete(canonical);
+      }
     } else {
       newExpanded.add(folderPath);
       // Start watching newly expanded folder
       if (!watchedFoldersRef.current.has(folderPath)) {
-        try { await invoke("start_watch_directory", { folder_path: folderPath }); } catch {}
+        try { await invoke("start_watch_directory", { folderPath }); } catch {}
         watchedFoldersRef.current.add(folderPath);
       }
+      // Cache canonical path for reliable event matching
+      try {
+        const canonical = await invoke<string>("canonicalize_path", { path: folderPath });
+        canonicalMapRef.current.set(folderPath, canonical);
+        canonicalToOriginalRef.current.set(canonical, folderPath);
+      } catch {}
     }
     setExpandedFolders(newExpanded);
   };
@@ -123,7 +138,7 @@ export function FileTree({
   useEffect(() => {
     const reset = async () => {
       for (const p of Array.from(watchedFoldersRef.current)) {
-        try { await invoke("stop_watch_directory", { folder_path: p }); } catch {}
+        try { await invoke("stop_watch_directory", { folderPath: p }); } catch {}
       }
       watchedFoldersRef.current.clear();
       setExpandedFolders(new Set());
@@ -136,14 +151,20 @@ export function FileTree({
   useEffect(() => {
     const run = async () => {
       if (!currentFolder) return;
-      try { await invoke("start_watch_directory", { folder_path: currentFolder }); } catch {}
+      try { await invoke("start_watch_directory", { folderPath: currentFolder }); } catch {}
       watchedFoldersRef.current.add(currentFolder);
+      try {
+        const canonical = await invoke<string>("canonicalize_path", { path: currentFolder });
+        setCanonicalCurrent(canonical);
+      } catch {
+        setCanonicalCurrent(currentFolder);
+      }
     };
     run();
     return () => {
       const stop = async () => {
         if (!currentFolder) return;
-        try { await invoke("stop_watch_directory", { folder_path: currentFolder }); } catch {}
+        try { await invoke("stop_watch_directory", { folderPath: currentFolder }); } catch {}
         watchedFoldersRef.current.delete(currentFolder);
       };
       stop();
@@ -154,37 +175,36 @@ export function FileTree({
   useEffect(() => {
     let unlisten: UnlistenFn | null = null;
     const setup = async () => {
-      unlisten = await listen<{ path: string; kind: string }>("fs_change", (event) => {
+      unlisten = await listen<{ path: string; kind: string }>("fs_change", async (event) => {
         const changedPath = event.payload.path;
-        let bumpedRoot = false;
-        // If the change affects root listing, reload root
-        if (currentFolder && changedPath.startsWith(currentFolder)) {
-          loadDirectory(currentFolder);
-          bumpedRoot = true;
+        // Compare against canonical root
+        if (canonicalCurrent && changedPath.startsWith(canonicalCurrent)) {
+          if (currentFolder) loadDirectory(currentFolder);
         }
 
-        // Bump refresh keys on expanded folders impacted
-        const newMap: Record<string, number> = { ...refreshMap };
-        expandedFolders.forEach((folder) => {
-          if (changedPath.startsWith(folder)) {
-            newMap[folder] = (newMap[folder] || 0) + 1;
-          }
+        // Bump refresh keys based on canonical mapping where available
+        setRefreshMap((prev) => {
+          const next: Record<string, number> = { ...prev };
+          expandedFolders.forEach((folder) => {
+            const canonical = canonicalMapRef.current.get(folder) || folder;
+            if (changedPath.startsWith(canonical)) {
+              next[folder] = (next[folder] || 0) + 1;
+            }
+          });
+          return next;
         });
-        if (bumpedRoot || Object.keys(newMap).length > 0) {
-          setRefreshMap(newMap);
-        }
       });
     };
     setup();
     return () => { if (unlisten) unlisten(); };
-  }, [currentFolder, expandedFolders, refreshMap]);
+  }, [currentFolder, expandedFolders, canonicalCurrent]);
 
   // On unmount, stop all active watchers
   useEffect(() => {
     return () => {
       (async () => {
         for (const p of Array.from(watchedFoldersRef.current)) {
-          try { await invoke("stop_watch_directory", { folder_path: p }); } catch {}
+          try { await invoke("stop_watch_directory", { folderPath: p }); } catch {}
         }
         watchedFoldersRef.current.clear();
       })();

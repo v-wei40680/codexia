@@ -20,7 +20,7 @@ use config::{
     read_model_providers, read_profiles, update_profile_model,
 };
 use filesystem::{
-    directory_ops::{get_default_directories, read_directory, search_files},
+    directory_ops::{get_default_directories, read_directory, search_files, canonicalize_path},
     file_analysis::calculate_file_tokens,
     file_io::{read_file, write_file},
     file_parsers::{csv::read_csv_content, pdf::read_pdf_content, xlsx::read_xlsx_content},
@@ -75,6 +75,7 @@ pub fn run() {
             read_directory,
             get_default_directories,
             search_files,
+            canonicalize_path,
             calculate_file_tokens,
             read_file,
             write_file,

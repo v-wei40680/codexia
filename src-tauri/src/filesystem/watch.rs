@@ -45,12 +45,16 @@ pub async fn start_watch_directory(
         return Err("Directory does not exist".to_string());
     }
 
-    let key = abs.to_string_lossy().to_string();
+    let key = match std::fs::canonicalize(&abs) {
+        Ok(p) => p.to_string_lossy().to_string(),
+        Err(_) => abs.to_string_lossy().to_string(),
+    };
 
     // If already watching, ignore
     {
-        let watchers = state.watchers.lock().await;
-        if watchers.contains_key(&key) {
+        let mut watchers = state.watchers.lock().await;
+        if let Some((_existing, count)) = watchers.get_mut(&key) {
+            *count += 1;
             return Ok(());
         }
     }
@@ -76,7 +80,7 @@ pub async fn start_watch_directory(
         .map_err(|e| format!("Failed to start watcher: {}", e))?;
 
     let mut watchers = state.watchers.lock().await;
-    watchers.insert(key, watcher);
+    watchers.insert(key, (watcher, 1));
     Ok(())
 }
 
@@ -87,11 +91,19 @@ pub async fn stop_watch_directory(
     folder_path: String,
 ) -> Result<(), String> {
     let abs = expand_path(&folder_path)?;
-    let key = abs.to_string_lossy().to_string();
+    let key = match std::fs::canonicalize(&abs) {
+        Ok(p) => p.to_string_lossy().to_string(),
+        Err(_) => abs.to_string_lossy().to_string(),
+    };
 
     let mut watchers = state.watchers.lock().await;
-    if let Some(mut watcher) = watchers.remove(&key) {
-        // Try to unwatch before dropping
+    if let Some((_, count)) = watchers.get_mut(&key) {
+        if *count > 1 {
+            *count -= 1;
+            return Ok(());
+        }
+    }
+    if let Some((mut watcher, _)) = watchers.remove(&key) {
         let _ = watcher.unwatch(&abs);
     }
     Ok(())
