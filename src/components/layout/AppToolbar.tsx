@@ -7,6 +7,7 @@ import {
   Globe,
 } from "lucide-react";
 import { useConversationStore } from "@/stores/ConversationStore";
+import { useEphemeralStore } from "@/stores/EphemeralStore";
 import { useNoteStore } from "@/stores/NoteStore";
 import { useLayoutStore } from "@/stores/layoutStore";
 import { useFolderStore } from "@/stores/FolderStore";
@@ -26,7 +27,7 @@ export const AppToolbar: React.FC<AppToolbarProps> = ({
   currentTab,
   onSwitchToTab,
 }) => {
-  const { setPendingNewConversation, setCurrentConversation } =
+  const { setPendingNewConversation, setCurrentConversation, currentConversationId } =
     useConversationStore();
   const { createNote, setCurrentNote } = useNoteStore();
   const { showWebPreview, setWebPreviewUrl } = useLayoutStore();
@@ -51,6 +52,16 @@ export const AppToolbar: React.FC<AppToolbarProps> = ({
   };
 
   const handleCreateConversation = () => {
+    // Clear any per-turn diffs (parsedFiles) from the current session
+    try {
+      const activeId = currentConversationId || "";
+      if (activeId) {
+        useEphemeralStore.getState().clearTurnDiffs(activeId);
+      }
+    } catch (e) {
+      console.error('Failed to clear turn diffs on new conversation:', e);
+    }
+
     if (onCreateNewSession) {
       // Use the callback for full session creation if provided
       onCreateNewSession();

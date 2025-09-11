@@ -132,6 +132,26 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   }, [sessionId, activeSessionId, tempSessionId]);
 
+  // When creating a new conversation (empty sessionId) or pending new conversation,
+  // clear any previous per-turn diffs (parsedFiles) and reset view state.
+  useEffect(() => {
+    const isCreating = pendingNewConversation || !sessionId.trim();
+    if (isCreating) {
+      try {
+        if (activeSessionId) {
+          useEphemeralStore.getState().clearTurnDiffs(activeSessionId);
+        }
+      } catch (e) {
+        console.error('Failed to clear diffs during new conversation setup:', e);
+      }
+      // Reset expanded diff panels and ensure we don't keep showing old diffs
+      setExpandedFiles({});
+      if (activeSessionId !== sessionId) {
+        setActiveSessionId(sessionId);
+      }
+    }
+  }, [pendingNewConversation, sessionId]);
+
   useEffect(() => {
     if (sessionId) {
       const isRunning = sessionManager.isSessionRunning(sessionId);
@@ -254,6 +274,16 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     } else if (pendingNewConversation) {
       // We already have a sessionId: just clear the pending flag and reuse it
       setPendingNewConversation(false);
+    }
+
+    // Clear any carryover diffs for the session we are about to use
+    try {
+      if (actualSessionId) {
+        useEphemeralStore.getState().clearTurnDiffs(actualSessionId);
+        setExpandedFiles({});
+      }
+    } catch (e) {
+      console.error('Failed to clear diffs before sending in new conversation:', e);
     }
 
     // Ensure session is running before sending message
