@@ -97,7 +97,7 @@
 - ✅ **Multiple AI providers** (OpenAI, OSS models via Ollama)
 - ✅ **Working directory context** for project-aware assistance
 - ✅ **Streaming responses** for real-time interaction - by config show_raw_agent_reasoning=true
-- ✅ **Web Search** for real-time interaction - by config show_raw_agent_reasoning=true
+- ✅ **Web Search** support gpt-5 built-in web search
 
 ## 🛣️ Roadmap
 
