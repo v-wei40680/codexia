@@ -24,6 +24,7 @@ interface SubFolderContentProps {
   onRemoveFromChat?: (path: string) => void;
   preventFileReplace?: boolean;
   shouldShowRemoveButton?: (path: string) => boolean;
+  refreshKey?: number;
 }
 
 export function SubFolderContent({
@@ -40,6 +41,7 @@ export function SubFolderContent({
   onRemoveFromChat,
   preventFileReplace,
   shouldShowRemoveButton,
+  refreshKey,
 }: SubFolderContentProps) {
   const [subEntries, setSubEntries] = useState<FileEntry[]>([]);
   const [loading, setLoading] = useState(false);
@@ -60,7 +62,7 @@ export function SubFolderContent({
     };
 
     loadSubFolder();
-  }, [folderPath]);
+  }, [folderPath, refreshKey]);
 
   if (loading) {
     return (

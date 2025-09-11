@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen, UnlistenFn } from "@tauri-apps/api/event";
 import { Button } from "@/components/ui/button";
 import { X, Copy, Check, Send, FileText, GitBranch, Code } from "lucide-react";
 import { CodeEditor } from "./CodeEditor";
@@ -32,6 +33,8 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
   const [viewMode, setViewMode] = useState<'code' | 'diff'>('code');
   const [gitDiff, setGitDiff] = useState<GitDiff | null>(null);
   const [diffLoading, setDiffLoading] = useState(false);
+  const [diskChanged, setDiskChanged] = useState(false);
+  const prevWatchedDirRef = useRef<string | null>(null);
   const { theme } = useThemeStore();
   const {} = useConversationStore();
   const { setActiveTab } = useLayoutStore();
@@ -49,6 +52,48 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
     return lastDot > -1 ? fileName.substring(lastDot + 1).toLowerCase() : "";
   };
 
+  const loadFile = async () => {
+    if (!filePath) return;
+    setLoading(true);
+    setError(null);
+    setGitDiff(null);
+    setViewMode('code');
+
+    try {
+      const extension = getFileExtension();
+      let fileContent: string;
+
+      switch (extension) {
+        case "pdf":
+          fileContent = await invoke<string>("read_pdf_content", {
+            filePath,
+          });
+          break;
+        case "csv":
+          fileContent = await invoke<string>("read_csv_content", {
+            filePath,
+          });
+          break;
+        case "xlsx":
+          fileContent = await invoke<string>("read_xlsx_content", {
+            filePath,
+          });
+          break;
+        default:
+          fileContent = await invoke<string>("read_file", { filePath });
+          break;
+      }
+
+      setContent(fileContent);
+      setCurrentContent(fileContent);
+      setDiskChanged(false);
+    } catch (err) {
+      setError(err as string);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (!filePath) {
       setContent("");
@@ -57,47 +102,6 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
       setViewMode('code');
       return;
     }
-
-    const loadFile = async () => {
-      setLoading(true);
-      setError(null);
-      setGitDiff(null);
-      setViewMode('code');
-
-      try {
-        const extension = getFileExtension();
-        let fileContent: string;
-
-        switch (extension) {
-          case "pdf":
-            fileContent = await invoke<string>("read_pdf_content", {
-              filePath,
-            });
-            break;
-          case "csv":
-            fileContent = await invoke<string>("read_csv_content", {
-              filePath,
-            });
-            break;
-          case "xlsx":
-            fileContent = await invoke<string>("read_xlsx_content", {
-              filePath,
-            });
-            break;
-          default:
-            fileContent = await invoke<string>("read_file", { filePath });
-            break;
-        }
-
-        setContent(fileContent);
-        setCurrentContent(fileContent);
-      } catch (err) {
-        setError(err as string);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadFile();
   }, [filePath]);
 
@@ -201,6 +205,49 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
 
   if (!filePath) return null;
 
+  // Watch parent directory of the open file so we reliably get fs_change events
+  useEffect(() => {
+    const parentDir = filePath.includes('/') ? filePath.slice(0, filePath.lastIndexOf('/')) : filePath;
+    const start = async () => {
+      try { await invoke("start_watch_directory", { folder_path: parentDir }); } catch {}
+    };
+    const stopPrev = async () => {
+      const prev = prevWatchedDirRef.current;
+      if (prev && prev !== parentDir) {
+        try { await invoke("stop_watch_directory", { folder_path: prev }); } catch {}
+      }
+    };
+    start();
+    stopPrev();
+    prevWatchedDirRef.current = parentDir;
+    return () => {
+      (async () => {
+        try { await invoke("stop_watch_directory", { folder_path: parentDir }); } catch {}
+      })();
+    };
+  }, [filePath]);
+
+  // Listen to fs_change to detect disk updates for the open file
+  useEffect(() => {
+    let unlisten: UnlistenFn | null = null;
+    const setup = async () => {
+      unlisten = await listen<{ path: string; kind: string }>("fs_change", async (event) => {
+        const changed = event.payload.path;
+        if (!filePath) return;
+        if (changed === filePath) {
+          // If user hasn’t modified content, auto-reload; otherwise show a banner
+          if (currentContent === content) {
+            await loadFile();
+          } else {
+            setDiskChanged(true);
+          }
+        }
+      });
+    };
+    setup();
+    return () => { if (unlisten) unlisten(); };
+  }, [filePath, content, currentContent]);
+
   return (
     <div className={`flex flex-col h-full border-l min-w-0 ${theme === 'dark' ? 'border-border' : 'border-gray-200'}`}>
       <div className={`flex items-center justify-between p-3 border-b ${theme === 'dark' ? 'border-border bg-card' : 'border-gray-200 bg-gray-50'}`}>
@@ -298,6 +345,19 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
       </div>
 
       <div className="flex-1 overflow-hidden">
+        {diskChanged && (
+          <div className={`px-3 py-2 text-xs flex items-center justify-between ${theme === 'dark' ? 'bg-amber-950 text-amber-300' : 'bg-amber-50 text-amber-800'}`}>
+            <span>File changed on disk.</span>
+            <div className="space-x-2">
+              <Button variant="outline" size="sm" className="h-6 px-2" onClick={() => setDiskChanged(false)}>
+                Dismiss
+              </Button>
+              <Button variant="default" size="sm" className="h-6 px-2" onClick={loadFile}>
+                Reload
+              </Button>
+            </div>
+          </div>
+        )}
         {loading ? (
           <div className={`p-4 text-center ${theme === 'dark' ? 'text-muted-foreground' : 'text-gray-500'}`}>Loading file...</div>
         ) : error ? (

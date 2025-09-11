@@ -49,6 +49,7 @@ interface FileTreeItemProps {
   disableSubFolderExpansion?: boolean;
   preventFileReplace?: boolean;
   shouldShowRemoveButton?: (path: string) => boolean;
+  refreshKeyMap?: Record<string, number>;
 }
 
 export function FileTreeItem({
@@ -65,6 +66,7 @@ export function FileTreeItem({
   onRemoveFromChat,
   preventFileReplace = false,
   shouldShowRemoveButton,
+  refreshKeyMap,
 }: FileTreeItemProps) {
   const [tokens, setTokens] = useState<number | null>(null);
   const [loadingTokens, setLoadingTokens] = useState(false);
@@ -255,6 +257,7 @@ export function FileTreeItem({
               onRemoveFromChat={onRemoveFromChat}
               preventFileReplace={preventFileReplace}
               shouldShowRemoveButton={shouldShowRemoveButton}
+              refreshKey={refreshKeyMap ? (refreshKeyMap[entry.path] || 0) : 0}
             />
           )}
         </div>

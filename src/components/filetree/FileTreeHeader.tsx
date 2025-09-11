@@ -61,7 +61,7 @@ export function FileTreeHeader({
 
       {showSearchInput &&
         <Input
-          placeholder="Filter files..."
+          placeholder="Search files or folders..."
           value={filterText}
           onChange={(e) => onFilterTextChange(e.target.value)}
           className="text-sm"
