@@ -16,18 +16,24 @@
 🚀 A powerful GUI/IDE for the [Codex CLI](https://github.com/openai/codex) — fork chat, file-tree integration, notepad, git diff, build-in pdf csv/xlsx viewer, Cross-platform desktop app built with Tauri v2.
 
 > [!TIP]
-> **⭐ Star the repo and follow milisp on [Twitter](https://x.com/lisp_mi) and [github](https://github.com/milisp) for more**.
+> **⭐ Star the repo and follow milisp on [x|Twitter](https://x.com/lisp_mi) and [github](https://github.com/milisp) for more**.
 
-![demo](public/codexia.png)
+<div style="display: flex; gap: 10px; justify-content: center;">
+  <div style="text-align: center;">
+    <img src="public/codexia-reason.png" alt="reason" width="300">
+    <p>Reason</p>
+  </div>
+  <div style="text-align: center;">
+    <img src="public/codexia-web-search.png" alt="web-search" width="300">
+    <p>Web Search</p>
+  </div>
+</div>
 
-▶️ [Watch the automation video on Twitter](https://x.com/lisp_mi/status/1963633403368280221)
-
-## Disclaimer
-
-Codexia is an independent open-source project and is not built by OpenAI or any company.
+▶️ [Watch the automation video on Twitter](https://x.com/lisp_mi/status/1966147638266589376)
 
 ## News
 
+- [2025-09-11] support codex built-in web search
 - [2025-09-05] fork chat + edit chat + (theme select + category conversatin) thanks to @rachelo3
 - [2025-09-03] show the plan message
 - [2025-08-29] support image input, codexia can read image now
@@ -91,10 +97,11 @@ Codexia is an independent open-source project and is not built by OpenAI or any 
 - ✅ **Multiple AI providers** (OpenAI, OSS models via Ollama)
 - ✅ **Working directory context** for project-aware assistance
 - ✅ **Streaming responses** for real-time interaction - by config show_raw_agent_reasoning=true
+- ✅ **Web Search** for real-time interaction - by config show_raw_agent_reasoning=true
 
 ## 🛣️ Roadmap
 
-- Enhance AI model integrations to include more open-source models.
+- MCP tool call
 - Expand file format support for better project compatibility.
 - Improve UI customization and theming options.
 - Develop plugins system for third-party extensions.
@@ -121,6 +128,10 @@ Thanks to all our wonderful contributors!
 ## 📄 License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## Disclaimer
+
+Codexia is an independent open-source project and is not built by OpenAI or any company.
 
 ## 🙏 Acknowledgments
 

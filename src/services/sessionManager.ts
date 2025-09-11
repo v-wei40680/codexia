@@ -51,6 +51,8 @@ class SessionManager {
           api_key: apiKey,
           reasoning_effort: config.reasoningEffort,
           resume_path: resumePath,
+          // Pass through web search toggle to backend (default false)
+          tools_web_search: !!config.webSearchEnabled,
         },
       });
 

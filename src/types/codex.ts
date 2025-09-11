@@ -72,6 +72,8 @@ export interface CodexConfig {
   reasoningEffort?: 'high' | 'medium' | 'low' | 'minimal';
   // Optional: resume a previous session from a rollout file
   resumePath?: string;
+  // Enable experimental web search tool for the agent
+  webSearchEnabled?: boolean;
 }
 
 export const SANDBOX_MODES = {
@@ -99,6 +101,7 @@ export const DEFAULT_CONFIG: CodexConfig = {
   useOss: true,
   approvalPolicy: 'on-request',
   sandboxMode: 'workspace-write',
+  webSearchEnabled: false,
 };
 
 export type McpServerConfig = 

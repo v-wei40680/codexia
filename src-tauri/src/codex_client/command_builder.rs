@@ -28,7 +28,7 @@ impl CommandBuilder {
         }
         cmd.arg("proto");
 
-        // Build environment variables
+        // Build environment variables (includes PATH from user's shell)
         let env_vars = Self::build_env_vars(config).await;
 
         // Configure provider settings
@@ -102,7 +102,81 @@ impl CommandBuilder {
             log::debug!("No API key provided");
         }
 
+        // Ensure PATH is populated from the user's shell so external tools (e.g., ripgrep) are found
+        match Self::detect_user_path().await {
+            Some(shell_path) if !shell_path.is_empty() => {
+                log::debug!("Detected PATH from shell: {}", shell_path);
+                env_vars.insert("PATH".to_string(), shell_path);
+            }
+            _ => {
+                // Fallback to current process PATH if available
+                if let Ok(current_path) = std::env::var("PATH") {
+                    log::debug!("Using current process PATH (fallback)");
+                    env_vars.insert("PATH".to_string(), current_path);
+                } else {
+                    log::warn!("No PATH could be determined for spawned process");
+                }
+            }
+        }
+
         env_vars
+    }
+
+    // Try to read PATH by sourcing the user's shell rc files.
+    // This helps when the GUI app is launched without the full shell environment (e.g., on macOS).
+    async fn detect_user_path() -> Option<String> {
+        let shell = std::env::var("SHELL").unwrap_or_else(|_| {
+            // Default to zsh on macOS; bash as a secondary fallback
+            if cfg!(target_os = "macos") { "/bin/zsh".to_string() } else { "/bin/bash".to_string() }
+        });
+
+        // Build a command that sources common init files and prints PATH without a trailing newline
+        let (program, args): (&str, Vec<&str>) = if shell.ends_with("zsh") {
+            (
+                &shell,
+                vec![
+                    "-c",
+                    r#"{ [ -f ~/.zprofile ] && . ~/.zprofile; [ -f ~/.zshrc ] && . ~/.zshrc; } >/dev/null 2>&1; print -nr -- $PATH"#,
+                ],
+            )
+        } else if shell.ends_with("bash") {
+            (
+                &shell,
+                vec![
+                    "-c",
+                    r#"{ [ -f ~/.bash_profile ] && . ~/.bash_profile; [ -f ~/.bashrc ] && . ~/.bashrc; } >/dev/null 2>&1; printf %s "$PATH""#,
+                ],
+            )
+        } else {
+            // Generic POSIX shell fallback
+            (
+                &shell,
+                vec!["-c", r#"printf %s "$PATH""#],
+            )
+        };
+
+        match Command::new(program).args(args).output().await {
+            Ok(output) if output.status.success() => {
+                let path = String::from_utf8_lossy(&output.stdout).trim().to_string();
+                if !path.is_empty() {
+                    Some(path)
+                } else {
+                    None
+                }
+            }
+            Ok(output) => {
+                log::warn!(
+                    "Failed to detect PATH from shell (status: {}), stderr: {}",
+                    output.status,
+                    String::from_utf8_lossy(&output.stderr)
+                );
+                None
+            }
+            Err(err) => {
+                log::warn!("Error running shell to detect PATH: {}", err);
+                None
+            }
+        }
     }
 
     async fn configure_provider(cmd: &mut Command, config: &CodexConfig) -> Result<()> {
@@ -213,6 +287,13 @@ impl CommandBuilder {
         // Enable streaming by setting show_raw_agent_reasoning=true
         // This is required for agent_message_delta events to be generated
         cmd.arg("-c").arg("show_raw_agent_reasoning=true");
+
+        // Enable web search tool if requested
+        if config.tools_web_search.unwrap_or(false) {
+            // Prefer scoped tools flag; also set alias for compatibility
+            cmd.arg("-c").arg("tools.web_search=true");
+            cmd.arg("-c").arg("web_search_request=true");
+        }
 
         // Resume from prior rollout file if provided
         if let Some(resume_path) = &config.resume_path {

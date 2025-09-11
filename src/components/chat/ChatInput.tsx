@@ -1,7 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { Button } from '../ui/button';
 import { Textarea } from '../ui/textarea';
-import { ArrowUp, Square, AudioLines } from 'lucide-react';
+import { ArrowUp, Square, AudioLines, Globe } from 'lucide-react';
 import { useChatInputStore } from '@/stores/chatInputStore';
 import { MediaSelector } from './MediaSelector';
 import { ModelSelector } from './ModelSelector';
@@ -9,6 +9,7 @@ import { FileReferenceList } from './FileReferenceList';
 import { MediaAttachmentList } from './MediaAttachmentList';
 import { useSettingsStore } from '@/stores/SettingsStore';
 import { ScreenshotPopover } from './ScreenshotPopover';
+import { useCodexStore } from '@/stores/CodexStore';
 
 interface ChatInputProps {
   inputValue: string;
@@ -39,6 +40,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     focusSignal,
   } = useChatInputStore();
   const { windowTitle } = useSettingsStore()
+  const { config, updateConfig } = useCodexStore();
 
   // Ref for the textarea to allow programmatic focus
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -151,6 +153,20 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           <ScreenshotPopover onScreenshotTaken={(path) => {
             onInputChange(inputValue + (inputValue ? '\n\n' : '') + path);
           }} />
+          {/* Web search toggle */}
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className={`h-6 px-1 py-0 hover:bg-muted/50 ${config.webSearchEnabled ? 'text-blue-500' : 'text-muted-foreground'}`}
+            onClick={() => updateConfig({ webSearchEnabled: !config.webSearchEnabled })}
+            title={config.webSearchEnabled ? 'Web search enabled' : 'Enable web search'}
+          >
+            <Globe className="h-4 w-4" />
+            {config.webSearchEnabled && (
+              <span className="ml-1 text-xs">search</span>
+            )}
+          </Button>
         </div>
 
         {/* Model Selector and Send Button - bottom right inside textarea */}

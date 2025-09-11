@@ -231,4 +231,6 @@ pub struct CodexConfig {
     pub api_key: Option<String>,
     pub reasoning_effort: Option<String>,
     pub resume_path: Option<String>,
+    #[serde(default)]
+    pub tools_web_search: Option<bool>,
 }
