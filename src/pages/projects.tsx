@@ -13,6 +13,14 @@ import { useFolderStore } from "@/stores/FolderStore";
 import { Button } from "@/components/ui/button";
 import { useLayoutStore } from "@/stores/layoutStore";
 import { open } from "@tauri-apps/plugin-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface Project {
   path: string;
@@ -22,6 +30,9 @@ interface Project {
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [trustDialogOpen, setTrustDialogOpen] = useState(false);
+  const [pendingProjectPath, setPendingProjectPath] = useState<string | null>(null);
+  const [isVersionControlled, setIsVersionControlled] = useState(false);
   const navigate = useNavigate();
   const { setCurrentFolder } = useFolderStore();
   const { setFileTree, setChatPane } = useLayoutStore();
@@ -57,7 +68,23 @@ export default function ProjectsPage() {
         multiple: false,
       });
       if (result) {
-        openProject(result);
+        // Check if the selected folder is version controlled (Git)
+        try {
+          const vcs = await invoke<boolean>("is_version_controlled", { path: result });
+          setPendingProjectPath(result);
+          setIsVersionControlled(Boolean(vcs));
+          if (vcs) {
+            // Open trust dialog if version controlled
+            setTrustDialogOpen(true);
+          } else {
+            // No VCS, proceed directly
+            openProject(result);
+          }
+        } catch (e) {
+          // If detection fails, fall back to opening the project
+          console.error("Failed to detect VCS:", e);
+          openProject(result);
+        }
       }
     } catch (error) {
       console.error("Failed to select directory:", error);
@@ -131,6 +158,63 @@ export default function ProjectsPage() {
           })}
         </div>
       )}
+
+      {/* Trust dialog shown only when a VCS folder is selected */}
+      <Dialog open={trustDialogOpen} onOpenChange={setTrustDialogOpen}>
+        <DialogContent showCloseButton={false}>
+          <DialogHeader>
+            <DialogTitle>Trust This Project?</DialogTitle>
+            <DialogDescription>
+              {`Since this folder is version controlled, you may wish to allow Codex to work in this folder without asking for approval.`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="text-sm text-muted-foreground whitespace-pre-wrap">
+            {pendingProjectPath && isVersionControlled ? (
+              <>
+                {"\n  1. Yes, allow Codex to work in this folder without asking for approval\n  2. No, ask me to approve edits and commands"}
+              </>
+            ) : null}
+          </div>
+          <DialogFooter>
+            <Button
+              variant="secondary"
+              onClick={() => {
+                const path = pendingProjectPath;
+                setTrustDialogOpen(false);
+                setPendingProjectPath(null);
+                if (path) {
+                  // Proceed without changing trust
+                  openProject(path);
+                }
+              }}
+            >
+              No, ask me to approve
+            </Button>
+            <Button
+              onClick={async () => {
+                if (!pendingProjectPath) return;
+                try {
+                  await invoke("set_project_trust", {
+                    path: pendingProjectPath,
+                    trustLevel: "trusted",
+                  });
+                } catch (e) {
+                  console.error("Failed to update project trust:", e);
+                } finally {
+                  const path = pendingProjectPath;
+                  setTrustDialogOpen(false);
+                  setPendingProjectPath(null);
+                  if (path) {
+                    openProject(path);
+                  }
+                }
+              }}
+            >
+              Yes, allow without approval
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

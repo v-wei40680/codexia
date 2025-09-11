@@ -16,8 +16,9 @@ use commands::{
 };
 use config::{
     add_or_update_model_provider, add_or_update_profile, delete_profile, ensure_default_providers,
-    get_profile_config, get_project_name, get_provider_config, read_codex_config,
-    read_model_providers, read_profiles, update_profile_model,
+    get_profile_config, get_project_name, get_provider_config, is_version_controlled,
+    read_codex_config, read_model_providers, read_profiles, set_project_trust,
+    update_profile_model,
 };
 use filesystem::{
     directory_ops::{get_default_directories, read_directory, search_files, canonicalize_path},
@@ -88,6 +89,8 @@ pub fn run() {
             stop_watch_directory,
             read_codex_config,
             get_project_name,
+            is_version_controlled,
+            set_project_trust,
             read_mcp_servers,
             add_mcp_server,
             delete_mcp_server,
