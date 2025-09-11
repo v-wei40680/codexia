@@ -33,7 +33,7 @@
 
 ## News
 
-- [2025-09-11] support codex built-in web search
+- [2025-09-11] support codex built-in web search + file and filetree change detect and refresh
 - [2025-09-05] fork chat + edit chat + (theme select + category conversatin) thanks to @rachelo3
 - [2025-09-03] show the plan message
 - [2025-08-29] support image input, codexia can read image now
