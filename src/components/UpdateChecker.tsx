@@ -46,7 +46,6 @@ export function UpdateChecker() {
 
   // Check if update dialog should be shown
   const shouldShowUpdateDialog = (version: string): boolean => {
-    if (import.meta.env.DEV) return true;
     // Check if version is in skip list
     const skippedVersions = getSkippedVersions();
     if (skippedVersions.includes(version)) {
@@ -68,8 +67,6 @@ export function UpdateChecker() {
 
   // Check update frequency control
   const shouldCheckForUpdates = (): boolean => {
-    // In development, always allow checks so it's easy to verify UI
-    if (import.meta.env.DEV) return true;
     const lastCheckTime = localStorage.getItem(STORAGE_KEYS.LAST_CHECK_TIME);
     if (!lastCheckTime) return true;
 
@@ -125,7 +122,9 @@ export function UpdateChecker() {
 
   // Check for updates on app startup
   useEffect(() => {
-    checkForUpdates();
+    if (import.meta.env.PROD) {
+      checkForUpdates();
+    }
   }, []);
 
   return (
