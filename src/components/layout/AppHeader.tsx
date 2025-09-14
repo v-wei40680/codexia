@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLayoutStore } from "@/stores/layoutStore";
 import { invoke } from "@tauri-apps/api/core";
 import { useState, useEffect } from "react";
@@ -23,10 +23,13 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuLabel,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import supabase from "@/lib/supabase";
 
 export function AppHeader() {
   const { showFileTree, toggleFileTree, toggleChatPane } = useLayoutStore();
@@ -35,7 +38,20 @@ export function AppHeader() {
   const [codexVersion, setCodexVersion] = useState<string>("");
   const [isCodexAvailable, setIsCodexAvailable] = useState<boolean>(false);
   const location = useLocation();
+  const navigate = useNavigate();
   const { user } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      if (supabase) {
+        await supabase.auth.signOut();
+      }
+    } catch (e) {
+      console.error("Error signing out:", e);
+    } finally {
+      navigate("/login", { replace: true });
+    }
+  };
 
   useEffect(() => {
     const checkVersion = async () => {
@@ -162,23 +178,41 @@ export function AppHeader() {
           Settings
         </Link>
 
-        {import.meta.env.EnableAuth &&
+        {(import.meta.env.VITE_ENABLE_AUTH === 'true') && (
           <>
-          {user?.user_metadata.avatar_url ? (
-            <img
-              src={user.user_metadata.avatar_url}
-              className="rounded-full w-6 h-6"
-            />
-          ) : (
-            <Link
-              to="/login"
-              className="flex hover:text-primary items-center gap-1 px-2"
-            >
-              login
-            </Link>
-          )}
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="h-6 w-6 p-0 rounded-full">
+                    {user.user_metadata?.avatar_url ? (
+                      <img
+                        src={user.user_metadata.avatar_url}
+                        className="rounded-full w-6 h-6"
+                        alt="User avatar"
+                      />
+                    ) : (
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-xs">
+                        {user.email?.charAt(0)?.toUpperCase() ?? "U"}
+                      </span>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>Sign out</DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Link
+                to="/login"
+                className="flex hover:text-primary items-center gap-1 px-2"
+              >
+                login
+              </Link>
+            )}
           </>
-        }
+        )}
       </span>
     </div>
   );

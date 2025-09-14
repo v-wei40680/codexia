@@ -27,13 +27,14 @@ function Root() {
 
 function RequireAuth() {
   const { user, loading } = useAuth();
+  const ENABLE_AUTH = import.meta.env.VITE_ENABLE_AUTH === 'true'
 
-  // Skip auth entirely in development
-  if (import.meta.env.DEV) {
+  // In development, only skip if auth is not forced
+  if (import.meta.env.DEV && !ENABLE_AUTH) {
     return <Outlet />;
   }
 
-  if (!import.meta.env.EnableAuth) {
+  if (!ENABLE_AUTH) {
     return <Outlet />;
   }
 
@@ -85,5 +86,3 @@ export const router = createHashRouter([
     ],
   },
 ]);
-
-

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { User } from '@supabase/supabase-js'
+import type { User } from '@supabase/supabase-js'
 import supabase from '@/lib/supabase'
 
 export const useAuth = () => {
@@ -7,14 +7,24 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // If Supabase is not configured, treat as logged out but don't block UI
+    if (!supabase) {
+      setUser(null)
+      setLoading(false)
+      return
+    }
+
     // Get initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
-    }).catch((error) => {
-      console.error('Error getting session:', error)
-      setLoading(false)
-    })
+    supabase.auth
+      .getSession()
+      .then(({ data: { session } }) => {
+        setUser(session?.user ?? null)
+        setLoading(false)
+      })
+      .catch((error) => {
+        console.error('Error getting session:', error)
+        setLoading(false)
+      })
 
     // Listen for auth changes
     const {

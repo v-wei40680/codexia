@@ -22,6 +22,11 @@ Install dependencies:
 bun install
 ```
 
+Option step note or conversaion in the cloud if user require in the future:
+```sh
+cp .env.example .env
+```
+
 Run the app in development:
 ```bash
 bun tauri dev

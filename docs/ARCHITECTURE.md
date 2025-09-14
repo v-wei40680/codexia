@@ -26,6 +26,13 @@ Codexia is a cross‑platform desktop app built with Tauri v2 (Rust backend) and
 - Configurable startup parameters (model, sandboxing, approval policy, working directory)
 - Event isolation between sessions for security and clarity
 
+important files connect Codexia and Codex CLI
+ 
+```
+useCodexEvents.rs
+codex_client.rs
+```
+
 ## Project Structure
 
 ```
