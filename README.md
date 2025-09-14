@@ -15,6 +15,8 @@
 
 🚀 A powerful GUI/IDE for the [Codex CLI](https://github.com/openai/codex) — fork chat, file-tree integration, notepad, git diff, build-in pdf csv/xlsx viewer, Cross-platform desktop app built with Tauri v2.
 
+[USAGE](docs/USAGE.md) | [CONTRIBUTING](CONTRIBUTING.md) | [ARCHITECTURE](docs/ARCHITECTURE.md)
+
 > [!TIP]
 > **⭐ Star the repo and follow milisp on [x|Twitter](https://x.com/lisp_mi) and [github](https://github.com/milisp) for more**.
 
