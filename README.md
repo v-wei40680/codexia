@@ -13,7 +13,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/milisp/codexia/actions/workflows/ci.yml/badge.svg)](https://github.com/milisp/codexia/actions/workflows/ci.yml)
 
-🚀 A powerful GUI/IDE for the [Codex CLI](https://github.com/openai/codex) — fork chat, file-tree integration, notepad, git diff, build-in pdf csv/xlsx viewer, Cross-platform desktop app built with Tauri v2.
+🚀 A powerful GUI and Toolkit for [Codex CLI](https://github.com/openai/codex)
+
+fork chat, file-tree integration, notepad, git diff, build-in pdf csv/xlsx viewer, and more.
 
 [USAGE](docs/USAGE.md) | [CONTRIBUTING](CONTRIBUTING.md) | [ARCHITECTURE](docs/ARCHITECTURE.md)
 
@@ -80,10 +82,19 @@
 - Theme & Accent Selection
 
 ### 🛡️ **Security & Control**
+
+Codexia prioritizes your privacy and security:
+
+#### Codex CLI features
 - Sandbox execution modes for safe code running
 - Approval workflows for sensitive operations
 - Configurable command execution policies
 - Isolated processes per session for security
+
+#### Privacy
+- **Local Storage**: All data stays on your machine
+- **No Telemetry**: No data collection or tracking
+- **Open Source**: Full transparency through open source code
 
 ## Documentation
 
