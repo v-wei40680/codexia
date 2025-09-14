@@ -9,13 +9,13 @@ export type EventMsg =
   | { type: 'session_configured'; session_id: string; model: string; history_log_id?: number; history_entry_count?: number }
   | { type: 'task_started' }
   | {
-    "cached_input_tokens": null,
-    "input_tokens": null,
-    "output_tokens": null,
-    "reasoning_output_tokens": null,
-    "total_tokens": null,
-    "type": "token_count"
-  }
+      type: "token_count";
+      cached_input_tokens?: number | null;
+      input_tokens?: number | null;
+      output_tokens?: number | null;
+      reasoning_output_tokens?: number | null;
+      total_tokens?: number | null;
+    }
   | { type: 'task_complete'; response_id?: string; last_agent_message?: string }
   | { type: 'agent_message'; message?: string; last_agent_message?: string }
   | { type: 'agent_message_delta'; delta: string }
