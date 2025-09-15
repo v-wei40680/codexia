@@ -69,7 +69,7 @@ export interface CodexConfig {
   approvalPolicy: 'untrusted' | 'on-failure' | 'on-request' | 'never';
   sandboxMode: 'read-only' | 'workspace-write' | 'danger-full-access';
   codexPath?: string;
-  reasoningEffort?: 'high' | 'medium' | 'low' | 'minimal';
+  reasoningEffort?: 'high' | 'medium' | 'low';
   // Optional: resume a previous session from a rollout file
   resumePath?: string;
   // Enable experimental web search tool for the agent
@@ -79,7 +79,7 @@ export interface CodexConfig {
 export const SANDBOX_MODES = {
   'read-only': {
     label: 'Read Only',
-    shortLabel: 'Chat',
+    shortLabel: 'Chat or plan',
     description: 'View files only, requires approval for edits/commands'
   },
   'workspace-write': {
@@ -96,9 +96,9 @@ export const SANDBOX_MODES = {
 
 export const DEFAULT_CONFIG: CodexConfig = {
   workingDirectory: '',
-  model: 'llama3.2',
-  provider: 'oss',
-  useOss: true,
+  model: 'gpt-5-codex',
+  provider: 'openai',
+  useOss: false,
   approvalPolicy: 'on-request',
   sandboxMode: 'workspace-write',
   webSearchEnabled: false,

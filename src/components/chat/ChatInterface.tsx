@@ -16,6 +16,7 @@ import { generateUniqueId } from "@/utils/genUniqueId";
 import { ForkOriginBanner } from './ForkOriginBanner';
 import { useEphemeralStore } from '@/stores/EphemeralStore';
 import { ChangesSummary } from './ChangesSummary';
+import { ModelSelector } from "./ModelSelector";
 
 interface ChatInterfaceProps {
   sessionId: string;
@@ -477,8 +478,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             sandboxMode={config.sandboxMode}
             onModeChange={setSandboxMode}
           />
+          <ModelSelector />
           <ReasoningEffortSelector />
-        </div>
+          </div>
       </div>
     </div>
   );

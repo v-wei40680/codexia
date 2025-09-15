@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-type ReasoningEffort = 'high' | 'medium' | 'low' | 'minimal';
+type ReasoningEffort = 'high' | 'medium' | 'low';
 
 interface ModelStore {
   currentModel: string;
@@ -14,7 +14,7 @@ interface ModelStore {
 export const useModelStore = create<ModelStore>()(
   persist(
     (set) => ({
-      currentModel: 'gpt-5',
+      currentModel: 'gpt-5-codex',
       currentProvider: 'openai',
       reasoningEffort: 'medium',
       setCurrentModel: (model: string, provider: string) =>

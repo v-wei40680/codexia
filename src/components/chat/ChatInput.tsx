@@ -4,7 +4,6 @@ import { Textarea } from '../ui/textarea';
 import { ArrowUp, Square, AudioLines, Globe } from 'lucide-react';
 import { useChatInputStore } from '@/stores/chatInputStore';
 import { MediaSelector } from './MediaSelector';
-import { ModelSelector } from './ModelSelector';
 import { FileReferenceList } from './FileReferenceList';
 import { MediaAttachmentList } from './MediaAttachmentList';
 import { useSettingsStore } from '@/stores/SettingsStore';
@@ -170,10 +169,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         </div>
 
         {/* Model Selector and Send Button - bottom right inside textarea */}
-        <div className="absolute right-4 bottom-2 flex items-center gap-1 group">
-          <div className="opacity-0 transition-opacity duration-300 group-hover:opacity-100">
-            <ModelSelector />
-          </div>
+        <div className="absolute right-4 bottom-2 flex items-center gap-1">
           {isLoading ? (
             <Button
               onClick={handleStopStreaming}
