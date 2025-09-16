@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.4.0] - 2025-09-15
+
+- add gpt-5-codex as default model
+- move model select ui between mode and Reasoning Effort
+
+### Change publish Strategy
+- change `.github/workflows/release.yml` manual publish binary package
+
+## [0.3.0] - 2025-09-11
+
+### Featrues
+- support codex built-in web search
+- file and FileTree change detect and refresh
+- enhance MessageList with feature cards for improved user onboarding
+- add ChangesSummary component for improved file diff display
+
 ## [0.2.0] - 2025-09-11
 
 ### Features
