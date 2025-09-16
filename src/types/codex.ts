@@ -69,7 +69,7 @@ export interface CodexConfig {
   approvalPolicy: 'untrusted' | 'on-failure' | 'on-request' | 'never';
   sandboxMode: 'read-only' | 'workspace-write' | 'danger-full-access';
   codexPath?: string;
-  reasoningEffort?: 'high' | 'medium' | 'low';
+  reasoningEffort?: 'high' | 'medium' | 'low' | 'minimal';
   // Optional: resume a previous session from a rollout file
   resumePath?: string;
   // Enable experimental web search tool for the agent

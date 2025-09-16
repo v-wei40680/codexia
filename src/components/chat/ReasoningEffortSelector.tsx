@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from '../ui/button';
 import { Brain, ChevronDown } from 'lucide-react';
 import {
@@ -8,15 +8,42 @@ import {
 } from '../ui/popover';
 import { useModelStore } from '@/stores/ModelStore';
 
+const EFFORT_OPTIONS = [
+  { value: 'minimal', label: 'Minimal' },
+  { value: 'low', label: 'Low' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'high', label: 'High' },
+] as const;
+
 export const ReasoningEffortSelector: React.FC = () => {
-  const { reasoningEffort, setReasoningEffort } = useModelStore();
+  const {
+    reasoningEffort,
+    setReasoningEffort,
+    currentModel,
+    currentProvider,
+  } = useModelStore();
   const [isOpen, setIsOpen] = useState(false);
 
-  const efforts = [
-    { value: 'low', label: 'Low' },
-    { value: 'medium', label: 'Medium' },
-    { value: 'high', label: 'High' },
-  ] as const;
+  const allowedEfforts = useMemo(() => {
+    const provider = currentProvider.toLowerCase();
+    if (provider === 'openai' && currentModel === 'gpt-5-codex') {
+      return EFFORT_OPTIONS.filter((effort) => effort.value !== 'minimal');
+    }
+    return EFFORT_OPTIONS;
+  }, [currentModel, currentProvider]);
+
+  useEffect(() => {
+    const isCurrentEffortAllowed = allowedEfforts.some(
+      (effort) => effort.value === reasoningEffort,
+    );
+
+    if (!isCurrentEffortAllowed && allowedEfforts.length > 0) {
+      const fallbackEffort =
+        allowedEfforts.find((effort) => effort.value === 'medium') ??
+        allowedEfforts[0];
+      setReasoningEffort(fallbackEffort.value);
+    }
+  }, [allowedEfforts, reasoningEffort, setReasoningEffort]);
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
@@ -34,7 +61,7 @@ export const ReasoningEffortSelector: React.FC = () => {
           <div>
             Reasoning Effort
           </div>
-          {efforts.map((effort) => (
+          {allowedEfforts.map((effort) => (
             <Button
               key={effort.value}
               variant={reasoningEffort === effort.value ? "default" : "ghost"}
