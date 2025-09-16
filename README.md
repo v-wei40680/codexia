@@ -46,40 +46,34 @@ fork chat, file-tree integration, notepad, git diff, build-in pdf csv/xlsx viewe
 ## ✨ Features
 
 ### 🔄 **Multi-Session Support**
-- Run multiple independent chat sessions simultaneously
-- Each session maintains its own configuration and context
-- Switch between sessions without interrupting ongoing conversations
-- Persistent session storage with automatic restoration on app restart
+- Multiple independent chat sessions
+- Auto-restore sessions on restart
 
 ### 💬 **Real-Time Streaming**
-- Live streaming responses for immediate feedback
-- Character-by-character message updates as AI generates responses
-- No more waiting for complete responses - see results as they appear
-- Visual indicators for active generation and thinking states
 
 ### Build-in Mutil file format support
 
-- pdf - select text from pdf
-- csv, xlsx - preview and select text
+- PDF text selection
+- CSV/XLSX preview & selection
 
 ### ⚙️ **Flexible Configuration**
-- Support for multiple AI providers (OpenAI, OSS via Ollama, Custom)
-- Configurable models per session (GPT, Llama, etc.)
-- Adjustable sandbox policies (read-only, workspace-write, full-access)
-- Customizable approval policies for command execution
-- Working directory selection for each session
+- Multiple AI providers (OpenAI, Ollama, Custom)
+- Per-session model configs
+- Adjustable sandbox policies
+- Custom approval workflows
+- Select working directory
 
 ### 🎯 **Professional UX**
-- Clean, responsive interface built with shadcn/ui components
-- Configuration panel
-- **Notepad-chat integration** for seamless note-taking and send back during conversations
-- **Enhanced markdown rendering** with syntax highlighting for code blocks
-- **Todo list** Plan Display
-- Screenshot as image input
-- fork chat
-- Persistent UI state and preferences
-- **WebPreview** Click WebPreview icon Auto detect web port to show WebPreview, eg. Next.js project will show WebPreview `http://localhost:3000`
-- Theme & Accent Selection
+- Responsive UI with shadcn/ui
+- Config panel
+- Notepad-chat integration
+- Syntax-highlighted markdown
+- Todo plan display
+- Screenshot as input
+- Fork chat
+- Persistent UI state
+- Auto WebPreview (e.g., Next.js http://localhost:3000)
+- Theme & Accent selection
 
 ### 🛡️ **Security & Control**
 
@@ -104,24 +98,24 @@ Codexia prioritizes your privacy and security:
 
 ## 📋 Supported Codex Features
 
-- ✅ **Interactive chat** with AI assistants
-- ✅ **Code generation and editing** in various languages
-- ✅ **File operations** with sandbox controls
-- ✅ **Command execution** with approval workflows
-- ✅ **Multiple AI providers** (OpenAI, OSS models via Ollama)
-- ✅ **Working directory context** for project-aware assistance
-- ✅ **Streaming responses** for real-time interaction - by config show_raw_agent_reasoning=true
-- ✅ **Web Search** support gpt-5 built-in web search
+- ✅ Interactive chat
+- ✅ Code generation/editing
+- ✅ File operations with sandbox
+- ✅ Command execution with approval
+- ✅ Multiple AI providers
+- ✅ Project-aware assistance
+- ✅ Streaming responses
+- ✅ Built-in Web Search
 
 ## 🛣️ Roadmap
 
 - MCP tool call
-- Expand file format support for better project compatibility.
-- Improve UI customization and theming options.
-- Develop plugins system for third-party extensions.
-- Integrate advanced debugging and profiling tools.
-- Add collaborative coding features with real-time sharing.
-- Optimize performance and reduce resource consumption.
+- More file format support
+- Better UI customization
+- Plugin system
+- Advanced debugging tools
+- Real-time collaboration
+- Performance optimizations
 
 🚀 **Call to Action**
 
