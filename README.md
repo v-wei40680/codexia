@@ -7,7 +7,6 @@
 [![Downloads](https://img.shields.io/github/downloads/milisp/codexia/total.svg)](https://github.com/milisp/codexia/releases)
 [![Stars](https://img.shields.io/github/stars/milisp/codexia?style=social)](https://github.com/milisp/codexia/stargazers)
 [![Forks](https://img.shields.io/github/forks/milisp/codexia?style=social)](https://github.com/milisp/codexia/network/members)
-[![Issues](https://img.shields.io/github/issues/milisp/codexia)](https://github.com/milisp/codexia/issues)
 [![Feature Requests](https://img.shields.io/github/issues/milisp/codexia/feature-request?label=feature%20requests)](https://github.com/milisp/codexia/labels/feature-request)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#-contributing)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
@@ -117,6 +116,7 @@ Codexia prioritizes your privacy and security:
 - Advanced debugging tools
 - Real-time collaboration
 - Performance optimizations
+- token count
 
 🚀 **Call to Action**
 
@@ -125,6 +125,16 @@ If you’re a developer, designer, or AI tinkerer — Join us on this exciting j
 ## Development & Support Docs
 
 For development commands, troubleshooting/FAQ, and contribution guidance, see [CONTRIBUTING](CONTRIBUTING.md) and [USAGE](docs/USAGE.md).
+
+## 💬 Discussions
+
+Join the [Discussions](https://github.com/milisp/codexia/discussions)
+
+## Community forks
+
+- [jeremiahodom/codex-ui](https://github.com/jeremiahodom/codex-ui) - Node.js backend with API/SSE communication
+- [Itexoft/codexia](https://github.com/Itexoft/codexia) - SSH integration
+- [nuno5645/codexia](https://github.com/nuno5645/codexia) - add support for new reasoning and token count events
 
 ## 💖 Contributors
 
