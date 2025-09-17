@@ -12,6 +12,7 @@
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#-contributing)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![CI](https://github.com/milisp/codexia/actions/workflows/ci.yml/badge.svg)](https://github.com/milisp/codexia/actions/workflows/ci.yml)
+[![Follow on 𝕏](https://img.shields.io/badge/𝕏-@lisp__mi-1c9bf0)](http://x.com/intent/follow?screen_name=lisp_mi)
 
 🚀 A powerful GUI and Toolkit for [Codex CLI](https://github.com/openai/codex)
 
@@ -20,7 +21,7 @@ fork chat, file-tree integration, notepad, git diff, build-in pdf csv/xlsx viewe
 [USAGE](docs/USAGE.md) | [CONTRIBUTING](CONTRIBUTING.md) | [ARCHITECTURE](docs/ARCHITECTURE.md)
 
 > [!TIP]
-> **⭐ Star the repo and follow milisp on [x|Twitter](https://x.com/lisp_mi) and [github](https://github.com/milisp) for more**.
+> **⭐ Star the repo and follow https://github.com/milisp for more**.
 
 <div style="display: flex; gap: 10px; justify-content: center;">
   <div style="text-align: center;">
