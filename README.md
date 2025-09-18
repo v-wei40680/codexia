@@ -39,17 +39,14 @@ fork chat, file-tree integration, notepad, git diff, build-in pdf csv/xlsx viewe
 
 - [2025-09-11] support codex built-in web search + file and filetree change detect and refresh
 - [2025-09-05] fork chat + edit chat
-  * (theme select + category conversatin) ideas thanks to reddit user [rachelo3](https://racheluidesign.weebly.com/)
+  * (theme select + category conversatin) ideas thanks to reddit user [rachelo3](https://racheluidesign.weebly.com/?utm_source=https://github.com/milisp/codexia)
 - [2025-09-03] show the plan message
 - [2025-08-29] support image input, codexia can read image now
 
 ## ✨ Features
 
-### 🔄 **Multi-Session Support**
-- Multiple independent chat sessions
-- Auto-restore sessions on restart
-
-### 💬 **Real-Time Streaming**
+- 🔄 **Multi-Session Support**
+- 💬 **Real-Time Streaming**
 
 ### Build-in Mutil file format support
 
@@ -126,6 +123,10 @@ If you’re a developer, designer, or AI tinkerer — Join us on this exciting j
 
 For development commands, troubleshooting/FAQ, and contribution guidance, see [CONTRIBUTING](CONTRIBUTING.md) and [USAGE](docs/USAGE.md).
 
+### What we need
+- docs improve
+- make the UI more clean.
+
 ## 💬 Discussions
 
 Join the [Discussions](https://github.com/milisp/codexia/discussions)
@@ -165,3 +166,7 @@ Codexia is an independent open-source project and is not built by OpenAI or any 
 ---
 
 **Built with ❤️ using Tauri, React, and Rust**
+
+## 📈 Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=milisp/codexia&type=Date)](https://star-history.com/#milisp/codexia)
