@@ -1,6 +1,7 @@
 use crate::protocol::CodexConfig;
 use crate::services::{codex, session};
 use crate::state::CodexState;
+use crate::utils::file::{get_sessions_path, scan_jsonl_files};
 use std::fs;
 use tauri::{AppHandle, State};
 
@@ -84,58 +85,14 @@ pub async fn get_latest_session_id() -> Result<Option<String>, String> {
 
 #[tauri::command]
 pub async fn get_session_files() -> Result<Vec<String>, String> {
-    let home = dirs::home_dir().ok_or("Could not find home directory")?;
-    let sessions_dir = home.join(".codex").join("sessions");
+    let sessions_dir = get_sessions_path()?;
 
     if !sessions_dir.exists() {
         return Ok(vec![]);
     }
-
-    let mut session_files = Vec::new();
-
-    // Walk through year/month/day directories
-    if let Ok(entries) = fs::read_dir(&sessions_dir) {
-        for entry in entries.flatten() {
-            if entry.file_type().map(|ft| ft.is_dir()).unwrap_or(false) {
-                let year_path = entry.path();
-                if let Ok(month_entries) = fs::read_dir(&year_path) {
-                    for month_entry in month_entries.flatten() {
-                        if month_entry
-                            .file_type()
-                            .map(|ft| ft.is_dir())
-                            .unwrap_or(false)
-                        {
-                            let month_path = month_entry.path();
-                            if let Ok(day_entries) = fs::read_dir(&month_path) {
-                                for day_entry in day_entries.flatten() {
-                                    if day_entry.file_type().map(|ft| ft.is_dir()).unwrap_or(false)
-                                    {
-                                        let day_path = day_entry.path();
-                                        if let Ok(file_entries) = fs::read_dir(&day_path) {
-                                            for file_entry in file_entries.flatten() {
-                                                if let Some(filename) =
-                                                    file_entry.file_name().to_str()
-                                                {
-                                                    if filename.ends_with(".jsonl") {
-                                                        session_files.push(
-                                                            file_entry
-                                                                .path()
-                                                                .to_string_lossy()
-                                                                .to_string(),
-                                                        );
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
+    let session_files = scan_jsonl_files(&sessions_dir)
+        .map(|entry| entry.path().to_string_lossy().to_string())
+        .collect::<Vec<_>>();
 
     Ok(session_files)
 }
@@ -159,32 +116,22 @@ pub async fn read_history_file() -> Result<String, String> {
 
 #[tauri::command]
 pub async fn find_rollout_path_for_session(session_uuid: String) -> Result<Option<String>, String> {
-    let home = dirs::home_dir().ok_or("Could not find home directory")?;
-    let sessions_dir = home.join(".codex").join("sessions");
+    let sessions_dir = get_sessions_path()?;
     if !sessions_dir.exists() {
         return Ok(None);
     }
 
     // Walk recursively year/month/day and find file ending with -<uuid>.jsonl
     let needle = format!("-{}.jsonl", session_uuid);
-    let mut stack = vec![sessions_dir];
-    while let Some(dir) = stack.pop() {
-        if let Ok(entries) = std::fs::read_dir(&dir) {
-            for entry in entries.flatten() {
-                let path = entry.path();
-                if let Ok(ft) = entry.file_type() {
-                    if ft.is_dir() {
-                        stack.push(path);
-                    } else if ft.is_file() {
-                        if let Some(name) = path.file_name().and_then(|s| s.to_str()) {
-                            if name.ends_with(&needle) {
-                                return Ok(Some(path.to_string_lossy().to_string()));
-                            }
-                        }
-                    }
-                }
+    let rollout_path = scan_jsonl_files(&sessions_dir)
+        .find_map(|entry| {
+            let file_name = entry.file_name();
+            if file_name.to_string_lossy().ends_with(&needle) {
+                Some(entry.path().to_string_lossy().to_string())
+            } else {
+                None
             }
-        }
-    }
-    Ok(None)
+        });
+
+    Ok(rollout_path)
 }
