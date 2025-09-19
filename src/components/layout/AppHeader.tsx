@@ -106,10 +106,10 @@ export function AppHeader() {
         )}
       </span>
 
-      <span className="flex gap-0 h-6">
+      <span className="flex items-center gap-2 h-6">
         {location.pathname === "/chat" && (
           <McpDialog>
-            <Button variant="ghost" className="flex gap-1 h-6">
+            <Button variant="ghost" className="flex gap-1 h-6 px-1.5">
               <Usb />
               MCP
             </Button>
@@ -118,7 +118,7 @@ export function AppHeader() {
 
         <Link
           to="/usage"
-          className="flex hover:text-primary items-center gap-1"
+          className="flex hover:text-primary items-center gap-1 -ml-1"
         >
           <BarChart3 className="w-4 h-4" /> Usage
         </Link>
