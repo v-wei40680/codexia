@@ -18,6 +18,9 @@ interface ChatInputStore {
   
   // Input value (not persisted)
   inputValue: string;
+
+  // Prompt optimization history (local stack, not persisted)
+  promptHistory: string[];
   
   // Actions for file references
   addFileReference: (path: string, relativePath: string, name: string, isDirectory: boolean) => void;
@@ -33,6 +36,11 @@ interface ChatInputStore {
   // Input actions
   setInputValue: (value: string) => void;
   appendToInput: (value: string) => void;
+
+  // Prompt optimization history actions
+  pushPromptHistory: (value: string) => void;
+  popPromptHistory: () => string | null;
+  clearPromptHistory: () => void;
   
   // Focus control
   focusSignal: number;
@@ -57,6 +65,7 @@ export const useChatInputStore = create<ChatInputStore>()(
       fileReferences: [],
       mediaAttachments: [],
       inputValue: "",
+      promptHistory: [],
       
       // Focus control (increments to trigger effects)
       focusSignal: 0,
@@ -120,6 +129,33 @@ export const useChatInputStore = create<ChatInputStore>()(
         const separator = inputValue.trim() ? '\n\n' : '';
         set({ inputValue: inputValue + separator + value });
       },
+
+      pushPromptHistory: (value: string) => {
+        const { promptHistory } = get();
+        const lastEntry = promptHistory[promptHistory.length - 1];
+        const shouldAdd = value.trim().length > 0 && value !== lastEntry;
+
+        if (!shouldAdd) {
+          return;
+        }
+
+        set({ promptHistory: [value] });
+      },
+
+      popPromptHistory: () => {
+        const { promptHistory } = get();
+        if (promptHistory.length === 0) {
+          return null;
+        }
+
+        const previousValue = promptHistory[promptHistory.length - 1];
+        set({ promptHistory: promptHistory.slice(0, -1) });
+        return previousValue;
+      },
+
+      clearPromptHistory: () => {
+        set({ promptHistory: [] });
+      },
       
       // Focus control: bump signal to notify listeners
       requestFocus: () => {
@@ -131,7 +167,8 @@ export const useChatInputStore = create<ChatInputStore>()(
         set({ 
           fileReferences: [],
           mediaAttachments: [],
-          inputValue: ""
+          inputValue: "",
+          promptHistory: [],
         });
       },
 

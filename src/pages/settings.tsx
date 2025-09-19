@@ -5,6 +5,7 @@ import ProviderModels from "@/components/ProviderModels";
 import ExcludeFolders from "@/components/ExcludeFolders";
 import LogoSettings from "@/components/LogoSettings";
 import { useSettingsStore } from "@/stores/SettingsStore";
+import { PromptOptimizerSettings } from "@/components/PromptOptimizerSettings";
 
 export default function SettingsPage() {
   const { activeSection, setActiveSection } = useSettingsStore();
@@ -37,6 +38,7 @@ export default function SettingsPage() {
             />
           </div>
         )}
+        {activeSection === "promptOptimizer" && <PromptOptimizerSettings />}
         {activeSection === "security" && <p>Security Settings</p>}
         {activeSection === "working" && <p>Working Directory Settings</p>}
         {activeSection === "exclude" && <ExcludeFolders />}

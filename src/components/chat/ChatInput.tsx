@@ -9,6 +9,8 @@ import { MediaAttachmentList } from './MediaAttachmentList';
 import { useSettingsStore } from '@/stores/SettingsStore';
 import { ScreenshotPopover } from './ScreenshotPopover';
 import { useCodexStore } from '@/stores/CodexStore';
+import { PromptOptimizerControl } from './PromptOptimizerControl';
+import { usePromptOptimization } from '@/hooks/usePromptOptimization';
 
 interface ChatInputProps {
   inputValue: string;
@@ -37,9 +39,29 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     clearFileReferences,
     clearMediaAttachments,
     focusSignal,
+    pushPromptHistory,
+    popPromptHistory,
+    clearPromptHistory,
+    promptHistory,
   } = useChatInputStore();
   const { windowTitle } = useSettingsStore()
   const { config, updateConfig } = useCodexStore();
+  const {
+    isOptimizing,
+    canOptimize,
+    canUndo,
+    optimizePrompt,
+    undoOptimization,
+    resetOptimizationState,
+    credentialMessage,
+  } = usePromptOptimization({
+    inputValue,
+    disabled,
+    onInputChange,
+    pushPromptHistory,
+    popPromptHistory,
+    promptHistoryLength: promptHistory.length,
+  });
 
   // Ref for the textarea to allow programmatic focus
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
@@ -88,6 +110,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     onInputChange('');
     clearFileReferences();
     clearMediaAttachments();
+    clearPromptHistory();
+    resetOptimizationState();
   };
 
   const handleStopStreaming = () => {
@@ -170,6 +194,14 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
         {/* Model Selector and Send Button - bottom right inside textarea */}
         <div className="absolute right-4 bottom-2 flex items-center gap-1">
+          <PromptOptimizerControl
+            isOptimizing={isOptimizing}
+            canUndo={canUndo}
+            canOptimize={canOptimize}
+            onOptimize={optimizePrompt}
+            onUndo={undoOptimization}
+            disabledMessage={credentialMessage}
+          />
           {isLoading ? (
             <Button
               onClick={handleStopStreaming}

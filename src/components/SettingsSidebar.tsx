@@ -19,6 +19,13 @@ export default function SettingsSidebar({
         Provider
       </Button>
       <Button
+        variant={activeSection === "promptOptimizer" ? "default" : "ghost"}
+        className="w-full justify-start"
+        onClick={() => onSectionChange("promptOptimizer")}
+      >
+        Prompt Optimizer
+      </Button>
+      <Button
         variant={activeSection === "security" ? "default" : "ghost"}
         className="w-full justify-start"
         onClick={() => onSectionChange("security")}
