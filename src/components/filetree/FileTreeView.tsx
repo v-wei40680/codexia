@@ -7,6 +7,7 @@ import { useContextFilesStore } from "@/stores/ContextFilesStore";
 import { useFileTokens } from "@/hooks/useFileTokens";
 import { FileTreeHeader } from "./FileTreeHeader";
 import { FileTreeItem } from "./FileTreeItem";
+import { getErrorMessage } from "@/utils/errorUtils";
 
 interface FileEntry {
   name: string;
@@ -64,7 +65,7 @@ export function FileTree({
       });
       setEntries(result);
     } catch (err) {
-      setError(err as string);
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }
