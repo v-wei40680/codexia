@@ -9,6 +9,7 @@ import { useThemeStore } from "@/stores/ThemeStore";
 import { useConversationStore } from "@/stores/ConversationStore";
 import { useLayoutStore } from "@/stores/layoutStore";
 import { useChatInputStore } from "@/stores/chatInputStore";
+import { getErrorMessage } from "@/utils/errorUtils";
 
 interface FileViewerProps {
   filePath: string | null;
@@ -89,7 +90,7 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
       setCurrentContent(fileContent);
       setDiskChanged(false);
     } catch (err) {
-      setError(err as string);
+      setError(getErrorMessage(err));
     } finally {
       setLoading(false);
     }

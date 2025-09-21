@@ -37,7 +37,13 @@ export function TokenDistributionChart({ usageData, formatTokens }: TokenDistrib
                 cx="50%"
                 cy="50%"
                 labelLine={false}
-                label={({ name, percent }) => `${name} ${(percent ? percent * 100 : 0).toFixed(0)}%`}
+                label={({ name, percent }) => {
+                  const percentage =
+                    typeof percent === "number"
+                      ? (percent * 100).toFixed(0)
+                      : "0";
+                  return `${name} ${percentage}%`;
+                }}
                 outerRadius={80}
                 fill="#8884d8"
                 dataKey="value"

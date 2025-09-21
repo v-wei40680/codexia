@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useFolderStore } from "@/stores/FolderStore";
 import { RefreshCw, GitBranch, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { getErrorMessage } from "@/utils/errorUtils";
 
 interface GitStatus {
 	staged: string[];
@@ -45,8 +46,8 @@ export function GitStatusView({ currentFolder, onDiffClick }: GitStatusViewProps
 				directory: targetPath,
 			});
 			setGitStatus(result);
-		} catch (err) {
-			setError(err as string);
+                } catch (err) {
+                        setError(getErrorMessage(err));
 		} finally {
 			setLoading(false);
 		}
