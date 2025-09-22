@@ -27,14 +27,9 @@ function Root() {
 
 function RequireAuth() {
   const { user, loading } = useAuth();
-  const ENABLE_AUTH = import.meta.env.VITE_ENABLE_AUTH === 'true'
 
   // In development, only skip if auth is not forced
-  if (import.meta.env.DEV && !ENABLE_AUTH) {
-    return <Outlet />;
-  }
-
-  if (!ENABLE_AUTH) {
+  if (import.meta.env.DEV) {
     return <Outlet />;
   }
 

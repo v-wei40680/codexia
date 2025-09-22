@@ -178,40 +178,36 @@ export function AppHeader() {
           Settings
         </Link>
 
-        {(import.meta.env.VITE_ENABLE_AUTH === 'true') && (
-          <>
-            {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="h-6 w-6 p-0 rounded-full">
-                    {user.user_metadata?.avatar_url ? (
-                      <img
-                        src={user.user_metadata.avatar_url}
-                        className="rounded-full w-6 h-6"
-                        alt="User avatar"
-                      />
-                    ) : (
-                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-xs">
-                        {user.email?.charAt(0)?.toUpperCase() ?? "U"}
-                      </span>
-                    )}
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Account</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={handleLogout}>Sign out</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <Link
-                to="/login"
-                className="flex hover:text-primary items-center gap-1 px-2"
-              >
-                login
-              </Link>
-            )}
-          </>
+        {user ? (
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="h-6 w-6 p-0 rounded-full">
+                {user.user_metadata?.avatar_url ? (
+                  <img
+                    src={user.user_metadata.avatar_url}
+                    className="rounded-full w-6 h-6"
+                    alt="User avatar"
+                  />
+                ) : (
+                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-muted text-xs">
+                    {user.email?.charAt(0)?.toUpperCase() ?? "U"}
+                  </span>
+                )}
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Account</DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={handleLogout}>Sign out</DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : (
+          <Link
+            to="/login"
+            className="flex hover:text-primary items-center gap-1 px-2"
+          >
+            login
+          </Link>
         )}
       </span>
     </div>
