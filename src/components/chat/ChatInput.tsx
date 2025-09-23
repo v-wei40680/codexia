@@ -4,7 +4,6 @@ import { Textarea } from '../ui/textarea';
 import { ArrowUp, Square, AudioLines, Globe } from 'lucide-react';
 import { useChatInputStore } from '@/stores/chatInputStore';
 import { MediaSelector } from './MediaSelector';
-import { FileReferenceList } from './FileReferenceList';
 import { MediaAttachmentList } from './MediaAttachmentList';
 import { useSettingsStore } from '@/stores/SettingsStore';
 import { ScreenshotPopover } from './ScreenshotPopover';
@@ -34,7 +33,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   const {
     fileReferences,
     mediaAttachments,
-    removeFileReference,
     removeMediaAttachment,
     clearFileReferences,
     clearMediaAttachments,
@@ -136,15 +134,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     <div className="flex-shrink-0 border-t px-4 bg-background">
       <div className="relative">
         {/* File references and media attachments inside textarea */}
-        {(fileReferences.length > 0 || mediaAttachments.length > 0) && (
+        {mediaAttachments.length > 0 && (
           <div className="absolute top-2 left-3 right-32 z-10 flex flex-wrap gap-1 items-center mb-2 max-h-20 overflow-y-auto">
-            {/* File references */}
-            <FileReferenceList 
-              fileReferences={fileReferences}
-              onRemove={removeFileReference}
-            />
-            
-            {/* Media attachments */}
             <MediaAttachmentList
               mediaAttachments={mediaAttachments}
               onRemove={removeMediaAttachment}
@@ -159,7 +150,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           onKeyDown={handleKeyPress}
           placeholder={placeholderOverride || `Ask ${windowTitle == 'Codexia' ? "Codex" : windowTitle} to do anything`}
           className={`min-h-20 max-h-96 pr-32 bg-muted/50 resize-none overflow-y-auto pb-8 ${
-            (fileReferences.length > 0 || mediaAttachments.length > 0) ? 'pt-8' : ''
+            mediaAttachments.length > 0 ? 'pt-8' : ''
           }`}
           disabled={false}
           onInput={(e) => {

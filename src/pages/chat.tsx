@@ -171,6 +171,7 @@ export default function ChatPage() {
                           name: ref.name,
                           path: ref.path,
                           is_directory: ref.isDirectory,
+                          relativePath: ref.relativePath,
                         }}
                         level={0}
                         expandedFolders={expandedAddedFolders}

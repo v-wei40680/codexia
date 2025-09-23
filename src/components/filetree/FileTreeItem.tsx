@@ -32,6 +32,7 @@ interface FileEntry {
   is_directory: boolean;
   size?: number;
   extension?: string;
+  relativePath?: string;
 }
 
 interface FileTreeItemProps {
@@ -71,7 +72,12 @@ export function FileTreeItem({
   const [tokens, setTokens] = useState<number | null>(null);
   const [loadingTokens, setLoadingTokens] = useState(false);
   
-  const { addFileReference, replaceFileReferences, addMediaAttachment } = useChatInputStore();
+  const {
+    addFileReference,
+    addMediaAttachment,
+    setInputValue,
+    requestFocus,
+  } = useChatInputStore();
   const { currentFolder } = useFolderStore();
 
   const getRelativePath = (fullPath: string): string => {
@@ -88,8 +94,23 @@ export function FileTreeItem({
     return fullPath;
   };
 
+  const appendTokenToInput = (relativePath: string) => {
+    if (!relativePath) return;
+
+    const { inputValue } = useChatInputStore.getState();
+    const token = `\`${relativePath}\``;
+    const needsSpace = inputValue.length > 0 && !/\s$/.test(inputValue);
+    const updatedValue = inputValue.length > 0
+      ? `${inputValue}${needsSpace ? ' ' : ''}${token}`
+      : token;
+
+    setInputValue(updatedValue);
+  };
+
+  const resolveRelativePath = () => entry.relativePath ?? getRelativePath(entry.path);
+
   const handleAddToChatInput = async () => {
-    const relativePath = getRelativePath(entry.path);
+    const relativePath = resolveRelativePath();
     
     // If it's a media file, add to media attachments
     if (!entry.is_directory && isMediaFile(entry.name)) {
@@ -100,11 +121,15 @@ export function FileTreeItem({
         console.error('Failed to create media attachment:', error);
         // Fallback: still add as file reference
         addFileReference(entry.path, relativePath, entry.name, entry.is_directory);
+        appendTokenToInput(relativePath);
       }
     } else {
       // Regular file or directory, add to file references
       addFileReference(entry.path, relativePath, entry.name, entry.is_directory);
+      appendTokenToInput(relativePath);
     }
+
+    requestFocus();
     
     if (onAddToChat) {
       onAddToChat(entry.path);
@@ -115,17 +140,7 @@ export function FileTreeItem({
     if (entry.is_directory) {
       onToggleFolder(entry.path);
     } else {
-      // Only replace file references if not prevented (e.g., in regular Files tab)
-      if (!preventFileReplace) {
-        const relativePath = getRelativePath(entry.path);
-        replaceFileReferences([{
-          path: entry.path,
-          relativePath,
-          name: entry.name,
-          isDirectory: entry.is_directory
-        }]);
-      }
-      
+      void handleAddToChatInput();
       onFileClick(entry.path, entry.is_directory);
     }
   };
@@ -140,7 +155,7 @@ export function FileTreeItem({
   };
 
   const handleCopyRelativePath = async () => {
-    const relativePath = getRelativePath(entry.path);
+    const relativePath = resolveRelativePath();
     try {
       await navigator.clipboard.writeText(relativePath);
     } catch (error) {
