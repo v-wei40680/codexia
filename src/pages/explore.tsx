@@ -119,7 +119,7 @@ export default function ExploreProjectsPage() {
             />
           </div>
           <Button
-            onClick={() => navigate(user ? (projectCount > 0 ? "/profile" : "/share") : "/login")}
+            onClick={() => navigate(user ? (projectCount > 0 ? `/u/${user.id}` : "/share") : "/login")}
             title={projectCount > 0 ? "Manage your projects" : "Add your project"}
           >
             {projectCount > 0 ? "Manage your projects" : "Add your project"}
