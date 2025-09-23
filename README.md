@@ -106,7 +106,7 @@ Codexia prioritizes your privacy and security:
 
 ## 🛣️ Roadmap
 
-- MCP tool call
+- [x] MCP tool call
 - More file format support
 - Better UI customization
 - Plugin system
