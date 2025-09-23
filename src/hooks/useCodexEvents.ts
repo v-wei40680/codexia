@@ -20,6 +20,8 @@ export const useCodexEvents = ({
   const { addMessage, updateMessage, setSessionLoading, createConversation, conversations, setResumeMeta } = useConversationStore();
   const streamController = useRef<StreamController>(new StreamController());
   const currentStreamingMessageId = useRef<string | null>(null);
+  const currentReasoningMessageId = useRef<string | null>(null);
+  const reasoningBufferRef = useRef<string>('');
   const currentCommandMessageId = useRef<string | null>(null);
   const currentCommandInfo = useRef<{ command: string[], cwd: string } | null>(null);
   const lastTurnDiffRef = useRef<string | null>(null);
@@ -113,6 +115,8 @@ export const useCodexEvents = ({
         // Clear any previous streaming state
         streamController.current.clearAll();
         currentStreamingMessageId.current = null;
+        currentReasoningMessageId.current = null;
+        reasoningBufferRef.current = '';
         break;
         
       case 'task_complete':
@@ -122,6 +126,11 @@ export const useCodexEvents = ({
           streamController.current.finalize(true);
           currentStreamingMessageId.current = null;
         }
+        if (currentReasoningMessageId.current) {
+          updateMessage(sessionId, currentReasoningMessageId.current, { isStreaming: false });
+          currentReasoningMessageId.current = null;
+        }
+        reasoningBufferRef.current = '';
         break;
 
       case 'turn_complete':
@@ -131,6 +140,11 @@ export const useCodexEvents = ({
           streamController.current.finalize(true);
           currentStreamingMessageId.current = null;
         }
+        if (currentReasoningMessageId.current) {
+          updateMessage(sessionId, currentReasoningMessageId.current, { isStreaming: false });
+          currentReasoningMessageId.current = null;
+        }
+        reasoningBufferRef.current = '';
         break;
         
       case 'agent_message':
@@ -147,31 +161,55 @@ export const useCodexEvents = ({
         
       case 'agent_reasoning':
       case 'agent_reasoning_raw_content':
-        // Summarized reasoning message (TUI-like)
-        {
-          const reasoningContent =
-            (msg as any).text ??
-            (msg as any).reasoning ??
-            (msg as any).content;
-          if (reasoningContent) {
-            const reasoningMessage: ChatMessage = {
-              id: `${sessionId}-reasoning-${generateUniqueId()}`,
-              role: 'system',
-              content: reasoningContent,
-              timestamp: new Date().getTime(),
-              messageType: 'reasoning',
-              eventType: msg.type,
-            };
-            addMessageToStore(reasoningMessage);
-          }
-        }
+        // Reasoning is streamed via delta events; ignore summary payloads.
         break;
         
       case 'agent_reasoning_delta':
-      case 'agent_reasoning_raw_content_delta':
-        // Do not render reasoning deltas into chat to reduce noise.
-        console.log(msg)
+      case 'agent_reasoning_raw_content_delta': {
+        const deltaText = (msg as any).delta ?? '';
+        if (!deltaText) {
+          break;
+        }
+
+        if (!currentReasoningMessageId.current) {
+          const reasoningId = `${sessionId}-reasoning-${generateUniqueId()}`;
+          currentReasoningMessageId.current = reasoningId;
+          reasoningBufferRef.current = '';
+
+          const reasoningMessage: ChatMessage = {
+            id: reasoningId,
+            role: 'system',
+            content: '',
+            timestamp: new Date().getTime(),
+            isStreaming: true,
+            messageType: 'reasoning',
+            eventType: msg.type,
+          };
+          addMessageToStore(reasoningMessage);
+        }
+
+        const reasoningMessageId = currentReasoningMessageId.current;
+        if (reasoningMessageId) {
+          reasoningBufferRef.current += deltaText;
+          updateMessage(sessionId, reasoningMessageId, {
+            content: reasoningBufferRef.current,
+            eventType: msg.type,
+          });
+        }
         break;
+      }
+
+      case 'agent_reasoning_section_break': {
+        if (currentReasoningMessageId.current) {
+          const separator = reasoningBufferRef.current.endsWith('\n') ? '\n' : '\n\n';
+          reasoningBufferRef.current += separator;
+          updateMessage(sessionId, currentReasoningMessageId.current, {
+            content: reasoningBufferRef.current,
+            eventType: msg.type,
+          });
+        }
+        break;
+      }
         
       case 'plan_update': {
         // Use structured payload as-is; avoid altering step text
@@ -391,6 +429,11 @@ export const useCodexEvents = ({
           streamController.current.finalize(true);
           currentStreamingMessageId.current = null;
         }
+        if (currentReasoningMessageId.current) {
+          updateMessage(sessionId, currentReasoningMessageId.current, { isStreaming: false });
+          currentReasoningMessageId.current = null;
+        }
+        reasoningBufferRef.current = '';
         
         const errorMessage: ChatMessage = {
           id: `${sessionId}-error-${generateUniqueId()}`,
@@ -407,6 +450,11 @@ export const useCodexEvents = ({
         // Clean up streaming state on shutdown
         streamController.current.clearAll();
         currentStreamingMessageId.current = null;
+        if (currentReasoningMessageId.current) {
+          updateMessage(sessionId, currentReasoningMessageId.current, { isStreaming: false });
+          currentReasoningMessageId.current = null;
+        }
+        reasoningBufferRef.current = '';
         break;
         
       case 'background_event':
@@ -500,7 +548,13 @@ export const useCodexEvents = ({
           streamController.current.finalize();
           currentStreamingMessageId.current = null;
         }
-        
+
+        if (currentReasoningMessageId.current) {
+          updateMessage(sessionId, currentReasoningMessageId.current, { isStreaming: false });
+          currentReasoningMessageId.current = null;
+        }
+        reasoningBufferRef.current = '';
+
         // Clean up any ongoing command execution tracking
         if (currentCommandMessageId.current) {
           currentCommandMessageId.current = null;
@@ -531,7 +585,11 @@ export const useCodexEvents = ({
       const codexEvent = event.payload;
       
       // Log non-delta events for debugging
-      if (codexEvent.msg.type !== "agent_message_delta" && codexEvent.msg.type !== "agent_reasoning_delta") {
+      if (
+        codexEvent.msg.type !== "agent_message_delta" &&
+        codexEvent.msg.type !== "agent_reasoning_delta" &&
+        codexEvent.msg.type !== "agent_reasoning_raw_content_delta"
+      ) {
         console.log(`📨 Codex structured event [${sessionId}]:`, codexEvent.msg);
       }
       handleCodexEvent(codexEvent);
@@ -542,7 +600,11 @@ export const useCodexEvents = ({
       const rawEvent = event.payload;
       
       const rawMsgType = rawEvent.data.msg.type
-      if (rawMsgType !== 'exec_command_output_delta') {
+      if (
+        rawMsgType !== 'exec_command_output_delta' &&
+        rawMsgType !== 'agent_reasoning_delta' &&
+        rawMsgType !== 'agent_reasoning_raw_content_delta'
+      ) {
         console.log(`📨 Raw codex event [${sessionId}]:`, rawEvent.data);
       }
       
