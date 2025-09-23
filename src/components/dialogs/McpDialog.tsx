@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { open as openUrl } from "@tauri-apps/plugin-shell";
 import {
   Dialog,
   DialogContent,
@@ -169,12 +170,12 @@ export function McpDialog({ children }: McpDialogProps) {
 
   const defaultServers = [
     {
-      name: 'fetch',
-      description: 'Web scraping and fetching',
+      name: 'desktop-commander',
+      description: 'Search, update, manage files and run terminal commands with AI',
       config: {
         type: 'stdio' as const,
-        command: 'uvx',
-        args: ['-y', 'mcp-server-fetch'],
+        command: 'npx',
+        args: ['-y', '@wonderwhy-er/desktop-commander'],
       }
     },
     {
@@ -205,6 +206,7 @@ export function McpDialog({ children }: McpDialogProps) {
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto sm:!max-w-4xl">
         <DialogHeader>
           <DialogTitle>MCP Server Management</DialogTitle>
+          <Button onClick={() => openUrl('https://github.com/milisp/mcp-linker')}>Go to download MCP Linker to manage mcp</Button>
         </DialogHeader>
         
         <div className="space-y-6">
@@ -384,7 +386,7 @@ export function McpDialog({ children }: McpDialogProps) {
                   
                   <TabsContent value="stdio" className="space-y-4">
                     <div>
-                      <div className="text-sm font-medium mb-1">Stdio</div>
+                      <div className="text-sm font-medium mb-1">Command</div>
                       <Input
                         value={commandConfig.command}
                         onChange={(e) => setCommandConfig(prev => ({ ...prev, command: e.target.value }))}
