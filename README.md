@@ -20,7 +20,7 @@ fork chat, file-tree integration, notepad, git diff, build-in pdf csv/xlsx viewe
 [USAGE](docs/USAGE.md) | [CONTRIBUTING](CONTRIBUTING.md) | [ARCHITECTURE](docs/ARCHITECTURE.md)
 
 > [!TIP]
-> **⭐ Star the repo and follow https://github.com/milisp for more**.
+> **⭐ Star the repo and explore https://github.com/milisp for more project**.
 
 <div style="display: flex; gap: 10px; justify-content: center;">
   <div style="text-align: center;">
@@ -37,14 +37,14 @@ fork chat, file-tree integration, notepad, git diff, build-in pdf csv/xlsx viewe
 
 ## News
 
+- [2025-09-23] Share project to community and find a co-founder at explore page.
 - [2025-09-11] support codex built-in web search + file and filetree change detect and refresh
 - [2025-09-05] fork chat + edit chat
   * (theme select + category conversatin) ideas thanks to reddit user [rachelo3](https://racheluidesign.weebly.com/?utm_source=https://github.com/milisp/codexia)
-- [2025-09-03] show the plan message
-- [2025-08-29] support image input, codexia can read image now
 
 ## ✨ Features
 
+- Share project to community and find a co-founder at explore page - Freenium user can share two projects.
 - 🔄 **Multi-Session Support**
 - 💬 **Real-Time Streaming**
 
