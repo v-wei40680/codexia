@@ -40,10 +40,10 @@ jobs:
         run: bun install
 
       - name: Build Tauri App
-        run: bun tauri build --bundles nsis --debug
+        run: bun tauri build --bundles nsis
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: Windows_x64
-          path: src-tauri/target/debug/bundle/**/*.exe
+          name: Codexia_windows_x64
+          path: src-tauri/target/release/bundle/**/*.exe

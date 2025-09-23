@@ -60,10 +60,4 @@ jobs:
         run: bun install
 
       - name: Build Tauri App
-        run: bun tauri build --bundles deb --debug
-
-      - name: Upload build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: linux-x64
-          path: src-tauri/target/debug/**/*.deb
+        run: bun tauri build --bundles deb
