@@ -31,14 +31,34 @@ export const useDeepLink = () => {
 
         const code = searchParams.get("code");
         if (code && supabase) {
-          const { data, error } =
-            await supabase.auth.exchangeCodeForSession(code);
-          navigate("/");
+          const { data, error } = await supabase.auth.exchangeCodeForSession(code);
           if (error) throw error;
+
           if (data.session) {
-            toast.success("User authenticated successfully");
-            navigate("/", { replace: true });
-            return;
+            // Decide where to go based on profile completeness
+            try {
+              const userId = data.session.user.id;
+              const { data: profile, error: profileError } = await supabase
+                .from("profiles")
+                .select("id, bio, website, github_url, x_url")
+                .eq("id", userId)
+                .maybeSingle();
+
+              if (profileError) throw profileError;
+
+              const hasProfileInfo = Boolean(
+                profile && (profile.bio || profile.website || profile.github_url || profile.x_url)
+              );
+
+              toast.success("User authenticated successfully");
+              navigate(hasProfileInfo ? "/" : "/profile?onboarding=1", { replace: true });
+              return;
+            } catch {
+              // On any profile lookup error, fall back to home
+              toast.success("User authenticated successfully");
+              navigate("/", { replace: true });
+              return;
+            }
           }
         }
       } catch (err) {

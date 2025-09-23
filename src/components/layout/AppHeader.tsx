@@ -8,6 +8,7 @@ import {
   Moon,
   Brain,
   Palette,
+  Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -107,20 +108,24 @@ export function AppHeader() {
       </span>
 
       <span className="flex items-center gap-2 h-6">
-        {location.pathname === "/chat" && (
-          <McpDialog>
-            <Button variant="ghost" className="flex gap-1 h-6 px-1.5">
-              <Usb />
-              MCP
-            </Button>
-          </McpDialog>
-        )}
+        <McpDialog>
+          <Button variant="ghost" className="flex gap-1 h-6 px-1.5">
+            <Usb /> MCP
+          </Button>
+        </McpDialog>
 
         <Link
           to="/usage"
           className="flex hover:text-primary items-center gap-1 -ml-1"
         >
           <BarChart3 className="w-4 h-4" /> Usage
+        </Link>
+
+        <Link
+          to="/explore"
+          className="flex hover:text-primary items-center gap-1"
+        >
+          <Users className="w-4 h-4" /> Explore
         </Link>
 
         <Button variant="ghost" onClick={toggleChatPane} className="h-6 w-6">
@@ -196,7 +201,9 @@ export function AppHeader() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Account</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => navigate(`/u/${user.id}`)}>View public page</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/profile')}>Profile</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/share')}>Share project</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>Sign out</DropdownMenuItem>
             </DropdownMenuContent>

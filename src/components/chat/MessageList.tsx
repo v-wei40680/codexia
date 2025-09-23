@@ -4,9 +4,10 @@ import type { ChatMessage as ChatMessageType } from '@/types/chat';
 import type { ApprovalRequest } from '@/types/codex';
 import { TextSelectionMenu } from './TextSelectionMenu';
 import { Message } from './Message';
-import { StatusBar } from './StatusBar';
 import { useTextSelection } from '../../hooks/useTextSelection';
 import { Card, CardHeader, CardTitle, CardDescription } from '../ui/card';
+import { Button } from '../ui/button';
+import { Link } from 'react-router-dom';
 // Note: No external links or logos in empty state; show key features instead.
 
 // Unified message type
@@ -36,9 +37,6 @@ export function MessageList({
   className = "", 
   isLoading = false, 
   onApproval,
-  tokenUsage,
-  sessionId,
-  model 
 }: MessageListProps) {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -179,6 +177,11 @@ export function MessageList({
           <p className="text-sm text-muted-foreground">
             Powerful GUI/IDE for Codex CLI — start by sending your first message.
           </p>
+          
+          <Link to="/explore">
+            <Button>Explore the community project or find a co-founder.</Button>
+          </Link>
+
           <div className="grid grid-cols-2 gap-4 text-left">
             {features.map((f, i) => {
               const Icon = f.icon;
@@ -280,17 +283,6 @@ export function MessageList({
             <ChevronDown className="w-4 h-4 text-gray-600" />
           </button>
         </div>
-      )}
-      
-      {/* Status Bar */}
-      {(tokenUsage || sessionId || model || isLoading) && (
-        <StatusBar
-          tokenUsage={tokenUsage}
-          sessionId={sessionId}
-          model={model}
-          isTaskRunning={isLoading}
-          lastActivity={new Date()}
-        />
       )}
     </div>
   );
