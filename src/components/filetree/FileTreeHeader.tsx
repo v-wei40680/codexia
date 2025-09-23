@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Folder, RefreshCw, Search } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface FileTreeHeaderProps {
   currentFolder?: string;
@@ -20,6 +20,13 @@ export function FileTreeHeader({
   onRefresh,
 }: FileTreeHeaderProps) {
   const [showSearchInput, setShowSearchInput] = useState(false);
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
+
+  useEffect(() => {
+    if (showSearchInput) {
+      searchInputRef.current?.focus();
+    }
+  }, [showSearchInput]);
   const getCurrentDirectoryName = () => {
     if (!currentFolder) return "Home";
     return currentFolder.split("/").pop() || currentFolder;
@@ -64,6 +71,7 @@ export function FileTreeHeader({
           placeholder="Search files or folders..."
           value={filterText}
           onChange={(e) => onFilterTextChange(e.target.value)}
+          ref={searchInputRef}
           className="text-sm"
         />
       }
