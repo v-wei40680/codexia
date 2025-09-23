@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.5.0] - 2025-09-23
+
+### Features
+- Implement user profile, share project to community and find co-founder features.
+- Enhance MCP management via updated `McpDialog`.
+- Improve FileTreeHeader with better search input focus handling.
+- Improve reasoning message handling in `useCodexEvents`.
+- Add Prompt Optimizer settings and control components.
+- Add `ConversationCategoryDialog` and `ResumeSessionsDialog` components.
+- Enhance `ReasoningEffortSelector` with dynamic effort options.
+
+### Fixes
+- Fix navigation logic in `ExploreProjectsPage`.
+- Improve layout overflow handling in `Layout` component.
+- Handle Tauri errors on macOS to prevent unexpected application errors.
+- Improve layout spacing in `AppHeader`.
+
+### Refactor
+- Streamline authentication logic and improve `AppHeader`.
+- Remove `FileReferenceList` and simplify `ChatInput`.
+- Simplify session file retrieval and rollout path search.
+
+### Documentation
+- Multiple README updates to improve clarity, feature descriptions, and community information.
+- Add issue report template to improve bug reporting.
+
 ## [0.4.0] - 2025-09-15
 
 - add gpt-5-codex as default model
