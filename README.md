@@ -17,7 +17,7 @@
 
 fork chat, file-tree integration, notepad, git diff, build-in pdf csv/xlsx viewer, and more.
 
-[USAGE](docs/USAGE.md) | [CONTRIBUTING](CONTRIBUTING.md) | [ARCHITECTURE](docs/ARCHITECTURE.md)
+[Download](https://milisp.github.io/modern-github-release/#/repo/milisp/codexia) | [USAGE](docs/USAGE.md) | [CONTRIBUTING](CONTRIBUTING.md) | [ARCHITECTURE](docs/ARCHITECTURE.md)
 
 > [!TIP]
 > **⭐ Star the repo and explore https://github.com/milisp for more project**.
