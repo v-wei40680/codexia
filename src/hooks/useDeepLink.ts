@@ -1,6 +1,7 @@
 import supabase from "@/lib/supabase";
 import { ensureProfileRecord, mapProfileRow } from "@/lib/profile";
-import { onOpenUrl } from "@tauri-apps/plugin-deep-link";
+import type { UnlistenFn } from "@tauri-apps/api/event";
+import { getCurrent, onOpenUrl } from "@tauri-apps/plugin-deep-link";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -13,16 +14,11 @@ export const useDeepLink = () => {
   const [isHandlingDeepLink, setIsHandlingDeepLink] = useState(false);
 
   useEffect(() => {
-    const urlObj = new URL(window.location.href);
-    const searchParams = new URLSearchParams(urlObj.search);
-    const code = searchParams.get("code");
-
-    if (code) {
-      setIsHandlingDeepLink(true);
-    }
-
     const handleUrl = async (urls: string[] | string) => {
       const url = Array.isArray(urls) ? urls[0] : urls;
+      if (!url || processedUrls.has(url)) {
+        return;
+      }
       try {
         processedUrls.add(url);
 
@@ -68,7 +64,37 @@ export const useDeepLink = () => {
       }
     };
 
-    onOpenUrl((urls) => handleUrl(urls));
+    const setupDeepLinkHandlers = async () => {
+      try {
+        const current = await getCurrent();
+        if (current && current.length) {
+          await handleUrl(current);
+        }
+      } catch (err) {
+        console.error("Failed to read current deep link", err);
+      }
+
+      let unlisten: UnlistenFn | null = null;
+      try {
+        unlisten = await onOpenUrl((incoming) => {
+          void handleUrl(incoming);
+        });
+      } catch (err) {
+        console.error("Failed to register deep link handler", err);
+      }
+
+      return unlisten;
+    };
+
+    let dispose: UnlistenFn | null = null;
+    void setupDeepLinkHandlers().then((unlisten) => {
+      dispose = unlisten ?? null;
+    });
+
+    return () => {
+      dispose?.();
+      processedUrls.clear();
+    };
   }, [navigate]);
 
   return isHandlingDeepLink;
