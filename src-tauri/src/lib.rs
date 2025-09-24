@@ -34,7 +34,7 @@ use filesystem::{
 };
 use mcp::{add_mcp_server, delete_mcp_server, read_mcp_servers};
 use state::CodexState;
-use tauri::Manager;
+use tauri::{AppHandle, Emitter, Manager};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -42,13 +42,7 @@ pub fn run() {
     #[cfg(desktop)]
     {
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
-            println!("a new app instance was opened with {argv:?} and the deep link event was already triggered");
-
-            if let Some(deep_link_url) = argv.iter().find(|arg| arg.starts_with("codexia://")) {
-                if let Err(err) = app.emit_all("deep-link-received", deep_link_url.clone()) {
-                    eprintln!("Failed to emit deep link event: {err}");
-                }
-            }
+            show_window(app, argv);
         }));
     }
 
@@ -121,10 +115,10 @@ pub fn run() {
             add_or_update_model_provider,
             ensure_default_providers,
         ])
-        .setup(|app| {
+        .setup(|_app| {
             #[cfg(any(windows, target_os = "linux"))]
             {
-                if let Err(err) = app.deep_link().register_all() {
+                if let Err(err) = _app.deep_link().register_all() {
                     eprintln!("Failed to register deep link schemes: {err}");
                 }
             }
@@ -136,4 +130,23 @@ pub fn run() {
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+fn show_window(app: &AppHandle, args: Vec<String>) {
+    let windows = app.webview_windows();
+    let main_window = windows.values().next().expect("Sorry, no window found");
+
+    main_window
+        .set_focus()
+        .expect("Can't Bring Window to Focus");
+
+    dbg!(args.clone());
+    if args.len() > 1 {
+        let url = args[1].clone();
+
+        dbg!(url.clone());
+        if url.starts_with("codexia://") {
+            let _ = main_window.emit("deep-link-received", url);
+        }
+    }
 }
