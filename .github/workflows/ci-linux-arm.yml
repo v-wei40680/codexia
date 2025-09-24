@@ -46,10 +46,10 @@ jobs:
         run: bun install
 
       - name: Build Tauri App
-        run: bun tauri build --bundles deb --debug
+        run: bun tauri build --bundles deb
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Codexia-linux-arm
-          path: src-tauri/target/debug/bundle/**/*.deb
+          path: src-tauri/target/release/bundle/**/*.deb

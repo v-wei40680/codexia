@@ -8,9 +8,6 @@ mod services;
 mod state;
 mod utils;
 
-#[cfg(any(windows, target_os = "linux"))]
-use tauri_plugin_deep_link::DeepLinkExt;
-
 use commands::{
     approve_execution, approve_patch, check_codex_version, close_session, delete_session_file,
     find_rollout_path_for_session, get_latest_session_id, get_running_sessions, get_session_files,
@@ -118,9 +115,8 @@ pub fn run() {
         .setup(|_app| {
             #[cfg(any(windows, target_os = "linux"))]
             {
-                if let Err(err) = _app.deep_link().register_all() {
-                    eprintln!("Failed to register deep link schemes: {err}");
-                }
+                use tauri_plugin_deep_link::DeepLinkExt;
+                _app.deep_link().register_all()?;
             }
 
             tauri::async_runtime::spawn(async {
