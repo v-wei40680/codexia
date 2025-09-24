@@ -31,19 +31,10 @@ function Root() {
 }
 
 function RequireAuth() {
-  const { user, loading } = useAuth();
-
-  // In development, only skip if auth is not forced
-  if (import.meta.env.DEV) {
-    return <Outlet />;
-  }
+  const { loading } = useAuth();
 
   if (loading) {
     return null;
-  }
-
-  if (!user) {
-    return <Navigate to="/login" replace />;
   }
 
   return <Outlet />;
