@@ -2,7 +2,11 @@
 
 This guide covers installation, development, common workflows, and troubleshooting. See also: [Architecture](./ARCHITECTURE.md).
 
-## Prerequisites
+## Download from github release
+
+[github release](https://github.com/milisp/codexia/releases) or [modern-github-release](https://milisp.github.io/modern-github-release/#/repo/milisp/codexia)
+
+## Build from source Prerequisites
 
 - Tauri prerequisites: https://v2.tauri.app/start/prerequisites/
 
