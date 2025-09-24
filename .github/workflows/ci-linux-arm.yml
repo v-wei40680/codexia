@@ -1,4 +1,4 @@
-name: CI-linux
+name: CI-linux-arm
 
 on:
   workflow_dispatch:
