@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import supabase, { isSupabaseConfigured } from '@/lib/supabase'
 import { useAuth } from '@/hooks/useAuth'
+import { ensureProfileRecord, mapProfileRow, type ProfileRecord } from '@/lib/profile'
 
 // Returns whether the current (authenticated) user has a completed profile.
 // If Supabase is not configured or there is no user, the check is not applicable
@@ -30,8 +31,14 @@ export function useProfileStatus() {
           .eq('id', userId!)
           .maybeSingle()
         if (error) throw error
+        let profile: ProfileRecord | null = mapProfileRow(data)
+
+        if (!profile && user) {
+          profile = await ensureProfileRecord(user)
+        }
+
         const ok = Boolean(
-          data && (data.bio || data.website || data.github_url || data.x_url)
+          profile && (profile.bio || profile.website || profile.github_url || profile.x_url)
         )
         if (!cancelled) setHasProfile(ok)
       } catch {
@@ -45,8 +52,7 @@ export function useProfileStatus() {
     return () => {
       cancelled = true
     }
-  }, [requiresProfileCheck, userId])
+  }, [requiresProfileCheck, userId, user])
 
   return { hasProfile, loading, requiresProfileCheck }
 }
-

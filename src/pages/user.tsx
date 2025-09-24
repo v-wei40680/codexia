@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import supabase, { isSupabaseConfigured } from "@/lib/supabase";
+import { ensureProfileRecord, mapProfileRow, type ProfileRecord } from "@/lib/profile";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -24,6 +25,19 @@ type Project = {
   description?: string | null;
   url?: string | null;
 };
+
+function profileFromRecord(record: ProfileRecord | null): Profile | null {
+  if (!record) return null;
+  return {
+    id: record.id,
+    bio: record.bio,
+    website: record.website,
+    github_url: record.github_url,
+    x_url: record.x_url,
+    full_name: record.full_name ?? null,
+    avatar_url: record.avatar_url ?? null,
+  };
+}
 
 export default function PublicUserPage() {
   const params = useParams();
@@ -63,11 +77,21 @@ export default function PublicUserPage() {
             .limit(2),
         ]);
         if (perr) throw perr;
-        // If profile absent, fall back to a placeholder so projects can still show
-        if (!p) {
+
+        const existing = mapProfileRow(p);
+
+        if (!existing && isOwner && me) {
+          const ensured = await ensureProfileRecord(me);
+          if (ensured) {
+            setProfile(profileFromRecord(ensured));
+          } else {
+            setProfile({ id: userId } as Profile);
+          }
+        } else if (!existing) {
+          // If profile absent, fall back to a placeholder so projects can still show
           setProfile({ id: userId } as Profile);
         } else {
-          setProfile(p as Profile);
+          setProfile(profileFromRecord(existing));
         }
         if (!jerr && Array.isArray(prj)) setProjects(prj as Project[]);
       } catch (e: any) {
@@ -77,7 +101,7 @@ export default function PublicUserPage() {
       }
     };
     load();
-  }, [userId]);
+  }, [userId, isOwner, me]);
 
   return (
     <div className="p-4 mx-auto w-full max-w-3xl space-y-4">

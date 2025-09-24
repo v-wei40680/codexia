@@ -1,4 +1,5 @@
 import supabase from "@/lib/supabase";
+import { ensureProfileRecord, mapProfileRow } from "@/lib/profile";
 import { onOpenUrl } from "@tauri-apps/plugin-deep-link";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -35,26 +36,23 @@ export const useDeepLink = () => {
           if (error) throw error;
 
           if (data.session) {
-            // Decide where to go based on profile completeness
             try {
-              const userId = data.session.user.id;
-              const { data: profile, error: profileError } = await supabase
+              const user = data.session.user;
+              const { data: profileRow } = await supabase
                 .from("profiles")
-                .select("id, bio, website, github_url, x_url")
-                .eq("id", userId)
+                .select("id, full_name, avatar_url, bio, website, github_url, x_url, updated_at")
+                .eq("id", user.id)
                 .maybeSingle();
 
-              if (profileError) throw profileError;
-
-              const hasProfileInfo = Boolean(
-                profile && (profile.bio || profile.website || profile.github_url || profile.x_url)
-              );
+              const profile = mapProfileRow(profileRow);
+              if (!profile) {
+                await ensureProfileRecord(user);
+              }
 
               toast.success("User authenticated successfully");
-              navigate(hasProfileInfo ? "/" : "/profile?onboarding=1", { replace: true });
+              navigate("/", { replace: true });
               return;
             } catch {
-              // On any profile lookup error, fall back to home
               toast.success("User authenticated successfully");
               navigate("/", { replace: true });
               return;

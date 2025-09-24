@@ -3,6 +3,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import supabase, { isSupabaseConfigured } from "@/lib/supabase";
+import { ensureProfileRecord, mapProfileRow, type ProfileRecord } from "@/lib/profile";
 import { open } from "@tauri-apps/plugin-shell";
 import { Github } from "lucide-react";
 import { Navigate } from "react-router-dom";
@@ -35,11 +36,12 @@ export default function AuthPage() {
           .eq("id", user.id)
           .maybeSingle();
         if (error) throw error;
-        if (!data || !(data.bio || data.website || data.github_url || data.x_url)) {
-          setRedirect("/profile?onboarding=1");
-        } else {
-          setRedirect("/");
+        const profile: ProfileRecord | null = mapProfileRow(data);
+        if (!profile) {
+          await ensureProfileRecord(user);
         }
+        // Always send the user home; specific routes remain gated by useProfileStatus.
+        setRedirect("/");
       } catch (_e) {
         setRedirect("/");
       }

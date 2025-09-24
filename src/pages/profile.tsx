@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import supabase, { isSupabaseConfigured } from "@/lib/supabase";
+import { profileDefaultsFromMetadata } from "@/lib/profile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,6 +40,9 @@ export default function ProfilePage() {
     const load = async () => {
       try {
         const client = supabase!;
+        const defaults = profileDefaultsFromMetadata(user);
+        const githubFromMetadata = defaults.github_url ?? "";
+
         const { data, error } = await client
           .from("profiles")
           .select("id, full_name, avatar_url, bio, website, github_url, x_url, updated_at")
@@ -48,15 +52,20 @@ export default function ProfilePage() {
         if (error) throw error;
 
         setProfile(
-          data ?? {
-            id: user.id,
-            full_name: user.user_metadata?.full_name ?? null,
-            avatar_url: user.user_metadata?.avatar_url ?? null,
-            bio: "",
-            website: "",
-            github_url: "",
-            x_url: "",
-          }
+          (data
+            ? {
+                ...data,
+                github_url: data.github_url ?? (githubFromMetadata || ""),
+              }
+            : {
+                id: user.id,
+                full_name: defaults.full_name ?? user.user_metadata?.full_name ?? null,
+                avatar_url: defaults.avatar_url ?? user.user_metadata?.avatar_url ?? null,
+                bio: "",
+                website: "",
+                github_url: githubFromMetadata,
+                x_url: "",
+              }) as Profile
         );
       } catch (e: any) {
         setError(e?.message ?? "Failed to load profile");
@@ -105,7 +114,9 @@ export default function ProfilePage() {
         <CardHeader>
           <CardTitle>Profile</CardTitle>
           <CardDescription>
-            {isOnboarding ? "Complete your profile to continue" : "Manage your public profile"}
+            {isOnboarding
+              ? "Complete your profile to continue"
+              : "Manage your public profile. Your profile will only be public if you share a project."}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
