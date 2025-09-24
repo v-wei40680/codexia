@@ -1,6 +1,6 @@
 import supabase from "@/lib/supabase";
 import { ensureProfileRecord, mapProfileRow } from "@/lib/profile";
-import type { UnlistenFn } from "@tauri-apps/api/event";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { getCurrent, onOpenUrl } from "@tauri-apps/plugin-deep-link";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
@@ -74,16 +74,32 @@ export const useDeepLink = () => {
         console.error("Failed to read current deep link", err);
       }
 
-      let unlisten: UnlistenFn | null = null;
+      let pluginUnlisten: UnlistenFn | null = null;
       try {
-        unlisten = await onOpenUrl((incoming) => {
+        pluginUnlisten = await onOpenUrl((incoming) => {
           void handleUrl(incoming);
         });
       } catch (err) {
         console.error("Failed to register deep link handler", err);
       }
 
-      return unlisten;
+      let eventUnlisten: UnlistenFn | null = null;
+      try {
+        eventUnlisten = await listen<string>("deep-link-received", (event) => {
+          void handleUrl(event.payload);
+        });
+      } catch (err) {
+        console.error("Failed to register native deep link listener", err);
+      }
+
+      if (!pluginUnlisten && !eventUnlisten) {
+        return null;
+      }
+
+      return () => {
+        pluginUnlisten?.();
+        eventUnlisten?.();
+      };
     };
 
     let dispose: UnlistenFn | null = null;

@@ -8,6 +8,9 @@ mod services;
 mod state;
 mod utils;
 
+#[cfg(any(windows, target_os = "linux"))]
+use tauri_plugin_deep_link::DeepLinkExt;
+
 use commands::{
     approve_execution, approve_patch, check_codex_version, close_session, delete_session_file,
     find_rollout_path_for_session, get_latest_session_id, get_running_sessions, get_session_files,
@@ -31,14 +34,21 @@ use filesystem::{
 };
 use mcp::{add_mcp_server, delete_mcp_server, read_mcp_servers};
 use state::CodexState;
+use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let mut builder = tauri::Builder::default();
     #[cfg(desktop)]
     {
-        builder = builder.plugin(tauri_plugin_single_instance::init(|_app, argv, _cwd| {
+        builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
             println!("a new app instance was opened with {argv:?} and the deep link event was already triggered");
+
+            if let Some(deep_link_url) = argv.iter().find(|arg| arg.starts_with("codexia://")) {
+                if let Err(err) = app.emit_all("deep-link-received", deep_link_url.clone()) {
+                    eprintln!("Failed to emit deep link event: {err}");
+                }
+            }
         }));
     }
 
@@ -111,7 +121,14 @@ pub fn run() {
             add_or_update_model_provider,
             ensure_default_providers,
         ])
-        .setup(|_app| {
+        .setup(|app| {
+            #[cfg(any(windows, target_os = "linux"))]
+            {
+                if let Err(err) = app.deep_link().register_all() {
+                    eprintln!("Failed to register deep link schemes: {err}");
+                }
+            }
+
             tauri::async_runtime::spawn(async {
                 let _ = ensure_default_providers().await;
             });
