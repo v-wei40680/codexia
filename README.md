@@ -37,6 +37,7 @@ fork chat, file-tree integration, notepad, git diff, build-in pdf csv/xlsx viewe
 
 ## News
 
+- [2025-09-24] You can control Codex from Phone via browser, check [discussion comment](https://github.com/milisp/codexia/discussions/22#discussioncomment-14500403)
 - [2025-09-23] Share project to community and find a co-founder at explore page.
 - [2025-09-11] support codex built-in web search + file and filetree change detect and refresh
 - [2025-09-05] fork chat + edit chat
@@ -44,9 +45,10 @@ fork chat, file-tree integration, notepad, git diff, build-in pdf csv/xlsx viewe
 
 ## ✨ Features
 
-- Share project to community and find a co-founder at explore page - Freenium user can share two projects.
+- Share project to community and find a co-founder at explore page - every user can share two projects.
 - 🔄 **Multi-Session Support**
 - 💬 **Real-Time Streaming**
+- remote control from browser
 
 ### Build-in Mutil file format support
 
