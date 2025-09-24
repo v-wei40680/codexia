@@ -32,6 +32,7 @@ If available, attach screenshots, screen recordings, or GIFs that illustrate the
 - OS and version:
 - Codexia version:
 - Codex CLI version:
+- llm model and provider: 
 - Bun version:
 - Node.js version (if relevant):
 - Other tooling versions:
