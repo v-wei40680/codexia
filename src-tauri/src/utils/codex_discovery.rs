@@ -13,6 +13,28 @@ fn get_platform_binary_name() -> &'static str {
     }
 }
 
+fn get_vendor_platform_dir() -> Option<&'static str> {
+    let os = std::env::consts::OS;
+    let arch = std::env::consts::ARCH;
+    match (os, arch) {
+        ("macos", "aarch64") => Some("aarch64-apple-darwin"),
+        ("macos", "x86_64") => Some("x86_64-apple-darwin"),
+        ("linux", "x86_64") => Some("x86_64-unknown-linux-musl"),
+        ("linux", "aarch64") => Some("aarch64-unknown-linux-musl"),
+        ("windows", "x86_64") => Some("x86_64-pc-windows-msvc"),
+        ("windows", "aarch64") => Some("aarch64-pc-windows-msvc"),
+        _ => None,
+    }
+}
+
+fn get_vendor_binary_name() -> &'static str {
+    if cfg!(windows) {
+        "codex.exe"
+    } else {
+        "codex"
+    }
+}
+
 pub fn discover_codex_command() -> Option<PathBuf> {
     let home = if cfg!(windows) {
         std::env::var("USERPROFILE")
@@ -53,6 +75,40 @@ pub fn discover_codex_command() -> Option<PathBuf> {
         if path_buf.exists() {
             log::debug!("Found codex binary at {}", path_buf.display());
             return Some(path_buf.clone());
+        }
+    }
+
+    if let Some(vendor_dir) = get_vendor_platform_dir() {
+        let vendor_binary = get_vendor_binary_name();
+        let vendor_locations = [
+            PathBuf::from(&home)
+                .join(".bun/install/global/node_modules/@openai/codex/vendor")
+                .join(vendor_dir)
+                .join("codex")
+                .join(vendor_binary),
+            PathBuf::from(&home)
+                .join(".local/share/npm/lib/node_modules/@openai/codex/vendor")
+                .join(vendor_dir)
+                .join("codex")
+                .join(vendor_binary),
+            PathBuf::from("/usr/local/lib/node_modules/@openai/codex/vendor")
+                .join(vendor_dir)
+                .join("codex")
+                .join(vendor_binary),
+            PathBuf::from("/opt/homebrew/lib/node_modules/@openai/codex/vendor")
+                .join(vendor_dir)
+                .join("codex")
+                .join(vendor_binary),
+        ];
+
+        for path_buf in &vendor_locations {
+            if path_buf.exists() {
+                log::debug!(
+                    "Found codex vendor binary at {}",
+                    path_buf.display()
+                );
+                return Some(path_buf.clone());
+            }
         }
     }
 
