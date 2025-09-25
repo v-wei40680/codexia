@@ -1,5 +1,22 @@
 # Changelog
 
+## 2025-09-24
+
+### Feature
+- a button to create new window and a tauri command
+
+## [0.5.2] - 2025-09-24
+
+### Feature
+- optional login to share project
+
+### Fix
+- GitHub login issues on Linux and Windows
+
+## [0.5.1] - 2025-09-24
+
+Make Github login simple
+
 ## [0.5.0] - 2025-09-23
 
 ### Features
