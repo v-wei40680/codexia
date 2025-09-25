@@ -9,6 +9,7 @@ import {
   Brain,
   Palette,
   Users,
+  ExternalLink,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -54,6 +55,14 @@ export function AppHeader() {
     }
   };
 
+  const handleNewWindow = async () => {
+    try {
+      await invoke("create_new_window");
+    } catch (error) {
+      console.error("Failed to create new window:", error);
+    }
+  };
+
   useEffect(() => {
     const checkVersion = async () => {
       try {
@@ -92,8 +101,17 @@ export function AppHeader() {
 
         {/* Welcome button to projects page */}
         <Link to="/" className="flex hover:text-primary items-center gap-1">
-          <PartyPopper className="w-5 h-5" /> Projects
+          <PartyPopper className="w-5 h-5" />
         </Link>
+
+        <Button 
+          variant="ghost" 
+          onClick={handleNewWindow}
+          className="h-6 w-6"
+          title="Open New Window"
+        >
+          <ExternalLink />
+        </Button>
 
         {location.pathname === "/chat" && (
           <Button
@@ -131,7 +149,6 @@ export function AppHeader() {
         <Button variant="ghost" onClick={toggleChatPane} className="h-6 w-6">
           <Brain />
         </Button>
-
         <Button variant="ghost" className="h-6 w-6" onClick={toggleTheme}>
           {theme === "dark" ? <Sun /> : <Moon />}
         </Button>

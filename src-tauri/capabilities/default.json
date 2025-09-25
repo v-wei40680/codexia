@@ -3,12 +3,17 @@
   "identifier": "default",
   "description": "Capability for the main window",
   "windows": [
-    "main"
+    "main",
+    "main-*"
   ],
   "permissions": [
     "core:default",
+    "core:event:default",
+    "core:event:allow-listen",
+    "core:event:allow-emit",
     "core:window:allow-start-dragging",
     "core:window:allow-set-title",
+    "core:webview:default",
     "dialog:default",
     "dialog:allow-ask",
     "dialog:allow-message",
