@@ -1,4 +1,4 @@
-use serde_json;
+use serde_json::{self, Value};
 use tauri::{AppHandle, Emitter};
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::{ChildStderr, ChildStdout};
@@ -31,11 +31,19 @@ impl EventHandler {
                         log::debug!("Event for session: {}", event_session_id);
                     }
 
+                    let normalized_msg = match serde_json::to_value(&event.msg) {
+                        Ok(value) => value,
+                        Err(err) => {
+                            log::error!("Failed to serialize event msg to JSON: {}", err);
+                            Value::Null
+                        }
+                    };
+
                     // Emit structured event with attached session_id for routing in the UI
                     let wrapped = serde_json::json!({
                         "id": event.id,
-                        "msg": event.msg,
-                        "session_id": session_id
+                        "msg": normalized_msg,
+                        "session_id": session_id.clone()
                     });
                     if let Err(e) = app.emit("codex-events", &wrapped) {
                         log::error!("Failed to emit structured event: {}", e);
@@ -49,7 +57,7 @@ impl EventHandler {
                             // Emit raw JSON event with a wrapper structure
                             let raw_event = serde_json::json!({
                                 "type": "raw_event",
-                                "session_id": session_id,
+                                "session_id": session_id.clone(),
                                 "data": json_value
                             });
 
@@ -67,7 +75,7 @@ impl EventHandler {
                             // Emit as plain text event for debugging
                             let text_event = serde_json::json!({
                                 "type": "text_output",
-                                "session_id": session_id,
+                                "session_id": session_id.clone(),
                                 "content": line
                             });
 
@@ -127,4 +135,5 @@ impl EventHandler {
             _ => None,
         }
     }
+
 }

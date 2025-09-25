@@ -33,7 +33,7 @@ pub struct Conversation {
 struct SessionRecord {
     id: Option<String>,
     timestamp: Option<String>,
-    #[serde(rename = "type")]
+    #[serde(rename = "type", default)]
     message_type: Option<String>,
     role: Option<String>,
     content: Option<serde_json::Value>,

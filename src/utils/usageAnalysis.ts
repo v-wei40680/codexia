@@ -143,8 +143,8 @@ export async function parseSessionFile(filePath: string): Promise<SessionMetrics
           }
           
           // Nested structure with type field
-          if (event.msg.type === 'token_count' && event.msg.usage) {
-            const usage: TokenUsage = event.msg.usage;
+          if (event.msg.type === 'token_count' && event.msg.info?.total_token_usage) {
+            const usage: TokenUsage = event.msg.info.total_token_usage;
             if (usage.input_tokens !== undefined) {
               totalInputTokens = Math.max(totalInputTokens, usage.input_tokens);
             }

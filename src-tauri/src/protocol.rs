@@ -204,12 +204,48 @@ pub enum EventMsg {
     },
     // Token usage
     TokenCount {
-        input_tokens: Option<u64>,
-        output_tokens: Option<u64>,
-        total_tokens: Option<u64>,
-        cached_input_tokens: Option<u64>,
-        reasoning_output_tokens: Option<u64>,
+        info: Option<TokenUsageInfo>,
+        rate_limits: Option<RateLimitSnapshot>,
     },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct TokenUsage {
+    #[serde(default)]
+    pub input_tokens: u64,
+    #[serde(default)]
+    pub cached_input_tokens: u64,
+    #[serde(default)]
+    pub output_tokens: u64,
+    #[serde(default)]
+    pub reasoning_output_tokens: u64,
+    #[serde(default)]
+    pub total_tokens: u64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct TokenUsageInfo {
+    pub total_token_usage: TokenUsage,
+    pub last_token_usage: TokenUsage,
+    #[serde(default)]
+    pub model_context_window: Option<u64>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RateLimitSnapshot {
+    #[serde(default)]
+    pub primary: Option<RateLimitWindow>,
+    #[serde(default)]
+    pub secondary: Option<RateLimitWindow>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct RateLimitWindow {
+    pub used_percent: f64,
+    #[serde(default)]
+    pub window_minutes: Option<u64>,
+    #[serde(default)]
+    pub resets_in_seconds: Option<u64>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

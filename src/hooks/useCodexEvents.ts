@@ -7,6 +7,7 @@ import { generateUniqueId } from '@/utils/genUniqueId';
 import { ChatMessage } from '@/types/chat';
 import { invoke } from '@tauri-apps/api/core';
 import { useEphemeralStore } from '@/stores/EphemeralStore';
+import { toast } from "sonner";
 
 interface UseCodexEventsProps {
   sessionId: string;
@@ -568,12 +569,20 @@ export const useCodexEvents = ({
         break;
 
       case 'token_count':
-        console.log(msg)
+        console.log('token_count', msg)
+        break;
+
+      case 'stream_error':
+        toast.error(msg.message)
         break;
 
       default:
-        console.log('Unhandled event type:', msg.type);
-        console.log(JSON.stringify(msg, null, 2));
+        try {
+          console.log('Unhandled event');
+          console.log(JSON.stringify((event as any).msg ?? msg, null, 2));
+        } catch (error) {
+          console.error(error, msg)
+        }
     }
   };
 
