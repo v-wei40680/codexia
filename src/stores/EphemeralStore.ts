@@ -1,14 +1,26 @@
 import { create } from 'zustand';
 
+interface TokenCountShape {
+  input_tokens?: number;
+  cached_input_tokens?: number;
+  output_tokens?: number;
+  reasoning_output_tokens?: number;
+  total_tokens: number;
+}
+
 interface EphemeralStoreState {
   // sessionId -> filePath -> { unified, updatedAt }
   sessionFileDiffs: Record<string, Record<string, { unified: string; updatedAt: number }>>;
+  // sessionId -> latest token usage
+  sessionTokenUsage: Record<string, TokenCountShape | undefined>;
   setTurnDiff: (sessionId: string, unifiedDiff: string) => void;
   clearTurnDiffs: (sessionId: string) => void;
+  setSessionTokenUsage: (sessionId: string, usage?: TokenCountShape) => void;
 }
 
 export const useEphemeralStore = create<EphemeralStoreState>((set) => ({
   sessionFileDiffs: {},
+  sessionTokenUsage: {},
   setTurnDiff: (sessionId, unifiedDiff) =>
     set((state) => {
       // Parse unified diff into per-file segments and merge (overwrite by file)
@@ -65,4 +77,8 @@ export const useEphemeralStore = create<EphemeralStoreState>((set) => ({
       delete next[sessionId];
       return { sessionFileDiffs: next };
     }),
+  setSessionTokenUsage: (sessionId, usage) =>
+    set((state) => ({
+      sessionTokenUsage: { ...state.sessionTokenUsage, [sessionId]: usage },
+    })),
 }));

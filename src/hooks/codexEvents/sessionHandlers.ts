@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { generateUniqueId } from "@/utils/genUniqueId";
 import type { ChatMessage } from "@/types/chat";
 import type { CodexEventHandler } from "./types";
+import { useEphemeralStore } from "@/stores/EphemeralStore";
 
 const handleSessionConfigured: CodexEventHandler = (event, context) => {
   if (event.msg.type !== "session_configured") {
@@ -178,11 +179,13 @@ const handleTurnAborted: CodexEventHandler = (event, context) => {
   }
 };
 
-const handleTokenCount: CodexEventHandler = (event) => {
+const handleTokenCount: CodexEventHandler = (event, context) => {
   if (event.msg.type !== "token_count") {
     return;
   }
-  console.log("token_count", event.msg);
+  const { sessionId } = context;
+  const usage = event.msg.info?.total_token_usage;
+  useEphemeralStore.getState().setSessionTokenUsage(sessionId, usage ?? undefined);
 };
 
 const handleStreamError: CodexEventHandler = (event) => {

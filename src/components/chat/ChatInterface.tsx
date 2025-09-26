@@ -17,6 +17,7 @@ import { ForkOriginBanner } from './ForkOriginBanner';
 import { useEphemeralStore } from '@/stores/EphemeralStore';
 import { ChangesSummary } from './ChangesSummary';
 import { ModelSelector } from "./ModelSelector";
+import TokenCountInfo from "@/components/common/TokenCountInfo";
 
 interface ChatInterfaceProps {
   sessionId: string;
@@ -107,6 +108,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const messages = [...sessionMessages];
   const isLoading = currentConversation?.isLoading || false;
   const fileDiffMap = useEphemeralStore((s) => s.sessionFileDiffs[activeSessionId]);
+  const sessionUsage = useEphemeralStore((s) => s.sessionTokenUsage[activeSessionId]);
 
   // Update activeSessionId when sessionId prop changes
   useEffect(() => {
@@ -480,7 +482,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           />
           <ModelSelector />
           <ReasoningEffortSelector />
-          </div>
+          <TokenCountInfo usage={sessionUsage} />
+        </div>
       </div>
     </div>
   );
