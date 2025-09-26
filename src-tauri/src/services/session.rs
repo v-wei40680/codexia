@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use serde_json::Value;
 use std::fs;
 use std::path::Path;
 use walkdir::WalkDir;
@@ -29,14 +30,20 @@ pub struct Conversation {
     pub project_realpath: Option<String>,
 }
 
-#[derive(Debug, Deserialize)]
-struct SessionRecord {
-    id: Option<String>,
-    timestamp: Option<String>,
-    #[serde(rename = "type", default)]
-    message_type: Option<String>,
-    role: Option<String>,
-    content: Option<serde_json::Value>,
+fn extract_text_from_content(value: &Value) -> String {
+    if let Some(array) = value.as_array() {
+        array
+            .iter()
+            .filter_map(|entry| entry.as_object())
+            .filter_map(|object| object.get("text"))
+            .filter_map(|value| value.as_str())
+            .collect::<Vec<_>>()
+            .join("")
+    } else if let Some(text) = value.as_str() {
+        text.to_string()
+    } else {
+        String::new()
+    }
 }
 
 pub fn parse_session_file(content: &str, file_path: &Path) -> Option<Conversation> {
@@ -51,44 +58,131 @@ pub fn parse_session_file(content: &str, file_path: &Path) -> Option<Conversatio
     let mut project_realpath: Option<String> = None;
 
     for line in &lines {
-        if let Ok(record) = serde_json::from_str::<SessionRecord>(line) {
-            // Get session metadata
-            if record.id.is_some() && record.timestamp.is_some() {
-                session_id = record.id;
-                session_timestamp = record.timestamp;
+        let record: Value = match serde_json::from_str(line) {
+            Ok(value) => value,
+            Err(error) => {
+                eprintln!("Skipping malformed session line in {:?}: {}", file_path, error);
+                continue;
             }
+        };
 
-            // Parse messages (check for "type": "message")
-            if record.message_type.as_deref() == Some("message")
-                && record.role.is_some()
-                && record.content.is_some()
-            {
-                let role = record.role.unwrap();
-                let content_value = record.content.unwrap();
+        let record_type = record
+            .get("type")
+            .and_then(|value| value.as_str())
+            .unwrap_or_default();
 
-                let content_text = if let Some(array) = content_value.as_array() {
-                    array
-                        .iter()
-                        .filter_map(|item| {
-                            if let Some(obj) = item.as_object() {
-                                if let Some(text) = obj.get("text") {
-                                    text.as_str()
-                                } else {
-                                    None
-                                }
-                            } else {
-                                None
+        if session_id.is_none() {
+            if let Some(id) = record.get("id").and_then(|value| value.as_str()) {
+                session_id = Some(id.to_string());
+            }
+        }
+
+        if session_timestamp.is_none() {
+            if let Some(ts) = record.get("timestamp").and_then(|value| value.as_str()) {
+                session_timestamp = Some(ts.to_string());
+            }
+        }
+
+        let payload = record.get("payload");
+
+        match record_type {
+            "session_meta" => {
+                if let Some(meta) = payload.and_then(|value| value.as_object()) {
+                    if let Some(id) = meta.get("id").and_then(|value| value.as_str()) {
+                        session_id = Some(id.to_string());
+                    }
+
+                    if let Some(ts) = meta.get("timestamp").and_then(|value| value.as_str()) {
+                        session_timestamp = Some(ts.to_string());
+                    }
+
+                    if project_realpath.is_none() {
+                        if let Some(cwd) = meta.get("cwd").and_then(|value| value.as_str()) {
+                            let trimmed = cwd.trim();
+                            if !trimmed.is_empty() {
+                                project_realpath = Some(trimmed.to_string());
                             }
-                        })
-                        .collect::<Vec<_>>()
-                        .join("")
-                } else if let Some(text) = content_value.as_str() {
-                    text.to_string()
-                } else {
-                    String::new()
-                };
+                        }
+                    }
+                }
+            }
+            "response_item" => {
+                if let Some(item) = payload.and_then(|value| value.as_object()) {
+                    let payload_type = item
+                        .get("type")
+                        .and_then(|value| value.as_str())
+                        .unwrap_or_default();
 
-                // Capture project cwd from environment_context (may be recorded as user message)
+                    if payload_type != "message" {
+                        continue;
+                    }
+
+                    let role = item
+                        .get("role")
+                        .and_then(|value| value.as_str())
+                        .unwrap_or("user")
+                        .to_string();
+
+                    let content_value = item.get("content").cloned().unwrap_or(Value::Null);
+
+                    let content_text = extract_text_from_content(&content_value);
+
+                    if project_realpath.is_none() {
+                        if content_text.contains("<environment_context>") && content_text.contains("<cwd>") {
+                            if let (Some(start), Some(end)) = (content_text.find("<cwd>"), content_text.find("</cwd>")) {
+                                if end > start + 5 {
+                                    let start_idx = start + 5;
+                                    let cwd = content_text[start_idx..end].trim();
+                                    if !cwd.is_empty() {
+                                        project_realpath = Some(cwd.to_string());
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if !content_text.trim().is_empty() {
+                        let is_meta_block = content_text.contains("<user_instructions>")
+                            || content_text.contains("<environment_context>");
+
+                        let timestamp = record
+                            .get("timestamp")
+                            .and_then(|value| value.as_str())
+                            .and_then(|ts| chrono::DateTime::parse_from_rfc3339(ts).ok())
+                            .map(|dt| dt.timestamp_millis())
+                            .or_else(|| {
+                                session_timestamp.as_ref().and_then(|ts| {
+                                    chrono::DateTime::parse_from_rfc3339(ts)
+                                        .map(|dt| dt.timestamp_millis())
+                                        .ok()
+                                })
+                            })
+                            .unwrap_or_else(|| chrono::Utc::now().timestamp_millis());
+
+                        if !is_meta_block {
+                            let message_id_prefix = session_id.clone().unwrap_or_else(|| "unknown".to_string());
+                            messages.push(ChatMessage {
+                                id: format!("{}-{}-{}", message_id_prefix, role, timestamp),
+                                role,
+                                content: content_text.trim().to_string(),
+                                timestamp,
+                            });
+                        }
+                    }
+                }
+            }
+            "message" => {
+                let role = record
+                    .get("role")
+                    .and_then(|value| value.as_str())
+                    .unwrap_or("user")
+                    .to_string();
+
+                let content_text = record
+                    .get("content")
+                    .map(|value| extract_text_from_content(value))
+                    .unwrap_or_default();
+
                 if project_realpath.is_none() {
                     if content_text.contains("<environment_context>") && content_text.contains("<cwd>") {
                         if let (Some(start), Some(end)) = (content_text.find("<cwd>"), content_text.find("</cwd>")) {
@@ -104,26 +198,27 @@ pub fn parse_session_file(content: &str, file_path: &Path) -> Option<Conversatio
                 }
 
                 if !content_text.trim().is_empty() {
-                    // Filter out meta/system blocks from transcript rendering, but still use them to extract metadata
                     let is_meta_block = content_text.contains("<user_instructions>")
                         || content_text.contains("<environment_context>");
 
-                    let timestamp = if let Some(ts) = &session_timestamp {
-                        chrono::DateTime::parse_from_rfc3339(ts)
-                            .map(|dt| dt.timestamp_millis())
-                            .unwrap_or_else(|_| chrono::Utc::now().timestamp_millis())
-                    } else {
-                        chrono::Utc::now().timestamp_millis()
-                    };
+                    let timestamp = record
+                        .get("timestamp")
+                        .and_then(|value| value.as_str())
+                        .and_then(|ts| chrono::DateTime::parse_from_rfc3339(ts).ok())
+                        .map(|dt| dt.timestamp_millis())
+                        .or_else(|| {
+                            session_timestamp.as_ref().and_then(|ts| {
+                                chrono::DateTime::parse_from_rfc3339(ts)
+                                    .map(|dt| dt.timestamp_millis())
+                                    .ok()
+                            })
+                        })
+                        .unwrap_or_else(|| chrono::Utc::now().timestamp_millis());
 
                     if !is_meta_block {
+                        let message_id_prefix = session_id.clone().unwrap_or_else(|| "unknown".to_string());
                         messages.push(ChatMessage {
-                            id: format!(
-                                "{}-{}-{}",
-                                session_id.as_ref().unwrap_or(&"unknown".to_string()),
-                                role,
-                                timestamp
-                            ),
+                            id: format!("{}-{}-{}", message_id_prefix, role, timestamp),
                             role,
                             content: content_text.trim().to_string(),
                             timestamp,
@@ -131,6 +226,7 @@ pub fn parse_session_file(content: &str, file_path: &Path) -> Option<Conversatio
                     }
                 }
             }
+            _ => {}
         }
     }
 
@@ -276,15 +372,29 @@ pub async fn get_latest_session_id() -> Result<Option<String>, String> {
     if let Some((file_path, _)) = latest_file {
         // Read the first line to get session ID
         if let Ok(content) = fs::read_to_string(&file_path) {
-            let first_line = content.lines().next().unwrap_or("");
-            if let Ok(record) = serde_json::from_str::<SessionRecord>(first_line) {
-                if let Some(id) = record.id {
-                    let full_session_id = if id.starts_with("codex-event-") {
-                        id
-                    } else {
-                        format!("codex-event-{}", id)
-                    };
-                    return Ok(Some(full_session_id));
+            if let Some(first_line) = content.lines().next() {
+                if let Ok(record) = serde_json::from_str::<Value>(first_line) {
+                    let mut id_value = record
+                        .get("id")
+                        .and_then(|value| value.as_str())
+                        .map(|s| s.to_string());
+
+                    if id_value.is_none() {
+                        if let Some(payload) = record.get("payload").and_then(|value| value.as_object()) {
+                            if let Some(meta_id) = payload.get("id").and_then(|value| value.as_str()) {
+                                id_value = Some(meta_id.to_string());
+                            }
+                        }
+                    }
+
+                    if let Some(id) = id_value {
+                        let full_session_id = if id.starts_with("codex-event-") {
+                            id
+                        } else {
+                            format!("codex-event-{}", id)
+                        };
+                        return Ok(Some(full_session_id));
+                    }
                 }
             }
         }
