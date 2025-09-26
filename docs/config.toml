@@ -1,0 +1,13 @@
+[model_providers.openrouter]
+base_url = "https://openrouter.ai/api/v1"
+env_key = "OPENROUTER_API_KEY"
+name = "OpenRouter"
+
+[model_providers.google]
+base_url = "https://generativelanguage.googleapis.com/v1beta/openai"
+env_key = "GEMINI_API_KEY"
+name = "Google"
+
+[profiles.google]
+model = "gemini-2.5-flash"
+model_provider = "google"

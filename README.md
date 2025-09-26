@@ -37,7 +37,8 @@ fork chat, file-tree integration, notepad, git diff, build-in pdf csv/xlsx viewe
 
 ## News
 
-- [2025-09-24] You can control Codex from Phone via browser, check [discussion comment](https://github.com/milisp/codexia/discussions/22#discussioncomment-14500403)
+- [2025-09-26] With multiple windows support, open multiple projects at the same time. Show token usage beside Reasoning Effort.
+- [2025-09-24] Remote control via browser, check [discussion comment](https://github.com/milisp/codexia/discussions/22#discussioncomment-14500403)
 - [2025-09-23] Share project to community and find a co-founder at explore page.
 - [2025-09-11] support codex built-in web search + file and filetree change detect and refresh
 - [2025-09-05] fork chat + edit chat
@@ -48,6 +49,7 @@ fork chat, file-tree integration, notepad, git diff, build-in pdf csv/xlsx viewe
 - Share project to community and find a co-founder at explore page - every user can share two projects.
 - 🔄 **Multi-Session Support**
 - 💬 **Real-Time Streaming**
+- multiple windows support, open multiple projects at the same time
 - remote control from browser
 
 ### Build-in Mutil file format support
@@ -56,7 +58,7 @@ fork chat, file-tree integration, notepad, git diff, build-in pdf csv/xlsx viewe
 - CSV/XLSX preview & selection
 
 ### ⚙️ **Flexible Configuration**
-- Multiple AI providers (OpenAI, Ollama, Custom)
+- Multiple AI providers (OpenAI, Ollama, Gemini, openrouter, xAI, Custom) - see [config.toml](docs/config.toml)
 - Per-session model configs
 - Adjustable sandbox policies
 - Custom approval workflows
