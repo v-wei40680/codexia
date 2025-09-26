@@ -24,7 +24,6 @@ import { getFileIcon } from "./FileIcons";
 import { SubFolderContent } from "./SubFolderContent";
 import { useChatInputStore } from "@/stores/chatInputStore";
 import { useFolderStore } from "@/stores/FolderStore";
-import { isMediaFile, createMediaAttachment } from "@/utils/mediaUtils";
 
 interface FileEntry {
   name: string;
@@ -58,7 +57,7 @@ export function FileTreeItem({
   level = 0,
   expandedFolders,
   onToggleFolder,
-  onAddToChat,
+  onAddToChat: _onAddToChat,
   onFileClick,
   onSetWorkingFolder,
   onCalculateTokens,
@@ -72,12 +71,7 @@ export function FileTreeItem({
   const [tokens, setTokens] = useState<number | null>(null);
   const [loadingTokens, setLoadingTokens] = useState(false);
   
-  const {
-    addFileReference,
-    addMediaAttachment,
-    setInputValue,
-    requestFocus,
-  } = useChatInputStore();
+  const { setInputValue, requestFocus } = useChatInputStore();
   const { currentFolder } = useFolderStore();
 
   const getRelativePath = (fullPath: string): string => {
@@ -109,38 +103,16 @@ export function FileTreeItem({
 
   const resolveRelativePath = () => entry.relativePath ?? getRelativePath(entry.path);
 
-  const handleAddToChatInput = async () => {
+  const handleAddToChatInput = () => {
     const relativePath = resolveRelativePath();
-    
-    // If it's a media file, add to media attachments
-    if (!entry.is_directory && isMediaFile(entry.name)) {
-      try {
-        const mediaAttachment = await createMediaAttachment(entry.path);
-        addMediaAttachment(mediaAttachment);
-      } catch (error) {
-        console.error('Failed to create media attachment:', error);
-        // Fallback: still add as file reference
-        addFileReference(entry.path, relativePath, entry.name, entry.is_directory);
-        appendTokenToInput(relativePath);
-      }
-    } else {
-      // Regular file or directory, add to file references
-      addFileReference(entry.path, relativePath, entry.name, entry.is_directory);
-      appendTokenToInput(relativePath);
-    }
-
+    appendTokenToInput(relativePath);
     requestFocus();
-    
-    if (onAddToChat) {
-      onAddToChat(entry.path);
-    }
   };
 
-  const handleFileClickWithInput = () => {
+  const handleFileClickWithoutStore = () => {
     if (entry.is_directory) {
       onToggleFolder(entry.path);
     } else {
-      void handleAddToChatInput();
       onFileClick(entry.path, entry.is_directory);
     }
   };
@@ -193,7 +165,7 @@ export function FileTreeItem({
 
             <span
               className="flex-1 text-sm cursor-pointer hover:text-primary"
-              onClick={handleFileClickWithInput}
+              onClick={handleFileClickWithoutStore}
             >
               {entry.name}
             </span>
@@ -263,7 +235,7 @@ export function FileTreeItem({
               level={level + 1}
               expandedFolders={expandedFolders}
               onToggleFolder={onToggleFolder}
-              onAddToChat={onAddToChat}
+              onAddToChat={_onAddToChat}
               onFileClick={onFileClick}
               onSetWorkingFolder={onSetWorkingFolder}
               onCalculateTokens={onCalculateTokens}
