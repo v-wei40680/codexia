@@ -29,7 +29,9 @@ export function FileTreeHeader({
   }, [showSearchInput]);
   const getCurrentDirectoryName = () => {
     if (!currentFolder) return "Home";
-    return currentFolder.split("/").pop() || currentFolder;
+    // Support both Unix (/) and Windows (\) path separators
+    const parts = currentFolder.split(/[/\\]+/);
+    return parts.pop() || currentFolder;
   };
 
   return (
