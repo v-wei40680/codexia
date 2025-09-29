@@ -4,6 +4,7 @@ import type { CodexEvent } from "@/types/codex";
 import type { ChatMessage } from "@/types/chat";
 import { StreamController, StreamControllerSink } from "@/utils/streamController";
 import { useConversationStore } from "../stores/ConversationStore";
+import { useCodexStore } from "@/stores/CodexStore";
 import { handleCodexEvent } from "./codexEvents/handler";
 import { normalizeRawEvent, type RawCodexEventPayload } from "./codexEvents/normalizeRawEvent";
 import type { CodexEventHandlerContext, UseCodexEventsProps } from "./codexEvents/types";
@@ -17,6 +18,9 @@ export const useCodexEvents = ({ sessionId, onStopStreaming }: UseCodexEventsPro
     conversations,
     setResumeMeta,
   } = useConversationStore();
+  const sandboxMode = useCodexStore((state) => state.config.sandboxMode);
+  const autoApproveApprovals =
+    sandboxMode === "workspace-write" || sandboxMode === "danger-full-access";
 
   const streamController = useRef(new StreamController());
   const currentStreamingMessageId = useRef<string | null>(null);
@@ -87,6 +91,7 @@ export const useCodexEvents = ({ sessionId, onStopStreaming }: UseCodexEventsPro
     updateMessage,
     setSessionLoading,
     setResumeMeta,
+    autoApproveApprovals,
     streamController,
     currentStreamingMessageId,
     currentReasoningMessageId,

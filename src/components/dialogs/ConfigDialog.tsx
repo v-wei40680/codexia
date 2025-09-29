@@ -96,33 +96,6 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
             </p>
           </div>
 
-          {/* Security Settings */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-medium">Security Settings</h3>
-            
-            {/* Approval Policy */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Approval Policy</label>
-              <div className="grid grid-cols-2 gap-2">
-                {[
-                  { value: 'untrusted', label: 'Untrusted' },
-                  { value: 'on-failure', label: 'On Failure' },
-                  { value: 'on-request', label: 'On Request' },
-                  { value: 'never', label: 'Never' },
-                ].map((policy) => (
-                  <Button
-                    key={policy.value}
-                    variant={localConfig.approvalPolicy === policy.value ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => updateConfig('approvalPolicy', policy.value)}
-                  >
-                    {policy.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
-          </div>
-
           {/* Custom Arguments */}
           <div className="space-y-2">
             <label className="text-sm font-medium">Custom Arguments (Advanced)</label>

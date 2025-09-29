@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { ApprovalRequest } from "@/types/codex";
+import { ApprovalRequest, CodexConfig } from "@/types/codex";
 import type { Conversation } from "@/types/chat";
 import { useConversationStore } from "@/stores/ConversationStore";
 import { useCodexStore } from "@/stores/CodexStore";
@@ -9,13 +9,13 @@ import { useModelStore } from "@/stores/ModelStore";
 import { sessionManager } from "@/services/sessionManager";
 import { ChatInput } from "./ChatInput";
 import { MessageList } from "./MessageList";
-import { useCodexEvents } from "../../hooks/useCodexEvents";
-import { ReasoningEffortSelector } from './ReasoningEffortSelector';
+import { useCodexEvents } from "@/hooks/useCodexEvents";
+import { ReasoningEffortSelector } from "./ReasoningEffortSelector";
 import { Sandbox } from "./Sandbox";
 import { generateUniqueId } from "@/utils/genUniqueId";
-import { ForkOriginBanner } from './ForkOriginBanner';
-import { useEphemeralStore } from '@/stores/EphemeralStore';
-import { ChangesSummary } from './ChangesSummary';
+import { ForkOriginBanner } from "./ForkOriginBanner";
+import { useEphemeralStore } from "@/stores/EphemeralStore";
+import { ChangesSummary } from "./ChangesSummary";
 import { ModelSelector } from "./ModelSelector";
 import TokenCountInfo from "@/components/common/TokenCountInfo";
 
@@ -46,19 +46,19 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     setCurrentConversation,
     getCurrentConversation,
   } = useConversationStore();
-  
+
   // Get conversations filtered by current project
   const conversations = getCurrentProjectConversations();
-  
-  const setSandboxMode = (mode: typeof config.sandboxMode) => {
-    updateConfig({ sandboxMode: mode });
+
+  const setSandboxConfig = (
+    updates: Partial<Pick<CodexConfig, "sandboxMode" | "approvalPolicy">>,
+  ) => {
+    updateConfig(updates);
   };
 
   // Simplified: Use session_id to find conversation data
   // Priority: selectedConversation (from disk/history) > store currentConversation (unfiltered)
-  const currentConversation =
-    selectedConversation ||
-    getCurrentConversation();
+  const currentConversation = selectedConversation || getCurrentConversation();
 
   // Convert conversation messages to chat messages format
   const sessionMessages = currentConversation
@@ -68,14 +68,17 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           role: msg.role,
           content: msg.content,
           title: msg.title,
-          timestamp: typeof msg.timestamp === "number" ? msg.timestamp : Date.now(),
+          timestamp:
+            typeof msg.timestamp === "number" ? msg.timestamp : Date.now(),
           model: msg.role === "assistant" ? currentModel : undefined,
           approvalRequest: msg.approvalRequest,
           // Preserve optional rendering metadata
-          ...(msg as any).messageType && { messageType: (msg as any).messageType },
-          ...(msg as any).eventType && { eventType: (msg as any).eventType },
+          ...((msg as any).messageType && {
+            messageType: (msg as any).messageType,
+          }),
+          ...((msg as any).eventType && { eventType: (msg as any).eventType }),
           // Preserve structured plan payload for plan_update messages
-          ...(msg as any).plan && { plan: (msg as any).plan },
+          ...((msg as any).plan && { plan: (msg as any).plan }),
         };
       })
     : [];
@@ -107,8 +110,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const messages = [...sessionMessages];
   const isLoading = currentConversation?.isLoading || false;
-  const fileDiffMap = useEphemeralStore((s) => s.sessionFileDiffs[activeSessionId]);
-  const sessionUsage = useEphemeralStore((s) => s.sessionTokenUsage[activeSessionId]);
+  const fileDiffMap = useEphemeralStore(
+    (s) => s.sessionFileDiffs[activeSessionId],
+  );
+  const sessionUsage = useEphemeralStore(
+    (s) => s.sessionTokenUsage[activeSessionId],
+  );
 
   // Update activeSessionId when sessionId prop changes
   useEffect(() => {
@@ -132,7 +139,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           useEphemeralStore.getState().clearTurnDiffs(activeSessionId);
         }
       } catch (e) {
-        console.error('Failed to clear diffs during new conversation setup:', e);
+        console.error(
+          "Failed to clear diffs during new conversation setup:",
+          e,
+        );
       }
       // Ensure we don't keep showing old diffs
       if (activeSessionId !== sessionId) {
@@ -271,7 +281,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         useEphemeralStore.getState().clearTurnDiffs(actualSessionId);
       }
     } catch (e) {
-      console.error('Failed to clear diffs before sending in new conversation:', e);
+      console.error(
+        "Failed to clear diffs before sending in new conversation:",
+        e,
+      );
     }
 
     // Ensure session is running before sending message
@@ -318,30 +331,36 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
 
     // If this is a forked conversation and not yet applied, prepend context
-    if (currentConversation?.forkMeta && !currentConversation.forkMeta.applied) {
+    if (
+      currentConversation?.forkMeta &&
+      !currentConversation.forkMeta.applied
+    ) {
       try {
         const meta = currentConversation.forkMeta;
         const historyText = meta.history
-          .filter((m) => m.role === 'user' || m.role === 'assistant')
+          .filter((m) => m.role === "user" || m.role === "assistant")
           .map((m) => `${m.role}:\n${m.content}`)
           .join("\n\n");
         const forkHeader = `parentId: ${meta.parentMessageId}\nsourceSession: ${meta.fromConversationId}`;
         const combined = `${forkHeader}\n\nConversation history:\n${historyText}\n\nUser:\n${messageContent}`;
         messageContent = combined;
       } catch (e) {
-        console.error('Failed to build fork context:', e);
+        console.error("Failed to build fork context:", e);
       }
     }
 
     // If resending from an edited message, truncate messages from that point
     try {
-      const { editingTarget, clearEditingTarget } = useChatInputStore.getState();
+      const { editingTarget, clearEditingTarget } =
+        useChatInputStore.getState();
       if (editingTarget && editingTarget.conversationId === actualSessionId) {
-        useConversationStore.getState().truncateMessagesFrom(actualSessionId, editingTarget.messageId);
+        useConversationStore
+          .getState()
+          .truncateMessagesFrom(actualSessionId, editingTarget.messageId);
         clearEditingTarget();
       }
     } catch (e) {
-      console.error('Failed to handle edit-resend truncation:', e);
+      console.error("Failed to handle edit-resend truncation:", e);
     }
 
     // Add user message to conversation store
@@ -369,7 +388,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       console.log("📤 ChatInterface: Sending text message:", messageContent);
 
       // Mark fork context as applied so future sends don't include it
-      if (currentConversation?.forkMeta && !currentConversation.forkMeta.applied) {
+      if (
+        currentConversation?.forkMeta &&
+        !currentConversation.forkMeta.applied
+      ) {
         useConversationStore.getState().setForkMetaApplied(actualSessionId);
       }
     } catch (error) {
@@ -385,7 +407,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     }
   };
 
-  const handleApproval = async (approved: boolean, approvalRequest: ApprovalRequest) => {
+  const handleApproval = async (
+    approved: boolean,
+    approvalRequest: ApprovalRequest,
+  ) => {
     try {
       // Extract raw session ID for backend communication
       const rawSessionId = sessionId.startsWith("codex-event-")
@@ -394,47 +419,42 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
       // Handle different approval types with appropriate backend calls
       switch (approvalRequest.type) {
-        case 'exec':
+        case "exec":
           await invoke("approve_execution", {
             sessionId: rawSessionId,
             approvalId: approvalRequest.id,
             approved,
           });
           break;
-          
-        case 'patch':
+
+        case "patch":
+        case "apply_patch":
           await invoke("approve_patch", {
             sessionId: rawSessionId,
             approvalId: approvalRequest.id,
             approved,
           });
           break;
-          
-        case 'apply_patch':
-          await invoke("approve_patch", {
-            sessionId: rawSessionId,
-            approvalId: approvalRequest.id,
-            approved,
-          });
-          break;
-          
+
         default:
-          console.error('Unknown approval request type:', approvalRequest.type);
+          console.error("Unknown approval request type:", approvalRequest.type);
           return;
       }
-      
-      console.log(`✅ Approval ${approved ? 'granted' : 'denied'} for ${approvalRequest.type} request ${approvalRequest.id}`);
-      
+
+      console.log(
+        `✅ Approval ${approved ? "granted" : "denied"} for ${approvalRequest.type} request ${approvalRequest.id}`,
+      );
+
       // If denied, pause the session to stop further execution
       if (!approved) {
-        console.log('🛑 Pausing session due to denied approval');
+        console.log("🛑 Pausing session due to denied approval");
         await invoke("pause_session", {
           sessionId: rawSessionId,
         });
       }
     } catch (error) {
       console.error("Failed to send approval:", error);
-      
+
       // Add error message to conversation
       const errorMessage = {
         id: `${sessionId}-approval-error-${generateUniqueId()}`,
@@ -472,13 +492,18 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           onStopStreaming={handleStopStreaming}
           disabled={!!selectedConversation && !selectedConversation.filePath}
           isLoading={isLoading}
-          placeholderOverride={editingTarget ? 'Editing message and resending from here' : undefined}
+          placeholderOverride={
+            editingTarget
+              ? "Editing message and resending from here"
+              : undefined
+          }
         />
-        
+
         <div className="flex px-2 pt-0.5">
-          <Sandbox 
+          <Sandbox
             sandboxMode={config.sandboxMode}
-            onModeChange={setSandboxMode}
+            approvalPolicy={config.approvalPolicy}
+            onConfigChange={setSandboxConfig}
           />
           <ModelSelector />
           <ReasoningEffortSelector />

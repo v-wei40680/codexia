@@ -1,6 +1,32 @@
+import { invoke } from "@tauri-apps/api/core";
 import type { ApprovalRequest } from "@/types/codex";
 import type { ChatMessage } from "@/types/chat";
 import type { CodexEventHandler } from "./types";
+
+const normalizeSessionId = (
+  fallbackSessionId: string,
+  eventSessionId?: string,
+): string => {
+  const candidate = eventSessionId || fallbackSessionId;
+  return candidate.startsWith("codex-event-")
+    ? candidate.replace("codex-event-", "")
+    : candidate;
+};
+
+const reportAutoApprovalError = (
+  context: Parameters<CodexEventHandler>[1],
+  eventId: string,
+  error: unknown,
+): void => {
+  console.error("Failed to auto-approve request", error);
+  const message: ChatMessage = {
+    id: `${eventId}-auto-approval-error`,
+    role: "system",
+    content: `Failed to auto-approve request: ${String(error)}`,
+    timestamp: Date.now(),
+  };
+  context.addMessageToStore(message);
+};
 
 const handleExecApprovalRequest: CodexEventHandler = (event, context) => {
   const msg = event.msg;
@@ -8,7 +34,24 @@ const handleExecApprovalRequest: CodexEventHandler = (event, context) => {
     return;
   }
 
-  const { addMessageToStore } = context;
+  const { addMessageToStore, autoApproveApprovals } = context;
+  if (autoApproveApprovals) {
+    const sessionId = normalizeSessionId(context.sessionId, event.session_id);
+    void (async () => {
+      try {
+        await invoke("approve_execution", {
+          sessionId,
+          approvalId: event.id,
+          approved: true,
+        });
+        console.log(`✅ Auto-approved exec request ${event.id}`);
+      } catch (error) {
+        reportAutoApprovalError(context, event.id, error);
+      }
+    })();
+    return;
+  }
+
   const command = msg.command.join(" ");
 
   const execMessage: ChatMessage = {
@@ -36,7 +79,24 @@ const handlePatchApprovalRequest: CodexEventHandler = (event, context) => {
     return;
   }
 
-  const { addMessageToStore } = context;
+  const { addMessageToStore, autoApproveApprovals } = context;
+  if (autoApproveApprovals) {
+    const sessionId = normalizeSessionId(context.sessionId, event.session_id);
+    void (async () => {
+      try {
+        await invoke("approve_patch", {
+          sessionId,
+          approvalId: event.id,
+          approved: true,
+        });
+        console.log(`✅ Auto-approved patch request ${event.id}`);
+      } catch (error) {
+        reportAutoApprovalError(context, event.id, error);
+      }
+    })();
+    return;
+  }
+
   const patchApprovalRequest: ApprovalRequest = {
     id: event.id,
     type: "patch",
@@ -59,15 +119,18 @@ const handlePatchApprovalRequest: CodexEventHandler = (event, context) => {
 const makeChangeSummary = (file: string, change: any): string => {
   try {
     if (change.add) {
-      const content = change.add.content || change.add.unified_diff || JSON.stringify(change.add, null, 2);
+      const content =
+        change.add.content || change.add.unified_diff || JSON.stringify(change.add, null, 2);
       return `Add ${file}\n${content}`;
     }
     if (change.remove) {
-      const content = change.remove.content || change.remove.unified_diff || JSON.stringify(change.remove, null, 2);
+      const content =
+        change.remove.content || change.remove.unified_diff || JSON.stringify(change.remove, null, 2);
       return `Remove ${file}\n${content}`;
     }
     if (change.modify) {
-      const content = change.modify.content || change.modify.unified_diff || JSON.stringify(change.modify, null, 2);
+      const content =
+        change.modify.content || change.modify.unified_diff || JSON.stringify(change.modify, null, 2);
       return `Modify ${file}\n${content}`;
     }
     if (change.update) {
@@ -87,7 +150,24 @@ const handleApplyPatchApprovalRequest: CodexEventHandler = (event, context) => {
     return;
   }
 
-  const { addMessageToStore } = context;
+  const { addMessageToStore, autoApproveApprovals } = context;
+  if (autoApproveApprovals) {
+    const sessionId = normalizeSessionId(context.sessionId, event.session_id);
+    void (async () => {
+      try {
+        await invoke("approve_patch", {
+          sessionId,
+          approvalId: event.id,
+          approved: true,
+        });
+        console.log(`✅ Auto-approved apply patch request ${event.id}`);
+      } catch (error) {
+        reportAutoApprovalError(context, event.id, error);
+      }
+    })();
+    return;
+  }
+
   const approvalRequest: ApprovalRequest = {
     id: event.id,
     type: "apply_patch",
@@ -112,7 +192,9 @@ const handleApplyPatchApprovalRequest: CodexEventHandler = (event, context) => {
         }
         return p;
       };
-      changesText = entries.map(([file, change]) => makeChangeSummary(rel(file), change)).join("\n\n");
+      changesText = entries
+        .map(([file, change]) => makeChangeSummary(rel(file), change))
+        .join("\n\n");
       titleFiles = entries.map(([file]) => rel(file)).join(", ");
     }
   } else if (Array.isArray(msgChanges)) {

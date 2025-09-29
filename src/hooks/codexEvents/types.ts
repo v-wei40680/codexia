@@ -19,6 +19,7 @@ export interface CodexEventHandlerContext {
   updateMessage: (sessionId: string, messageId: string, updates: Partial<ChatMessage>) => void;
   setSessionLoading: (sessionId: string, loading: boolean) => void;
   setResumeMeta: (sessionId: string, meta: SessionMeta) => void;
+  autoApproveApprovals: boolean;
   streamController: MutableRefObject<StreamController>;
   currentStreamingMessageId: MutableRefObject<string | null>;
   currentReasoningMessageId: MutableRefObject<string | null>;

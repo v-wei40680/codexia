@@ -148,23 +148,61 @@ export interface CodexConfig {
   webSearchEnabled?: boolean;
 }
 
-export const SANDBOX_MODES = {
+export const SANDBOX_MODES: Record<
+  CodexConfig["sandboxMode"],
+  {
+    label: string;
+    shortLabel: string;
+    description: string;
+    defaultApprovalPolicy: CodexConfig["approvalPolicy"];
+  }
+> = {
   "read-only": {
     label: "Read Only",
     shortLabel: "Chat or plan",
     description: "View files only, requires approval for edits/commands",
+    defaultApprovalPolicy: "on-request",
   },
   "workspace-write": {
     label: "Workspace Write",
     shortLabel: "Agent",
     description: "Edit project files, approval for network/external access",
+    defaultApprovalPolicy: "on-request",
   },
   "danger-full-access": {
     label: "Full Access",
     shortLabel: "Agent (Full)",
     description: "System-wide access without restrictions",
+    defaultApprovalPolicy: "never",
   },
-} as const;
+};
+
+export const APPROVAL_POLICIES: Array<{
+  value: CodexConfig["approvalPolicy"];
+  label: string;
+  description: string;
+}> = [
+  {
+    value: "untrusted",
+    label: "Untrusted",
+    description: "Always prompt before running commands, editing, or using tools.",
+  },
+  {
+    value: "on-failure",
+    label: "On Failure",
+    description: "Try actions automatically and only prompt if sandbox blocks them.",
+  },
+  {
+    value: "on-request",
+    label: "On Request",
+    description: "Ask before risky actions like editing, running commands, or network access.",
+  },
+  {
+    value: "never",
+    label: "Never",
+    description: "Never prompt; Codex decides autonomously. Use with caution.",
+  },
+];
 
 export const DEFAULT_CONFIG: CodexConfig = {
   workingDirectory: "",
