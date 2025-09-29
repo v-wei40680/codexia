@@ -161,7 +161,7 @@ export const SANDBOX_MODES: Record<
     label: "Read Only",
     shortLabel: "Chat or plan",
     description: "View files only, requires approval for edits/commands",
-    defaultApprovalPolicy: "on-request",
+    defaultApprovalPolicy: "untrusted",
   },
   "workspace-write": {
     label: "Workspace Write",
