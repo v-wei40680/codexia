@@ -1,14 +1,12 @@
 import { useRef, useEffect, useMemo, useCallback, useState } from 'react';
-import { ChevronUp, ChevronDown, Layers, Zap, SlidersHorizontal, LayoutDashboard } from 'lucide-react';
+import { ChevronUp, ChevronDown } from 'lucide-react';
 import type { ChatMessage as ChatMessageType } from '@/types/chat';
 import type { ApprovalRequest } from '@/types/codex';
 import { TextSelectionMenu } from './TextSelectionMenu';
 import { Message } from './Message';
 import { useTextSelection } from '../../hooks/useTextSelection';
-import { Card, CardHeader, CardTitle, CardDescription } from '../ui/card';
-import { Button } from '../ui/button';
-import { Link } from 'react-router-dom';
-// Note: No external links or logos in empty state; show key features instead.
+import BouncingDotsLoader from './BouncingDotsLoader';
+import { WelcomeSection } from './WelcomeSection';
 
 // Unified message type
 type UnifiedMessage = ChatMessageType;
@@ -42,34 +40,9 @@ export function MessageList({
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [showScrollButtons, setShowScrollButtons] = useState(false);
   const { selectedText } = useTextSelection();
-  // Four feature cards based on README.md
-  const features = [
-    {
-      title: 'Multi-Session',
-      description: 'Run multiple sessions with persistent restoration.',
-      icon: Layers,
-    },
-    {
-      title: 'Streaming',
-      description: 'Live responses as they generate for instant feedback.',
-      icon: Zap,
-    },
-    {
-      title: 'Configuration',
-      description: 'Providers, models, sandbox modes, approvals, and more.',
-      icon: SlidersHorizontal,
-    },
-    {
-      title: 'Polished UX',
-      description: 'Notepad, Markdown, Plan/Todo, Themes, WebPreview.',
-      icon: LayoutDashboard,
-    },
-  ] as const;
-
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
-
 
   const jumpToTop = useCallback(() => {
     messagesContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
@@ -172,35 +145,7 @@ export function MessageList({
   if (messages.length === 0) {
     return (
       <div className={`flex-1 min-h-0 flex items-center justify-center ${className}`}>
-        <div className="text-center flex flex-col space-y-6 max-w-3xl px-4 w-full">
-          <h2 className="text-2xl font-semibold">Welcome to Codexia</h2>
-          <p className="text-sm text-muted-foreground">
-            Powerful GUI/IDE for Codex CLI — start by sending your first message.
-          </p>
-          
-          <Link to="/explore">
-            <Button>Explore the community project or find a co-founder.</Button>
-          </Link>
-
-          <div className="grid grid-cols-2 gap-4 text-left">
-            {features.map((f, i) => {
-              const Icon = f.icon;
-              return (
-                <Card key={i} className="hover:shadow-md hover:-translate-y-0.5 transition-all">
-                  <CardHeader className="flex flex-row items-start gap-3">
-                    <div className="rounded-lg p-2 bg-muted flex items-center justify-center">
-                      <Icon className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-base">{f.title}</CardTitle>
-                      <CardDescription>{f.description}</CardDescription>
-                    </div>
-                  </CardHeader>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
+        <WelcomeSection />
       </div>
     );
   }
@@ -249,17 +194,7 @@ export function MessageList({
           
           {/* Loading indicator */}
           {isLoading && (
-            <div>
-              <div className="w-full min-w-0">
-                <div className="rounded-lg border px-3 py-2 bg-white border-gray-200">
-                  <div className="flex space-x-1">
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                    <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                  </div>
-                </div>
-              </div>
-            </div>
+            <BouncingDotsLoader />
           )}
         </div>
         <div ref={messagesEndRef} />
