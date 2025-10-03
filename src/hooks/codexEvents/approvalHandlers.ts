@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "@/lib/tauri-proxy";
 import type { ApprovalRequest } from "@/types/codex";
 import type { ChatMessage } from "@/types/chat";
 import type { CodexEventHandler } from "./types";

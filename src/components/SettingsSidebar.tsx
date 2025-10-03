@@ -26,25 +26,18 @@ export default function SettingsSidebar({
         Prompt Optimizer
       </Button>
       <Button
-        variant={activeSection === "security" ? "default" : "ghost"}
-        className="w-full justify-start"
-        onClick={() => onSectionChange("security")}
-      >
-        Security
-      </Button>
-      <Button
-        variant={activeSection === "working" ? "default" : "ghost"}
-        className="w-full justify-start"
-        onClick={() => onSectionChange("working")}
-      >
-        Working Directory
-      </Button>
-      <Button
         variant={activeSection === "exclude" ? "default" : "ghost"}
         className="w-full justify-start"
         onClick={() => onSectionChange("exclude")}
       >
         Exclude Folders
+      </Button>
+      <Button
+        variant={activeSection === "exclude" ? "default" : "ghost"}
+        className="w-full justify-start"
+        onClick={() => onSectionChange("remoteAccess")}
+      >
+        remoteAccess
       </Button>
       <Button
         variant={activeSection === "logo" ? "default" : "ghost"}

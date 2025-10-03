@@ -1,4 +1,4 @@
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "@/lib/tauri-proxy";
 import { toast } from "sonner";
 import { generateUniqueId } from "@/utils/genUniqueId";
 import type { ChatMessage } from "@/types/chat";

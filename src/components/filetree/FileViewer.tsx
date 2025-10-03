@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { listen, UnlistenFn } from "@tauri-apps/api/event";
+import { invoke, listen } from "@/lib/tauri-proxy";
+import type { UnlistenFn } from "@/lib/tauri-proxy";
 import { Button } from "@/components/ui/button";
 import { X, Copy, Check, Send, FileText, GitBranch, Code } from "lucide-react";
 import { CodeEditor } from "./CodeEditor";

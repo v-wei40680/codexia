@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef } from "react";
-import { listen } from "@tauri-apps/api/event";
+import { listen } from "@/lib/tauri-proxy";
 import type { CodexEvent } from "@/types/codex";
 import type { ChatMessage } from "@/types/chat";
 import { StreamController, StreamControllerSink } from "@/utils/streamController";

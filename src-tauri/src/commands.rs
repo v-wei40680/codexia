@@ -1,12 +1,13 @@
 use crate::protocol::CodexConfig;
-use crate::services::{codex, session};
-use crate::state::CodexState;
+use crate::services::{codex, remote, session};
+use crate::state::{CodexState, RemoteAccessState, RemoteUiStatus};
 use crate::utils::file::{get_sessions_path, scan_jsonl_files};
 use std::fs;
 use tauri::{AppHandle, State};
 
 // Re-export types for external use
 pub use crate::services::session::Conversation;
+pub use remote::RemoteUiConfigPayload;
 
 #[tauri::command]
 pub async fn load_sessions_from_disk() -> Result<Vec<Conversation>, String> {
@@ -123,15 +124,14 @@ pub async fn find_rollout_path_for_session(session_uuid: String) -> Result<Optio
 
     // Walk recursively year/month/day and find file ending with -<uuid>.jsonl
     let needle = format!("-{}.jsonl", session_uuid);
-    let rollout_path = scan_jsonl_files(&sessions_dir)
-        .find_map(|entry| {
-            let file_name = entry.file_name();
-            if file_name.to_string_lossy().ends_with(&needle) {
-                Some(entry.path().to_string_lossy().to_string())
-            } else {
-                None
-            }
-        });
+    let rollout_path = scan_jsonl_files(&sessions_dir).find_map(|entry| {
+        let file_name = entry.file_name();
+        if file_name.to_string_lossy().ends_with(&needle) {
+            Some(entry.path().to_string_lossy().to_string())
+        } else {
+            None
+        }
+    });
 
     Ok(rollout_path)
 }
@@ -139,9 +139,9 @@ pub async fn find_rollout_path_for_session(session_uuid: String) -> Result<Optio
 #[tauri::command]
 pub async fn create_new_window(app: AppHandle) -> Result<(), String> {
     use tauri::{WebviewUrl, WebviewWindowBuilder};
-    
+
     let window_label = format!("main-{}", chrono::Utc::now().timestamp_millis());
-    
+
     let window = WebviewWindowBuilder::new(&app, &window_label, WebviewUrl::default())
         .title("Codexia")
         .inner_size(1200.0, 800.0)
@@ -151,9 +151,36 @@ pub async fn create_new_window(app: AppHandle) -> Result<(), String> {
         .fullscreen(false)
         .build()
         .map_err(|e| format!("Failed to create new window: {}", e))?;
-        
+
     // Focus the new window
-    window.set_focus().map_err(|e| format!("Failed to focus window: {}", e))?;
-    
+    window
+        .set_focus()
+        .map_err(|e| format!("Failed to focus window: {}", e))?;
+
     Ok(())
+}
+
+#[tauri::command]
+pub async fn enable_remote_ui(
+    app: AppHandle,
+    state: State<'_, RemoteAccessState>,
+    config: RemoteUiConfigPayload,
+) -> Result<RemoteUiStatus, String> {
+    remote::start_remote_ui(app, state, config).await
+}
+
+#[tauri::command]
+pub async fn disable_remote_ui(
+    app: AppHandle,
+    state: State<'_, RemoteAccessState>,
+) -> Result<RemoteUiStatus, String> {
+    remote::stop_remote_ui(app, state).await
+}
+
+#[tauri::command]
+pub async fn get_remote_ui_status(
+    app: AppHandle,
+    state: State<'_, RemoteAccessState>,
+) -> Result<RemoteUiStatus, String> {
+    remote::get_remote_ui_status(app, state).await
 }

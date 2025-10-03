@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import { invoke } from '@/lib/tauri-proxy';
 import { open as openUrl } from "@tauri-apps/plugin-shell";
 import {
   Dialog,
