@@ -9,13 +9,19 @@ import {
 } from '../ui/tooltip';
 import { useChatInputStore } from '@/stores/chatInputStore';
 import { isMediaFile, createMediaAttachment } from '@/utils/mediaUtils';
-import { open } from '@tauri-apps/plugin-dialog';
+import { isRemoteRuntime } from "@/lib/tauri-proxy";
 
 export const MediaSelector: React.FC = () => {
   const { addMediaAttachment } = useChatInputStore();
 
   const handleSelectMedia = async () => {
     try {
+      if (isRemoteRuntime()) {
+        alert('Adding media is only available from the desktop app for now.');
+        return;
+      }
+
+      const { open } = await import('@tauri-apps/plugin-dialog');
       const selected: string | string[] | null = await open({
         multiple: true,
         filters: [

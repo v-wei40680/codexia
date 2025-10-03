@@ -7,9 +7,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { check, Update } from "@tauri-apps/plugin-updater";
+import type { Update } from "@tauri-apps/plugin-updater";
 import { useEffect, useState } from "react";
-import { relaunch } from '@tauri-apps/plugin-process';
+import { isRemoteRuntime } from "@/lib/tauri-proxy";
 
 interface UpdateState {
   update?: Update;
@@ -28,6 +28,7 @@ const REMIND_LATER_HOURS = 24; // Remind later interval 24 hours
 export function UpdateChecker() {
   const [updateState, setUpdateState] = useState<UpdateState>({});
   const [showDialog, setShowDialog] = useState(false);
+  const remoteMode = isRemoteRuntime();
 
   // Get list of skipped versions
   const getSkippedVersions = (): string[] => {
@@ -79,11 +80,12 @@ export function UpdateChecker() {
   };
 
   const checkForUpdates = async () => {
-    if (!shouldCheckForUpdates()) {
+    if (remoteMode || !shouldCheckForUpdates()) {
       return;
     }
 
     try {
+      const { check } = await import("@tauri-apps/plugin-updater");
       const update = await check();
       localStorage.setItem(STORAGE_KEYS.LAST_CHECK_TIME, new Date().toISOString());
       
@@ -122,13 +124,14 @@ export function UpdateChecker() {
 
   // Check for updates on app startup
   useEffect(() => {
-    if (import.meta.env.PROD) {
+    if (!remoteMode && import.meta.env.PROD) {
       checkForUpdates();
     }
-  }, []);
+  }, [remoteMode]);
 
   return (
-    <>
+    remoteMode ? null : (
+      <>
       {/* Update available dialog */}
       <Dialog open={showDialog} onOpenChange={setShowDialog}>
         <DialogContent className="sm:max-w-md">
@@ -178,6 +181,7 @@ export function UpdateChecker() {
                 onClick={async () => {
                   await downloadAndInstall();
                   // Relaunch the app after successful install to apply update
+                  const { relaunch } = await import("@tauri-apps/plugin-process");
                   await relaunch();
                 }}
               >
@@ -190,5 +194,6 @@ export function UpdateChecker() {
 
       {/* No progress UI; app will relaunch after install */}
     </>
+    )
   );
 }

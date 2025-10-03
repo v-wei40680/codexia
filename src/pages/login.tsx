@@ -4,13 +4,13 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import supabase, { isSupabaseConfigured } from "@/lib/supabase";
 import { ensureProfileRecord, mapProfileRow, type ProfileRecord } from "@/lib/profile";
-import { open } from "@tauri-apps/plugin-shell";
 import { Github } from "lucide-react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSettingsStore } from "@/stores/SettingsStore";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { isRemoteRuntime } from "@/lib/tauri-proxy";
 
 export default function AuthPage() {
   const { user, loading } = useAuth();
@@ -20,6 +20,7 @@ export default function AuthPage() {
   const [password, setPassword] = useState("");
   const [loadingForm, setLoadingForm] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const remoteMode = isRemoteRuntime();
 
   useEffect(() => {
     const decideRedirect = async () => {
@@ -124,7 +125,7 @@ export default function AuthPage() {
       <p className="mb-6 text-gray-500 dark:text-gray-400">Sign in to get more</p>
 
       <div className="w-full max-w-sm text-left">
-        {import.meta.env.DEV &&
+        {(import.meta.env.DEV || remoteMode) &&
           <>
             <Tabs defaultValue="signin" className="w-full mb-4">
               <TabsList className="grid w-full grid-cols-2">

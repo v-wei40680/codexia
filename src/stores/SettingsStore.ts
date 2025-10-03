@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { getCurrentWindow } from '@tauri-apps/api/window';
+import { isRemoteRuntime } from "@/lib/tauri-proxy";
 
 interface SettingsStore {
   excludeFolders: string[];
@@ -67,8 +67,16 @@ export const useSettingsStore = create<SettingsStore>()(
       setWindowTitle: (title: string) => {
         set({ windowTitle: title });
         (async () => {
-          const win = getCurrentWindow();
-          await win.setTitle(title);
+          if (isRemoteRuntime()) {
+            return;
+          }
+
+          try {
+            const { getCurrentWindow } = await import("@tauri-apps/api/window");
+            await getCurrentWindow().setTitle(title);
+          } catch (error) {
+            console.error("Failed to update window title:", error);
+          }
         })();
       },
     }),

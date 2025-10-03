@@ -12,7 +12,7 @@ import { FolderOpen, Plus } from "lucide-react";
 import { useFolderStore } from "@/stores/FolderStore";
 import { Button } from "@/components/ui/button";
 import { useLayoutStore } from "@/stores/layoutStore";
-import { open } from "@tauri-apps/plugin-dialog";
+import { isRemoteRuntime } from "@/lib/tauri-proxy";
 import {
   Dialog,
   DialogContent,
@@ -63,6 +63,12 @@ export default function ProjectsPage() {
 
   const selectNewProject = async () => {
     try {
+      if (isRemoteRuntime()) {
+        alert("Opening projects is only available from the desktop app.");
+        return;
+      }
+
+      const { open } = await import("@tauri-apps/plugin-dialog");
       const result = await open({
         directory: true,
         multiple: false,

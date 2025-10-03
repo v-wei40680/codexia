@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { open } from '@tauri-apps/plugin-dialog';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Settings, FileText } from 'lucide-react';
 import { CodexConfig, DEFAULT_CONFIG } from '@/types/codex';
+import { isRemoteRuntime } from "@/lib/tauri-proxy";
 import {
   Dialog,
   DialogContent,
@@ -31,12 +31,18 @@ export const ConfigDialog: React.FC<ConfigDialogProps> = ({
 
   const handleSelectCodexExecutable = async () => {
     try {
+      if (isRemoteRuntime()) {
+        alert("Selecting executables is only available from the desktop app.");
+        return;
+      }
+
+      const { open } = await import("@tauri-apps/plugin-dialog");
       const result = await open({
         multiple: false,
-        directory: false
+        directory: false,
       });
       if (result) {
-        setLocalConfig(prev => ({ ...prev, codexPath: result }));
+        setLocalConfig((prev) => ({ ...prev, codexPath: result }));
       }
     } catch (error) {
       console.error('Failed to select codex executable:', error);

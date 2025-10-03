@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { invoke } from '@/lib/tauri-proxy';
-import { open as openUrl } from "@tauri-apps/plugin-shell";
 import {
   Dialog,
   DialogContent,
@@ -16,6 +15,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../ui/tabs';
 import { Trash2, Plus, Edit, Save, X } from 'lucide-react';
 import { McpServerConfig } from '@/types/codex';
 import { toast } from 'sonner';
+import { isRemoteRuntime } from "@/lib/tauri-proxy";
 
 interface McpDialogProps {
   children: React.ReactNode;
@@ -206,7 +206,18 @@ export function McpDialog({ children }: McpDialogProps) {
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto sm:!max-w-4xl">
         <DialogHeader>
           <DialogTitle>MCP Server Management</DialogTitle>
-          <Button onClick={() => openUrl('https://github.com/milisp/mcp-linker')}>Go to download MCP Linker to manage mcp</Button>
+          <Button
+            onClick={() => {
+              const url = 'https://github.com/milisp/mcp-linker';
+              if (isRemoteRuntime()) {
+                window.open(url, '_blank', 'noopener,noreferrer');
+              } else {
+                void import("@tauri-apps/plugin-shell").then(({ open }) => open(url));
+              }
+            }}
+          >
+            Go to download MCP Linker to manage mcp
+          </Button>
         </DialogHeader>
         
         <div className="space-y-6">

@@ -1,6 +1,6 @@
 import { MediaAttachment } from '@/types/chat';
-import { readFile } from '@tauri-apps/plugin-fs';
 import { generateUniqueId } from './genUniqueId';
+import { isRemoteRuntime } from "@/lib/tauri-proxy";
 
 // Supported image formats
 export const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg'];
@@ -96,6 +96,11 @@ export const createMediaAttachment = async (filePath: string): Promise<MediaAtta
  */
 export const readFileAsBase64 = async (filePath: string): Promise<string> => {
   try {
+    if (isRemoteRuntime()) {
+      throw new Error("Reading local files is not supported in remote mode");
+    }
+
+    const { readFile } = await import('@tauri-apps/plugin-fs');
     const bytes = await readFile(filePath);
     const base64 = btoa(String.fromCharCode(...new Uint8Array(bytes)));
     const mimeType = getMimeType(filePath);
