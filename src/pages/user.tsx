@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import supabase, { isSupabaseConfigured } from "@/lib/supabase";
 import { ensureProfileRecord, mapProfileRow, type ProfileRecord } from "@/lib/profile";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { Github, Twitter } from "lucide-react";
 
@@ -16,14 +15,6 @@ type Profile = {
   website?: string | null;
   github_url?: string | null;
   x_url?: string | null;
-};
-
-type Project = {
-  id: string;
-  user_id: string;
-  title: string;
-  description?: string | null;
-  url?: string | null;
 };
 
 function profileFromRecord(record: ProfileRecord | null): Profile | null {
@@ -44,7 +35,6 @@ export default function PublicUserPage() {
   const userId = params.id as string | undefined;
   const { user: me } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [projects, setProjects] = useState<Project[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const isOwner = !!(me && userId && me.id === userId);
@@ -63,18 +53,12 @@ export default function PublicUserPage() {
       }
       try {
         const client = supabase!;
-        const [{ data: p, error: perr }, { data: prj, error: jerr }] = await Promise.all([
+        const [{ data: p, error: perr }] = await Promise.all([
           client
             .from("profiles")
             .select("id, full_name, avatar_url, bio, website, github_url, x_url")
             .eq("id", userId)
             .maybeSingle(),
-          client
-            .from("projects")
-            .select("id, user_id, title, description, url")
-            .eq("user_id", userId)
-            .order("updated_at", { ascending: false, nullsFirst: false })
-            .limit(2),
         ]);
         if (perr) throw perr;
 
@@ -93,7 +77,6 @@ export default function PublicUserPage() {
         } else {
           setProfile(profileFromRecord(existing));
         }
-        if (!jerr && Array.isArray(prj)) setProjects(prj as Project[]);
       } catch (e: any) {
         setError(e?.message ?? "Failed to load user");
       } finally {
@@ -108,7 +91,7 @@ export default function PublicUserPage() {
       <Card>
         <CardHeader>
           <CardTitle>Public Profile</CardTitle>
-          <CardDescription>View a user's profile and shared project</CardDescription>
+          <CardDescription>View a user's profile</CardDescription>
         </CardHeader>
         <CardContent>
           {loading && <p className="text-sm text-muted-foreground">Loading...</p>}
@@ -151,51 +134,6 @@ export default function PublicUserPage() {
           )}
         </CardContent>
       </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Shared Project</CardTitle>
-          <CardDescription>The user's current shared project</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading && <p className="text-sm text-muted-foreground">Loading...</p>}
-          {!loading && !error && (
-            projects.length > 0 ? (
-              <div className="space-y-6">
-                {projects.map((project) => (
-                  <div key={project.id} className="space-y-2">
-                    <div className="flex items-center justify-between gap-2">
-                      <h3 className="text-lg font-semibold">
-                        {project.url ? (
-                          <a href={project.url} className="hover:underline" target="_blank" rel="noreferrer">
-                            {project.title}
-                          </a>
-                        ) : (
-                          project.title
-                        )}
-                      </h3>
-                      {isOwner && (
-                        <Button asChild size="sm" variant="secondary">
-                          <Link to={`/share/${project.id}`}>Edit</Link>
-                        </Button>
-                      )}
-                    </div>
-                    {project.description && (
-                      <p className="text-sm text-muted-foreground whitespace-pre-wrap">{project.description}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-muted-foreground">No project shared.</p>
-            )
-          )}
-        </CardContent>
-      </Card>
-
-      <div className="text-xs text-muted-foreground">
-        Want to share yours? <Link to="/share" className="underline">Share a project</Link>
-      </div>
     </div>
   );
 }
