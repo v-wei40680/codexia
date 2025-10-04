@@ -10,7 +10,7 @@ This guide covers installation, development, common workflows, and troubleshooti
 
 - Tauri prerequisites: https://v2.tauri.app/start/prerequisites/
 
-## Installation
+### Installation
 
 Clone and install dependencies:
 ```bash
@@ -32,7 +32,7 @@ bun tauri build
 ## App Usage
 
 ### Creating Sessions
-- Click the "+" button in the session sidebar to create a new chat session.
+- Click the Pencil button in the session sidebar to create a new chat session.
 - Each session starts its own Codex process and maintains independent configuration and context.
 
 ### Managing Conversations
@@ -46,6 +46,10 @@ bun tauri build
 - Toggle light/dark with the sun/moon button in the header.
 - Pick an accent color from the palette button next to the theme toggle.
 - Defaults: dark mode with a pink accent. Choices persist via Zustand.
+
+### Chat pane
+
+- toggle brain icon
 
 ## Troubleshooting / FAQ
 

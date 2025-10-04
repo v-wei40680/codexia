@@ -37,6 +37,7 @@ fork chat, file-tree integration, notepad, git diff, build-in pdf csv/xlsx viewe
 
 ## News
 
+- [2025-10-04] change codex proto to app-server for codex 0.4.4
 - [2025-09-26] With multiple windows support, open multiple projects at the same time. Show token usage beside Reasoning Effort.
 - [2025-09-24] Remote control via browser, check [discussion comment](https://github.com/milisp/codexia/discussions/22#discussioncomment-14500403)
 - [2025-09-23] Share project to community and find a co-founder at explore page.
@@ -96,6 +97,11 @@ Codexia prioritizes your privacy and security:
 - Usage and setup: [USAGE](docs/USAGE.md)
 - Architecture overview: [ARCHITECTURE](docs/ARCHITECTURE.md)
 - Development and contributing: [CONTRIBUTING](CONTRIBUTING.md)
+
+### FAQ
+
+- Why other providers no support
+codex 0.4.4 maybe change chat completions api to response api, you can try change base_url to response base_url
 
 ## 📋 Supported Codex Features
 
