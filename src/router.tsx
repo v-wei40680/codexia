@@ -6,28 +6,20 @@ import ProjectsPage from "@/pages/projects";
 import DxtPage from "./pages/dxt";
 import SettingsPage from "./pages/settings";
 import UsagePage from "./pages/usage";
+import { useDeepLink } from "./hooks/useDeepLink";
 import ProfilePage from "./pages/profile";
 import ShareProjectPage from "./pages/share";
 import PublicUserPage from "./pages/user";
 import ExploreProjectsPage from "./pages/explore";
-import { isRemoteRuntime } from "@/lib/tauri-proxy";
 import { useEffect } from "react";
 import { useLayoutStore } from "./stores/layoutStore";
 import { useAuth } from "./hooks/useAuth";
 import { useProfileStatus } from "./hooks/useProfileStatus";
 
 function Root() {
-  const remoteMode = isRemoteRuntime()
-  
-  useEffect(() => {
-    const initDeepLink = async () => {
-      if (!import.meta.env.DEV && !remoteMode) {
-        const { useDeepLink } = await import("./hooks/useDeepLink");
-        useDeepLink();
-      }
-    };
-    initDeepLink();
-  }, [remoteMode]);
+  if (!import.meta.env.DEV) {
+    useDeepLink();
+  }
 
   const { lastRoute } = useLayoutStore();
 

@@ -11,6 +11,7 @@ import { useSettingsStore } from "@/stores/SettingsStore";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { isRemoteRuntime } from "@/lib/tauri-proxy";
+import { open } from "@tauri-apps/plugin-shell"
 
 export default function AuthPage() {
   const { user, loading } = useAuth();
@@ -55,6 +56,7 @@ export default function AuthPage() {
   }
 
   const handleOAuthLogin = async (provider: "github") => {
+    console.log("provider", provider)
     if (!isSupabaseConfigured || !supabase) return;
     try {
       const client = supabase!;
