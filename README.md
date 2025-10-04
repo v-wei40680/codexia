@@ -7,9 +7,9 @@
 [![Downloads](https://img.shields.io/github/downloads/milisp/codexia/total.svg)](https://github.com/milisp/codexia/releases)
 [![Stars](https://img.shields.io/github/stars/milisp/codexia?style=social)](https://github.com/milisp/codexia/stargazers)
 [![Forks](https://img.shields.io/github/forks/milisp/codexia?style=social)](https://github.com/milisp/codexia/network/members)
-[![Feature Requests](https://img.shields.io/github/issues/milisp/codexia/feature-request?label=feature%20requests)](https://github.com/milisp/codexia/labels/feature-request)
+[![Feature Requests](https://img.shields.io/badge/Feature-Requests-blue?style=flat&logo=github&labelColor=24292e)](https://github.com/milisp/codexia/discussions/new?category=ideas)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#-contributing)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](LICENSE)
 [![CI](https://github.com/milisp/codexia/actions/workflows/ci.yml/badge.svg)](https://github.com/milisp/codexia/actions/workflows/ci.yml)
 [![Follow on 𝕏](https://img.shields.io/badge/𝕏-@lisp__mi-1c9bf0)](http://x.com/intent/follow?screen_name=lisp_mi)
 
@@ -20,7 +20,7 @@ fork chat, file-tree integration, notepad, git diff, build-in pdf csv/xlsx viewe
 [Download](https://milisp.github.io/modern-github-release/#/repo/milisp/codexia) | [USAGE](docs/USAGE.md) | [We welcome contributions](CONTRIBUTING.md) | [ARCHITECTURE](docs/ARCHITECTURE.md)
 
 > [!TIP]
-> **⭐ Star the repo and follow milisp on [Github](https://github.com/milisp) for more project**.
+> **⭐ Star the repo and follow [milisp](https://github.com/milisp) on Github for more project**.
 
 <div style="display: flex; gap: 10px; justify-content: center;">
   <div style="text-align: center;">
@@ -37,10 +37,9 @@ fork chat, file-tree integration, notepad, git diff, build-in pdf csv/xlsx viewe
 
 ## News
 
-- [2025-10-04] change codex proto to app-server for codex 0.4.4
+- [2025-10-04] change codex proto to app-server for codex 0.44.0
 - [2025-09-26] With multiple windows support, open multiple projects at the same time. Show token usage beside Reasoning Effort.
 - [2025-09-24] Remote control via browser, check [discussion comment](https://github.com/milisp/codexia/discussions/22#discussioncomment-14500403)
-- [2025-09-23] Share project to community and find a co-founder at explore page.
 - [2025-09-11] support codex built-in web search + file and filetree change detect and refresh
 - [2025-09-05] fork chat + edit chat
   * (theme select + category conversatin) ideas thanks to reddit user [rachelo3](https://racheluidesign.weebly.com/?utm_source=https://github.com/milisp/codexia)
