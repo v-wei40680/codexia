@@ -1,3 +1,0 @@
-[submodule "plugins/tauri-remote-ui"]
-	path = plugins/tauri-remote-ui
-	url = https://github.com/DraviaVemal/tauri-remote-ui

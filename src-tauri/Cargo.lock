@@ -5013,6 +5013,7 @@ dependencies = [
 [[package]]
 name = "tauri-remote-ui"
 version = "0.14.0"
+source = "git+https://github.com/DraviaVemal/tauri-remote-ui#49971370b2b8b9df6433ef07e4b173a153102c04"
 dependencies = [
  "futures",
  "http-body-util",
