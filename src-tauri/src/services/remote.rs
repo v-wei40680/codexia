@@ -1,9 +1,8 @@
 use crate::state::{RemoteAccessState, RemoteUiStatus};
 use serde::Deserialize;
-use tauri::{AppHandle, State};
 use tauri::path::BaseDirectory;
+use tauri::{AppHandle, Manager, State};
 use tauri_remote_ui::{OriginType, RemoteUiConfig, RemoteUiExt};
-use tauri::Manager;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -167,5 +166,74 @@ fn resolve_bundle_path(app: &AppHandle, requested_path: Option<String>) -> Optio
         }
     }
 
+    #[cfg(not(debug_assertions))]
+    {
+        if let Some(extracted) = materialize_embedded_frontend(app) {
+            return Some(extracted);
+        }
+    }
+
     None
+}
+
+#[cfg(not(debug_assertions))]
+fn materialize_embedded_frontend(app: &AppHandle) -> Option<String> {
+    use log::warn;
+    use std::fs::{create_dir_all, remove_dir_all, write};
+    use std::path::PathBuf;
+
+    let Ok(cache_root) = app
+        .path()
+        .resolve("remote-ui", BaseDirectory::AppCache)
+        .map(PathBuf::from)
+    else {
+        warn!("Failed to resolve remote UI cache directory");
+        return None;
+    };
+
+    let bundle_dir = cache_root.join(app.package_info().version.to_string());
+
+    if bundle_dir.exists() {
+        if let Err(error) = remove_dir_all(&bundle_dir) {
+            warn!("Failed to clear remote UI cache directory: {error}");
+            return None;
+        }
+    }
+
+    if let Err(error) = create_dir_all(&bundle_dir) {
+        warn!("Failed to create remote UI cache directory: {error}");
+        return None;
+    }
+
+    let resolver = app.asset_resolver();
+    let mut found_index = false;
+
+    for (key, bytes) in resolver.iter() {
+        let relative = key.trim_start_matches('/');
+        if relative.is_empty() {
+            continue;
+        }
+
+        if relative == "index.html" {
+            found_index = true;
+        }
+
+        let target = bundle_dir.join(relative);
+        if let Some(parent) = target.parent() {
+            if let Err(error) = create_dir_all(parent) {
+                warn!("Failed to create remote UI asset directory {parent:?}: {error}");
+                continue;
+            }
+        }
+
+        if let Err(error) = write(&target, bytes.as_ref()) {
+            warn!("Failed to materialize asset {relative}: {error}");
+        }
+    }
+
+    if !found_index {
+        warn!("Remote UI bundle extraction is missing index.html");
+    }
+
+    Some(bundle_dir.to_string_lossy().to_string())
 }

@@ -657,7 +657,7 @@ impl CodexClient {
                 )
             };
 
-            if let Some(request_id) = maybe_request_id {
+            if let Some(_request_id) = maybe_request_id {
                 let mut store = self.approval_store.lock().await;
                 if let Some(confirmed_id) = store.take_request_for_event(kind, event_id) {
                     return Ok(confirmed_id);

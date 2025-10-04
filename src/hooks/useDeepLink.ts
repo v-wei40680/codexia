@@ -1,7 +1,6 @@
 import supabase from "@/lib/supabase";
 import { ensureProfileRecord, mapProfileRow } from "@/lib/profile";
-import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import { getCurrent, onOpenUrl } from "@tauri-apps/plugin-deep-link";
+import { listen, type UnlistenFn, isRemoteRuntime } from "@/lib/tauri-proxy";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -66,9 +65,19 @@ export const useDeepLink = () => {
 
     const setupDeepLinkHandlers = async () => {
       try {
-        const current = await getCurrent();
-        if (current && current.length) {
-          await handleUrl(current);
+        // Only access the deep-link plugin when running in the native Tauri runtime.
+        // In remote browser runtime, the OS still delivers the deep link to the app
+        // and the backend emits a `deep-link-received` event which we listen to below.
+        if (!isRemoteRuntime()) {
+          try {
+            const mod = await import("@tauri-apps/plugin-deep-link");
+            const current = await mod.getCurrent();
+            if (current && current.length) {
+              await handleUrl(current);
+            }
+          } catch (err) {
+            console.error("Failed to read current deep link", err);
+          }
         }
       } catch (err) {
         console.error("Failed to read current deep link", err);
@@ -76,9 +85,12 @@ export const useDeepLink = () => {
 
       let pluginUnlisten: UnlistenFn | null = null;
       try {
-        pluginUnlisten = await onOpenUrl((incoming) => {
-          void handleUrl(incoming);
-        });
+        if (!isRemoteRuntime()) {
+          const mod = await import("@tauri-apps/plugin-deep-link");
+          pluginUnlisten = await mod.onOpenUrl((incoming) => {
+            void handleUrl(incoming);
+          });
+        }
       } catch (err) {
         console.error("Failed to register deep link handler", err);
       }
