@@ -3,7 +3,6 @@ import SettingsSidebar from "@/components/SettingsSidebar";
 import ProviderList from "@/components/ProviderList";
 import ProviderModels from "@/components/ProviderModels";
 import ExcludeFolders from "@/components/ExcludeFolders";
-import LogoSettings from "@/components/LogoSettings";
 import { useSettingsStore } from "@/stores/SettingsStore";
 import { PromptOptimizerSettings } from "@/components/PromptOptimizerSettings";
 import { RemoteAccessSettings } from "@/components/RemoteAccessSettings";
@@ -40,11 +39,8 @@ export default function SettingsPage() {
           </div>
         )}
         {activeSection === "promptOptimizer" && <PromptOptimizerSettings />}
-        {activeSection === "security" && <p>Security Settings</p>}
-        {activeSection === "working" && <p>Working Directory Settings</p>}
         {activeSection === "remoteAccess" && <RemoteAccessSettings />}
         {activeSection === "exclude" && <ExcludeFolders />}
-        {activeSection === "logo" && <LogoSettings />}
       </div>
     </div>
   );
