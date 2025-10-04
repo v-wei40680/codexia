@@ -3,6 +3,7 @@ mod commands;
 mod config;
 mod filesystem;
 mod mcp;
+mod jsonrpc;
 mod protocol;
 mod services;
 mod state;

@@ -26,7 +26,7 @@ impl CommandBuilder {
         if !args.is_empty() {
             cmd.args(&args);
         }
-        cmd.arg("proto");
+        cmd.arg("app-server");
 
         // Build environment variables (includes PATH from user's shell)
         let env_vars = Self::build_env_vars(config).await;
@@ -213,7 +213,7 @@ impl CommandBuilder {
                             cmd.arg("-c")
                                 .arg(format!("model_provider={}", provider_key.to_lowercase()));
 
-                            // Set base URL if available
+                                // Set base URL if available
                             if !provider_config.base_url.is_empty() {
                                 cmd.arg("-c")
                                     .arg(format!("base_url={}", provider_config.base_url));

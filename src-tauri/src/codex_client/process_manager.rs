@@ -113,10 +113,6 @@ impl ProcessManager {
         Ok(())
     }
 
-    pub fn is_active(&self) -> bool {
-        self.process.is_some() && self.stdin_tx.is_some()
-    }
-
     pub fn send_to_stdin(&self, message: String) -> Result<()> {
         if let Some(stdin_tx) = &self.stdin_tx {
             stdin_tx.send(message)?;

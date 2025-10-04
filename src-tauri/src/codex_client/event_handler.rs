@@ -1,15 +1,19 @@
-use serde_json::{self, Value};
+use serde_json;
 use tauri::{AppHandle, Emitter, Manager};
 use tauri_remote_ui::EmitterExt;
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::{ChildStderr, ChildStdout};
-
-use crate::protocol::Event;
+use tokio::sync::mpsc::UnboundedSender;
 
 pub struct EventHandler;
 
 impl EventHandler {
-    pub fn start_stdout_handler(app: AppHandle, stdout: ChildStdout, session_id: String) {
+    pub fn start_stdout_handler(
+        app: AppHandle,
+        stdout: ChildStdout,
+        session_id: String,
+        message_tx: UnboundedSender<crate::jsonrpc::JsonRpcMessage>,
+    ) {
         tokio::spawn(async move {
             let reader = BufReader::new(stdout);
             let mut lines = reader.lines();
@@ -20,61 +24,45 @@ impl EventHandler {
                 if line.trim().is_empty() {
                     continue;
                 }
-
-                // log::debug!("📥 Received line from codex: {}", line);
-
-                // Try to parse as the structured Event format first
-                if let Ok(event) = serde_json::from_str::<Event>(&line) {
-                    // log::debug!("📨 Parsed structured event: {:?}", event);
-
-                    // Log the event for debugging
-                    if let Some(event_session_id) = Self::get_session_id_from_event(&event) {
-                        log::debug!("Event for session: {}", event_session_id);
-                    }
-
-                    let normalized_msg = match serde_json::to_value(&event.msg) {
-                        Ok(value) => value,
-                        Err(err) => {
-                            log::error!("Failed to serialize event msg to JSON: {}", err);
-                            Value::Null
-                        }
-                    };
-
-                    // Emit structured event with attached session_id for routing in the UI
-                    let wrapped = serde_json::json!({
-                        "id": event.id,
-                        "msg": normalized_msg,
-                        "session_id": session_id.clone()
-                    });
-                    emit_to_frontend(&app, "codex-events", &wrapped).await;
-                } else {
-                    // If structured parsing fails, try to parse as generic JSON and emit as raw event
-                    match serde_json::from_str::<serde_json::Value>(&line) {
-                        Ok(json_value) => {
-                            log::debug!("📨 Parsed raw JSON event: {:?}", json_value);
-
-                            // Emit raw JSON event with a wrapper structure
-                            let raw_event = serde_json::json!({
-                                "type": "raw_event",
-                                "session_id": session_id.clone(),
-                                "data": json_value
-                            });
-                            emit_to_frontend(&app, "codex-raw-events", &raw_event).await;
-                        }
-                        Err(e) => {
+                match serde_json::from_str::<crate::jsonrpc::JsonRpcMessage>(&line) {
+                    Ok(message) => {
+                        if let Err(err) = message_tx.send(message) {
                             log::warn!(
-                                "Failed to parse codex output as JSON: {} - Line: {}",
-                                e,
-                                line
+                                "Failed to forward JSON-RPC message to router: {}",
+                                err
                             );
+                            break;
+                        }
+                    }
+                    Err(parse_err) => {
+                        // If structured parsing fails, try to parse as generic JSON and emit as raw event
+                        match serde_json::from_str::<serde_json::Value>(&line) {
+                            Ok(json_value) => {
+                                log::debug!("📨 Parsed raw JSON event: {:?}", json_value);
 
-                            // Emit as plain text event for debugging
-                            let text_event = serde_json::json!({
-                                "type": "text_output",
-                                "session_id": session_id.clone(),
-                                "content": line
-                            });
-                            emit_to_frontend(&app, "codex-text-output", &text_event).await;
+                                // Emit raw JSON event with a wrapper structure
+                                let raw_event = serde_json::json!({
+                                    "type": "raw_event",
+                                    "session_id": session_id.clone(),
+                                    "data": json_value
+                                });
+                                emit_to_frontend(&app, "codex-raw-events", &raw_event).await;
+                            }
+                            Err(e) => {
+                                log::warn!(
+                                    "Failed to parse codex output as JSON-RPC ({}), raw error: {}",
+                                    parse_err,
+                                    e
+                                );
+
+                                // Emit as plain text event for debugging
+                                let text_event = serde_json::json!({
+                                    "type": "text_output",
+                                    "session_id": session_id.clone(),
+                                    "content": line
+                                });
+                                emit_to_frontend(&app, "codex-text-output", &text_event).await;
+                            }
                         }
                     }
                 }
@@ -119,19 +107,9 @@ impl EventHandler {
         line.starts_with("20") && line.contains("Z  DEBUG") ||
         line.starts_with("20") && line.contains("Z  TRACE")
     }
-
-    fn get_session_id_from_event(event: &Event) -> Option<String> {
-        match &event.msg {
-            crate::protocol::EventMsg::SessionConfigured { session_id, .. } => {
-                Some(session_id.clone())
-            }
-            _ => None,
-        }
-    }
-
 }
 
-async fn emit_to_frontend(app: &AppHandle, event: &str, payload: &serde_json::Value) {
+pub(crate) async fn emit_to_frontend(app: &AppHandle, event: &str, payload: &serde_json::Value) {
     if let Some(window) = app.get_webview_window("main") {
         if let Err(err) = EmitterExt::emit(&window, event, payload.clone()).await {
             log::error!("Failed to emit '{}' event via window: {}", event, err);
