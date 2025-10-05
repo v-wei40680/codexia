@@ -17,7 +17,7 @@
 
 fork chat, file-tree integration, notepad, git diff, build-in pdf csv/xlsx viewer, and more.
 
-[Download](https://milisp.github.io/modern-github-release/#/repo/milisp/codexia) | [USAGE](docs/USAGE.md) | [We welcome contributions](CONTRIBUTING.md) | [ARCHITECTURE](docs/ARCHITECTURE.md)
+[Download](https://milisp.github.io/modern-github-release/#/repo/milisp/codexia) | [USAGE](docs/USAGE.md) | [We welcome contributions](CONTRIBUTING.md) | [ARCHITECTURE](docs/ARCHITECTURE.md) | [FAQ](#faq)
 
 > [!TIP]
 > **⭐ Star the repo and follow [milisp](https://github.com/milisp) on Github for more project**.
@@ -101,6 +101,14 @@ Codexia prioritizes your privacy and security:
 
 - Why other providers no support
 codex 0.4.4 maybe change chat completions api to response api, you can try change base_url to response base_url
+- MacOS damaged warning
+[🎥Youtube](https://www.youtube.com/watch?v=MEHFd0PCQh4)
+The app not sign yet, You can open it by running the terminal command:
+
+```sh
+xattr -cr /Applications/codexia.app
+open -a /Applications/codexia.app  # or click the Codexia app
+```
 
 ## 📋 Supported Codex Features
 
