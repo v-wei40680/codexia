@@ -120,32 +120,6 @@ pub async fn pause_session(state: State<'_, CodexState>, session_id: String) -> 
     }
 }
 
-pub async fn close_session(state: State<'_, CodexState>, session_id: String) -> Result<(), String> {
-    let mut sessions = state.sessions.lock().await;
-    if let Some(mut client) = sessions.remove(&session_id) {
-        client
-            .close_session()
-            .await
-            .map_err(|e| format!("Failed to close session: {}", e))?;
-        Ok(())
-    } else {
-        Err("Session not found".to_string())
-    }
-}
-
-pub async fn get_running_sessions(state: State<'_, CodexState>) -> Result<Vec<String>, String> {
-    let sessions = state.sessions.lock().await;
-    let session_keys: Vec<String> = sessions.keys().cloned().collect();
-
-    // Debug log to see what sessions are actually stored
-    log::debug!(
-        "get_running_sessions called - stored sessions: {:?}",
-        session_keys
-    );
-
-    Ok(session_keys)
-}
-
 pub async fn check_codex_version() -> Result<String, String> {
     let path = match discover_codex_command() {
         Some(p) => p.to_string_lossy().to_string(),

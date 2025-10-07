@@ -10,9 +10,9 @@ mod state;
 mod utils;
 
 use commands::{
-    approve_execution, approve_patch, check_codex_version, close_session, create_new_window,
+    approve_execution, approve_patch, check_codex_version, create_new_window,
     disable_remote_ui, enable_remote_ui, delete_session_file, find_rollout_path_for_session, get_latest_session_id,
-    get_remote_ui_status, get_running_sessions, get_session_files, load_sessions_from_disk, pause_session,
+    get_remote_ui_status, get_session_files, load_sessions_from_disk, pause_session,
     read_history_file, read_session_file, send_message, start_codex_session,
 };
 use config::{
@@ -74,8 +74,6 @@ pub fn run() {
             approve_execution,
             approve_patch,
             pause_session,
-            close_session,
-            get_running_sessions,
             load_sessions_from_disk,
             delete_session_file,
             get_latest_session_id,

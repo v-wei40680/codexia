@@ -625,26 +625,6 @@ impl CodexClient {
         Ok(())
     }
 
-    pub async fn close_session(&mut self) -> Result<()> {
-        log::debug!("Closing session: {}", self.session_id);
-
-        if let Some(subscription_id) = self.subscription_id.lock().await.clone() {
-            let params = json!({
-                "subscriptionId": subscription_id,
-            });
-            let _ = self
-                .send_request("removeConversationListener", Some(params))
-                .await
-                .map_err(|err| {
-                    log::warn!("Failed to remove conversation listener: {err}");
-                    err
-                });
-        }
-
-        self.process_manager.terminate().await?;
-        Ok(())
-    }
-
     async fn await_request_id(&self, event_id: &str, kind: ApprovalKind) -> Result<RequestId> {
         let deadline = Instant::now() + APPROVAL_WAIT_TIMEOUT;
 

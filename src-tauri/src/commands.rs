@@ -60,16 +60,6 @@ pub async fn pause_session(state: State<'_, CodexState>, session_id: String) -> 
 }
 
 #[tauri::command]
-pub async fn close_session(state: State<'_, CodexState>, session_id: String) -> Result<(), String> {
-    codex::close_session(state, session_id).await
-}
-
-#[tauri::command]
-pub async fn get_running_sessions(state: State<'_, CodexState>) -> Result<Vec<String>, String> {
-    codex::get_running_sessions(state).await
-}
-
-#[tauri::command]
 pub async fn check_codex_version() -> Result<String, String> {
     codex::check_codex_version().await
 }
