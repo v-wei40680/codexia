@@ -64,46 +64,6 @@ class SessionManager {
     }
   }
 
-
-  async closeSession(sessionId: string): Promise<void> {
-    try {
-      // Extract raw session ID for backend process management
-      const rawSessionId = sessionId.startsWith('codex-event-') 
-        ? sessionId.replace('codex-event-', '') 
-        : sessionId;
-      
-      // Use the new close_session command which properly shuts down the protocol connection
-      await invoke('close_session', { sessionId: rawSessionId });
-      this.sessionConfigs.delete(sessionId);
-      this.runningSessions.delete(sessionId);
-    } catch (error) {
-      console.error('Failed to close session:', error);
-      throw error;
-    }
-  }
-
-  async restartSession(sessionId: string, config: CodexConfig): Promise<void> {
-    try {
-      console.log('Restarting session:', sessionId, 'with config:', config);
-      
-      // Close the existing session
-      if (this.runningSessions.has(sessionId)) {
-        await this.closeSession(sessionId);
-      }
-      
-      // Add a small delay to ensure cleanup is complete
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Start with new config
-      await this.ensureSessionRunning(sessionId, config);
-      
-      console.log('Session restarted successfully:', sessionId);
-    } catch (error) {
-      console.error('Failed to restart session:', error);
-      throw error;
-    }
-  }
-
   isSessionRunning(sessionId: string): boolean {
     return this.runningSessions.has(sessionId);
   }
@@ -111,20 +71,6 @@ class SessionManager {
   getLocalRunningSessions(): string[] {
     return Array.from(this.runningSessions);
   }
-  
-  async closeAllSessions(): Promise<void> {
-    const sessions = Array.from(this.runningSessions);
-    const promises = sessions.map(sessionId => 
-      this.closeSession(sessionId).catch(error => {
-        console.error(`Failed to close session ${sessionId}:`, error);
-        return null; // Don't let one failure close the others
-      })
-    );
-    
-    await Promise.all(promises);
-    console.log(`Closed ${sessions.length} sessions`);
-  }
-
 
   getSessionConfig(sessionId: string): CodexConfig | undefined {
     return this.sessionConfigs.get(sessionId);
