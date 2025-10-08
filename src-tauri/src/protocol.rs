@@ -11,8 +11,8 @@ pub struct CodexConfig {
     pub sandbox_mode: String,
     pub codex_path: Option<String>,
     pub api_key: Option<String>,
+    pub base_url: Option<String>,
     pub reasoning_effort: Option<String>,
     pub resume_path: Option<String>,
-    #[serde(default)]
     pub tools_web_search: Option<bool>,
 }

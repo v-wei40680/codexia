@@ -30,8 +30,10 @@ class SessionManager {
       const providersStore = useProvidersStore.getState();
       const providerConfig = providersStore.providers[config.provider as keyof typeof providersStore.providers];
       const apiKey = providerConfig?.apiKey || null;
+      const baseUrl = providerConfig?.baseUrl || null;
       
       console.log(`🔑 API key debug - Provider: ${config.provider}, Has API key: ${!!apiKey}, Length: ${apiKey?.length || 0}`);
+      console.log(`🌍 Base URL debug - Provider: ${config.provider}, Base URL: ${baseUrl}`);
 
       // Start the session (backend will check if already exists)
       // If this conversation has a resume path, include it
@@ -49,6 +51,7 @@ class SessionManager {
           approval_policy: config.approvalPolicy,
           sandbox_mode: config.sandboxMode,
           api_key: apiKey,
+          base_url: baseUrl,
           reasoning_effort: config.reasoningEffort,
           resume_path: resumePath,
           // Pass through web search toggle to backend (default false)
