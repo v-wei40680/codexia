@@ -43,6 +43,10 @@ export const router = createHashRouter([
     element: <Root />,
     children: [
       {
+        index: true,
+        element: <ProjectsPage />,
+      },
+      {
         path: "login",
         element: <LoginPage />,
       },
@@ -53,10 +57,6 @@ export const router = createHashRouter([
       {
         element: <RequireAuth />,
         children: [
-          {
-            index: true,
-            element: <ProjectsPage />,
-          },
           {
             path: "chat",
             element: <ChatPage />,
