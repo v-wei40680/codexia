@@ -1,6 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { invoke, listen } from "@/lib/tauri-proxy";
-import type { UnlistenFn } from "@/lib/tauri-proxy";
+import { useState, useEffect } from "react";
+import { invoke } from "@/lib/tauri-proxy";
 import { useSettingsStore } from "@/stores/SettingsStore";
 import { useFolderStore } from "@/stores/FolderStore";
 import { useContextFilesStore } from "@/stores/ContextFilesStore";
@@ -42,11 +41,6 @@ export function FileTree({
   const { setCurrentFolder } = useFolderStore();
   const { addFile, clearFiles } = useContextFilesStore();
   const { calculateTokens } = useFileTokens();
-  const [refreshMap, setRefreshMap] = useState<Record<string, number>>({});
-  const watchedFoldersRef = useRef<Set<string>>(new Set());
-  const [canonicalCurrent, setCanonicalCurrent] = useState<string | null>(null);
-  const canonicalMapRef = useRef<Map<string, string>>(new Map()); // original -> canonical
-  const canonicalToOriginalRef = useRef<Map<string, string>>(new Map()); // canonical -> original
 
   const loadDirectory = async (path?: string) => {
     setLoading(true);
@@ -71,33 +65,12 @@ export function FileTree({
     }
   };
 
-
   const toggleFolder = async (folderPath: string) => {
     const newExpanded = new Set(expandedFolders);
     if (expandedFolders.has(folderPath)) {
       newExpanded.delete(folderPath);
-      // Stop watching when collapsing
-      try { await invoke("stop_watch_directory", { folderPath }); } catch {}
-      watchedFoldersRef.current.delete(folderPath);
-      // Drop canonical mapping for this folder
-      const canonical = canonicalMapRef.current.get(folderPath);
-      if (canonical) {
-        canonicalMapRef.current.delete(folderPath);
-        canonicalToOriginalRef.current.delete(canonical);
-      }
     } else {
       newExpanded.add(folderPath);
-      // Start watching newly expanded folder
-      if (!watchedFoldersRef.current.has(folderPath)) {
-        try { await invoke("start_watch_directory", { folderPath }); } catch {}
-        watchedFoldersRef.current.add(folderPath);
-      }
-      // Cache canonical path for reliable event matching
-      try {
-        const canonical = await invoke<string>("canonicalize_path", { path: folderPath });
-        canonicalMapRef.current.set(folderPath, canonical);
-        canonicalToOriginalRef.current.set(canonical, folderPath);
-      } catch {}
     }
     setExpandedFolders(newExpanded);
   };
@@ -134,83 +107,6 @@ export function FileTree({
   useEffect(() => {
     loadDirectory();
   }, [currentFolder]);
-
-  // Reset watchers and expansion when changing root folder
-  useEffect(() => {
-    const reset = async () => {
-      for (const p of Array.from(watchedFoldersRef.current)) {
-        try { await invoke("stop_watch_directory", { folderPath: p }); } catch {}
-      }
-      watchedFoldersRef.current.clear();
-      setExpandedFolders(new Set());
-      setRefreshMap({});
-    };
-    reset();
-  }, [currentFolder]);
-
-  // Always watch the current root folder for top-level changes
-  useEffect(() => {
-    const run = async () => {
-      if (!currentFolder) return;
-      try { await invoke("start_watch_directory", { folderPath: currentFolder }); } catch {}
-      watchedFoldersRef.current.add(currentFolder);
-      try {
-        const canonical = await invoke<string>("canonicalize_path", { path: currentFolder });
-        setCanonicalCurrent(canonical);
-      } catch {
-        setCanonicalCurrent(currentFolder);
-      }
-    };
-    run();
-    return () => {
-      const stop = async () => {
-        if (!currentFolder) return;
-        try { await invoke("stop_watch_directory", { folderPath: currentFolder }); } catch {}
-        watchedFoldersRef.current.delete(currentFolder);
-      };
-      stop();
-    };
-  }, [currentFolder]);
-
-  // Listen for file system change events from backend and refresh affected folders
-  useEffect(() => {
-    let unlisten: UnlistenFn | null = null;
-    const setup = async () => {
-      unlisten = await listen<{ path: string; kind: string }>("fs_change", async (event) => {
-        const changedPath = event.payload.path;
-        // Compare against canonical root
-        if (canonicalCurrent && changedPath.startsWith(canonicalCurrent)) {
-          if (currentFolder) loadDirectory(currentFolder);
-        }
-
-        // Bump refresh keys based on canonical mapping where available
-        setRefreshMap((prev) => {
-          const next: Record<string, number> = { ...prev };
-          expandedFolders.forEach((folder) => {
-            const canonical = canonicalMapRef.current.get(folder) || folder;
-            if (changedPath.startsWith(canonical)) {
-              next[folder] = (next[folder] || 0) + 1;
-            }
-          });
-          return next;
-        });
-      });
-    };
-    setup();
-    return () => { if (unlisten) unlisten(); };
-  }, [currentFolder, expandedFolders, canonicalCurrent]);
-
-  // On unmount, stop all active watchers
-  useEffect(() => {
-    return () => {
-      (async () => {
-        for (const p of Array.from(watchedFoldersRef.current)) {
-          try { await invoke("stop_watch_directory", { folderPath: p }); } catch {}
-        }
-        watchedFoldersRef.current.clear();
-      })();
-    };
-  }, []);
 
   // Global search across the entire file tree starting at currentFolder
   useEffect(() => {
@@ -264,12 +160,16 @@ export function FileTree({
 
   if (loading && entries.length === 0) {
     return (
-      <div className="p-4 text-center text-muted-foreground">Loading files...</div>
+      <div className="p-4 text-center text-muted-foreground">
+        Loading files...
+      </div>
     );
   }
 
   if (error) {
-    return <div className="p-4 text-center text-destructive">Error: {error}</div>;
+    return (
+      <div className="p-4 text-center text-destructive">Error: {error}</div>
+    );
   }
 
   return (
@@ -287,9 +187,13 @@ export function FileTree({
       <div className="flex-1 overflow-y-auto">
         {filterText.trim() ? (
           <>
-            {isSearching && entries.length === 0 && searchResults.length === 0 && (
-              <div className="p-2 text-xs text-muted-foreground">Searching...</div>
-            )}
+            {isSearching &&
+              entries.length === 0 &&
+              searchResults.length === 0 && (
+                <div className="p-2 text-xs text-muted-foreground">
+                  Searching...
+                </div>
+              )}
             {searchResults.map((entry) => (
               <FileTreeItem
                 key={entry.path}
@@ -301,11 +205,12 @@ export function FileTree({
                 onSetWorkingFolder={handleSetWorkingFolder}
                 onCalculateTokens={calculateTokens}
                 isFiltered={isFiltered}
-                refreshKeyMap={refreshMap}
               />
             ))}
             {!isSearching && searchResults.length === 0 && (
-              <div className="p-2 text-xs text-muted-foreground">No matches found</div>
+              <div className="p-2 text-xs text-muted-foreground">
+                No matches found
+              </div>
             )}
           </>
         ) : (
@@ -320,9 +225,6 @@ export function FileTree({
               onSetWorkingFolder={handleSetWorkingFolder}
               onCalculateTokens={calculateTokens}
               isFiltered={isFiltered}
-              refreshKeyMap={refreshMap}
-              // Pass per-folder refresh signal down to subfolder loaders
-              // via SubFolderContent
             />
           ))
         )}
