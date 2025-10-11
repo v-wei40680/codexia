@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { FolderOpen, Plus } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { useFolderStore } from "@/stores/FolderStore";
 import { Button } from "@/components/ui/button";
 import { useLayoutStore } from "@/stores/layoutStore";
@@ -33,6 +34,7 @@ export default function ProjectsPage() {
   const [trustDialogOpen, setTrustDialogOpen] = useState(false);
   const [pendingProjectPath, setPendingProjectPath] = useState<string | null>(null);
   const [isVersionControlled, setIsVersionControlled] = useState(false);
+  const [searchTerm, setSearchTerm] = useState("");
   const navigate = useNavigate();
   const { setCurrentFolder } = useFolderStore();
   const { setFileTree, setChatPane } = useLayoutStore();
@@ -117,6 +119,14 @@ export default function ProjectsPage() {
             </Button>
           </div>
           <p className="text-muted-foreground">Manage your Codex projects</p>
+          <div className="mt-4">
+            <Input
+              placeholder="Search projects..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              autoFocus
+            />
+          </div>
         </div>
       </div>
 
@@ -132,7 +142,11 @@ export default function ProjectsPage() {
         </Card>
       ) : (
         <div className="space-y-3 grid grid-cols-1 md:grid-cols-2">
-          {projects.map((project, index) => {
+          {projects
+            .filter((project) =>
+              project.path.toLowerCase().includes(searchTerm.toLowerCase())
+            )
+            .map((project, index) => {
             const projectName =
               project.path.split(/[/\\]/).pop() || project.path;
             return (

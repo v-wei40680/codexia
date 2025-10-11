@@ -87,7 +87,7 @@ export function AppHeader() {
 
         {/* Welcome button to projects page */}
         <Link to="/" className="flex hover:text-primary items-center gap-1">
-          <PartyPopper className="w-5 h-5" />
+          <PartyPopper className="w-5 h-5" /> Projects
         </Link>
 
         <Button 
