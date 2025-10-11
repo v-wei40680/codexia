@@ -16,7 +16,7 @@ import { useCodexStore } from "@/stores/CodexStore";
 import { useChatInputStore } from "@/stores/chatInputStore";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { invoke } from "@/lib/tauri-proxy";
-import { GitBranch, Files, Bot, NotebookPen, Image } from "lucide-react";
+import { GitBranch, Files, Bot, NotebookPen } from "lucide-react";
 import { NoteList } from "@/components/notes";
 import { WebPreview } from "@/components/WebPreview";
 
@@ -111,7 +111,7 @@ export default function ChatPage() {
       {showFileTree && (
         <div className="w-64 border-r h-full flex-shrink-0">
           <Tabs value={selectedLeftPanelTab} onValueChange={setSelectedLeftPanelTab} className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-6">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="files">Files</TabsTrigger>
               <TabsTrigger value="git">
                 <GitBranch />
@@ -124,9 +124,6 @@ export default function ChatPage() {
               </TabsTrigger>
               <TabsTrigger value="notes">
                 <NotebookPen />
-              </TabsTrigger>
-              <TabsTrigger value="image">
-                <Image />
               </TabsTrigger>
             </TabsList>
             <TabsContent value="files" className="flex-1 overflow-hidden mt-0">
@@ -203,9 +200,6 @@ export default function ChatPage() {
             </TabsContent>
             <TabsContent value="notes">
               <NoteList />
-            </TabsContent>
-            <TabsContent value="image" className="px-2">
-              Create your first image and video
             </TabsContent>
           </Tabs>
         </div>
