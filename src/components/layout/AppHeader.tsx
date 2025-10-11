@@ -17,7 +17,6 @@ import { invoke } from "@/lib/tauri-proxy";
 import { useState, useEffect } from "react";
 import { McpDialog } from "../dialogs/McpDialog";
 import { useThemeStore } from "@/stores/ThemeStore";
-import { useSettingsStore } from "@/stores/SettingsStore";
 import { useAuth } from "@/hooks/useAuth";
 import {
   DropdownMenu,
@@ -32,7 +31,6 @@ import { AccentColorSelector } from "../common/AccentColorSelector";
 export function AppHeader() {
   const { showFileTree, toggleFileTree, toggleChatPane } = useLayoutStore();
   const { theme, toggleTheme } = useThemeStore();
-  const { logoSettings } = useSettingsStore();
   const [codexVersion, setCodexVersion] = useState<string>("");
   const [isCodexAvailable, setIsCodexAvailable] = useState<boolean>(false);
   const location = useLocation();
@@ -78,20 +76,12 @@ export function AppHeader() {
     <div data-tauri-drag-region className="flex justify-between px-2">
       <span className="flex gap-2 items-center">
         <Link to="/chat" className="flex hover:text-primary items-center gap-1">
-          {logoSettings.useCustomLogo && logoSettings.customLogoPath ? (
-            <img
-              src={logoSettings.customLogoPath}
-              alt="Custom Logo"
-              className="h-6 w-auto object-contain"
-            />
-          ) : (
-            <span className="flex gap-2 items-center">
-              <div
-                className={`w-2 h-2 rounded-full ${isCodexAvailable ? "bg-green-500" : "bg-destructive"}`}
-              ></div>
-              <Badge>{codexVersion}</Badge>
-            </span>
-          )}
+          <span className="flex gap-2 items-center">
+            <div
+              className={`w-2 h-2 rounded-full ${isCodexAvailable ? "bg-green-500" : "bg-destructive"}`}
+            ></div>
+            <Badge>{codexVersion}</Badge>
+          </span>
           Chat
         </Link>
 
