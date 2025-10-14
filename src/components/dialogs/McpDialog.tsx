@@ -16,6 +16,7 @@ import { Trash2, Plus, Edit, Save, X } from 'lucide-react';
 import { McpServerConfig } from '@/types/codex';
 import { toast } from 'sonner';
 import { isRemoteRuntime } from "@/lib/tauri-proxy";
+import { open as openUrl } from "@tauri-apps/plugin-shell"
 
 interface McpDialogProps {
   children: React.ReactNode;
@@ -212,7 +213,7 @@ export function McpDialog({ children }: McpDialogProps) {
               if (isRemoteRuntime()) {
                 window.open(url, '_blank', 'noopener,noreferrer');
               } else {
-                void import("@tauri-apps/plugin-shell").then(({ open }) => open(url));
+		openUrl(url)
               }
             }}
           >

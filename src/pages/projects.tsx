@@ -22,6 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { toast } from "sonner";
 
 interface Project {
   path: string;
@@ -48,7 +49,7 @@ export default function ProjectsPage() {
       const projectList = await invoke<Project[]>("read_codex_config");
       setProjects(projectList);
     } catch (error) {
-      console.error("Failed to load projects:", error);
+      toast.error(`Failed to load projects:, ${error}`)
     } finally {
       setLoading(false);
     }
