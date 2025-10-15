@@ -35,6 +35,12 @@ fork chat, file-tree integration, notepad, git diff, build-in pdf csv/xlsx viewe
 
 ▶️ [Watch the automation video on Twitter](https://x.com/lisp_mi/status/1966147638266589376)
 
+## Related project
+- [codexia-zen](https://github.com/milisp/codexia) - a minimalist design GUI for OpenAI Codex CLI, baby Codexia
+- [Codexsm](https://github.com/milisp/codexsm) - Codex cli session manager, rename, view, delete session file, one click resume session.
+- [MCP Linker](https://github.com/milisp/mcp-linker) - Tauri GUI for managing MCP for Codex CLI
+- [awesome-codex-cli](https://github.com/milisp/awesome-codex-cli) - A curated list of awesome resources, tools for OpenAI Codex CLI
+
 ## News
 
 - [2025-10-04] change codex proto to app-server for codex 0.44.0
