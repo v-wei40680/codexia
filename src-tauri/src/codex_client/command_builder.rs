@@ -70,12 +70,14 @@ impl CommandBuilder {
 
                     if let Some(provider_config) = provider_config {
                         log::debug!("Found provider config: {:?}", provider_config);
-                        if !provider_config.env_key.is_empty() {
+                        if let Some(env_key) = &provider_config.env_key {
+                            if !env_key.is_empty() {
                             log::debug!(
                                 "Setting env var {} from provider config",
-                                provider_config.env_key
+                                env_key
                             );
-                            env_vars.insert(provider_config.env_key.clone(), api_key.clone());
+                                env_vars.insert(env_key.clone(), api_key.clone());
+                            }
                         } else {
                             log::debug!("Provider config has empty env_key");
                         }

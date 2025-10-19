@@ -2,16 +2,16 @@ mod codex_client;
 mod commands;
 mod config;
 mod filesystem;
-mod mcp;
 mod jsonrpc;
+mod mcp;
 mod protocol;
 mod services;
 mod state;
 mod utils;
 
 use commands::{
-    approve_execution, approve_patch, check_codex_version, create_new_window,
-    disable_remote_ui, enable_remote_ui, delete_session_file, find_rollout_path_for_session, get_latest_session_id,
+    approve_execution, approve_patch, check_codex_version, create_new_window, delete_session_file,
+    disable_remote_ui, enable_remote_ui, find_rollout_path_for_session, get_latest_session_id,
     get_remote_ui_status, get_session_files, load_sessions_from_disk, pause_session,
     read_history_file, read_session_file, send_message, start_codex_session,
 };
@@ -19,7 +19,6 @@ use config::{
     add_or_update_model_provider, add_or_update_profile, delete_profile, ensure_default_providers,
     get_profile_config, get_project_name, get_provider_config, is_version_controlled,
     read_codex_config, read_model_providers, read_profiles, set_project_trust,
-    update_profile_model,
 };
 use filesystem::{
     directory_ops::{canonicalize_path, get_default_directories, read_directory, search_files},
@@ -108,7 +107,6 @@ pub fn run() {
             read_profiles,
             get_provider_config,
             get_profile_config,
-            update_profile_model,
             add_or_update_profile,
             delete_profile,
             add_or_update_model_provider,

@@ -15,7 +15,7 @@ pub struct ProjectConfig {
 pub struct ModelProvider {
     pub name: String,
     pub base_url: String,
-    pub env_key: String,
+    pub env_key: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -186,33 +186,6 @@ pub async fn get_profile_config(profile_name: String) -> Result<Option<Profile>,
 }
 
 #[command]
-pub async fn update_profile_model(profile_name: String, new_model: String) -> Result<(), String> {
-    let config_path = get_config_path()?;
-
-    let mut codex_config: CodexConfig = if config_path.exists() {
-        let content = fs::read_to_string(&config_path)
-            .map_err(|e| format!("Failed to read config file: {}", e))?;
-        toml::from_str(&content).map_err(|e| format!("Failed to parse config file: {}", e))?
-    } else {
-        return Err("Config file does not exist".to_string());
-    };
-
-    if let Some(profile) = codex_config.profiles.get_mut(&profile_name) {
-        profile.model = new_model;
-    } else {
-        return Err(format!("Profile '{}' not found", profile_name));
-    }
-
-    let toml_content =
-        toml::to_string(&codex_config).map_err(|e| format!("Failed to serialize config: {}", e))?;
-
-    fs::write(&config_path, toml_content)
-        .map_err(|e| format!("Failed to write config file: {}", e))?;
-
-    Ok(())
-}
-
-#[command]
 pub async fn add_or_update_profile(profile_name: String, profile: Profile) -> Result<(), String> {
     let config_path = get_config_path()?;
 
@@ -333,7 +306,7 @@ pub async fn ensure_default_providers() -> Result<(), String> {
             ModelProvider {
                 name: "Google".to_string(),
                 base_url: "https://generativelanguage.googleapis.com/v1beta/openai".to_string(),
-                env_key: "GEMINI_API_KEY".to_string(),
+                env_key: Some("GEMINI_API_KEY".to_string()),
             },
         );
         changed = true;
@@ -345,7 +318,7 @@ pub async fn ensure_default_providers() -> Result<(), String> {
             ModelProvider {
                 name: "OpenRouter".to_string(),
                 base_url: "https://openrouter.ai/api/v1".to_string(),
-                env_key: "OPENROUTER_API_KEY".to_string(),
+                env_key: Some("OPENROUTER_API_KEY".to_string()),
             },
         );
         changed = true;
