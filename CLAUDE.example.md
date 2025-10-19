@@ -21,8 +21,8 @@ must be english in file
 - `bun tauri dev` - read the backend output
 - `bun run build` - test frontend
 - `bunx --bun shadcn@latest add <dep>` - add shadcn dep
-- `cd <codexia-home>/src-tauri && cargo check` - only `cargo check ` when `bun tauri dev` fail
-- `codex -h` - Codex CLI for help 
+- `cargo build` - only `cargo build at <root>/src-tauri` when rust code change
+- `codex -h` - Codex CLI for help
 
 ## Project Structure
 - `src/components/` - React components
