@@ -25,6 +25,7 @@
     "fs:default",
     "screenshots:default",
     "log:default",
-    "deep-link:default"
+    "deep-link:default",
+    "log:default"
   ]
 }

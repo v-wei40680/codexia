@@ -61,19 +61,20 @@ pub async fn start_watch_directory(
 
     let app_for_cb = app.clone();
     // Create a new watcher with a callback that emits tauri event
-    let mut watcher: RecommendedWatcher = recommended_watcher(move |res: Result<Event, notify::Error>| {
-        if let Ok(event) = res {
-            // Send one event per affected path
-            for p in event.paths.iter() {
-                let payload = FsChangePayload {
-                    path: p.to_string_lossy().to_string(),
-                    kind: kind_to_string(&event.kind),
-                };
-                let _ = app_for_cb.emit("fs_change", &payload);
+    let mut watcher: RecommendedWatcher =
+        recommended_watcher(move |res: Result<Event, notify::Error>| {
+            if let Ok(event) = res {
+                // Send one event per affected path
+                for p in event.paths.iter() {
+                    let payload = FsChangePayload {
+                        path: p.to_string_lossy().to_string(),
+                        kind: kind_to_string(&event.kind),
+                    };
+                    let _ = app_for_cb.emit("fs_change", &payload);
+                }
             }
-        }
-    })
-    .map_err(|e| format!("Failed to create watcher: {}", e))?;
+        })
+        .map_err(|e| format!("Failed to create watcher: {}", e))?;
 
     watcher
         .watch(&abs, RecursiveMode::Recursive)

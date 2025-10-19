@@ -110,17 +110,21 @@ export default function ChatPage() {
       {/* Left Panel - File Tree and Git Status */}
       {showFileTree && (
         <div className="w-64 border-r h-full flex-shrink-0">
-          <Tabs value={selectedLeftPanelTab} onValueChange={setSelectedLeftPanelTab} className="h-full flex flex-col">
+          <Tabs
+            value={selectedLeftPanelTab}
+            onValueChange={setSelectedLeftPanelTab}
+            className="h-full flex flex-col"
+          >
             <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="chat">
+                <Bot />
+              </TabsTrigger>
               <TabsTrigger value="files">Files</TabsTrigger>
               <TabsTrigger value="git">
                 <GitBranch />
               </TabsTrigger>
               <TabsTrigger value="attached">
                 <Files />
-              </TabsTrigger>
-              <TabsTrigger value="chat">
-                <Bot />
               </TabsTrigger>
               <TabsTrigger value="notes">
                 <NotebookPen />
@@ -208,23 +212,21 @@ export default function ChatPage() {
       {/* Main Content Area */}
       <div className="flex-1 min-h-0 h-full flex min-w-0 overflow-hidden">
         {/* Middle Panel - Chat/Notes */}
-        {showChatPane &&
+        {showChatPane && (
           <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
             <AppToolbar
               onOpenConfig={() => setIsConfigOpen(true)}
               currentTab={selectedLeftPanelTab}
               onSwitchToTab={setSelectedLeftPanelTab}
             />
-            {selectedLeftPanelTab === "notes" ? (
-              <NotesView />
-            ) : (
-              <ChatView />
-            )}
+            {selectedLeftPanelTab === "notes" ? <NotesView /> : <ChatView />}
           </div>
-        }
+        )}
 
         {/* Right Panel - FileViewer, DiffViewer, or WebPreview */}
-        {((showFilePanel && selectedFile) || diffFile || (showWebPreview && webPreviewUrl)) && (
+        {((showFilePanel && selectedFile) ||
+          diffFile ||
+          (showWebPreview && webPreviewUrl)) && (
           <div className="flex-1 min-w-0 border-r overflow-hidden">
             {diffFile ? (
               <div className="h-full flex flex-col">
@@ -252,13 +254,17 @@ export default function ChatPage() {
                 onUrlChange={(url) => setWebPreviewUrl(url)}
               />
             ) : selectedFile ? (
-              <FileViewer 
-                filePath={selectedFile} 
-                onClose={closeFile} 
+              <FileViewer
+                filePath={selectedFile}
+                onClose={closeFile}
                 addToNotepad={(content: string, source?: string) => {
-                  const { getCurrentNote, addContentToNote, createNoteFromContent } = useNoteStore.getState();
+                  const {
+                    getCurrentNote,
+                    addContentToNote,
+                    createNoteFromContent,
+                  } = useNoteStore.getState();
                   const currentNote = getCurrentNote();
-                  
+
                   if (currentNote) {
                     addContentToNote(currentNote.id, content, source);
                   } else {

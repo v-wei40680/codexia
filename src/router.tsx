@@ -3,7 +3,7 @@ import { Layout } from "@/components/layout/Layout";
 import LoginPage from "@/pages/login";
 import ChatPage from "@/pages/chat";
 import ProjectsPage from "@/pages/projects";
-import DxtPage from "./pages/dxt";
+import TaskPage from "./pages/task";
 import SettingsPage from "./pages/settings";
 import UsagePage from "./pages/usage";
 import { useDeepLink } from "./hooks/useDeepLink";
@@ -62,8 +62,8 @@ export const router = createHashRouter([
             element: <ChatPage />,
           },
           {
-            path: "dxt",
-            element: <DxtPage />,
+            path: "task",
+            element: <TaskPage />,
           },
           {
             path: "settings",

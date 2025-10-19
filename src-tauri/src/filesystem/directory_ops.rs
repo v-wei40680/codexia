@@ -148,7 +148,9 @@ pub async fn search_files(
             let extension = if is_directory {
                 None
             } else {
-                path.extension().and_then(|ext| ext.to_str()).map(|s| s.to_string())
+                path.extension()
+                    .and_then(|ext| ext.to_str())
+                    .map(|s| s.to_string())
             };
 
             results.push(FileEntry {

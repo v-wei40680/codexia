@@ -88,11 +88,7 @@ impl ApprovalStore {
         }
     }
 
-    fn take_request_for_event(
-        &mut self,
-        kind: ApprovalKind,
-        event_id: &str,
-    ) -> Option<RequestId> {
+    fn take_request_for_event(&mut self, kind: ApprovalKind, event_id: &str) -> Option<RequestId> {
         match kind {
             ApprovalKind::Exec => {
                 if let Some(call_id) = self.exec_event_to_call.remove(event_id) {
@@ -181,7 +177,8 @@ impl MessageRouter {
         } else {
             log::warn!(
                 "Received unexpected JSON-RPC response with id {:?} for session {}",
-                id, self.session_id
+                id,
+                self.session_id
             );
         }
     }
@@ -198,7 +195,8 @@ impl MessageRouter {
         } else {
             log::warn!(
                 "Received unexpected JSON-RPC error with id {:?} for session {}",
-                id, self.session_id
+                id,
+                self.session_id
             );
         }
     }
@@ -209,7 +207,8 @@ impl MessageRouter {
         } else {
             log::debug!(
                 "Unhandled JSON-RPC notification '{}' for session {}",
-                notification.method, self.session_id
+                notification.method,
+                self.session_id
             );
         }
     }
@@ -260,11 +259,7 @@ impl MessageRouter {
                                 msg_object.get("call_id").and_then(|value| value.as_str())
                             {
                                 let mut store = self.approval_store.lock().await;
-                                store.register_event(
-                                    ApprovalKind::ApplyPatch,
-                                    call_id,
-                                    &event_id,
-                                );
+                                store.register_event(ApprovalKind::ApplyPatch, call_id, &event_id);
                             }
                         }
                         _ => {}
@@ -318,7 +313,8 @@ impl MessageRouter {
             other => {
                 log::warn!(
                     "Unsupported JSON-RPC request '{}' received for session {}",
-                    other, self.session_id
+                    other,
+                    self.session_id
                 );
             }
         }
@@ -342,7 +338,8 @@ impl CodexClient {
     pub async fn new(app: &AppHandle, session_id: String, config: CodexConfig) -> Result<Self> {
         log::debug!(
             "Creating CodexClient for session {} with config: {:?}",
-            session_id, config
+            session_id,
+            config
         );
 
         let (cmd, env_vars) = CommandBuilder::build_command(&config).await?;
@@ -354,15 +351,16 @@ impl CodexClient {
         ) = mpsc::unbounded_channel();
 
         if let Some(process) = &mut process_manager.process {
-            let stdout = process.stdout.take().context("Failed to open Codex stdout")?;
-            let stderr = process.stderr.take().context("Failed to open Codex stderr")?;
+            let stdout = process
+                .stdout
+                .take()
+                .context("Failed to open Codex stdout")?;
+            let stderr = process
+                .stderr
+                .take()
+                .context("Failed to open Codex stderr")?;
 
-            EventHandler::start_stdout_handler(
-                app.clone(),
-                stdout,
-                session_id.clone(),
-                message_tx,
-            );
+            EventHandler::start_stdout_handler(app.clone(), stdout, session_id.clone(), message_tx);
             EventHandler::start_stderr_handler(stderr, session_id.clone());
         }
 
@@ -487,7 +485,9 @@ impl CodexClient {
 
         self.add_conversation_listener(&conversation_id).await?;
 
-        if let Some(initial_messages) = response.get("initialMessages").and_then(|value| value.as_array())
+        if let Some(initial_messages) = response
+            .get("initialMessages")
+            .and_then(|value| value.as_array())
         {
             for msg in initial_messages {
                 let payload = json!({
@@ -527,11 +527,17 @@ impl CodexClient {
         let mut params = serde_json::Map::new();
 
         if !self.config.model.is_empty() {
-            params.insert("model".to_string(), Value::String(self.config.model.clone()));
+            params.insert(
+                "model".to_string(),
+                Value::String(self.config.model.clone()),
+            );
         }
 
         if !self.config.working_directory.is_empty() {
-            params.insert("cwd".to_string(), Value::String(self.config.working_directory.clone()));
+            params.insert(
+                "cwd".to_string(),
+                Value::String(self.config.working_directory.clone()),
+            );
         }
 
         if !self.config.approval_policy.is_empty() {
@@ -645,14 +651,16 @@ impl CodexClient {
             } else if !event_known {
                 return Err(anyhow!(
                     "Approval request {} (kind: {:?}) is no longer pending",
-                    event_id, kind
+                    event_id,
+                    kind
                 ));
             }
 
             if Instant::now() >= deadline {
                 return Err(anyhow!(
                     "Timed out waiting for approval request {} (kind: {:?})",
-                    event_id, kind
+                    event_id,
+                    kind
                 ));
             }
 
@@ -710,7 +718,10 @@ impl CodexClient {
         let result = json!({
             "decision": decision,
         });
-        let response = JsonRpcResponse { id: request_id, result };
+        let response = JsonRpcResponse {
+            id: request_id,
+            result,
+        };
         let payload = serde_json::to_string(&OutgoingJsonRpcMessage::Response(response))?;
         self.process_manager
             .send_to_stdin(payload)

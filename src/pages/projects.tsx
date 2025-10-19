@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useCodexStore } from "@/stores/useCodexStore";
 import { invoke } from "@/lib/tauri-proxy";
 import {
   Card,
@@ -40,6 +41,7 @@ export default function ProjectsPage() {
   const { setCurrentFolder } = useFolderStore();
   const { setFileTree, setChatPane } = useLayoutStore();
 
+  const { setCwd } = useCodexStore();
   useEffect(() => {
     loadProjects();
   }, []);
@@ -57,6 +59,7 @@ export default function ProjectsPage() {
 
   const openProject = (projectPath: string) => {
     setCurrentFolder(projectPath);
+    setCwd(projectPath);
     // Enable both panels when opening a project
     setFileTree(true);
     setChatPane(true);

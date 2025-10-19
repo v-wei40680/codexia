@@ -5,9 +5,6 @@ use crate::utils::codex_discovery::discover_codex_command;
 use std::process::Command;
 use tauri::{AppHandle, State};
 
-// Note: Frontend now properly extracts raw session IDs before calling backend
-// so we no longer need complex ID normalization
-
 pub async fn start_codex_session(
     app: AppHandle,
     state: State<'_, CodexState>,
@@ -17,8 +14,8 @@ pub async fn start_codex_session(
     log::debug!("Starting session with ID: {}", session_id);
 
     {
-        let sessions = state.sessions.lock().await;
-        if sessions.contains_key(&session_id) {
+        let clients = state.sessions.lock().await;
+        if clients.contains_key(&session_id) {
             log::debug!("Session {} already exists, skipping", session_id);
             return Ok(());
         }
@@ -29,14 +26,11 @@ pub async fn start_codex_session(
         .map_err(|e| format!("Failed to start Codex session: {}", e))?;
 
     {
-        let mut sessions = state.sessions.lock().await;
-        sessions.insert(session_id.clone(), codex_client);
+        let mut clients = state.sessions.lock().await;
+        clients.insert(session_id.clone(), codex_client);
         log::debug!("Session {} stored successfully", session_id);
-        log::debug!("Total sessions now: {}", sessions.len());
-        log::debug!(
-            "All session keys: {:?}",
-            sessions.keys().collect::<Vec<_>>()
-        );
+        log::debug!("Total clients now: {}", clients.len());
+        log::debug!("All session keys: {:?}", clients.keys().collect::<Vec<_>>());
     }
     Ok(())
 }
@@ -46,8 +40,8 @@ pub async fn send_message(
     session_id: String,
     message: String,
 ) -> Result<(), String> {
-    let mut sessions = state.sessions.lock().await;
-    if let Some(client) = sessions.get_mut(&session_id) {
+    let mut clients = state.sessions.lock().await;
+    if let Some(client) = clients.get_mut(&session_id) {
         client
             .send_user_input(message)
             .await
@@ -64,8 +58,8 @@ pub async fn approve_execution(
     approval_id: String,
     approved: bool,
 ) -> Result<(), String> {
-    let mut sessions = state.sessions.lock().await;
-    if let Some(client) = sessions.get_mut(&session_id) {
+    let mut clients = state.sessions.lock().await;
+    if let Some(client) = clients.get_mut(&session_id) {
         client
             .send_exec_approval(approval_id, approved)
             .await
@@ -88,8 +82,8 @@ pub async fn approve_patch(
         approval_id,
         approved
     );
-    let mut sessions = state.sessions.lock().await;
-    if let Some(client) = sessions.get_mut(&session_id) {
+    let mut clients = state.sessions.lock().await;
+    if let Some(client) = clients.get_mut(&session_id) {
         client
             .send_apply_patch_approval(approval_id, approved)
             .await
@@ -101,13 +95,13 @@ pub async fn approve_patch(
 }
 
 pub async fn pause_session(state: State<'_, CodexState>, session_id: String) -> Result<(), String> {
-    let sessions = state.sessions.lock().await;
-    let stored_sessions: Vec<String> = sessions.keys().cloned().collect();
+    let clients = state.sessions.lock().await;
+    let stored_clients: Vec<String> = clients.keys().cloned().collect();
 
     log::debug!("Attempting to pause session: {}", session_id);
-    log::debug!("Currently stored sessions: {:?}", stored_sessions);
+    log::debug!("Currently stored clients: {:?}", stored_clients);
 
-    if let Some(client) = sessions.get(&session_id) {
+    if let Some(client) = clients.get(&session_id) {
         log::debug!("Found session, sending interrupt (pause): {}", session_id);
         client
             .interrupt()

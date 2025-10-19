@@ -1,6 +1,9 @@
+mod cmd;
+mod codex;
 mod codex_client;
 mod commands;
 mod config;
+mod export_bindings;
 mod filesystem;
 mod jsonrpc;
 mod mcp;
@@ -9,11 +12,10 @@ mod services;
 mod state;
 mod utils;
 
+use cmd::{send_message, start_chat_session};
 use commands::{
-    approve_execution, approve_patch, check_codex_version, create_new_window, delete_session_file,
-    disable_remote_ui, enable_remote_ui, find_rollout_path_for_session, get_latest_session_id,
-    get_remote_ui_status, get_session_files, load_sessions_from_disk, pause_session,
-    read_history_file, read_session_file, send_message, start_codex_session,
+    approve_execution, approve_patch, check_codex_version, create_new_window, disable_remote_ui,
+    enable_remote_ui, get_remote_ui_status, pause_session,
 };
 use config::{
     add_or_update_model_provider, add_or_update_profile, delete_profile, ensure_default_providers,
@@ -30,12 +32,12 @@ use filesystem::{
     watch::{start_watch_directory, stop_watch_directory},
 };
 use mcp::{add_mcp_server, delete_mcp_server, read_mcp_servers};
-use state::{CodexState, RemoteAccessState};
+use state::{AppState, CodexState, RemoteAccessState};
 use tauri::{AppHandle, Emitter, Manager};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let mut builder = tauri::Builder::default();
+    let mut builder = tauri::Builder::default().plugin(tauri_plugin_log::Builder::new().build());
     #[cfg(desktop)]
     {
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
@@ -48,16 +50,7 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(
             tauri_plugin_log::Builder::new()
-                .level(if cfg!(debug_assertions) {
-                    log::LevelFilter::Debug
-                } else {
-                    log::LevelFilter::Info
-                })
-                .target(tauri_plugin_log::Target::new(
-                    tauri_plugin_log::TargetKind::LogDir {
-                        file_name: Some("logs".to_string()),
-                    },
-                ))
+                .level(log::LevelFilter::Info)
                 .build(),
         )
         .plugin(tauri_plugin_fs::init())
@@ -65,21 +58,15 @@ pub fn run() {
         .plugin(tauri_plugin_screenshots::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
+        .manage(AppState::new())
         .manage(CodexState::new())
         .manage(RemoteAccessState::default())
         .invoke_handler(tauri::generate_handler![
-            start_codex_session,
+            start_chat_session,
             send_message,
             approve_execution,
             approve_patch,
             pause_session,
-            load_sessions_from_disk,
-            delete_session_file,
-            get_latest_session_id,
-            get_session_files,
-            read_session_file,
-            read_history_file,
-            find_rollout_path_for_session,
             check_codex_version,
             create_new_window,
             read_directory,
@@ -114,8 +101,15 @@ pub fn run() {
             enable_remote_ui,
             disable_remote_ui,
             get_remote_ui_status,
+            services::session::delete_session_file,
+            cmd::send_message,
+            cmd::new_conversation,
+            cmd::delete_file,
         ])
         .setup(|_app| {
+            #[cfg(debug_assertions)]
+            export_bindings::export_ts_types();
+
             #[cfg(any(windows, target_os = "linux"))]
             {
                 use tauri_plugin_deep_link::DeepLinkExt;

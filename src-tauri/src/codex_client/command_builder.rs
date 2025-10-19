@@ -72,10 +72,7 @@ impl CommandBuilder {
                         log::debug!("Found provider config: {:?}", provider_config);
                         if let Some(env_key) = &provider_config.env_key {
                             if !env_key.is_empty() {
-                            log::debug!(
-                                "Setting env var {} from provider config",
-                                env_key
-                            );
+                                log::debug!("Setting env var {} from provider config", env_key);
                                 env_vars.insert(env_key.clone(), api_key.clone());
                             }
                         } else {
@@ -129,7 +126,11 @@ impl CommandBuilder {
     async fn detect_user_path() -> Option<String> {
         let shell = std::env::var("SHELL").unwrap_or_else(|_| {
             // Default to zsh on macOS; bash as a secondary fallback
-            if cfg!(target_os = "macos") { "/bin/zsh".to_string() } else { "/bin/bash".to_string() }
+            if cfg!(target_os = "macos") {
+                "/bin/zsh".to_string()
+            } else {
+                "/bin/bash".to_string()
+            }
         });
 
         // Build a command that sources common init files and prints PATH without a trailing newline
@@ -151,10 +152,7 @@ impl CommandBuilder {
             )
         } else {
             // Generic POSIX shell fallback
-            (
-                &shell,
-                vec!["-c", r#"printf %s "$PATH""#],
-            )
+            (&shell, vec!["-c", r#"printf %s "$PATH""#])
         };
 
         match Command::new(program).args(args).output().await {
@@ -215,7 +213,7 @@ impl CommandBuilder {
                             cmd.arg("-c")
                                 .arg(format!("model_provider={}", provider_key.to_lowercase()));
 
-                                // Set base URL if available
+                            // Set base URL if available
                             if !provider_config.base_url.is_empty() {
                                 cmd.arg("-c")
                                     .arg(format!("base_url={}", provider_config.base_url));
@@ -301,7 +299,8 @@ impl CommandBuilder {
         if let Some(resume_path) = &config.resume_path {
             if !resume_path.is_empty() {
                 let normalized = resume_path.replace('\\', "/");
-                cmd.arg("-c").arg(format!("experimental_resume=\"{}\"", normalized));
+                cmd.arg("-c")
+                    .arg(format!("experimental_resume=\"{}\"", normalized));
             }
         }
 

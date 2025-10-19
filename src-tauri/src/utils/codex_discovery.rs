@@ -103,10 +103,7 @@ pub fn discover_codex_command() -> Option<PathBuf> {
 
         for path_buf in &vendor_locations {
             if path_buf.exists() {
-                log::debug!(
-                    "Found codex vendor binary at {}",
-                    path_buf.display()
-                );
+                log::debug!("Found codex vendor binary at {}", path_buf.display());
                 return Some(path_buf.clone());
             }
         }

@@ -5,6 +5,31 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock};
 
+use crate::codex::CodexAppServerClient;
+
+pub struct AppState {
+    pub clients: Arc<Mutex<HashMap<String, CodexAppServerClient>>>,
+}
+
+impl AppState {
+    pub fn new() -> Self {
+        Self {
+            clients: Arc::new(Mutex::new(HashMap::new())),
+        }
+    }
+}
+
+pub async fn get_client(
+    state: &tauri::State<'_, AppState>,
+    session_id: &str,
+) -> Result<CodexAppServerClient, String> {
+    let clients_guard = state.clients.lock().await;
+    clients_guard
+        .get(session_id)
+        .cloned()
+        .ok_or_else(|| format!("Client for session_id '{}' not found.", session_id))
+}
+
 pub struct CodexState {
     pub sessions: Arc<Mutex<HashMap<String, CodexClient>>>,
     // Active filesystem watchers keyed by absolute folder path with ref-count

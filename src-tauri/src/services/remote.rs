@@ -151,12 +151,7 @@ fn resolve_bundle_path(app: &AppHandle, requested_path: Option<String>) -> Optio
     }
 
     let resolver = app.path();
-    let candidates = [
-        "dist",
-        "../dist",
-        "public",
-        "../public",
-    ];
+    let candidates = ["dist", "../dist", "public", "../public"];
 
     for candidate in candidates {
         if let Ok(resolved) = resolver.resolve(candidate, BaseDirectory::Resource) {

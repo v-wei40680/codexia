@@ -8,6 +8,7 @@ import {
   Moon,
   Brain,
   ExternalLink,
+  PocketKnife,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -90,8 +91,12 @@ export function AppHeader() {
           <PartyPopper className="w-5 h-5" /> Projects
         </Link>
 
-        <Button 
-          variant="ghost" 
+        <Link to="/task" className="flex hover:text-primary items-center gap-1">
+          <PocketKnife className="w-5 h-5" /> Tasks
+        </Link>
+
+        <Button
+          variant="ghost"
           onClick={handleNewWindow}
           className="h-6 w-6"
           title="Open New Window"
@@ -160,9 +165,13 @@ export function AppHeader() {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => navigate(`/u/${user.id}`)}>View public page</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate(`/u/${user.id}`)}>
+                View public page
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>Sign out</DropdownMenuItem>
+              <DropdownMenuItem onClick={handleLogout}>
+                Sign out
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (

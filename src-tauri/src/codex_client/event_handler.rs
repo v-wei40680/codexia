@@ -27,10 +27,7 @@ impl EventHandler {
                 match serde_json::from_str::<crate::jsonrpc::JsonRpcMessage>(&line) {
                     Ok(message) => {
                         if let Err(err) = message_tx.send(message) {
-                            log::warn!(
-                                "Failed to forward JSON-RPC message to router: {}",
-                                err
-                            );
+                            log::warn!("Failed to forward JSON-RPC message to router: {}", err);
                             break;
                         }
                     }
