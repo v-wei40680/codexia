@@ -17,6 +17,15 @@ pub async fn start_codex_session(
 }
 
 #[tauri::command]
+pub async fn send_message(
+    state: State<'_, CodexState>,
+    session_id: String,
+    message: String,
+) -> Result<(), String> {
+    codex::send_message(state, session_id, message).await
+}
+
+#[tauri::command]
 pub async fn approve_execution(
     state: State<'_, CodexState>,
     session_id: String,

@@ -59,6 +59,9 @@ jobs:
       - name: install frontend dependencies
         run: bun install
 
+      - name: Export TS bindings (needed before bun build)
+        run: cargo run --manifest-path src-tauri/Cargo.toml
+
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

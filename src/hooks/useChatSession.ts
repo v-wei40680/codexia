@@ -141,7 +141,7 @@ export function useChatSession() {
       addMessage(conversationId, userMessage);
       setCurrentMessage("");
 
-      await invoke("send_message", {
+      await invoke("send_user_message", {
         sessionId: currentSessionId,
         conversationId,
         items: [{ type: "text", data: { text: currentMessage } } as InputItem],

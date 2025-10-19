@@ -26,6 +26,7 @@ bun tauri dev
 
 Build for production:
 ```bash
+codex generate-ts --out src/bindings  # if you didn't run `bun tauri dev`
 bun tauri build
 ```
 

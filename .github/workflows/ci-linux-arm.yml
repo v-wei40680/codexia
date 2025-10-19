@@ -45,6 +45,9 @@ jobs:
       - name: Install dependencies
         run: bun install
 
+      - name: Export TS bindings (needed before bun build)
+        run: cargo run --manifest-path src-tauri/Cargo.toml
+
       - name: Build Tauri App
         run: bun tauri build --bundles deb
 

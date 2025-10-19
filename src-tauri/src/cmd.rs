@@ -77,7 +77,7 @@ pub async fn start_chat_session(
 }
 
 #[tauri::command]
-pub async fn send_message(
+pub async fn send_user_message(
     session_id: String,
     conversation_id: String,
     items: Vec<InputItem>,

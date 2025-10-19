@@ -12,10 +12,9 @@ mod services;
 mod state;
 mod utils;
 
-use cmd::{send_message, start_chat_session};
 use commands::{
     approve_execution, approve_patch, check_codex_version, create_new_window, disable_remote_ui,
-    enable_remote_ui, get_remote_ui_status, pause_session,
+    enable_remote_ui, get_remote_ui_status, pause_session, start_codex_session, send_message
 };
 use config::{
     add_or_update_model_provider, add_or_update_profile, delete_profile, ensure_default_providers,
@@ -62,7 +61,7 @@ pub fn run() {
         .manage(CodexState::new())
         .manage(RemoteAccessState::default())
         .invoke_handler(tauri::generate_handler![
-            start_chat_session,
+            start_codex_session,
             send_message,
             approve_execution,
             approve_patch,
@@ -102,9 +101,11 @@ pub fn run() {
             disable_remote_ui,
             get_remote_ui_status,
             services::session::delete_session_file,
-            cmd::send_message,
+            cmd::start_chat_session,
+            cmd::send_user_message,
             cmd::new_conversation,
             cmd::delete_file,
+            cmd::exec_approval_request,
         ])
         .setup(|_app| {
             #[cfg(debug_assertions)]
