@@ -156,10 +156,11 @@ export function useChatSession() {
     }
   };
 
-  const handleNewConversation = () => {
+  const handleNewConversation = (onComplete?: () => void) => {
     // Do not start session or create conversation here
     setActiveConversationId(null);
     setCurrentMessage("");
+    onComplete?.();
   };
 
   return {

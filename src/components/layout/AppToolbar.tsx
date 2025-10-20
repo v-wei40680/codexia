@@ -6,33 +6,28 @@ import {
   History,
   Globe,
 } from "lucide-react";
-import { useConversationStore } from "@/stores/ConversationStore";
-import { useEphemeralStore } from "@/stores/EphemeralStore";
 import { useNoteStore } from "@/stores/NoteStore";
 import { useLayoutStore } from "@/stores/layoutStore";
 import { useFolderStore } from "@/stores/FolderStore";
 import { detectWebFramework } from "@/utils/webFrameworkDetection";
-import { useChatInputStore } from "@/stores/chatInputStore";
 
 interface AppToolbarProps {
   onOpenConfig: () => void;
   onCreateNewSession?: () => void;
   currentTab?: string;
   onSwitchToTab?: (tab: string) => void;
+  onNewConversationClick: () => void;
 }
 
 export const AppToolbar: React.FC<AppToolbarProps> = ({
   onOpenConfig,
-  onCreateNewSession,
   currentTab,
   onSwitchToTab,
+  onNewConversationClick,
 }) => {
-  const { setPendingNewConversation, setCurrentConversation, currentConversationId } =
-    useConversationStore();
   const { createNote, setCurrentNote } = useNoteStore();
   const { showWebPreview, setWebPreviewUrl } = useLayoutStore();
   const { currentFolder } = useFolderStore();
-  const { requestFocus } = useChatInputStore();
 
   const handleToggleLeftPanel = () => {
     if (!onSwitchToTab) return;
@@ -49,31 +44,6 @@ export const AppToolbar: React.FC<AppToolbarProps> = ({
   const handleCreateNote = () => {
     const newNote = createNote();
     setCurrentNote(newNote.id);
-  };
-
-  const handleCreateConversation = () => {
-    // Clear any per-turn diffs (parsedFiles) from the current session
-    try {
-      const activeId = currentConversationId || "";
-      if (activeId) {
-        useEphemeralStore.getState().clearTurnDiffs(activeId);
-      }
-    } catch (e) {
-      console.error('Failed to clear turn diffs on new conversation:', e);
-    }
-
-    if (onCreateNewSession) {
-      // Use the callback for full session creation if provided
-      onCreateNewSession();
-    } else {
-      // Set pending state to prepare for new conversation
-      setPendingNewConversation(true);
-      // Clear current conversation to show new chat interface
-      // The actual session ID will be created when user sends first message
-      setCurrentConversation('');
-    }
-    // After creating/selecting a new conversation, focus the chat input
-    requestFocus();
   };
 
   const handleToggleWebPreview = async () => {
@@ -115,17 +85,15 @@ export const AppToolbar: React.FC<AppToolbarProps> = ({
 
       {currentTab !== "notes" && (
         <>
-          {/* Create Conversation Button */}
           <Button
-            onClick={handleCreateConversation}
             variant="ghost"
             size="icon"
-            className="h-7 w-7 p-0"
-            title="Create New Conversation"
+            className="h-7 w-7 shrink-0"
+            onClick={onNewConversationClick}
+            title="New Conversation"
           >
-            <PencilIcon />
+            <PencilIcon className="h-4 w-4" />
           </Button>
-
           <PanelToggleButton />
 
           {/* Web Preview Button */}

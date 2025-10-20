@@ -1,4 +1,3 @@
-import { ChatView } from "@/components/ChatView";
 import { NotesView } from "@/components/NotesView";
 import { useLayoutStore } from "@/stores/layoutStore";
 import { useFolderStore } from "@/stores/FolderStore";
@@ -13,12 +12,15 @@ import { AppToolbar } from "@/components/layout/AppToolbar";
 import { useConversationStore } from "@/stores/ConversationStore";
 import { useCodexStore } from "@/stores/CodexStore";
 import { useChatInputStore } from "@/stores/chatInputStore";
+import { useChatSession } from "@/hooks/useChatSession";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Files, GitBranch, Bot, NotebookPen } from "lucide-react";
 import { AttachedFilesTab } from "@/components/AttachedFilesTab";
 import { NoteList } from "@/components/notes";
 import { WebPreview } from "@/components/WebPreview";
 import { SourceControl } from "@/components/SourceControl";
+import { NewChatView } from "@/components/NewChatView";
+import { useRef } from "react";
 
 export default function ChatPage() {
   const {
@@ -39,10 +41,18 @@ export default function ChatPage() {
 
   const { config, setConfig } = useCodexStore();
   const {} = useConversationStore();
+  const { handleNewConversation } = useChatSession();
+  const newChatViewRef = useRef<{ focusChatInput: () => void }>(null);
 
   const { currentFolder } = useFolderStore();
   const {} = useChatInputStore();
   const [isConfigOpen, setIsConfigOpen] = useState(false);
+
+  const handleNewConversationClick = () => {
+    handleNewConversation(() => {
+      newChatViewRef.current?.focusChatInput();
+    });
+  };
 
   return (
     <div className="h-full flex overflow-hidden">
@@ -89,7 +99,7 @@ export default function ChatPage() {
               <AttachedFilesTab />
             </TabsContent>
             <TabsContent value="chat" className="flex-1 overflow-y-auto mt-0">
-              <ChatView showChatTabs={true} />
+              <NewChatView showChatTabs={true} ref={newChatViewRef} />
             </TabsContent>
             <TabsContent value="notes">
               <NoteList />
@@ -107,8 +117,9 @@ export default function ChatPage() {
               onOpenConfig={() => setIsConfigOpen(true)}
               currentTab={selectedLeftPanelTab}
               onSwitchToTab={setSelectedLeftPanelTab}
+              onNewConversationClick={handleNewConversationClick}
             />
-            {selectedLeftPanelTab === "notes" ? <NotesView /> : <ChatView />}
+            {selectedLeftPanelTab === "notes" ? <NotesView /> : <NewChatView ref={newChatViewRef} />}
           </div>
         )}
 

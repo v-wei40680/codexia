@@ -8,7 +8,6 @@ import {
   Moon,
   Brain,
   ExternalLink,
-  PocketKnife,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -89,10 +88,6 @@ export function AppHeader() {
         {/* Welcome button to projects page */}
         <Link to="/" className="flex hover:text-primary items-center gap-1">
           <PartyPopper className="w-5 h-5" /> Projects
-        </Link>
-
-        <Link to="/task" className="flex hover:text-primary items-center gap-1">
-          <PocketKnife className="w-5 h-5" /> Tasks
         </Link>
 
         <Button

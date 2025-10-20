@@ -3,7 +3,10 @@ import { ConversationList } from "./ConversationList";
 import { SearchInput } from "@/components/common/SearchInput";
 import { useLayoutStore } from "@/stores/layoutStore";
 import type { Conversation } from "@/types/chat";
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { ListCheck } from "lucide-react";
+import { ConversationCategoryDialog } from "@/components/chat/ConversationCategoryDialog";
 
 interface ChatTabsProps {
   favoriteStatuses: Record<string, boolean>;
@@ -16,6 +19,11 @@ interface ChatTabsProps {
   onToggleFavorite: (conversationId: string, e: React.MouseEvent) => void;
   onDeleteConversation: (conversationId: string, e: React.MouseEvent) => void;
   onSelectSession?: (sessionId: string) => void;
+  categories: { id: string; name: string }[];
+  selectedCategoryId: string | null;
+  addCategory: (name: string) => void;
+  deleteCategory: (id: string) => void;
+  setSelectedCategory: (id: string | null) => void;
 }
 
 export function ConversationTabs({
@@ -29,8 +37,15 @@ export function ConversationTabs({
   onToggleFavorite,
   onDeleteConversation,
   onSelectSession,
+  categories,
+  selectedCategoryId,
+  addCategory,
+  deleteCategory,
+  setSelectedCategory,
 }: ChatTabsProps) {
   const { conversationListTab, setConversationListTab } = useLayoutStore();
+
+  const [categoryOpen, setCategoryOpen] = useState(false);
 
   const getFilteredConversations = (tab: string, searchQuery: string) => {
     let conversations: Conversation[] = [];
@@ -78,10 +93,28 @@ export function ConversationTabs({
       </TabsList>
 
       <div className="flex-1 overflow-y-auto mt-0">
-        <SearchInput
-          placeholder="Search conversations..."
-          value={searchQuery}
-          onChange={onSearchChange}
+        <div className="flex items-center">
+          <SearchInput
+            placeholder="Search conversations..."
+            value={searchQuery}
+            onChange={onSearchChange}
+          />
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setCategoryOpen(true)}
+          >
+            <ListCheck className="h-4 w-4" />
+          </Button>
+        </div>
+        <ConversationCategoryDialog
+          open={categoryOpen}
+          onOpenChange={setCategoryOpen}
+          categories={categories}
+          selectedCategoryId={selectedCategoryId}
+          onAddCategory={addCategory}
+          onDeleteCategory={deleteCategory}
+          onSelectCategory={setSelectedCategory}
         />
         <ConversationList
           conversations={filteredConversations}
