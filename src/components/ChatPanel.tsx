@@ -14,7 +14,7 @@ interface ChatPanelProps {
   handleSendMessage: () => void;
   isSending: boolean;
   isInitializing: boolean;
-  inputRef: React.RefObject<HTMLInputElement | null>;
+  inputRef: React.RefObject<HTMLTextAreaElement | null>;
 }
 
 export function ChatPanel({

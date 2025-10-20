@@ -52,19 +52,29 @@ export const useConversationStore = create<ConversationStore & ChatActions>()(
         ) {
           const messages = get().messages[conversationId] || [];
           const lastMessage = messages[messages.length - 1];
+          const newContent = extractEventContent(event.msg);
 
           if (lastMessage?.role === "assistant") {
             const existingEvents = lastMessage.events || [];
-            const isDuplicate = existingEvents.some(
-              (e) => JSON.stringify(e.msg) === JSON.stringify(event.msg),
-            );
+            const sameIdExists = existingEvents.some((e) => e.id === event.id);
 
-            const newContent = extractEventContent(event.msg);
+            let updatedEvents;
+            let updatedContent;
+
+            if (sameIdExists) {
+              // Append new content for the same event.id
+              updatedEvents = [...existingEvents, event];
+              updatedContent = lastMessage.content + "\n" + newContent;
+            } else {
+              // Add as a separate event if id is different
+              updatedEvents = [...existingEvents, event];
+              updatedContent = lastMessage.content + "\n" + newContent;
+            }
 
             const updatedMessage = {
               ...lastMessage,
-              content: newContent,
-              events: isDuplicate ? existingEvents : [...existingEvents, event],
+              content: updatedContent,
+              events: updatedEvents,
             };
 
             set((state) => ({
@@ -74,10 +84,11 @@ export const useConversationStore = create<ConversationStore & ChatActions>()(
               },
             }));
           } else {
+            // Create new assistant message if none exists
             get().addMessage(conversationId, {
               id: event.id,
               role: "assistant",
-              content: extractEventContent(event.msg),
+              content: newContent,
               timestamp: Date.now(),
               events: [event],
             });

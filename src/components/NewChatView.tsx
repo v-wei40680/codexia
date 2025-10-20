@@ -13,7 +13,7 @@ interface NewChatViewProps {
 export const NewChatView = forwardRef<{
   focusChatInput: () => void;
 }, NewChatViewProps>(({ showChatTabs = false }, ref) => {
-  const chatInputRef = useRef<HTMLInputElement>(null);
+  const chatInputRef = useRef<HTMLTextAreaElement>(null);
   const { messages, currentMessage, setCurrentMessage } =
     useConversationStore();
   const { activeConversationId } = useConversationListStore();

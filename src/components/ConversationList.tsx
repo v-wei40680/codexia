@@ -44,8 +44,8 @@ export function ConversationList() {
                   <DropdownMenuItem
                     onClick={async () => {
                       if (conv.path) {
-                        await invoke('delete_file', { path: conv.path });
                         useConversationListStore.getState().removeConversation(conv.conversationId);
+                        await invoke('delete_file', { path: conv.path });
                       }
                     }}
                     className="text-red-600 px-1"

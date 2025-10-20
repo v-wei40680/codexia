@@ -40,7 +40,7 @@ export function useChatListeners() {
 
           if (!convId) return;
           // Log non‑delta events for debugging.
-          console.log(`Received codex/event: ${convId} params.id ${id}`, msg);
+          console.log(`Received codex/event: ${convId} params.id ${id} ${msg.type}`, msg);
           updateLastAgentMessage(convId, { id, msg: msg });
         },
       );

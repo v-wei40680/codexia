@@ -1,5 +1,5 @@
 import React from "react";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { ProviderModels } from "./config/provider-models";
 import { Send, Square } from "lucide-react";
@@ -12,7 +12,8 @@ interface ChatComposeProps {
   handleSendMessage: () => void;
   isSending: boolean;
   isInitializing: boolean;
-  inputRef: React.RefObject<HTMLInputElement | null>;
+  // Use Textarea element for multi-line input
+  inputRef: React.RefObject<HTMLTextAreaElement | null>;
 }
 
 export function ChatCompose({
@@ -26,7 +27,7 @@ export function ChatCompose({
   return (
     <div className="gap-2">
       <div className="flex items-center space-x-2">
-        <Input
+        <Textarea
           ref={inputRef}
           value={currentMessage}
           onChange={(e) => setCurrentMessage(e.target.value)}

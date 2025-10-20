@@ -7,6 +7,7 @@ export const mapProviderToEnvKey = (provider: string | undefined): string => {
       ollama: "",
       openrouter: "OPENROUTER_API_KEY",
       google: "GEMINI_API_KEY",
+      hf: "HF_API_TOKEN",
     }[provider];
     if (key === undefined) {
       console.error(`Unknown provider '${provider}', defaulting to GENERIC_API_KEY`);
