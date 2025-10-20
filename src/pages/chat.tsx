@@ -6,7 +6,6 @@ import { FileTree } from "@/components/filetree/FileTreeView";
 
 import { FileViewer } from "@/components/filetree/FileViewer";
 import { useNoteStore } from "@/stores/NoteStore";
-import { GitStatusView } from "@/components/filetree/GitStatusView";
 import { DiffViewer } from "@/components/filetree/DiffViewer";
 import { useState } from "react";
 import { ConfigDialog } from "@/components/dialogs/ConfigDialog";
@@ -15,11 +14,11 @@ import { useConversationStore } from "@/stores/ConversationStore";
 import { useCodexStore } from "@/stores/CodexStore";
 import { useChatInputStore } from "@/stores/chatInputStore";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { invoke } from "@/lib/tauri-proxy";
 import { Files, GitBranch, Bot, NotebookPen } from "lucide-react";
 import { AttachedFilesTab } from "@/components/AttachedFilesTab";
 import { NoteList } from "@/components/notes";
 import { WebPreview } from "@/components/WebPreview";
+import { SourceControl } from "@/components/SourceControl";
 
 export default function ChatPage() {
   const {
@@ -35,7 +34,6 @@ export default function ChatPage() {
     setSelectedLeftPanelTab,
     setWebPreviewUrl,
     diffFile,
-    setDiffFile,
     closeDiffFile,
   } = useLayoutStore();
 
@@ -45,47 +43,6 @@ export default function ChatPage() {
   const { currentFolder } = useFolderStore();
   const {} = useChatInputStore();
   const [isConfigOpen, setIsConfigOpen] = useState(false);
-
-
-  const handleDiffClick = async (filePath: string) => {
-    try {
-      console.log("handleDiffClick called with:", filePath);
-      console.log("currentFolder:", currentFolder);
-
-      // Try with currentFolder first, then fallback to direct path
-      const fullPath = currentFolder
-        ? `${currentFolder}/${filePath}`
-        : filePath;
-      console.log("Trying full path:", fullPath);
-
-      const result = await invoke<{
-        original_content: string;
-        current_content: string;
-        has_changes: boolean;
-      }>("get_git_file_diff", {
-        filePath: fullPath,
-      });
-
-      if (result.has_changes) {
-        // Clear selected file to avoid conflicts
-        closeFile();
-        // Set diff file and ensure panel is visible
-        setDiffFile({
-          original: result.original_content,
-          current: result.current_content,
-          fileName: filePath,
-        });
-      }
-    } catch (error) {
-      console.error("Failed to get diff:", error);
-      console.error(
-        "Tried path:",
-        currentFolder ? `${currentFolder}/${filePath}` : filePath,
-      );
-    }
-  };
-
-  // No auto-initialization - let user start conversations manually
 
   return (
     <div className="h-full flex overflow-hidden">
@@ -123,10 +80,7 @@ export default function ChatPage() {
               />
             </TabsContent>
             <TabsContent value="git" className="flex-1 overflow-hidden mt-0">
-              <GitStatusView
-                currentFolder={currentFolder || undefined}
-                onDiffClick={handleDiffClick}
-              />
+              <SourceControl />
             </TabsContent>
             <TabsContent
               value="attached"
