@@ -1,7 +1,7 @@
 ---
 name: Issue report
 about: Report a bug, UI glitch, or regression in the Codexia app
-title: "[Issue] "
+title: "Bug: "
 labels:
   - needs-triage
 ---
@@ -33,7 +33,6 @@ If available, attach screenshots, screen recordings, or GIFs that illustrate the
 - Codexia version:
 - Codex CLI version:
 - llm model and provider: 
-- Bun version:
 - Node.js version (if relevant):
 - Other tooling versions:
 
