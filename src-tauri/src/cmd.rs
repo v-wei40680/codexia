@@ -64,9 +64,9 @@ pub async fn start_chat_session(
 
     tokio::spawn(async move {
         while let Ok(line_json) = event_rx.recv().await {
-            if let Err(e) = app.emit("codex-event", line_json) {
+            if let Err(e) = app.emit("codex/event", line_json) {
                 error!(
-                    "Failed to emit codex-event for session_id {}: {:?}",
+                    "Failed to emit codex/event for session_id {}: {:?}",
                     client_session_id, e
                 );
             }

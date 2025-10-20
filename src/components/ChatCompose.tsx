@@ -2,7 +2,7 @@ import React from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ProviderModels } from "./config/provider-models";
-import { Send } from "lucide-react";
+import { Send, Square } from "lucide-react";
 import { Sandbox } from "./config/Sandbox";
 import { ReasoningEffortSelector } from "./config/ReasoningEffortSelector";
 
@@ -28,7 +28,6 @@ export function ChatCompose({
       <div className="flex items-center space-x-2">
         <Input
           ref={inputRef}
-          placeholder="Type your message..."
           value={currentMessage}
           onChange={(e) => setCurrentMessage(e.target.value)}
           onKeyDown={(e) => {
@@ -43,7 +42,7 @@ export function ChatCompose({
           onClick={handleSendMessage}
           disabled={isSending || isInitializing}
         >
-          {isSending ? "Sending..." : <Send />}
+          {isSending ? <Square /> : <Send />}
         </Button>
       </div>
       <div>

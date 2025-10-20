@@ -5,7 +5,6 @@ import { ArrowUp, Square, AudioLines, Globe } from 'lucide-react';
 import { useChatInputStore } from '@/stores/chatInputStore';
 import { MediaSelector } from './MediaSelector';
 import { MediaAttachmentList } from './MediaAttachmentList';
-import { useSettingsStore } from '@/stores/SettingsStore';
 import { ScreenshotPopover } from './ScreenshotPopover';
 import { useCodexStore } from '@/stores/CodexStore';
 import { PromptOptimizerControl } from './PromptOptimizerControl';
@@ -42,7 +41,6 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     clearPromptHistory,
     promptHistory,
   } = useChatInputStore();
-  const { windowTitle } = useSettingsStore()
   const { config, updateConfig } = useCodexStore();
   const {
     isOptimizing,
@@ -97,12 +95,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       if (imagePaths) {
         messageContent = `${messageContent}\n\n${imagePaths}`;
       }
-      
-      console.log("📸 Including image paths in text:", imagePaths);
     }
-
-    // Send as simple text message - Agent will use view_image tool automatically
-    console.log("📤 ChatInput: Sending text message with image paths:", messageContent);
     
     onSendMessage(messageContent);
     onInputChange('');
@@ -148,7 +141,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           value={inputValue}
           onChange={(e) => onInputChange(e.target.value)}
           onKeyDown={handleKeyPress}
-          placeholder={placeholderOverride || `Ask ${windowTitle == 'Codexia' ? "Codex" : windowTitle} to do anything`}
+          placeholder={placeholderOverride || `Ask Codex to do anything`}
           className={`min-h-20 max-h-96 pr-32 bg-muted/50 resize-none overflow-y-auto pb-8 ${
             mediaAttachments.length > 0 ? 'pt-8' : ''
           }`}
