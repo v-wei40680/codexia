@@ -23,6 +23,7 @@ type ProviderActions = {
   setSelectedProviderId: (id: string) => void;
   setSelectedModel: (model: string) => void;
   addModel: (providerId: string, model: string) => void;
+  removeModel: (providerId: string, model: string) => void;
   setReasoningEffort: (effort: ReasoningEffort) => void;
   updateProviderModels: (providerId: string, newModels: string[]) => void;
 };
@@ -102,6 +103,15 @@ export const useProviderStore = create<ProviderState & ProviderActions>()(
         set((state) => ({
           providers: state.providers.map((p) =>
             p.id === providerId ? { ...p, models: [...p.models, model] } : p,
+          ),
+        }));
+      },
+      removeModel: (providerId, modelToRemove) => {
+        set((state) => ({
+          providers: state.providers.map((p) =>
+            p.id === providerId
+              ? { ...p, models: p.models.filter((m) => m !== modelToRemove) }
+              : p,
           ),
         }));
       },

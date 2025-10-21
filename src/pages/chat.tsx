@@ -41,7 +41,7 @@ export default function ChatPage() {
 
   const { config, setConfig } = useCodexStore();
   const {} = useConversationStore();
-  const { handleNewConversation } = useChatSession();
+  const chatSession = useChatSession();
   const newChatViewRef = useRef<{ focusChatInput: () => void }>(null);
 
   const { currentFolder } = useFolderStore();
@@ -49,7 +49,7 @@ export default function ChatPage() {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
 
   const handleNewConversationClick = () => {
-    handleNewConversation(() => {
+    chatSession.handleNewConversation(() => {
       newChatViewRef.current?.focusChatInput();
     });
   };
@@ -99,7 +99,7 @@ export default function ChatPage() {
               <AttachedFilesTab />
             </TabsContent>
             <TabsContent value="chat" className="flex-1 overflow-y-auto mt-0">
-              <NewChatView showChatTabs={true} ref={newChatViewRef} />
+              <NewChatView showChatTabs={true} ref={newChatViewRef} {...chatSession} />
             </TabsContent>
             <TabsContent value="notes">
               <NoteList />
@@ -119,7 +119,7 @@ export default function ChatPage() {
               onSwitchToTab={setSelectedLeftPanelTab}
               onNewConversationClick={handleNewConversationClick}
             />
-            {selectedLeftPanelTab === "notes" ? <NotesView /> : <NewChatView ref={newChatViewRef} />}
+            {selectedLeftPanelTab === "notes" ? <NotesView /> : <NewChatView ref={newChatViewRef} {...chatSession} />}
           </div>
         )}
 

@@ -4,22 +4,21 @@ import { useSessionStore } from "@/stores/useSessionStore";
 import { useConversationListStore } from "@/stores/useConversationListStore";
 import { ConversationList } from "@/components/ConversationList";
 import { ChatPanel } from "@/components/ChatPanel";
-import { useChatSession } from "@/hooks/useChatSession";
 
 interface NewChatViewProps {
   showChatTabs?: boolean;
+  handleSendMessage: (message: string) => void;
+  isSending: boolean;
 }
 
 export const NewChatView = forwardRef<{
   focusChatInput: () => void;
-}, NewChatViewProps>(({ showChatTabs = false }, ref) => {
+}, NewChatViewProps>(({ showChatTabs = false, handleSendMessage, isSending }, ref) => {
   const chatInputRef = useRef<HTMLTextAreaElement>(null);
   const { messages, currentMessage, setCurrentMessage } =
     useConversationStore();
   const { activeConversationId } = useConversationListStore();
   const { isInitializing } = useSessionStore();
-  const { isSending, handleSendMessage } =
-    useChatSession();
 
   const activeMessages = messages[activeConversationId || ""] || [];
 

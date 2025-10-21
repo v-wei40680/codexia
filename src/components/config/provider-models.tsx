@@ -8,7 +8,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useProviderStore } from "@/stores/useProviderStore";
-import { ChevronDown, PlusCircle } from "lucide-react";
+import { ChevronDown, PlusCircle, Trash2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -98,6 +98,7 @@ export function ProviderModels() {
     setSelectedProviderId,
     setSelectedModel,
     setApiKey,
+    removeModel,
   } = useProviderStore();
 
   const [showAddForm, setShowAddForm] = useState(false);
@@ -229,6 +230,19 @@ export function ProviderModels() {
                           onClick={() => setSelectedModel(m)}
                         >
                           {m}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-2 h-6 w-6 text-muted-foreground hover:text-foreground"
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent selecting the model when deleting
+                              if (selectedProviderId) {
+                                removeModel(selectedProviderId, m);
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
                         </Button>
                       ))}
                     </div>
