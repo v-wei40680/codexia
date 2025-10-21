@@ -19,7 +19,7 @@ import { AttachedFilesTab } from "@/components/AttachedFilesTab";
 import { NoteList } from "@/components/notes";
 import { WebPreview } from "@/components/WebPreview";
 import { SourceControl } from "@/components/SourceControl";
-import { NewChatView } from "@/components/NewChatView";
+import { MemoizedNewChatView as NewChatView } from "@/components/NewChatView";
 import { useRef } from "react";
 
 export default function ChatPage() {
@@ -65,15 +65,15 @@ export default function ChatPage() {
             className="h-full flex flex-col"
           >
             <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="chat">
-                <Bot />
-              </TabsTrigger>
               <TabsTrigger value="files">Files</TabsTrigger>
               <TabsTrigger value="git">
                 <GitBranch />
               </TabsTrigger>
               <TabsTrigger value="attached">
                 <Files />
+              </TabsTrigger>
+              <TabsTrigger value="chat">
+                <Bot />
               </TabsTrigger>
               <TabsTrigger value="notes">
                 <NotebookPen />

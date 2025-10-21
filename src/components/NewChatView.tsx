@@ -1,4 +1,4 @@
-import { useRef, forwardRef, useImperativeHandle } from "react";
+import { useRef, forwardRef, useImperativeHandle, memo } from "react";
 import { useConversationStore } from "@/stores/useConversationStore";
 import { useSessionStore } from "@/stores/useSessionStore";
 import { useConversationListStore } from "@/stores/useConversationListStore";
@@ -47,5 +47,14 @@ export const NewChatView = forwardRef<{
       isInitializing={isInitializing}
       inputRef={chatInputRef}
     />
+  );
+});
+
+// Memoize to prevent re‑renders when props that don’t affect the UI stay the same.
+export const MemoizedNewChatView = memo(NewChatView, (prev, next) => {
+  return (
+    prev.showChatTabs === next.showChatTabs &&
+    prev.isSending === next.isSending &&
+    prev.handleSendMessage === next.handleSendMessage
   );
 });
