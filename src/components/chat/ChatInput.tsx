@@ -18,6 +18,12 @@ interface ChatInputProps {
   disabled?: boolean;
   isLoading?: boolean;
   placeholderOverride?: string;
+  /**
+   * Optional external ref to the underlying textarea element. Allows parent
+   * components to programmatically focus the input (e.g., when creating a new
+   * conversation).
+   */
+  externalRef?: React.RefObject<HTMLTextAreaElement | null>;
 }
 
 export const ChatInput: React.FC<ChatInputProps> = ({
@@ -28,6 +34,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   disabled = false,
   isLoading = false,
   placeholderOverride,
+  externalRef,
 }) => {
   const {
     fileReferences,
@@ -59,16 +66,19 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     promptHistoryLength: promptHistory.length,
   });
 
-  // Ref for the textarea to allow programmatic focus
+  // Ref for the textarea to allow programmatic focus and external access
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
-  // Focus textarea when a focus is requested (signal increments)
+  // Focus textarea when a focus is requested (signal increments) and sync external ref
   useEffect(() => {
     if (textareaRef.current) {
       // Slight delay to ensure UI updates (e.g., new conversation selection)
       setTimeout(() => textareaRef.current?.focus(), 0);
     }
-  }, [focusSignal]);
+    if (externalRef) {
+      externalRef.current = textareaRef.current;
+    }
+  }, [focusSignal, externalRef]);
 
   const generateSmartPrompt = (): string => {
     if (fileReferences.length === 0) return '';

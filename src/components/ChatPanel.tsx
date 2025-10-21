@@ -1,10 +1,15 @@
-import { ChatCompose } from "./ChatCompose";
+// Replaced ChatCompose with ChatInput for richer input features
+import { ChatInput } from "./chat/ChatInput";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useRef, useEffect } from "react";
 import EventLog from "./EventLog";
 import DeltaEventLog from "./DeltaEventLog";
 import { useDeltaEvents } from "@/hooks/useDeltaEvents";
 import { Message } from "@/types/Message";
+import { Sandbox } from "./config/Sandbox";
+import { ProviderModels } from "./config/provider-models";
+import { ReasoningEffortSelector } from "./config/ReasoningEffortSelector";
+import { useChatInputStore } from "@/stores/chatInputStore";
 
 interface ChatPanelProps {
   activeConversationId: string | null;
@@ -20,8 +25,9 @@ interface ChatPanelProps {
 export function ChatPanel({
   activeConversationId,
   activeMessages,
-  currentMessage,
-  setCurrentMessage,
+  // Props kept for compatibility but will be ignored in favor of the shared store
+  currentMessage: _unusedCurrentMessage,
+  setCurrentMessage: _unusedSetCurrentMessage,
   handleSendMessage,
   isSending,
   isInitializing,
@@ -29,6 +35,20 @@ export function ChatPanel({
 }: ChatPanelProps) {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const deltaEvents = useDeltaEvents(activeConversationId);
+  // Use global chat input store so that notes can append to the same textarea.
+  // Sync legacy props with the store for compatibility.
+  const { inputValue, setInputValue, setExternalSetter } = useChatInputStore();
+
+  // Keep legacy `currentMessage` / `setCurrentMessage` in sync with store.
+  useEffect(() => {
+    // Register external setter to update parent state when store changes.
+    setExternalSetter(_unusedSetCurrentMessage);
+    // Initialize store value from prop if they differ.
+    if (_unusedCurrentMessage !== inputValue) {
+      setInputValue(_unusedCurrentMessage);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [_unusedSetCurrentMessage, setExternalSetter]);
 
   useEffect(() => {
     if (scrollAreaRef.current) {
@@ -92,15 +112,22 @@ export function ChatPanel({
          </ScrollArea>
         </div>
       </main>
-      <div className="sticky bottom-0 left-0 right-0 bg-background border-t">
-        <ChatCompose
-          currentMessage={currentMessage}
-          setCurrentMessage={setCurrentMessage}
-          handleSendMessage={handleSendMessage}
-          isSending={isSending}
-          isInitializing={isInitializing}
-          inputRef={inputRef}
+      <div className="sticky bottom-0 left-0 right-0 bg-background border-t p-2">
+        {/* Chat input with extended capabilities */}
+        <ChatInput
+          inputValue={inputValue}
+          onInputChange={setInputValue}
+          onSendMessage={handleSendMessage}
+          disabled={isSending || isInitializing}
+          isLoading={isSending}
+          externalRef={inputRef}
         />
+        {/* Additional UI components placed below the input */}
+        <div className="flex gap-2 mt-2">
+          <Sandbox />
+          <ProviderModels />
+          <ReasoningEffortSelector />
+        </div>
       </div>
     </div>
   );
