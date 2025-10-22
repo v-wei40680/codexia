@@ -2,7 +2,7 @@ mod cmd;
 mod codex;
 mod codex_client;
 mod commands;
-mod config;
+pub mod config;
 mod export_bindings;
 mod filesystem;
 mod jsonrpc;
@@ -16,11 +16,9 @@ use commands::{
     approve_execution, approve_patch, check_codex_version, create_new_window, disable_remote_ui,
     enable_remote_ui, get_remote_ui_status, pause_session, start_codex_session, send_message
 };
-use config::{
-    add_or_update_model_provider, add_or_update_profile, delete_profile, ensure_default_providers,
-    get_profile_config, get_project_name, get_provider_config, is_version_controlled,
-    read_codex_config, read_model_providers, read_profiles, set_project_trust,
-};
+use crate::config::provider::ensure_default_providers;
+
+
 use filesystem::{
     directory_ops::{canonicalize_path, get_default_directories, read_directory, search_files},
     file_analysis::calculate_file_tokens,
@@ -82,21 +80,21 @@ pub fn run() {
             get_git_status,
             start_watch_directory,
             stop_watch_directory,
-            read_codex_config,
-            get_project_name,
-            is_version_controlled,
-            set_project_trust,
+            config::project::read_codex_config,
+            config::project::get_project_name,
+            config::project::is_version_controlled,
+            config::project::set_project_trust,
             read_mcp_servers,
             add_mcp_server,
             delete_mcp_server,
-            read_model_providers,
-            read_profiles,
-            get_provider_config,
-            get_profile_config,
-            add_or_update_profile,
-            delete_profile,
-            add_or_update_model_provider,
-            ensure_default_providers,
+            config::provider::read_model_providers,
+            config::profile::read_profiles,
+            config::profile::get_provider_config,
+            config::profile::get_profile_config,
+            config::profile::add_or_update_profile,
+            config::profile::delete_profile,
+            config::provider::add_or_update_model_provider,
+            config::provider::ensure_default_providers,
             enable_remote_ui,
             disable_remote_ui,
             get_remote_ui_status,

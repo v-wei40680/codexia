@@ -2,7 +2,8 @@ use anyhow::Result;
 use std::collections::HashMap;
 use tokio::process::Command;
 
-use crate::config::{read_model_providers, read_profiles};
+use crate::config::provider::read_model_providers;
+use crate::config::profile::read_profiles;
 use crate::protocol::CodexConfig;
 use crate::utils::codex_discovery::discover_codex_command;
 
