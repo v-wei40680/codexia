@@ -9,7 +9,7 @@ use super::provider::ModelProvider;
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Profile {
     pub model_provider: String,
-    pub model: String,
+    pub model: Option<String>,
 }
 
 #[command]
