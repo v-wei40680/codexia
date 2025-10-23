@@ -1,49 +1,105 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { ConversationSummary } from "@/bindings/ConversationSummary";
+import type { ConversationSummary } from "@/bindings/ConversationSummary";
 
-interface ConversationListStore {
+interface ConversationListState {
   conversationsByCwd: Record<string, ConversationSummary[]>;
-  activeConversationId: string | null;
-  setConversations: (cwd: string, conversations: ConversationSummary[]) => void;
-  setActiveConversationId: (id: string | null) => void;
-  addConversation: (cwd: string, conversation: ConversationSummary) => void;
-  removeConversation: (conversationId: string) => void;
+  conversationIndex: Record<string, string>;
 }
 
-export const useConversationListStore = create<ConversationListStore>()(
+interface ConversationListActions {
+  addConversation: (cwd: string, summary: ConversationSummary) => void;
+  updateConversationPreview: (conversationId: string, preview: string) => void;
+  removeConversation: (conversationId: string) => void;
+  reset: () => void;
+}
+
+export const useConversationListStore = create<
+  ConversationListState & ConversationListActions
+>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       conversationsByCwd: {},
-      activeConversationId: null,
-      setConversations: (cwd, conversations) =>
-        set((state) => ({
-          conversationsByCwd: {
-            ...state.conversationsByCwd,
-            [cwd]: conversations,
-          },
-        })),
-      setActiveConversationId: (id) => set({ activeConversationId: id }),
-      addConversation: (cwd, conversation) =>
-        set((state) => ({
-          conversationsByCwd: {
-            ...state.conversationsByCwd,
-            [cwd]: [...(state.conversationsByCwd[cwd] || []), conversation],
-          },
-        })),
-      removeConversation: (conversationId) =>
-        set((state) => ({
-          conversationsByCwd: Object.fromEntries(
-            Object.entries(state.conversationsByCwd).map(([cwd, conversations]) => [
-              cwd,
-              conversations.filter((conv) => conv.conversationId !== conversationId),
-            ]),
-          ),
-          activeConversationId:
-            state.activeConversationId === conversationId
-              ? null
-              : state.activeConversationId,
-        })),
+      conversationIndex: {},
+
+      addConversation: (cwd, summary) =>
+        set((state) => {
+          const existingList = state.conversationsByCwd[cwd] ?? [];
+          const index = existingList.findIndex(
+            (item) => item.conversationId === summary.conversationId,
+          );
+          const existingItem = index >= 0 ? existingList[index] : null;
+          const summaryWithTimestamp: ConversationSummary = {
+            ...summary,
+            timestamp:
+              summary.timestamp ??
+              existingItem?.timestamp ??
+              new Date().toISOString(),
+          };
+          const nextList =
+            index >= 0
+              ? existingList.map((item, idx) =>
+                  idx === index ? { ...item, ...summaryWithTimestamp } : item,
+                )
+              : [...existingList, summaryWithTimestamp];
+
+          return {
+            conversationsByCwd: {
+              ...state.conversationsByCwd,
+              [cwd]: nextList,
+            },
+            conversationIndex: {
+              ...state.conversationIndex,
+              [summaryWithTimestamp.conversationId]: cwd,
+            },
+          };
+        }),
+
+      updateConversationPreview: (conversationId, preview) => {
+        const cwd = get().conversationIndex[conversationId];
+        if (!cwd) return;
+        set((state) => {
+          const list = state.conversationsByCwd[cwd] ?? [];
+          const nextList = list.map((item) =>
+            item.conversationId === conversationId
+              ? { ...item, preview }
+              : item,
+          );
+          return {
+            conversationsByCwd: {
+              ...state.conversationsByCwd,
+              [cwd]: nextList,
+            },
+          };
+        });
+      },
+
+      removeConversation: (conversationId) => {
+        const cwd = get().conversationIndex[conversationId];
+        if (!cwd) return;
+        set((state) => {
+          const list = state.conversationsByCwd[cwd] ?? [];
+          const nextList = list.filter(
+            (item) => item.conversationId !== conversationId,
+          );
+          const nextIndex = { ...state.conversationIndex };
+          delete nextIndex[conversationId];
+
+          return {
+            conversationsByCwd: {
+              ...state.conversationsByCwd,
+              [cwd]: nextList,
+            },
+            conversationIndex: nextIndex,
+          };
+        });
+      },
+
+      reset: () =>
+        set({
+          conversationsByCwd: {},
+          conversationIndex: {},
+        }),
     }),
     {
       name: "conversation-list",

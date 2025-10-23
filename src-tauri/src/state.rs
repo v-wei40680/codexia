@@ -4,30 +4,44 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock};
+use log::{info};
+use tauri::{AppHandle, State};
 
 use crate::codex::CodexAppServerClient;
 
 pub struct AppState {
-    pub clients: Arc<Mutex<HashMap<String, CodexAppServerClient>>>,
+    pub client: Arc<Mutex<Option<Arc<CodexAppServerClient>>>>,
 }
 
 impl AppState {
     pub fn new() -> Self {
         Self {
-            clients: Arc::new(Mutex::new(HashMap::new())),
+            client: Arc::new(Mutex::new(None)),
         }
     }
 }
 
 pub async fn get_client(
-    state: &tauri::State<'_, AppState>,
-    session_id: &str,
-) -> Result<CodexAppServerClient, String> {
-    let clients_guard = state.clients.lock().await;
-    clients_guard
-        .get(session_id)
-        .cloned()
-        .ok_or_else(|| format!("Client for session_id '{}' not found.", session_id))
+    state: &State<'_, AppState>,
+    app_handle: &AppHandle,
+) -> Result<Arc<CodexAppServerClient>, String> {
+    if let Some(existing) = {
+        let guard = state.client.lock().await;
+        guard.clone()
+    } {
+        return Ok(existing);
+    }
+
+    info!("Starting Codex app-server process");
+    let client = CodexAppServerClient::spawn(app_handle.clone()).await?;
+    info!("Codex app-server spawned");
+
+    let mut guard = state.client.lock().await;
+    if let Some(existing) = (*guard).as_ref() {
+        return Ok(existing.clone());
+    }
+    *guard = Some(client.clone());
+    Ok(client)
 }
 
 pub struct CodexState {

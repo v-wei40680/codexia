@@ -1,163 +1,128 @@
-use crate::codex::CodexAppServerClient;
-use crate::state::{get_client, AppState};
-use codex_app_server_protocol::{InputItem, NewConversationParams, NewConversationResponse};
-use codex_protocol::ConversationId;
-use tauri::Emitter;
-use log::{debug, error, info};
-use tokio::fs;
+use std::path::PathBuf;
+
+use codex_app_server_protocol::{ 
+    AddConversationListenerParams, NewConversationParams, NewConversationResponse,
+    SendUserMessageParams, SendUserMessageResponse,
+};
+use codex_protocol::protocol::ReviewDecision;
+use log::{error, info, warn};
+use tauri::{AppHandle, State};
+
+use crate::state::{AppState, get_client};
 
 #[tauri::command]
-pub async fn start_chat_session(
-    session_id: String,
-    api_key: String,
-    env_key: String,
-    app: tauri::AppHandle,
-    state: tauri::State<'_, AppState>,
-) -> Result<String, String> {
-    let mut clients_guard = state.clients.lock().await;
-
-    if clients_guard.contains_key(&session_id) {
-        return Ok(session_id);
-    }
-
-    info!(
-        "Initializing new chat session for session_id {}...",
-        session_id
-    );
-
-    let client = CodexAppServerClient::new(api_key, env_key);
-    let mut event_rx = client.subscribe_to_events();
-    let client_session_id = session_id.clone();
-
-    let init_result = client.initialize().await;
-    match init_result {
-        Ok(response) => {
-            if let Err(e) = app.emit(
-                "app_server_initialized",
-                (client_session_id.clone(), response),
-            ) {
+pub async fn new_conversation(
+    params: NewConversationParams,
+    state: State<'_, AppState>,
+    app_handle: AppHandle,
+) -> Result<NewConversationResponse, String> {
+    info!("Creating new conversation; params {:?} ", params);
+    let client = get_client(&state, &app_handle).await?;
+    match client.new_conversation(params).await {
+        Ok(conversation) => {
+            info!(
+                "New conversation created: {}",
+                conversation.conversation_id
+            );
+            if let Err(err) = client
+                .add_conversation_listener(AddConversationListenerParams {
+                    conversation_id: conversation.conversation_id.clone(),
+                })
+                .await
+            {
                 error!(
-                    "Failed to emit app_server_initialized for session_id {}: {:?}",
-                    client_session_id, e
+                    "Failed to register conversation listener for {}: {err}",
+                    conversation.conversation_id
                 );
+                return Err(err);
             }
+            info!(
+                "Listener registered for conversation {}",
+                conversation.conversation_id
+            );
+            Ok(conversation)
         }
-        Err(e) => {
-            error!(
-                "Failed to initialize app server for session_id {}: {:?}",
-                session_id, e
-            );
-            let _ = app.emit(
-                "session_init_failed",
-                (client_session_id.clone(), e.to_string()),
-            );
-            return Err(format!(
-                "Failed to initialize app server for session_id {}: {}",
-                session_id, e
-            ));
+        Err(err) => {
+            error!("Failed to create conversation: {err}");
+            Err(err)
         }
     }
-
-    clients_guard.insert(session_id.clone(), client);
-
-    debug!("Current active sessions : {}", clients_guard.len());
-
-    tokio::spawn(async move {
-        while let Ok(line_json) = event_rx.recv().await {
-            if let Err(e) = app.emit("codex/event", line_json) {
-                error!(
-                    "Failed to emit codex/event for session_id {}: {:?}",
-                    client_session_id, e
-                );
-            }
-        }
-    });
-
-    Ok(session_id)
 }
 
 #[tauri::command]
 pub async fn send_user_message(
-    session_id: String,
-    conversation_id: String,
-    items: Vec<InputItem>,
-    state: tauri::State<'_, AppState>,
-) -> Result<(), String> {
-    let client = get_client(&state, &session_id).await?;
-    info!("Sending message to conversation ID: {}", conversation_id);
-    client
-        .send_user_message(
-            ConversationId::from_string(&conversation_id).unwrap(),
-            items,
-        )
-        .await
-        .map_err(|e| e.to_string())?;
-    Ok(())
+    params: SendUserMessageParams,
+    state: State<'_, AppState>,
+    app_handle: AppHandle,
+) -> Result<SendUserMessageResponse, String> {
+    let client = get_client(&state, &app_handle).await?;
+    let conversation_id = params.conversation_id.clone();
+    let item_count = params.items.len();
+
+    if item_count == 0 {
+        warn!(
+            "Attempted to send empty item list to conversation {}",
+            conversation_id
+        );
+        return Err("Message items cannot be empty.".to_string());
+    }
+
+    info!(
+        "Forwarding send_user_message to conversation {} (items={})",
+        conversation_id, item_count
+    );
+
+    match client.send_user_message(params).await {
+        Ok(response) => {
+            info!("Message accepted for {}", conversation_id);
+            Ok(response)
+        }
+        Err(err) => {
+            error!("Failed to send message to {conversation_id}: {err}");
+            Err(err)
+        }
+    }
 }
 
 #[tauri::command]
-pub async fn new_conversation(
-    session_id: String,
-    params: NewConversationParams,
-    state: tauri::State<'_, AppState>,
-) -> Result<NewConversationResponse, String> {
-    let client = get_client(&state, &session_id).await?;
-    info!("{:?}", params);
-    let response = client.new_conversation(params).await.map_err(|e| {
-        error!(
-            "Error from codex app-server during new_conversation: {:?}",
-            e
-        );
-        e.to_string()
-    })?;
-
-    let conversation_id = response.conversation_id.clone();
-
+pub async fn respond_exec_command_request(
+    request_token: String,
+    decision: String,
+    state: State<'_, AppState>,
+    app_handle: AppHandle,
+) -> Result<(), String> {
+    let client = get_client(&state, &app_handle).await?;
+    let parsed = parse_review_decision(&decision)?;
     client
-        .add_conversation_listener(conversation_id.clone())
+        .respond_exec_command_request(&request_token, parsed)
         .await
-        .map_err(|e| {
-            error!(
-                "Error from codex app-server during add_conversation_listener: {:?}",
-                e
-            );
-            e.to_string()
-        })?;
-
-    Ok(response)
 }
 
 #[tauri::command]
 pub async fn delete_file(path: String) -> Result<(), String> {
-    info!("Deleting file: {}", path);
-    fs::remove_file(&path)
+    let trimmed = path.trim();
+    if trimmed.is_empty() {
+        warn!("delete_file invoked with empty path");
+        return Err("Path is empty.".to_string());
+    }
+
+    info!("Deleting conversation file {}", trimmed);
+    let path_buf = PathBuf::from(trimmed);
+    tokio::fs::remove_file(path_buf)
         .await
-        .map_err(|e| format!("Failed to delete file {}: {}", path, e))?;
-    Ok(())
+        .map_err(|err| {
+            error!("Failed to delete file {trimmed}: {err}");
+            format!("Failed to delete file: {err}")
+        })
 }
 
-#[tauri::command]
-pub async fn exec_approval_request(
-    session_id: String,
-    request_id: i64,
-    decision: bool,
-    state: tauri::State<'_, AppState>,
-) -> Result<(), String> {
-    let client = get_client(&state, &session_id).await?;
-    info!(
-        "Sending exec approval response for request ID: {}",
-        request_id
-    );
-    let response = codex_app_server_protocol::ExecCommandApprovalResponse {
-        decision: if decision {
-            codex_protocol::protocol::ReviewDecision::Approved
-        } else {
-            codex_protocol::protocol::ReviewDecision::Denied
-        },
-    };
-    client
-        .send_response_to_server_request(request_id, response)
-        .await
-        .map_err(|e| e.to_string())?;
-    Ok(())
+fn parse_review_decision(decision: &str) -> Result<ReviewDecision, String> {
+    let normalized = decision.trim().to_lowercase().replace('-', "_");
+    match normalized.as_str() {
+        "approved" => Ok(ReviewDecision::Approved),
+        "approved_for_session" => Ok(ReviewDecision::ApprovedForSession),
+        "denied" => Ok(ReviewDecision::Denied),
+        "abort" => Ok(ReviewDecision::Abort),
+        other => Err(format!("Unsupported review decision: {other}")),
+    }
 }

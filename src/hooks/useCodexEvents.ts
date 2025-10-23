@@ -1,159 +1,164 @@
-import { useCallback, useEffect, useRef } from "react";
-import { listen } from "@/lib/tauri-proxy";
-import type { CodexEvent } from "@/types/codex";
-import type { ChatMessage } from "@/types/chat";
-import { StreamController, StreamControllerSink } from "@/utils/streamController";
-import { useConversationStore } from "../stores/ConversationStore";
-import { useCodexStore } from "@/stores/CodexStore";
-import { handleCodexEvent } from "./codexEvents/handler";
-import { normalizeRawEvent, type RawCodexEventPayload } from "./codexEvents/normalizeRawEvent";
-import type { CodexEventHandlerContext, UseCodexEventsProps } from "./codexEvents/types";
+import { useCallback, useEffect, useState } from "react";
+import { listen, type UnlistenFn } from "@tauri-apps/api/event";
+import { v4 as uuidv4 } from "uuid";
 
-export const useCodexEvents = ({ sessionId, onStopStreaming }: UseCodexEventsProps) => {
-  const {
-    addMessage,
-    updateMessage,
-    setSessionLoading,
-    createConversation,
-    conversations,
-    setResumeMeta,
-  } = useConversationStore();
-  const sandboxMode = useCodexStore((state) => state.config.sandboxMode);
-  const autoApproveApprovals =
-    sandboxMode === "workspace-write" || sandboxMode === "danger-full-access";
+import type { EventMsg } from "@/bindings/EventMsg";
+import type { ConversationEventPayload, EventWithId } from "@/types/chat";
+import { DELTA_EVENT_TYPES } from "@/types/chat";
+import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
 
-  const streamController = useRef(new StreamController());
-  const currentStreamingMessageId = useRef<string | null>(null);
-  const currentReasoningMessageId = useRef<string | null>(null);
-  const reasoningBufferRef = useRef<string>("");
-  const currentCommandMessageId = useRef<string | null>(null);
-  const currentCommandInfo = useRef<{ command: string[]; cwd: string } | null>(null);
-  const lastTurnDiffRef = useRef<string | null>(null);
-  const handlerContextRef = useRef<CodexEventHandlerContext | null>(null);
+type EventsByConversation = Record<string, EventWithId[]>;
 
-  const addMessageToStore = useCallback(
-    (message: ChatMessage) => {
-      const conversationExists = conversations.find((conv) => conv.id === sessionId);
-      if (!conversationExists) {
-        console.log(`Creating conversation for session ${sessionId} from event`);
-        createConversation("New Chat", sessionId);
-      }
+interface UseCodexEventsParams {
+  eventsByConversation: EventsByConversation;
+  appendEvent: (conversationId: string, event: EventWithId) => void;
+  setIsInitializing: (value: boolean) => void;
+  setIsSending: (value: boolean) => void;
+  isInitializing: boolean;
+}
 
-      const conversationMessage = {
-        id: message.id,
-        role:
-          message.role === "user"
-            ? ("user" as const)
-            : message.role === "assistant"
-            ? ("assistant" as const)
-            : message.role === "approval"
-            ? ("approval" as const)
-            : ("system" as const),
-        content: message.content,
-        title: message.title,
-        timestamp: message.timestamp,
-        ...(message.approvalRequest && { approvalRequest: message.approvalRequest }),
-        ...(message.messageType && { messageType: message.messageType }),
-        ...(message.eventType && { eventType: message.eventType }),
-        ...(message.plan && { plan: message.plan }),
-      };
+interface UseCodexEventsResult {
+  deltaEventMap: EventsByConversation;
+  initializeConversationBuffer: (conversationId: string) => void;
+}
 
-      addMessage(sessionId, conversationMessage);
-    },
-    [addMessage, conversations, createConversation, sessionId],
-  );
-
-  const createStreamSink = useCallback(
-    (messageId: string): StreamControllerSink => {
-      let accumulatedContent = "";
-
-      return {
-        insertLines: (lines: string[]) => {
-          const newContent = lines.join("\n");
-          if (accumulatedContent) {
-            accumulatedContent += "\n" + newContent;
-          } else {
-            accumulatedContent = newContent;
-          }
-          updateMessage(sessionId, messageId, { content: accumulatedContent });
-        },
-        startAnimation: () => {},
-        stopAnimation: () => {},
-      };
-    },
-    [sessionId, updateMessage],
-  );
-
-  handlerContextRef.current = {
-    sessionId,
-    onStopStreaming,
-    addMessageToStore,
-    updateMessage,
-    setSessionLoading,
-    setResumeMeta,
-    autoApproveApprovals,
-    streamController,
-    currentStreamingMessageId,
-    currentReasoningMessageId,
-    reasoningBufferRef,
-    currentCommandMessageId,
-    currentCommandInfo,
-    lastTurnDiffRef,
-    createStreamSink,
-  };
+export function useCodexEvents({
+  eventsByConversation,
+  appendEvent,
+  setIsInitializing,
+  setIsSending,
+  isInitializing,
+}: UseCodexEventsParams): UseCodexEventsResult {
+  const [deltaEventMap, setDeltaEventMap] = useState<EventsByConversation>({});
+  const { activeConversationId } = useActiveConversationStore();
 
   useEffect(() => {
-    if (!sessionId) return;
+    setDeltaEventMap((prev) => {
+      let changed = false;
+      const next: EventsByConversation = {};
 
-    const eventUnlisten = listen<CodexEvent>("codex-events", (event) => {
-      const codexEvent = event.payload;
-
-      if (
-        codexEvent.msg.type !== "agent_message_delta" &&
-        codexEvent.msg.type !== "agent_reasoning_delta" &&
-        codexEvent.msg.type !== "agent_reasoning_raw_content_delta"
-      ) {
-        console.log(`📨 Codex structured event [${sessionId}]:`, codexEvent.msg);
+      for (const [key, value] of Object.entries(prev)) {
+        if (eventsByConversation[key]) {
+          next[key] = value;
+        } else {
+          changed = true;
+          console.debug("[chat] dropping delta buffer for conversation", key);
+        }
       }
 
-      const context = handlerContextRef.current;
-      if (context) {
-        handleCodexEvent(codexEvent, context);
+      if (!changed && Object.keys(next).length === Object.keys(prev).length) {
+        return prev;
       }
+
+      return next;
     });
+  }, [eventsByConversation]);
 
-    const rawEventUnlisten = listen<RawCodexEventPayload>("codex-raw-events", (event) => {
-      const rawEvent = event.payload;
+  useEffect(() => {
+    let isActive = true;
+    const listenerPromise = listen<ConversationEventPayload>(
+      "codex:event",
+      (event) => {
+        if (!isActive) {
+          return;
+        }
 
-      const rawMsgType = rawEvent.data.msg.type;
-      if (
-        rawMsgType !== "exec_command_output_delta" &&
-        rawMsgType !== "agent_reasoning_delta" &&
-        rawMsgType !== "agent_reasoning_raw_content_delta"
-      ) {
-        console.log(`📨 Raw codex event [${sessionId}]:`, rawEvent.data);
-      }
+        const payload = event.payload;
+        if (!payload || !payload.params) return;
 
-      const convertedEvent = normalizeRawEvent(rawEvent);
-      if (!convertedEvent) {
-        return;
-      }
+        const { conversationId, msg, id: incomingId } = payload.params;
+        if (!conversationId || !msg) return;
 
-      const context = handlerContextRef.current;
-      if (context) {
-        handleCodexEvent(convertedEvent, context);
-      }
+        const eventMsg = msg as EventMsg;
+        if (typeof eventMsg !== "object" || typeof eventMsg.type !== "string") {
+          return;
+        }
+
+        const eventId =
+          typeof incomingId === "string" && incomingId.length > 0
+            ? incomingId
+            : uuidv4();
+
+        const eventRecord: EventWithId = {
+          id: eventId,
+          msg: eventMsg,
+        };
+
+        if (!eventMsg.type.endsWith("_delta")) {
+          console.debug("[codex:event]", conversationId, eventMsg.type, eventRecord);
+        }
+
+        if (DELTA_EVENT_TYPES.has(eventMsg.type)) {
+          setDeltaEventMap((prev) => {
+            const current = prev[conversationId] ?? [];
+            if (current.some((item) => item.id === eventId)) {
+              return prev;
+            }
+            return {
+              ...prev,
+              [conversationId]: [...current, eventRecord],
+            };
+          });
+          return;
+        }
+
+        appendEvent(conversationId, eventRecord);
+
+        if (
+          eventMsg.type === "task_complete" ||
+          eventMsg.type === "error" ||
+          eventMsg.type === "turn_aborted"
+        ) {
+          setIsSending(false);
+        }
+
+        if (isInitializing && conversationId === activeConversationId) {
+          setIsInitializing(false);
+        }
+
+        setDeltaEventMap((prev) => {
+          if (!prev[conversationId] || prev[conversationId].length === 0) {
+            return prev;
+          }
+          console.debug("[chat] flushing delta events", conversationId);
+          const { [conversationId]: _removed, ...rest } = prev;
+          return rest;
+        });
+      },
+    );
+
+    listenerPromise.catch((error) => {
+      console.error("Failed to initialize Codex listeners", error);
     });
 
     return () => {
-      eventUnlisten.then((fn) => fn());
-      rawEventUnlisten.then((fn) => fn());
-      streamController.current.clearAll();
-      currentStreamingMessageId.current = null;
+      isActive = false;
+      listenerPromise
+        .then((unlisten: UnlistenFn) => {
+          try {
+            unlisten();
+          } catch (error) {
+            console.warn("Failed to remove Codex listener", error);
+          }
+        })
+        .catch((error) => {
+          console.warn("Codex listener cleanup skipped", error);
+        });
     };
-  }, [sessionId, createStreamSink]);
+  }, [
+    appendEvent,
+    setIsInitializing,
+    setIsSending,
+    isInitializing,
+    activeConversationId,
+  ]);
 
-  return {};
-};
+  const initializeConversationBuffer = useCallback((conversationId: string) => {
+    setDeltaEventMap((prev) => ({
+      ...prev,
+      [conversationId]: [],
+    }));
+  }, []);
 
-export type { UseCodexEventsProps };
+  return { deltaEventMap, initializeConversationBuffer };
+}

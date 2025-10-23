@@ -86,7 +86,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   const handleSendMessage = () => {
-    if (!inputValue.trim() || isLoading) return;
+    if (!inputValue.trim() || isLoading || disabled) return;
 
     // Build message content with file references
     let messageContent = inputValue;
@@ -122,6 +122,9 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (disabled || isLoading) {
+      return;
+    }
     if (e.key === 'Enter') {
       if (e.shiftKey) {
         // allow newline
@@ -155,7 +158,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           className={`min-h-20 max-h-96 pr-32 bg-muted/50 resize-none overflow-y-auto pb-8 ${
             mediaAttachments.length > 0 ? 'pt-8' : ''
           }`}
-          disabled={false}
+          disabled={disabled || isLoading}
           onInput={(e) => {
             const target = e.target as HTMLTextAreaElement;
             target.style.height = '60px';
@@ -178,6 +181,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             className={`h-6 px-1 py-0 hover:bg-muted/50 ${config.webSearchEnabled ? 'text-blue-500' : 'text-muted-foreground'}`}
             onClick={() => updateConfig({ webSearchEnabled: !config.webSearchEnabled })}
             title={config.webSearchEnabled ? 'Web search enabled' : 'Enable web search'}
+            disabled={disabled}
           >
             <Globe className="h-4 w-4" />
             {config.webSearchEnabled && (

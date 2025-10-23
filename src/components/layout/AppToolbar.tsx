@@ -10,24 +10,24 @@ import { useNoteStore } from "@/stores/NoteStore";
 import { useLayoutStore } from "@/stores/layoutStore";
 import { useFolderStore } from "@/stores/FolderStore";
 import { detectWebFramework } from "@/utils/webFrameworkDetection";
+import { useChatSession } from "@/hooks/useChatSession";
 
 interface AppToolbarProps {
   onOpenConfig: () => void;
   onCreateNewSession?: () => void;
   currentTab?: string;
   onSwitchToTab?: (tab: string) => void;
-  onNewConversationClick: () => void;
 }
 
 export const AppToolbar: React.FC<AppToolbarProps> = ({
   onOpenConfig,
   currentTab,
   onSwitchToTab,
-  onNewConversationClick,
 }) => {
   const { createNote, setCurrentNote } = useNoteStore();
   const { showWebPreview, setWebPreviewUrl } = useLayoutStore();
   const { currentFolder } = useFolderStore();
+  const { handlePrepareNewConversation } = useChatSession()
 
   const handleToggleLeftPanel = () => {
     if (!onSwitchToTab) return;
@@ -89,7 +89,7 @@ export const AppToolbar: React.FC<AppToolbarProps> = ({
             variant="ghost"
             size="icon"
             className="h-7 w-7 shrink-0"
-            onClick={onNewConversationClick}
+            onClick={handlePrepareNewConversation}
             title="New Conversation"
           >
             <PencilIcon className="h-4 w-4" />

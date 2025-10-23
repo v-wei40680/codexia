@@ -1,113 +1,88 @@
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import { EventMsg } from "@/bindings/EventMsg";
-import { Message } from "@/types";
-import { EventWithId } from "@/types/Message";
+import type { ConversationEvent, EventWithId } from "@/types/chat";
+import { DELTA_EVENT_TYPES } from "@/types/chat";
 
-type ConversationStore = {
-  messages: Record<string, Message[]>;
-  currentMessage: string;
-};
+const DEDUPE_EXEMPT_TYPES = new Set<EventWithId["msg"]["type"]>([
+  "user_message",
+]);
 
-type ChatActions = {
-  addMessage: (conversationId: string, message: Message) => void;
-  updateLastAgentMessage: (conversationId: string, event: EventWithId) => void;
-  deleteMessages: (conversationId: string) => void;
-  setCurrentMessage: (message: string) => void;
-};
-
-const extractEventContent = (msg: EventMsg): string => {
-  switch (msg.type) {
-    case "agent_message":
-      return msg.message;
-    case "agent_reasoning_raw_content":
-      return msg.text;
-    default:
-      return "";
+function shouldSkipDuplicate(
+  previous: ConversationEvent,
+  incoming: ConversationEvent,
+): boolean {
+  if (DEDUPE_EXEMPT_TYPES.has(incoming.msg.type)) {
+    return false;
   }
-};
+  if (previous.msg.type !== incoming.msg.type) {
+    return false;
+  }
+  return JSON.stringify(previous.msg) === JSON.stringify(incoming.msg);
+}
 
-export const useConversationStore = create<ConversationStore & ChatActions>()(
-  persist(
-    (set, get) => ({
-      messages: {},
-      currentMessage: "",
+interface ConversationState {
+  eventsByConversation: Record<string, ConversationEvent[]>;
+  currentMessage: string;
+}
 
-      addMessage: (conversationId, message) => {
-        set((state) => ({
-          messages: {
-            ...state.messages,
-            [conversationId]: [
-              ...(state.messages[conversationId] || []),
-              message,
-            ],
-          },
-        }));
-      },
+interface ConversationActions {
+  setCurrentMessage: (value: string) => void;
+  appendEvent: (conversationId: string, event: EventWithId) => void;
+  replaceEvents: (conversationId: string, events: ConversationEvent[]) => void;
+  clearConversation: (conversationId: string) => void;
+  reset: () => void;
+}
 
-      updateLastAgentMessage: (conversationId, event) => {
-        if (
-          event.msg.type === "agent_message" ||
-          event.msg.type === "agent_reasoning_raw_content"
-        ) {
-          const messages = get().messages[conversationId] || [];
-          const lastMessage = messages[messages.length - 1];
-          const newContent = extractEventContent(event.msg);
+export const useConversationStore = create<
+  ConversationState & ConversationActions
+>()((set) => ({
+  eventsByConversation: {},
+  currentMessage: "",
+  setCurrentMessage: (value) => set({ currentMessage: value }),
+  appendEvent: (conversationId, event) => {
+    if (DELTA_EVENT_TYPES.has(event.msg.type)) {
+      return;
+    }
+    set((state) => {
+      const existing = state.eventsByConversation[conversationId] ?? [];
+      const lastEvent = existing[existing.length - 1];
+      if (lastEvent && shouldSkipDuplicate(lastEvent, event)) {
+        return state;
+      }
 
-          if (lastMessage?.role === "assistant") {
-            const existingEvents = lastMessage.events || [];
-            const sameIdExists = existingEvents.some((e) => e.id === event.id);
-
-            let updatedEvents;
-            let updatedContent;
-
-            if (sameIdExists) {
-              // Append new content for the same event.id
-              updatedEvents = [...existingEvents, event];
-              updatedContent = lastMessage.content + "\n" + newContent;
-            } else {
-              // Add as a separate event if id is different
-              updatedEvents = [...existingEvents, event];
-              updatedContent = lastMessage.content + "\n" + newContent;
-            }
-
-            const updatedMessage = {
-              ...lastMessage,
-              content: updatedContent,
-              events: updatedEvents,
-            };
-
-            set((state) => ({
-              messages: {
-                ...state.messages,
-                [conversationId]: [...messages.slice(0, -1), updatedMessage],
-              },
-            }));
-          } else {
-            // Create new assistant message if none exists
-            get().addMessage(conversationId, {
-              id: event.id,
-              role: "assistant",
-              content: newContent,
-              timestamp: Date.now(),
-              events: [event],
-            });
-          }
+      return {
+        eventsByConversation: {
+          ...state.eventsByConversation,
+          [conversationId]: [...existing, event],
+        },
+      };
+    });
+  },
+  replaceEvents: (conversationId, events) =>
+    set((state) => {
+      const filtered: ConversationEvent[] = [];
+      for (const event of events) {
+        if (DELTA_EVENT_TYPES.has(event.msg.type)) {
+          continue;
         }
-      },
+        const previous = filtered[filtered.length - 1];
+        if (previous && shouldSkipDuplicate(previous, event)) {
+          continue;
+        }
+        filtered.push(event);
+      }
 
-      deleteMessages: (conversationId) => {
-        set((state) => {
-          const { [conversationId]: _, ...rest } = state.messages;
-          return { messages: rest };
-        });
-      },
-
-      setCurrentMessage: (message) => set({ currentMessage: message }),
+      return {
+        eventsByConversation: {
+          ...state.eventsByConversation,
+          [conversationId]: filtered,
+        },
+      };
     }),
-
-    {
-      name: "conversation",
-    },
-  ),
-);
+  clearConversation: (conversationId) =>
+    set((state) => {
+      const updated = { ...state.eventsByConversation };
+      delete updated[conversationId];
+      return { eventsByConversation: updated };
+    }),
+  reset: () => set({ eventsByConversation: {}, currentMessage: "" }),
+}));

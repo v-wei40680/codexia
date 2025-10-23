@@ -99,11 +99,10 @@ pub fn run() {
             disable_remote_ui,
             get_remote_ui_status,
             services::session::delete_session_file,
-            cmd::start_chat_session,
             cmd::send_user_message,
             cmd::new_conversation,
+            cmd::respond_exec_command_request,
             cmd::delete_file,
-            cmd::exec_approval_request,
         ])
         .setup(|_app| {
             #[cfg(debug_assertions)]

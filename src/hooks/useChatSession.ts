@@ -1,172 +1,294 @@
-import { useState } from "react";
-import { useChatListeners } from "./useChatListeners";
+import { useCallback, useMemo, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { toast } from "sonner";
-import { v4 } from "uuid";
-import { useConversationStore } from "@/stores/useConversationStore";
-import { useProviderStore } from "@/stores/useProviderStore";
-import { useSessionStore } from "@/stores/useSessionStore";
-import { useCodexStore } from "@/stores/useCodexStore";
-import { useConversationListStore } from "@/stores/useConversationListStore";
-import { Message } from "@/types/Message";
-import { InputItem } from "@/bindings/InputItem";
-import { NewConversationResponse } from "@/bindings/NewConversationResponse";
+
 import { getNewConversationParams } from "@/components/config/ConversationParams";
+import { useConversationStore } from "@/stores/useConversationStore";
+import { useConversationListStore } from "@/stores/useConversationListStore";
+import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
+import { useSessionStore } from "@/stores/useSessionStore";
+import { useProviderStore } from "@/stores/useProviderStore";
 import { useSandboxStore } from "@/stores/useSandboxStore";
-import { mapProviderToEnvKey } from "@/utils/mapProviderEnvKey";
-import { ConversationSummary } from "@/bindings/ConversationSummary";
+import { useCodexStore } from "@/stores/useCodexStore";
+import { useCodexEvents } from "@/hooks/useCodexEvents";
+import { useCodexApprovalRequests } from "@/hooks/useCodexApprovalRequests";
+import type { NewConversationResponse } from "@/bindings/NewConversationResponse";
+import type { SendUserMessageParams } from "@/bindings/SendUserMessageParams";
+import type { SendUserMessageResponse } from "@/bindings/SendUserMessageResponse";
+import type { InputItem } from "@/bindings/InputItem";
+import { type ConversationEvent, type EventWithId } from "@/types/chat";
+
+function buildTextMessageParams(
+  conversationId: string,
+  text: string,
+): SendUserMessageParams {
+  const textItem: InputItem = {
+    type: "text",
+    data: { text },
+  };
+  return {
+    conversationId,
+    items: [textItem],
+  };
+}
 
 export function useChatSession() {
-  const { addMessage, setCurrentMessage } =
-    useConversationStore();
-  const { activeConversationId, setActiveConversationId, addConversation } =
-    useConversationListStore();
-  const { sessionId, setSessionId, setSessionActive, setIsInitializing } =
+  const textAreaRef = useRef<HTMLTextAreaElement>(null);
+  const createConversationPromiseRef = useRef<Promise<string | null> | null>(
+    null,
+  );
+
+  const {
+    eventsByConversation,
+    appendEvent,
+    replaceEvents,
+    currentMessage,
+    setCurrentMessage,
+  } = useConversationStore();
+
+  const { addConversation } = useConversationListStore();
+
+  const { activeConversationId, setActiveConversationId } =
+    useActiveConversationStore();
+
+  const { isInitializing, isSending, setIsInitializing, setIsSending } =
     useSessionStore();
+
   const { providers, selectedProviderId, selectedModel, reasoningEffort } =
     useProviderStore();
-  const provider = providers.find((p) => p.id === selectedProviderId);
-  const { cwd } = useCodexStore();
   const { mode, approvalPolicy } = useSandboxStore();
-  const [isSending, setIsSending] = useState(false);
-  useChatListeners();
+  const { cwd } = useCodexStore();
 
-  const handleStartSession = async () => {
-    if (sessionId) return sessionId;
+  const { deltaEventMap, initializeConversationBuffer } = useCodexEvents({
+    eventsByConversation,
+    appendEvent,
+    setIsInitializing,
+    setIsSending,
+    isInitializing,
+  });
 
-    setIsInitializing(true);
-    const uuid = v4();
+  useCodexApprovalRequests();
 
-    try {
-      await invoke("start_chat_session", {
-        sessionId: uuid,
-        apiKey: provider?.apiKey ?? "",
-        envKey: mapProviderToEnvKey(provider?.id),
-      });
-      setSessionActive(true);
-      setSessionId(uuid);
-      return uuid;
-    } catch (error) {
-      console.error("Failed to start session:", error);
-      return null;
-    } finally {
-      setIsInitializing(false);
+  const activeEvents: ConversationEvent[] = useMemo(() => {
+    if (!activeConversationId) return [];
+    return eventsByConversation[activeConversationId] ?? [];
+  }, [eventsByConversation, activeConversationId]);
+
+  const activeDeltaEventsRef = useRef<EventWithId[]>([]);
+
+  const activeDeltaEvents: EventWithId[] = useMemo(() => {
+    if (!activeConversationId) return [];
+    const newDeltaEvents = deltaEventMap[activeConversationId] ?? [];
+
+    // Deep compare newDeltaEvents with the current value in the ref
+    // If they are deeply equal, return the ref's current value to maintain referential stability
+    if (
+      JSON.stringify(newDeltaEvents) ===
+      JSON.stringify(activeDeltaEventsRef.current)
+    ) {
+      return activeDeltaEventsRef.current;
     }
-  };
 
-  const createNewConversation = async (
-    currentSessionId: string,
-    message: string,
-  ): Promise<string | null> => {
+    activeDeltaEventsRef.current = newDeltaEvents;
+    return newDeltaEvents;
+  }, [deltaEventMap, activeConversationId]);
+
+  const createConversation = useCallback(async (): Promise<string | null> => {
+    if (createConversationPromiseRef.current) {
+      return createConversationPromiseRef.current;
+    }
+
     if (!cwd) {
-      toast.error(
-        "Cannot create conversation without active project directory",
-      );
+      console.warn("Select a project before starting a conversation.");
       return null;
     }
 
-    const params = getNewConversationParams(
-      provider,
-      selectedModel,
-      cwd,
-      approvalPolicy,
-      mode,
-      { model_reasoning_effort: reasoningEffort },
-    );
+    const provider = providers.find((item) => item.id === selectedProviderId);
 
-    const response = await invoke<NewConversationResponse>("new_conversation", {
-      sessionId: currentSessionId,
-      params,
-    });
+    const promise = (async () => {
+      setIsInitializing(true);
+      try {
+        const params = getNewConversationParams(
+          provider,
+          selectedModel ?? null,
+          cwd,
+          approvalPolicy,
+          mode,
+          {
+            model_reasoning_effort: reasoningEffort,
+          },
+        );
 
-    if (!response?.conversationId) {
-      console.error(
-        "Failed to create conversation: No conversationId in response",
+        console.info("[chat] new_conversation", params);
+        const conversation = await invoke<NewConversationResponse>(
+          "new_conversation",
+          { params },
+        );
+
+        console.info("[chat] conversation created", conversation);
+
+        const conversationId = conversation.conversationId;
+        addConversation(cwd, {
+          conversationId,
+          preview:
+            useConversationStore.getState().currentMessage ||
+            "New conversation",
+          path: conversation.rolloutPath,
+          timestamp: new Date().toISOString(),
+        });
+        setActiveConversationId(conversationId);
+        replaceEvents(conversationId, []);
+        initializeConversationBuffer(conversationId);
+        return conversationId;
+      } catch (error) {
+        console.error("Failed to start Codex conversation", error);
+        return null;
+      } finally {
+        setIsInitializing(false);
+        createConversationPromiseRef.current = null;
+      }
+    })();
+
+    createConversationPromiseRef.current = promise;
+    return promise;
+  }, [
+    addConversation,
+    approvalPolicy,
+    cwd,
+    initializeConversationBuffer,
+    mode,
+    providers,
+    reasoningEffort,
+    replaceEvents,
+    selectedModel,
+    selectedProviderId,
+    setActiveConversationId,
+    setIsInitializing,
+  ]);
+
+  const sendConversationMessage = useCallback(
+    async (params: SendUserMessageParams) => {
+      console.debug(
+        "[chat] invoke send_user_message",
+        params.conversationId,
+        params.items.length,
       );
-      return null;
+      await invoke<SendUserMessageResponse>("send_user_message", {
+        params,
+      });
+      console.debug("[chat] send_user_message success", params.conversationId);
+    },
+    [],
+  );
+
+  const handleSendMessage = useCallback(async (messageOverride?: string) => {
+    if (!cwd) {
+      console.warn("Select a project before sending messages.");
+      return;
     }
 
-    const newConversation: ConversationSummary = {
-      conversationId: response.conversationId,
-      preview: message,
-      path: response.rolloutPath,
-      timestamp: new Date().toLocaleTimeString(),
-    };
-
-    addConversation(cwd, newConversation);
-    setActiveConversationId(response.conversationId);
-
-    return response.conversationId;
-  };
-
-  const handleSendMessage = async (currentMessage: string) => {
-    if (isSending || !currentMessage.trim()) return;
+    const originalMessage =
+      messageOverride ?? useConversationStore.getState().currentMessage;
+    const trimmed = originalMessage.trim();
+    if (!trimmed) return;
 
     setIsSending(true);
+    // Maintain the original message temporarily for preview during conversation creation
+    let pendingRestore: string | null = originalMessage;
 
     try {
-      let currentSessionId = sessionId;
-      if (!activeConversationId) {
-        currentSessionId = await handleStartSession();
-        if (!currentSessionId) {
-          toast.error("Failed to start session");
-          return;
+      let targetConversationId = activeConversationId;
+      if (!targetConversationId) {
+        const newConversationId = await createConversation();
+        if (!newConversationId) {
+          throw new Error("Failed to create conversation");
         }
+        targetConversationId = newConversationId;
       }
-
-      if (!currentSessionId) {
-        toast.error("No active session");
-        return;
-      }
-
-      let conversationId = activeConversationId;
-      if (!conversationId) {
-        conversationId = await createNewConversation(
-          currentSessionId,
-          currentMessage,
-        );
-        if (!conversationId) {
-          toast.error("Failed to create conversation");
-          return;
-        }
-      }
-
-      const userMessage: Message = {
-        id: Date.now().toString(),
-        content: currentMessage,
-        role: "user",
-        timestamp: Date.now(),
-      };
-
-      addMessage(conversationId, userMessage);
+      // Clear the message input after ensuring the conversation exists
       setCurrentMessage("");
 
-      await invoke("send_user_message", {
-        sessionId: currentSessionId,
-        conversationId,
-        items: [{ type: "text", data: { text: currentMessage } } as InputItem],
+      // Append the user's message to the conversation store
+      appendEvent(targetConversationId, {
+        id: `user-message-${Date.now()}`,
+        msg: {
+          type: "user_message",
+          message: trimmed,
+          kind: null,
+          images: null,
+        },
       });
-    } catch (error) {
-      console.error("Error in handleSendMessage:", error);
-      toast.error(
-        error instanceof Error ? error.message : "Failed to send message",
+
+      const params = buildTextMessageParams(targetConversationId, trimmed);
+      console.info(
+        "[chat] send_user_message",
+        targetConversationId,
+        trimmed.length,
       );
+      await sendConversationMessage(params);
+      pendingRestore = null;
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      console.error("Failed to send message", error);
+
+      if (message.includes("conversation not found")) {
+        console.warn(
+          "Conversation missing on Codex server; creating a new one.",
+        );
+        const newConversationId = await createConversation();
+        if (newConversationId) {
+          try {
+            console.info("[chat] resend send_user_message", newConversationId);
+            const resendParams = buildTextMessageParams(
+              newConversationId,
+              trimmed,
+            );
+            await sendConversationMessage(resendParams);
+            pendingRestore = null;
+          } catch (resendErr) {
+            console.error("Failed to resend message", resendErr);
+          }
+        }
+      }
     } finally {
+      if (pendingRestore) {
+        setCurrentMessage(pendingRestore);
+      }
       setIsSending(false);
     }
-  };
+  }, [
+    activeConversationId,
+    createConversation,
+    cwd,
+    sendConversationMessage,
+    setCurrentMessage,
+    setIsSending,
+  ]);
 
-  const handleNewConversation = (onComplete?: () => void) => {
-    // Do not start session or create conversation here
+  const focusChatInput = useCallback(() => {
+    textAreaRef.current?.focus();
+  }, []);
+
+  const handlePrepareNewConversation = useCallback(() => {
+    if (!cwd) {
+      console.warn("Select a project before starting a conversation.");
+      return;
+    }
     setActiveConversationId(null);
     setCurrentMessage("");
-    onComplete?.();
-  };
+    focusChatInput();
+  }, [cwd, focusChatInput, setActiveConversationId, setCurrentMessage]);
 
   return {
-    isSending,
-    handleStartSession,
+    textAreaRef,
+    activeConversationId,
+    activeEvents,
+    activeDeltaEvents,
+    currentMessage,
+    setCurrentMessage,
     handleSendMessage,
-    handleNewConversation,
+    isSending,
+    isInitializing,
+    canCompose: Boolean(cwd),
+    handlePrepareNewConversation,
   };
 }

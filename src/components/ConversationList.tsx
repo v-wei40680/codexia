@@ -9,9 +9,11 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { useConversationListStore } from "@/stores/useConversationListStore";
 import { useCodexStore } from "@/stores/useCodexStore";
+import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
 
 export function ConversationList() {
-  const { conversationsByCwd, activeConversationId, setActiveConversationId } = useConversationListStore();
+  const { conversationsByCwd } = useConversationListStore();
+  const { activeConversationId, setActiveConversationId } = useActiveConversationStore();
   const { cwd } = useCodexStore();
 
   const conversations = (conversationsByCwd[cwd || ""] || []).slice().reverse();
