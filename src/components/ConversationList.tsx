@@ -28,7 +28,7 @@ export function ConversationList() {
                 <div className="flex items-center justify-between w-full">
                   <button
                     onClick={() => setActiveConversationId(conv.conversationId)}
-                    className={`flex-grow text-left whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
+                    className={`flex-1 min-w-0 truncate text-left rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
                       activeConversationId === conv.conversationId
                         ? "bg-accent text-accent-foreground"
                         : "text-muted-foreground"
