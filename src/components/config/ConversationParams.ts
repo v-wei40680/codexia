@@ -59,7 +59,7 @@ export const getNewConversationParams = (
     ...config
   } : defaultConfig
   return {
-    profile: provider?.id ?? null,
+    profile: provider?.id === 'openai' ? null : provider?.id ?? null,
     model: selectedModel,
     cwd,
     approvalPolicy: approvalPolicy,
