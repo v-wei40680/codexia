@@ -61,9 +61,9 @@ export function ChatPanel({
           </div>
         ) : (
           <>
-            {events.map((event) => (
+            {events.map((event, index) => (
               <EventItem
-                key={event.id}
+                key={`${event.id}-${index}`}
                 event={event}
                 conversationId={conversationId}
               />
