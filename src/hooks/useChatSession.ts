@@ -11,6 +11,7 @@ import { useSandboxStore } from "@/stores/useSandboxStore";
 import { useCodexStore } from "@/stores/useCodexStore";
 import { useCodexEvents } from "@/hooks/useCodexEvents";
 import { useCodexApprovalRequests } from "@/hooks/useCodexApprovalRequests";
+import { useChatInputStore } from "@/stores/chatInputStore";
 import type { NewConversationResponse } from "@/bindings/NewConversationResponse";
 import type { SendUserMessageParams } from "@/bindings/SendUserMessageParams";
 import type { SendUserMessageResponse } from "@/bindings/SendUserMessageResponse";
@@ -41,8 +42,6 @@ export function useChatSession() {
     eventsByConversation,
     appendEvent,
     replaceEvents,
-    currentMessage,
-    setCurrentMessage,
   } = useConversationStore();
 
   const { addConversation } = useConversationListStore();
@@ -92,7 +91,8 @@ export function useChatSession() {
     return newDeltaEvents;
   }, [deltaEventMap, activeConversationId]);
 
-  const createConversation = useCallback(async (): Promise<string | null> => {
+  const createConversation = useCallback(
+    async (initialMessage?: string): Promise<string | null> => {
     if (createConversationPromiseRef.current) {
       return createConversationPromiseRef.current;
     }
@@ -129,9 +129,7 @@ export function useChatSession() {
         const conversationId = conversation.conversationId;
         addConversation(cwd, {
           conversationId,
-          preview:
-            useConversationStore.getState().currentMessage ||
-            "New conversation",
+          preview: initialMessage || useChatInputStore.getState().inputValue || "New conversation",
           path: conversation.rolloutPath,
           timestamp: new Date().toISOString(),
         });
@@ -187,25 +185,23 @@ export function useChatSession() {
     }
 
     const originalMessage =
-      messageOverride ?? useConversationStore.getState().currentMessage;
+      messageOverride ?? useChatInputStore.getState().inputValue;
     const trimmed = originalMessage.trim();
     if (!trimmed) return;
 
     setIsSending(true);
-    // Maintain the original message temporarily for preview during conversation creation
-    let pendingRestore: string | null = originalMessage;
 
     try {
       let targetConversationId = activeConversationId;
       if (!targetConversationId) {
-        const newConversationId = await createConversation();
+        const newConversationId = await createConversation(trimmed);
         if (!newConversationId) {
           throw new Error("Failed to create conversation");
         }
         targetConversationId = newConversationId;
       }
       // Clear the message input after ensuring the conversation exists
-      setCurrentMessage("");
+      useChatInputStore.getState().setInputValue("");
 
       // Append the user's message to the conversation store
       appendEvent(targetConversationId, {
@@ -225,7 +221,6 @@ export function useChatSession() {
         trimmed.length,
       );
       await sendConversationMessage(params);
-      pendingRestore = null;
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       console.error("Failed to send message", error);
@@ -243,16 +238,12 @@ export function useChatSession() {
               trimmed,
             );
             await sendConversationMessage(resendParams);
-            pendingRestore = null;
           } catch (resendErr) {
             console.error("Failed to resend message", resendErr);
           }
         }
       }
     } finally {
-      if (pendingRestore) {
-        setCurrentMessage(pendingRestore);
-      }
       setIsSending(false);
     }
   }, [
@@ -260,13 +251,8 @@ export function useChatSession() {
     createConversation,
     cwd,
     sendConversationMessage,
-    setCurrentMessage,
     setIsSending,
   ]);
-
-  const focusChatInput = useCallback(() => {
-    textAreaRef.current?.focus();
-  }, []);
 
   const handlePrepareNewConversation = useCallback(() => {
     if (!cwd) {
@@ -274,17 +260,15 @@ export function useChatSession() {
       return;
     }
     setActiveConversationId(null);
-    setCurrentMessage("");
-    focusChatInput();
-  }, [cwd, focusChatInput, setActiveConversationId, setCurrentMessage]);
+    useChatInputStore.getState().setInputValue("");
+    useChatInputStore.getState().requestFocus();
+  }, [cwd, setActiveConversationId]);
 
   return {
     textAreaRef,
     activeConversationId,
     activeEvents,
     activeDeltaEvents,
-    currentMessage,
-    setCurrentMessage,
     handleSendMessage,
     isSending,
     isInitializing,

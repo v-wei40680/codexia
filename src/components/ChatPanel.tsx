@@ -11,8 +11,8 @@ interface ChatPanelProps {
   conversationId: string | null;
   events: ConversationEvent[];
   deltaEvents: EventWithId[];
-  currentMessage: string;
-  setCurrentMessage: (value: string) => void;
+  inputValue: string;
+  setInputValue: (value: string) => void;
   handleSendMessage: (messageOverride?: string) => Promise<void>;
   isSending: boolean;
   isInitializing: boolean;
@@ -24,8 +24,8 @@ export function ChatPanel({
   conversationId,
   events,
   deltaEvents,
-  currentMessage,
-  setCurrentMessage,
+  inputValue,
+  setInputValue,
   handleSendMessage,
   isSending,
   isInitializing,
@@ -81,8 +81,8 @@ export function ChatPanel({
         )}
       </div>
       <ChatInput
-        inputValue={currentMessage}
-        onInputChange={setCurrentMessage}
+        inputValue={inputValue}
+        onInputChange={setInputValue}
         onSendMessage={(message) => {
           void handleSendMessage(message);
         }}

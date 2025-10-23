@@ -1,6 +1,7 @@
 import { ConversationList } from "@/components/ConversationList";
 import { ChatPanel } from "@/components/ChatPanel";
 import { useChatSession } from "@/hooks/useChatSession";
+import { useChatInputStore } from "@/stores/chatInputStore";
 
 interface NewChatViewProps {
   showChatTabs?: boolean;
@@ -12,13 +13,12 @@ export const NewChatView = ({ showChatTabs = false }: NewChatViewProps) => {
       activeConversationId,
       activeEvents,
       activeDeltaEvents,
-      currentMessage,
-      setCurrentMessage,
-      handleSendMessage,
       isSending,
       isInitializing,
       canCompose,
+      handleSendMessage,
     } = useChatSession();
+    const { inputValue, setInputValue } = useChatInputStore();
     if (showChatTabs) {
       return <ConversationList />;
     }
@@ -28,8 +28,8 @@ export const NewChatView = ({ showChatTabs = false }: NewChatViewProps) => {
         conversationId={activeConversationId}
         events={activeEvents}
         deltaEvents={activeDeltaEvents}
-        currentMessage={currentMessage}
-        setCurrentMessage={setCurrentMessage}
+        inputValue={inputValue}
+        setInputValue={setInputValue}
         handleSendMessage={handleSendMessage}
         isSending={isSending}
         isInitializing={isInitializing}
