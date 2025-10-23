@@ -6,7 +6,6 @@ import { X, Copy, Check, Send, FileText, GitBranch, Code } from "lucide-react";
 import { CodeEditor } from "./CodeEditor";
 import { DiffViewer } from "./DiffViewer";
 import { useThemeStore } from "@/stores/ThemeStore";
-import { useConversationStore } from "@/stores/ConversationStore";
 import { useLayoutStore } from "@/stores/layoutStore";
 import { useChatInputStore } from "@/stores/chatInputStore";
 import { getErrorMessage } from "@/utils/errorUtils";
@@ -38,7 +37,6 @@ export function FileViewer({ filePath, onClose, addToNotepad }: FileViewerProps)
   const prevWatchedDirRef = useRef<string | null>(null);
   const [canonicalFile, setCanonicalFile] = useState<string | null>(null);
   const { theme } = useThemeStore();
-  const {} = useConversationStore();
   const { setActiveTab } = useLayoutStore();
   const { setInputValue } = useChatInputStore();
 
