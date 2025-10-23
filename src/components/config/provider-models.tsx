@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Popover,
@@ -105,7 +105,23 @@ export function ProviderModels() {
     setApiKey,
     setApiKeyVar,
     setBaseUrl,
+    setOllamaModels,
   } = useProviderStore();
+
+  useEffect(() => {
+    if (selectedProviderId === "ollama") {
+      fetch("http://localhost:11434/v1/models")
+        .then((resp) => resp.json())
+        .then((data) => {
+          const ossModels = data.data.map((item: any) => item.id);
+          setOllamaModels(ossModels);
+          console.log("ollama models:", ossModels);
+        })
+        .catch((error) => {
+          console.error("Failed to fetch Ollama models:", error);
+        });
+    }
+  }, [selectedProviderId, setOllamaModels]);
 
   const [showAddForm, setShowAddForm] = useState(false);
   const [showAddModelForm, setShowAddModelForm] = useState(false);
@@ -132,9 +148,13 @@ export function ProviderModels() {
     }
   };
 
+  const [isPopoverOpen, setIsPopoverOpen] = useState(false);
+
   return (
     <Popover
-      onOpenChange={() => {
+      open={isPopoverOpen}
+      onOpenChange={(open) => {
+        setIsPopoverOpen(open);
         setShowAddForm(false);
         setShowAddModelForm(false);
         setShowProviderDetails(false);
@@ -146,7 +166,7 @@ export function ProviderModels() {
           <ChevronDown className="h-4 w-4 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[480px] p-0" align="end">
+      <PopoverContent className="w-[480px] h-[480px] p-0" align="end">
         <div className="p-4 pb-3">
           <h3 className="font-semibold text-lg">Model Settings</h3>
         </div>
@@ -167,7 +187,7 @@ export function ProviderModels() {
                 <PlusCircle className="h-4 w-4" />
               </Button>
             </div>
-            <ScrollArea className="h-[370px]">
+            <ScrollArea className="h-[480px]">
               {showAddForm ? (
                 <AddProviderForm onAdd={() => setShowAddForm(false)} />
               ) : (
@@ -296,7 +316,10 @@ export function ProviderModels() {
                           variant={m === selectedModel ? "secondary" : "ghost"}
                           size="sm"
                           className="w-full justify-start font-mono text-xs relative"
-                          onClick={() => setSelectedModel(m)}
+                          onClick={() => {
+                            setSelectedModel(m);
+                            setIsPopoverOpen(false);
+                          }}
                         >
                           {m}
                         </Button>

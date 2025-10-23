@@ -28,14 +28,10 @@ type ProviderActions = {
   setSelectedModel: (model: string) => void;
   addModel: (providerId: string, model: string) => void;
   setReasoningEffort: (effort: ReasoningEffort) => void;
+  setOllamaModels: (models: string[]) => void;
 };
 
-let ossModels: string[] = []
-fetch("http://localhost:11434/v1/models")
-  .then(resp => resp.json())
-  .then(data => 
-    ossModels = data.data.map((item: any) => item.id)
-  )
+
 
 const initialProviders: ModelProvider[] = [
   {
@@ -49,7 +45,7 @@ const initialProviders: ModelProvider[] = [
   {
     id: "ollama",
     name: "Ollama",
-    models: ossModels,
+    models: [],
     apiKey: "",
     apiKeyVar: "",
     baseUrl: "",
@@ -138,7 +134,14 @@ export const useProviderStore = create<ProviderState & ProviderActions>()(
           ),
         }));
       },
-      setReasoningEffort: (effort) => set({ reasoningEffort: effort }),    }),
+      setReasoningEffort: (effort) => set({ reasoningEffort: effort }),
+      setOllamaModels: (models: string[]) => {
+        set((state) => ({
+          providers: state.providers.map((p) =>
+            p.id === "ollama" ? { ...p, models: models } : p,
+          ),
+        }));
+      },    }),
     {
       name: "provider"
     },
