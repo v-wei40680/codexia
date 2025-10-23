@@ -1,6 +1,6 @@
 import { useEffect, useRef, type RefObject } from "react";
 import DeltaEventLog from "@/components/DeltaEventLog";
-import { EventItem } from "@/components/EventItem";
+import { EventItem } from "@/components/events/EventItem";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { Sandbox } from "@/components/config/Sandbox";
 import { ProviderModels } from "@/components/config/provider-models";

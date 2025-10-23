@@ -1,163 +1,22 @@
-import { memo, useState, type ReactNode } from "react";
+import { memo, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { cn } from "@/lib/utils";
+
+import { MarkdownRenderer } from "@/components/chat/MarkdownRenderer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import { useApprovalStore } from "@/stores/useApprovalStore";
 import type { ConversationEvent } from "@/types/chat";
 
-type EventVariant = "user" | "assistant" | "system";
-
-const VARIANT_CLASSES: Record<EventVariant, string> = {
-  user: "bg-primary text-primary-foreground",
-  assistant: "bg-muted text-foreground",
-  system: "bg-background text-foreground border border-border",
-};
-
-const TITLE_CLASSES: Record<EventVariant, string> = {
-  user: "text-primary-foreground/80",
-  assistant: "text-muted-foreground",
-  system: "text-muted-foreground",
-};
-
-function EventBubble({
-  align,
-  variant,
-  title,
-  children,
-}: {
-  align: "start" | "end";
-  variant: EventVariant;
-  title?: string;
-  children: ReactNode;
-}) {
-  return (
-    <div
-      className={cn(
-        "flex w-full",
-        align === "end" ? "justify-end" : "justify-start",
-      )}
-    >
-      <div
-        className={cn(
-          "max-w-xl rounded-lg px-4 py-3 text-sm shadow-sm",
-          VARIANT_CLASSES[variant],
-        )}
-      >
-        {title ? (
-          <div
-            className={cn(
-              "mb-2 text-xs font-semibold uppercase tracking-wide",
-              TITLE_CLASSES[variant],
-            )}
-          >
-            {title}
-          </div>
-        ) : null}
-        {children}
-      </div>
-    </div>
-  );
-}
-
-function describeParsedCommand(
-  parsed: { type: string; cmd: string; name?: string | null; path?: string | null; query?: string | null },
-): string {
-  switch (parsed.type) {
-    case "read":
-      return parsed.name ? `read ${parsed.name}` : parsed.cmd;
-    case "list_files":
-      return parsed.path ? `list ${parsed.path}` : parsed.cmd;
-    case "search":
-      return parsed.query ? `search "${parsed.query}"` : parsed.cmd;
-    default:
-      return parsed.cmd;
-  }
-}
-
-function describeFileChange(change: unknown): { label: string; detail?: string } {
-  if (typeof change !== "object" || change === null) {
-    return { label: "Change" };
-  }
-
-  if ("add" in change) {
-    const add = (change as { add?: unknown }).add;
-    if (add) {
-      return { label: "Add" };
-    }
-  }
-
-  if ("delete" in change) {
-    const del = (change as { delete?: unknown }).delete;
-    if (del) {
-      return { label: "Delete" };
-    }
-  }
-
-  if ("update" in change) {
-    const update = (change as { update?: { move_path?: unknown } }).update;
-    const movePath =
-      update && typeof update.move_path === "string" ? update.move_path : null;
-    return {
-      label: "Update",
-      detail: movePath ? `moved to ${movePath}` : undefined,
-    };
-  }
-
-  return { label: "Change" };
-}
-
-function OutputBlock({ label, value }: { label: string; value: string }) {
-  if (!value || !value.trim()) {
-    return null;
-  }
-  return (
-    <div className="space-y-1">
-      <div className="text-xs font-medium uppercase text-muted-foreground">
-        {label}
-      </div>
-      <pre className="max-h-64 overflow-auto whitespace-pre-wrap rounded bg-muted/50 p-2 font-mono text-xs">
-        {value}
-      </pre>
-    </div>
-  );
-}
-
-function formatAbortReason(reason: string): string {
-  switch (reason) {
-    case "interrupted":
-      return "The turn was interrupted by the user.";
-    case "replaced":
-      return "A newer turn replaced the current one.";
-    case "review_ended":
-      return "Review mode ended the current turn.";
-    default:
-      return "The turn ended early.";
-  }
-}
-
-function DefaultEventContent({
-  message,
-  type,
-}: {
-  message?: string | null;
-  type: string;
-}) {
-  if (message) {
-    return (
-      <p className="whitespace-pre-wrap leading-relaxed">
-        {message}
-      </p>
-    );
-  }
-
-  return (
-    <p className="text-xs text-muted-foreground">
-      Received an event of type {type}.
-    </p>
-  );
-}
+import { DefaultEventContent } from "./DefaultEventContent";
+import { EventBubble } from "./EventBubble";
+import { OutputBlock } from "./OutputBlock";
+import {
+  describeFileChange,
+  describeParsedCommand,
+  formatAbortReason,
+} from "./helpers";
+import { PlanDisplay } from "../chat/messages/PlanDisplay";
 
 type ExecDecision = "approved" | "approved_for_session" | "denied" | "abort";
 
@@ -232,26 +91,10 @@ export const EventItem = memo(function EventItem({
         </EventBubble>
       );
     case "agent_message":
-      return (
-        <EventBubble align="start" variant="assistant">
-          <p className="whitespace-pre-wrap leading-relaxed">
-            {msg.message}
-          </p>
-        </EventBubble>
-      );
+      return <MarkdownRenderer content={msg.message} />;
     case "agent_reasoning":
     case "agent_reasoning_raw_content":
-      return (
-        <EventBubble
-          align="start"
-          variant="assistant"
-          title="Reasoning"
-        >
-          <p className="whitespace-pre-wrap text-xs text-muted-foreground">
-            {msg.text}
-          </p>
-        </EventBubble>
-      );
+      return <span>✨<MarkdownRenderer content={msg.text} /></span>;
     case "exec_approval_request": {
       const commandText = msg.command.join(" ");
       const awaitingDecision = Boolean(execApprovalRequest);
@@ -340,7 +183,7 @@ export const EventItem = memo(function EventItem({
         </EventBubble>
       );
     case "exec_command_end":
-      return null
+      return null;
     case "patch_apply_begin": {
       const entries = Object.entries(msg.changes ?? {});
       return (
@@ -419,13 +262,15 @@ export const EventItem = memo(function EventItem({
           </pre>
         </EventBubble>
       );
-    
     case "task_complete":
     case "task_started":
     case "exec_command_output_delta":
     case "token_count":
-    case "plan_update":
       return null;
+    case "agent_reasoning_section_break":
+      return null;
+    case "plan_update":
+      return <PlanDisplay steps={msg.plan} />
     default:
       return (
         <EventBubble
@@ -444,4 +289,4 @@ export const EventItem = memo(function EventItem({
         </EventBubble>
       );
   }
-})
+});
