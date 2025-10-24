@@ -6,7 +6,7 @@ import { useChatInputStore } from '@/stores/chatInputStore';
 import { MediaSelector } from './MediaSelector';
 import { MediaAttachmentList } from './MediaAttachmentList';
 import { ScreenshotPopover } from './ScreenshotPopover';
-import { useCodexStore } from '@/stores/CodexStore';
+import { useCodexStore } from '@/stores/useCodexStore';
 import { PromptOptimizerControl } from './PromptOptimizerControl';
 import { usePromptOptimization } from '@/hooks/usePromptOptimization';
 
@@ -48,7 +48,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     clearPromptHistory,
     promptHistory,
   } = useChatInputStore();
-  const { config, updateConfig } = useCodexStore();
+  const { webSearchEnabled, toggleWebSearch } = useCodexStore();
   const {
     isOptimizing,
     canOptimize,
@@ -178,13 +178,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             type="button"
             variant="ghost"
             size="sm"
-            className={`h-6 px-1 py-0 hover:bg-muted/50 ${config.webSearchEnabled ? 'text-blue-500' : 'text-muted-foreground'}`}
-            onClick={() => updateConfig({ webSearchEnabled: !config.webSearchEnabled })}
-            title={config.webSearchEnabled ? 'Web search enabled' : 'Enable web search'}
+            className={`h-6 px-1 py-0 hover:bg-muted/50 ${webSearchEnabled ? 'text-blue-500' : 'text-muted-foreground'}`}
+            onClick={toggleWebSearch}
+            title={webSearchEnabled ? 'Web search enabled' : 'Enable web search'}
             disabled={disabled}
           >
             <Globe className="h-4 w-4" />
-            {config.webSearchEnabled && (
+            {webSearchEnabled && (
               <span className="ml-1 text-xs">search</span>
             )}
           </Button>

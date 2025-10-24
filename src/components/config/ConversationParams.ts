@@ -41,6 +41,7 @@ export const SANDBOX_MODES: Record<
 
 
 const defaultConfig = {
+  "tools.web_search": false,
   "model_reasoning_effort": 'medium',
   "show_raw_agent_reasoning": true,
   "model_reasoning_summary": "auto"

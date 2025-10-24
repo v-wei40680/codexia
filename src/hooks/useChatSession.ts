@@ -56,7 +56,7 @@ export function useChatSession() {
   const { providers, selectedProviderId, selectedModel, reasoningEffort } =
     useProviderStore();
   const { mode, approvalPolicy } = useSandboxStore();
-  const { cwd } = useCodexStore();
+  const { cwd, webSearchEnabled } = useCodexStore();
 
   const {
     deltaEventMap,
@@ -120,6 +120,7 @@ export function useChatSession() {
           mode,
           {
             model_reasoning_effort: reasoningEffort,
+            "tools.web_search": webSearchEnabled,
           },
         );
 
