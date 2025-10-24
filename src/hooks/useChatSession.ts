@@ -216,7 +216,6 @@ export function useChatSession() {
         msg: {
           type: "user_message",
           message: trimmed,
-          kind: null,
           images: null,
         },
       });

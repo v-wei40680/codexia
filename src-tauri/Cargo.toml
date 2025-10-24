@@ -43,8 +43,8 @@ tauri-plugin-deep-link = "2"
 tauri-plugin-process = "2"
 notify = "6"
 tauri-remote-ui = { git = "https://github.com/DraviaVemal/tauri-remote-ui" }
-codex-protocol = { git = "https://github.com/openai/codex.git", package = "codex-protocol", rev = "26f7c46856060f440615645bdf2faf9e62c74e72" }
-codex-app-server-protocol = { git = "https://github.com/openai/codex.git", package = "codex-app-server-protocol", rev = "26f7c46856060f440615645bdf2faf9e62c74e72" }
+codex-protocol = { git = "https://github.com/openai/codex.git", package = "codex-protocol", rev = "ed77d2d977c1a6a2dac5174367963c2c71bdf35c" }
+codex-app-server-protocol = { git = "https://github.com/openai/codex.git", package = "codex-app-server-protocol", rev = "ed77d2d977c1a6a2dac5174367963c2c71bdf35c" }
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }

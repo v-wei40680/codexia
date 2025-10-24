@@ -17,6 +17,7 @@ import {
 } from "./helpers";
 import { PlanDisplay } from "../chat/messages/PlanDisplay";
 import { TurnDiffView } from "./TurnDiffView";
+import { AccordionMsg } from "./AccordionMsg";
 
 type ExecDecision = "approved" | "approved_for_session" | "denied" | "abort";
 
@@ -255,6 +256,6 @@ export const EventItem = memo(function EventItem({
     case "plan_update":
       return <PlanDisplay steps={msg.plan} />
     default:
-      return <div>{JSON.stringify(msg, null,)}</div>
+      return <AccordionMsg title={msg.type} content={JSON.stringify(msg, null, 2)} />
   }
 });

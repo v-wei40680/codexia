@@ -20,11 +20,10 @@ export function AccordionMsg({
       type="single"
       collapsible
       className="w-full"
-      defaultValue="item-1"
     >
       <AccordionItem value="item-1">
-        <AccordionTrigger>{title}</AccordionTrigger>
-        <AccordionContent className="flex flex-col gap-4 text-balance">
+        <AccordionTrigger className="bg-gray-200 dark:bg-gray-700 px-2">{title}</AccordionTrigger>
+        <AccordionContent className="flex flex-col gap-2 text-balance">
           <MarkdownRenderer content={content} />
         </AccordionContent>
       </AccordionItem>
