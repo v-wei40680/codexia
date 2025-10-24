@@ -103,7 +103,9 @@ export function useCodexEvents({
           return;
         }
 
-        appendEvent(conversationId, eventRecord);
+        if (eventMsg.type !== "exec_command_output_delta") {
+          appendEvent(conversationId, eventRecord);
+        }
 
         if (
           eventMsg.type === "task_complete" ||
