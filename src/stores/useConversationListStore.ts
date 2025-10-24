@@ -5,12 +5,15 @@ import type { ConversationSummary } from "@/bindings/ConversationSummary";
 interface ConversationListState {
   conversationsByCwd: Record<string, ConversationSummary[]>;
   conversationIndex: Record<string, string>;
+  favoriteConversationIdsByCwd: Record<string, string[]>;
 }
 
 interface ConversationListActions {
   addConversation: (cwd: string, summary: ConversationSummary) => void;
   updateConversationPreview: (conversationId: string, preview: string) => void;
   removeConversation: (conversationId: string) => void;
+  setFavorite: (conversationId: string, isFavorite: boolean) => void;
+  toggleFavorite: (conversationId: string) => void;
   reset: () => void;
 }
 
@@ -21,6 +24,7 @@ export const useConversationListStore = create<
     (set, get) => ({
       conversationsByCwd: {},
       conversationIndex: {},
+      favoriteConversationIdsByCwd: {},
 
       addConversation: (cwd, summary) =>
         set((state) => {
@@ -84,6 +88,15 @@ export const useConversationListStore = create<
           );
           const nextIndex = { ...state.conversationIndex };
           delete nextIndex[conversationId];
+          const favorites = state.favoriteConversationIdsByCwd[cwd] ?? [];
+          const nextFavorites = favorites.filter((id) => id !== conversationId);
+          const favoriteConversationIdsByCwd = {
+            ...state.favoriteConversationIdsByCwd,
+            [cwd]: nextFavorites,
+          };
+          if (nextFavorites.length === 0) {
+            delete favoriteConversationIdsByCwd[cwd];
+          }
 
           return {
             conversationsByCwd: {
@@ -91,14 +104,56 @@ export const useConversationListStore = create<
               [cwd]: nextList,
             },
             conversationIndex: nextIndex,
+            favoriteConversationIdsByCwd,
           };
         });
+      },
+
+      setFavorite: (conversationId, isFavorite) => {
+        const cwd = get().conversationIndex[conversationId];
+        if (!cwd) return;
+        set((state) => {
+          const favorites = state.favoriteConversationIdsByCwd[cwd] ?? [];
+          const hasFavorite = favorites.includes(conversationId);
+
+          if (isFavorite && hasFavorite) {
+            return {};
+          }
+
+          if (!isFavorite && !hasFavorite) {
+            return {};
+          }
+
+          const nextFavorites = isFavorite
+            ? [...favorites, conversationId]
+            : favorites.filter((id) => id !== conversationId);
+
+          const favoriteConversationIdsByCwd = {
+            ...state.favoriteConversationIdsByCwd,
+            [cwd]: nextFavorites,
+          };
+
+          if (nextFavorites.length === 0) {
+            delete favoriteConversationIdsByCwd[cwd];
+          }
+
+          return { favoriteConversationIdsByCwd };
+        });
+      },
+
+      toggleFavorite: (conversationId) => {
+        const cwd = get().conversationIndex[conversationId];
+        if (!cwd) return;
+        const favorites = get().favoriteConversationIdsByCwd[cwd] ?? [];
+        const isFavorite = favorites.includes(conversationId);
+        get().setFavorite(conversationId, !isFavorite);
       },
 
       reset: () =>
         set({
           conversationsByCwd: {},
           conversationIndex: {},
+          favoriteConversationIdsByCwd: {},
         }),
     }),
     {
