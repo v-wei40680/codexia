@@ -20,6 +20,7 @@ interface UseCodexEventsParams {
 interface UseCodexEventsResult {
   deltaEventMap: EventsByConversation;
   initializeConversationBuffer: (conversationId: string) => void;
+  clearConversationBuffer: (conversationId: string) => void;
 }
 
 export function useCodexEvents({
@@ -160,5 +161,15 @@ export function useCodexEvents({
     }));
   }, []);
 
-  return { deltaEventMap, initializeConversationBuffer };
+  const clearConversationBuffer = useCallback((conversationId: string) => {
+    setDeltaEventMap((prev) => {
+      if (!prev[conversationId]) {
+        return prev;
+      }
+      const { [conversationId]: _removed, ...rest } = prev;
+      return rest;
+    });
+  }, []);
+
+  return { deltaEventMap, initializeConversationBuffer, clearConversationBuffer };
 }

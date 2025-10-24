@@ -58,7 +58,11 @@ export function useChatSession() {
   const { mode, approvalPolicy } = useSandboxStore();
   const { cwd } = useCodexStore();
 
-  const { deltaEventMap, initializeConversationBuffer } = useCodexEvents({
+  const {
+    deltaEventMap,
+    initializeConversationBuffer,
+    clearConversationBuffer,
+  } = useCodexEvents({
     eventsByConversation,
     appendEvent,
     setIsInitializing,
@@ -255,6 +259,7 @@ export function useChatSession() {
     }
   }, [
     activeConversationId,
+    appendEvent,
     createConversation,
     cwd,
     sendConversationMessage,
@@ -274,6 +279,25 @@ export function useChatSession() {
 
     const conversationId = activeConversationId;
 
+    const agentMessagePreview = activeDeltaEvents
+      .filter(
+        (event) =>
+          event.msg.type === "agent_message_delta" &&
+          typeof (event.msg as { delta?: unknown }).delta === "string",
+      )
+      .map((event) => (event.msg as { delta: string }).delta)
+      .join("");
+
+    if (agentMessagePreview.trim().length > 0) {
+      appendEvent(conversationId, {
+        id: `agent-message-${Date.now()}`,
+        msg: {
+          type: "agent_message",
+          message: agentMessagePreview,
+        },
+      });
+    }
+
     try {
       console.info("[chat] interrupt_conversation", conversationId);
       await invoke<InterruptConversationResponse>("interrupt_conversation", {
@@ -282,7 +306,16 @@ export function useChatSession() {
     } catch (error) {
       console.error("Failed to interrupt conversation", error);
     }
-  }, [activeConversationId, isSending]);
+    clearConversationBuffer(conversationId);
+    setIsSending(false);
+  }, [
+    activeConversationId,
+    activeDeltaEvents,
+    appendEvent,
+    clearConversationBuffer,
+    isSending,
+    setIsSending,
+  ]);
 
   const handlePrepareNewConversation = useCallback(() => {
     if (!cwd) {
