@@ -9,11 +9,13 @@ import { ScreenshotPopover } from './ScreenshotPopover';
 import { useCodexStore } from '@/stores/useCodexStore';
 import { PromptOptimizerControl } from './PromptOptimizerControl';
 import { usePromptOptimization } from '@/hooks/usePromptOptimization';
+import type { MediaAttachment } from '@/types/chat';
+import { createMediaAttachment } from '@/utils/mediaUtils';
 
 interface ChatInputProps {
   inputValue: string;
   onInputChange: (value: string) => void;
-  onSendMessage: (message: string) => void;
+  onSendMessage: (message: string, attachments: MediaAttachment[]) => void;
   onStopStreaming?: () => void;
   disabled?: boolean;
   isLoading?: boolean;
@@ -42,6 +44,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     removeMediaAttachment,
     clearFileReferences,
     clearMediaAttachments,
+    addMediaAttachment,
     focusSignal,
     pushPromptHistory,
     popPromptHistory,
@@ -95,19 +98,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       messageContent = `${smartPrompt}\n\n${inputValue}`;
     }
 
-    // NEW: Include image paths directly in the text message for view_image tool
-    if (mediaAttachments.length > 0) {
-      const imagePaths = mediaAttachments
-        .filter(media => media.type === 'image')
-        .map(media => media.path)
-        .join(' ');
-      
-      if (imagePaths) {
-        messageContent = `${messageContent}\n\n${imagePaths}`;
-      }
-    }
-    
-    onSendMessage(messageContent);
+    const attachmentsToSend = mediaAttachments.map((attachment) => ({ ...attachment }));
+    onSendMessage(messageContent, attachmentsToSend);
     onInputChange('');
     clearFileReferences();
     clearMediaAttachments();
@@ -170,9 +162,19 @@ export const ChatInput: React.FC<ChatInputProps> = ({
         {/* Media Selector and Screenshot Selector - bottom left inside textarea */}
         <div className="flex absolute left-2 bottom-2 items-center gap-1">
           <MediaSelector />
-          <ScreenshotPopover onScreenshotTaken={(path) => {
-            onInputChange(inputValue + (inputValue ? '\n\n' : '') + path);
-          }} />
+          <ScreenshotPopover
+            onScreenshotTaken={(path) => {
+              const handleAttachment = async () => {
+                try {
+                  const attachment = await createMediaAttachment(path);
+                  addMediaAttachment(attachment);
+                } catch (error) {
+                  console.error('Failed to add screenshot attachment:', error);
+                }
+              };
+              void handleAttachment();
+            }}
+          />
           {/* Web search toggle */}
           <Button
             type="button"

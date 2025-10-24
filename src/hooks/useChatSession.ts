@@ -17,7 +17,7 @@ import type { NewConversationResponse } from "@/bindings/NewConversationResponse
 import type { SendUserMessageParams } from "@/bindings/SendUserMessageParams";
 import type { SendUserMessageResponse } from "@/bindings/SendUserMessageResponse";
 import type { InputItem } from "@/bindings/InputItem";
-import { type ConversationEvent, type EventWithId } from "@/types/chat";
+import { type ConversationEvent, type EventWithId, type MediaAttachment } from "@/types/chat";
 
 function buildTextMessageParams(
   conversationId: string,
@@ -30,6 +30,41 @@ function buildTextMessageParams(
   return {
     conversationId,
     items: [textItem],
+  };
+}
+
+function buildUserMessageParams(
+  conversationId: string,
+  text: string,
+  attachments: MediaAttachment[],
+): SendUserMessageParams {
+  const textItem: InputItem = {
+    type: "text",
+    data: { text },
+  };
+
+  const imageItems: InputItem[] = attachments
+    .filter((attachment) => attachment.type === "image")
+    .map((attachment) => ({
+      type: "localImage",
+      data: { path: attachment.path },
+    }));
+
+  if (imageItems.length < attachments.length) {
+    const unsupported = attachments
+      .filter((attachment) => attachment.type !== "image")
+      .map((attachment) => attachment.type);
+    if (unsupported.length > 0) {
+      console.warn(
+        "[chat] Unsupported attachment types omitted from message:",
+        unsupported.join(", "),
+      );
+    }
+  }
+
+  return {
+    conversationId,
+    items: [textItem, ...imageItems],
   };
 }
 
@@ -184,16 +219,15 @@ export function useChatSession() {
     [],
   );
 
-  const handleSendMessage = useCallback(async (messageOverride?: string) => {
+  const handleSendMessage = useCallback(async (messageOverride: string, attachments: MediaAttachment[] = []) => {
     if (!cwd) {
       console.warn("Select a project before sending messages.");
       return;
     }
 
-    const originalMessage =
-      messageOverride ?? useChatInputStore.getState().inputValue;
+    const originalMessage = messageOverride ?? useChatInputStore.getState().inputValue;
     const trimmed = originalMessage.trim();
-    if (!trimmed) return;
+    if (!trimmed && attachments.length === 0) return;
 
     setIsSending(true);
 
@@ -212,16 +246,25 @@ export function useChatSession() {
       useChatInputStore.getState().setInputValue("");
 
       // Append the user's message to the conversation store
+      const imageAttachments = attachments.filter(
+        (attachment) => attachment.type === "image",
+      );
       appendEvent(targetConversationId, {
         id: `user-message-${Date.now()}`,
         msg: {
           type: "user_message",
           message: trimmed,
-          images: null,
+          images:
+            imageAttachments.length > 0
+              ? imageAttachments.map((attachment) => attachment.path)
+              : null,
         },
       });
 
-      const params = buildTextMessageParams(targetConversationId, trimmed);
+      const params =
+        attachments.length > 0
+          ? buildUserMessageParams(targetConversationId, trimmed, attachments)
+          : buildTextMessageParams(targetConversationId, trimmed);
       console.info(
         "[chat] send_user_message",
         targetConversationId,
@@ -241,10 +284,10 @@ export function useChatSession() {
         if (newConversationId) {
           try {
             console.info("[chat] resend send_user_message", newConversationId);
-            const resendParams = buildTextMessageParams(
-              newConversationId,
-              trimmed,
-            );
+            const resendParams =
+              attachments.length > 0
+                ? buildUserMessageParams(newConversationId, trimmed, attachments)
+                : buildTextMessageParams(newConversationId, trimmed);
             await sendConversationMessage(resendParams);
             shouldResetSending = false;
           } catch (resendErr) {

@@ -5,7 +5,7 @@ import { ChatInput } from "@/components/chat/ChatInput";
 import { Sandbox } from "@/components/config/Sandbox";
 import { ProviderModels } from "@/components/config/provider-models";
 import { ReasoningEffortSelector } from "@/components/config/ReasoningEffortSelector";
-import type { ConversationEvent, EventWithId } from "@/types/chat";
+import type { ConversationEvent, EventWithId, MediaAttachment } from "@/types/chat";
 import { Badge } from "./ui/badge";
 import { cn } from "@/lib/utils";
 
@@ -15,7 +15,7 @@ interface ChatPanelProps {
   deltaEvents: EventWithId[];
   inputValue: string;
   setInputValue: (value: string) => void;
-  handleSendMessage: (messageOverride?: string) => Promise<void>;
+  handleSendMessage: (messageOverride: string, attachments: MediaAttachment[]) => Promise<void>;
   handleInterrupt: () => Promise<void>;
   isSending: boolean;
   isInitializing: boolean;
@@ -97,8 +97,8 @@ export function ChatPanel({
       <ChatInput
         inputValue={inputValue}
         onInputChange={setInputValue}
-        onSendMessage={(message) => {
-          void handleSendMessage(message);
+        onSendMessage={(message, attachments) => {
+          void handleSendMessage(message, attachments);
         }}
         disabled={composerDisabled}
         isLoading={isSending}
