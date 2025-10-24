@@ -1,0 +1,20 @@
+export const ja = {
+  header: {
+    chat: "チャット",
+    projects: "プロジェクト",
+    openNewWindow: "新しいウィンドウを開く",
+    codexUnavailable: "利用不可",
+    usage: "使用状況",
+    toggleChatPane: "チャットペインを切り替え",
+    toggleTheme: "テーマを切り替え",
+    settings: "設定",
+    viewPublicPage: "公開ページを見る",
+    signOut: "サインアウト",
+    login: "ログイン",
+    mcp: "MCP",
+    statusBadgeLabel: "Codex ステータス",
+    codexVersion: "バージョン",
+    language: "言語",
+    changeLanguage: "言語を変更",
+  },
+};

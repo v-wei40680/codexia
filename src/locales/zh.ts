@@ -1,0 +1,20 @@
+export const zh = {
+  header: {
+    chat: "聊天",
+    projects: "项目",
+    openNewWindow: "打开新窗口",
+    codexUnavailable: "不可用",
+    usage: "使用情况",
+    toggleChatPane: "切换聊天面板",
+    toggleTheme: "切换主题",
+    settings: "设置",
+    viewPublicPage: "查看公开页面",
+    signOut: "退出登录",
+    login: "登录",
+    mcp: "MCP",
+    statusBadgeLabel: "Codex 状态",
+    codexVersion: "版本",
+    language: "语言",
+    changeLanguage: "切换语言",
+  },
+};

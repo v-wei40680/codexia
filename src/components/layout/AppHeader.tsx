@@ -24,9 +24,16 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import supabase from "@/lib/supabase";
 import { AccentColorSelector } from "../common/AccentColorSelector";
+import { useTranslation } from "react-i18next";
+import { useLocaleStore } from "@/stores/LocaleStore";
+import type { AppLocale } from "@/locales";
+import { supportedLocales } from "@/lib/i18n";
 
 export function AppHeader() {
   const { showFileTree, toggleFileTree, toggleChatPane } = useLayoutStore();
@@ -36,6 +43,9 @@ export function AppHeader() {
   const location = useLocation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useTranslation();
+  const locale = useLocaleStore((state) => state.locale);
+  const setLocale = useLocaleStore((state) => state.setLocale);
 
   const handleLogout = async () => {
     try {
@@ -64,7 +74,7 @@ export function AppHeader() {
         setCodexVersion(version);
         setIsCodexAvailable(true);
       } catch (error) {
-        setCodexVersion("Not available");
+        setCodexVersion("");
         setIsCodexAvailable(false);
       }
     };
@@ -72,29 +82,49 @@ export function AppHeader() {
     checkVersion();
   }, []);
 
+  const codexStatusText =
+    isCodexAvailable && codexVersion
+      ? codexVersion
+      : t("header.codexUnavailable");
+
   return (
     <div data-tauri-drag-region className="flex justify-between px-2">
       <span className="flex gap-2 items-center">
-        <Link to="/chat" className="flex hover:text-primary items-center gap-1">
+        <Link
+          to="/chat"
+          className="flex hover:text-primary items-center gap-1"
+          title={t("header.chat")}
+        >
           <span className="flex gap-2 items-center">
             <div
               className={`w-2 h-2 rounded-full ${isCodexAvailable ? "bg-green-500" : "bg-destructive"}`}
+              aria-hidden="true"
             ></div>
-            <Badge>{codexVersion}</Badge>
+            <Badge
+              aria-label={`${t("header.statusBadgeLabel")}: ${codexStatusText}`}
+              title={t("header.codexVersion")}
+            >
+              {codexStatusText}
+            </Badge>
           </span>
-          Chat
+          {t("header.chat")}
         </Link>
 
         {/* Welcome button to projects page */}
-        <Link to="/" className="flex hover:text-primary items-center gap-1">
-          <PartyPopper className="w-5 h-5" /> Projects
+        <Link
+          to="/"
+          className="flex hover:text-primary items-center gap-1"
+          title={t("header.projects")}
+        >
+          <PartyPopper className="w-5 h-5" /> {t("header.projects")}
         </Link>
 
         <Button
           variant="ghost"
           onClick={handleNewWindow}
           className="h-6 w-6"
-          title="Open New Window"
+          title={t("header.openNewWindow")}
+          aria-label={t("header.openNewWindow")}
         >
           <ExternalLink />
         </Button>
@@ -105,6 +135,8 @@ export function AppHeader() {
             size="icon"
             onClick={toggleFileTree}
             className={`h-6 w-6 ${showFileTree ? "bg-primary/20" : ""}`}
+            title={t("header.toggleChatPane")}
+            aria-label={t("header.toggleChatPane")}
           >
             <PanelLeft className="w-3 h-3" />
           </Button>
@@ -114,7 +146,7 @@ export function AppHeader() {
       <span className="flex items-center gap-2 h-6">
         <McpDialog>
           <Button variant="ghost" className="flex gap-1 h-6 px-1.5">
-            <Usb /> MCP
+            <Usb /> {t("header.mcp")}
           </Button>
         </McpDialog>
 
@@ -122,15 +154,55 @@ export function AppHeader() {
           to="/usage"
           className="flex hover:text-primary items-center gap-1 -ml-1 hidden"
         >
-          <BarChart3 className="w-4 h-4" /> Usage
+          <BarChart3 className="w-4 h-4" /> {t("header.usage")}
         </Link>
 
-        <Button variant="ghost" onClick={toggleChatPane} className="h-6 w-6">
+        <Button
+          variant="ghost"
+          onClick={toggleChatPane}
+          className="h-6 w-6"
+          title={t("header.toggleChatPane")}
+          aria-label={t("header.toggleChatPane")}
+        >
           <Brain />
         </Button>
-        <Button variant="ghost" className="h-6 w-6" onClick={toggleTheme}>
+        <Button
+          variant="ghost"
+          className="h-6 w-6"
+          onClick={toggleTheme}
+          title={t("header.toggleTheme")}
+          aria-label={t("header.toggleTheme")}
+        >
           {theme === "dark" ? <Sun /> : <Moon />}
         </Button>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              className="h-6 px-2 text-xs uppercase"
+              title={t("header.changeLanguage")}
+              aria-label={t("header.changeLanguage")}
+            >
+              {locale.toUpperCase()}
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>{t("header.language")}</DropdownMenuLabel>
+            <DropdownMenuRadioGroup
+              value={locale}
+              onValueChange={(value) => setLocale(value as AppLocale)}
+            >
+              {supportedLocales.map(({ code, label }) => (
+                <DropdownMenuRadioItem key={code} value={code}>
+                  <span className="flex items-center gap-1 text-sm">
+                    {label}
+                  </span>
+                </DropdownMenuRadioItem>
+              ))}
+            </DropdownMenuRadioGroup>
+          </DropdownMenuContent>
+        </DropdownMenu>
 
         <AccentColorSelector />
 
@@ -139,7 +211,7 @@ export function AppHeader() {
           className="flex hover:text-primary items-center gap-1"
         >
           <Settings className="w-4 h-4" />
-          Settings
+          {t("header.settings")}
         </Link>
 
         {user ? (
@@ -161,11 +233,11 @@ export function AppHeader() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => navigate(`/u/${user.id}`)}>
-                View public page
+                {t("header.viewPublicPage")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
-                Sign out
+                {t("header.signOut")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -174,7 +246,7 @@ export function AppHeader() {
             to="/login"
             className="flex hover:text-primary items-center gap-1 px-2"
           >
-            login
+            {t("header.login")}
           </Link>
         )}
       </span>

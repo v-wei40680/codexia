@@ -1,0 +1,20 @@
+export const en = {
+  header: {
+    chat: "Chat",
+    projects: "Projects",
+    openNewWindow: "Open New Window",
+    codexUnavailable: "Not available",
+    usage: "Usage",
+    toggleChatPane: "Toggle chat pane",
+    toggleTheme: "Toggle theme",
+    settings: "Settings",
+    viewPublicPage: "View public page",
+    signOut: "Sign out",
+    login: "Login",
+    mcp: "MCP",
+    statusBadgeLabel: "Codex status",
+    codexVersion: "Version",
+    language: "Language",
+    changeLanguage: "Change language",
+  },
+};
