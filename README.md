@@ -43,6 +43,7 @@ fork chat, file-tree integration, notepad, git diff, build-in pdf csv/xlsx viewe
 
 ## News
 
+- [2025-10-24] Multilingual support - English, Chinese and Japanese.
 - [2025-10-04] change codex proto to app-server for codex 0.44.0
 - [2025-09-26] With multiple windows support, open multiple projects at the same time. Show token usage beside Reasoning Effort.
 - [2025-09-24] Remote control via browser, check [discussion comment](https://github.com/milisp/codexia/discussions/22#discussioncomment-14500403)
