@@ -29,6 +29,10 @@ use mcp::{add_mcp_server, delete_mcp_server, read_mcp_servers};
 use state::{AppState, RemoteAccessState};
 use tauri::{AppHandle, Emitter, Manager};
 
+pub fn export_ts_bindings() {
+    export_bindings::export_ts_types();
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let mut builder = tauri::Builder::default().plugin(tauri_plugin_log::Builder::new().build());

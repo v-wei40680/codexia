@@ -60,9 +60,7 @@ jobs:
         run: bun install
 
       - name: Export TS bindings (needed before bun build)
-        run: |
-          bun add -g @openai/codex@0.47.0
-          codex generate-ts --out src/bindings
+        run: bun run export:bindings
 
       - name: Build Tauri App
         run: bun tauri build --bundles deb

@@ -1,18 +1,13 @@
-#[allow(unused_imports)]
 use codex_app_server_protocol::{
     AddConversationListenerParams, AddConversationSubscriptionResponse, AuthMode, ClientInfo,
     ConversationSummary, ExecCommandApprovalParams, InitializeParams, InitializeResponse,
     InputItem, InterruptConversationParams, InterruptConversationResponse, ListConversationsResponse,
     NewConversationParams, NewConversationResponse, SendUserMessageParams, SendUserMessageResponse,
 };
-#[allow(unused_imports)]
 use codex_protocol::protocol::EventMsg;
-#[allow(unused_imports)]
 use std::path::Path;
-#[allow(unused_imports)]
 use ts_rs::TS;
 
-#[cfg(debug_assertions)]
 pub fn export_ts_types() {
     let out_dir = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("..")
