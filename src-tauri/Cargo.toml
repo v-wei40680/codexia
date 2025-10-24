@@ -4,6 +4,7 @@ version = "0.7.2"
 description = "A powerful IDE/GUI and Toolkit for Codex CLI"
 authors = ["milisp"]
 edition = "2021"
+default-run = "codexia"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
