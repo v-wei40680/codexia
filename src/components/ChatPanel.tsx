@@ -50,10 +50,10 @@ export function ChatPanel({
     : "Choose a project before starting a conversation.";
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden">
       <div
         ref={scrollRef}
-        className="flex-1 space-y-4 overflow-y-auto px-6 py-4"
+        className="flex-1 min-h-0 space-y-4 overflow-y-auto px-6 py-4"
       >
         {shouldShowEmptyState ? (
           <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
@@ -95,7 +95,7 @@ export function ChatPanel({
         }
         externalRef={textAreaRef}
       />
-      <div className="bg-background px-4 py-3">
+      <div className="bg-background">
         <div className="flex flex-wrap items-center gap-2">
           <Sandbox />
           <ProviderModels />

@@ -137,7 +137,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
   };
 
   return (
-    <div className="flex-shrink-0 border-t px-4 bg-background">
+    <div className="flex-shrink-0 border-t bg-background">
       <div className="relative">
         {/* File references and media attachments inside textarea */}
         {mediaAttachments.length > 0 && (
