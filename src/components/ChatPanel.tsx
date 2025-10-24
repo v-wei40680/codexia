@@ -14,6 +14,7 @@ interface ChatPanelProps {
   inputValue: string;
   setInputValue: (value: string) => void;
   handleSendMessage: (messageOverride?: string) => Promise<void>;
+  handleInterrupt: () => Promise<void>;
   isSending: boolean;
   isInitializing: boolean;
   canCompose: boolean;
@@ -27,6 +28,7 @@ export function ChatPanel({
   inputValue,
   setInputValue,
   handleSendMessage,
+  handleInterrupt,
   isSending,
   isInitializing,
   canCompose,
@@ -94,6 +96,9 @@ export function ChatPanel({
             : "Select a project to start chatting"
         }
         externalRef={textAreaRef}
+        onStopStreaming={() => {
+          void handleInterrupt();
+        }}
       />
       <div className="bg-background">
         <div className="flex flex-wrap items-center gap-2">

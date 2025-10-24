@@ -2,8 +2,8 @@
 use codex_app_server_protocol::{
     AddConversationListenerParams, AddConversationSubscriptionResponse, AuthMode, ClientInfo,
     ConversationSummary, ExecCommandApprovalParams, InitializeParams, InitializeResponse,
-    InputItem, ListConversationsResponse, NewConversationParams, NewConversationResponse,
-    SendUserMessageParams, SendUserMessageResponse,
+    InputItem, InterruptConversationParams, InterruptConversationResponse, ListConversationsResponse,
+    NewConversationParams, NewConversationResponse, SendUserMessageParams, SendUserMessageResponse,
 };
 #[allow(unused_imports)]
 use codex_protocol::protocol::EventMsg;
@@ -35,4 +35,6 @@ pub fn export_ts_types() {
     AddConversationListenerParams::export_all_to(&out_dir).unwrap();
     AddConversationSubscriptionResponse::export_all_to(&out_dir).unwrap();
     InputItem::export_all_to(&out_dir).unwrap();
+    InterruptConversationParams::export_all_to(&out_dir).unwrap();
+    InterruptConversationResponse::export_all_to(&out_dir).unwrap();
 }

@@ -1,7 +1,8 @@
 use std::path::PathBuf;
 
 use codex_app_server_protocol::{ 
-    AddConversationListenerParams, NewConversationParams, NewConversationResponse,
+    AddConversationListenerParams, InterruptConversationParams,
+    InterruptConversationResponse, NewConversationParams, NewConversationResponse,
     SendUserMessageParams, SendUserMessageResponse,
 };
 use codex_protocol::protocol::ReviewDecision;
@@ -79,6 +80,32 @@ pub async fn send_user_message(
         }
         Err(err) => {
             error!("Failed to send message to {conversation_id}: {err}");
+            Err(err)
+        }
+    }
+}
+
+#[tauri::command]
+pub async fn interrupt_conversation(
+    params: InterruptConversationParams,
+    state: State<'_, AppState>,
+    app_handle: AppHandle,
+) -> Result<InterruptConversationResponse, String> {
+    let client = get_client(&state, &app_handle).await?;
+    let conversation_id = params.conversation_id.clone();
+
+    info!("Forwarding interrupt to conversation {}", conversation_id);
+
+    match client.interrupt_conversation(params).await {
+        Ok(response) => {
+            info!(
+                "Conversation {} interrupted ({:?})",
+                conversation_id, response.abort_reason
+            );
+            Ok(response)
+        }
+        Err(err) => {
+            error!("Failed to interrupt {conversation_id}: {err}");
             Err(err)
         }
     }

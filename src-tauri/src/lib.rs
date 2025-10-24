@@ -92,6 +92,7 @@ pub fn run() {
             services::session::delete_session_file,
             cmd::send_user_message,
             cmd::new_conversation,
+            cmd::interrupt_conversation,
             cmd::respond_exec_command_request,
             cmd::delete_file,
         ])

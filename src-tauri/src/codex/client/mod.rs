@@ -5,7 +5,8 @@ use std::sync::atomic::{AtomicI64, Ordering};
 
 use codex_app_server_protocol::{
     AddConversationListenerParams, AddConversationSubscriptionResponse, ClientInfo,
-    InitializeParams, JSONRPCErrorError, JSONRPCNotification, JSONRPCRequest, NewConversationParams,
+    InitializeParams, InterruptConversationParams, InterruptConversationResponse,
+    JSONRPCErrorError, JSONRPCNotification, JSONRPCRequest, NewConversationParams,
     NewConversationResponse, RequestId, SendUserMessageParams, SendUserMessageResponse,
 };
 use codex_protocol::protocol::ReviewDecision;
@@ -142,6 +143,14 @@ impl CodexAppServerClient {
     ) -> Result<SendUserMessageResponse, String> {
         let params_value = serde_json::to_value(params).map_err(|err| err.to_string())?;
         self.request("sendUserMessage", Some(params_value)).await
+    }
+
+    pub async fn interrupt_conversation(
+        &self,
+        params: InterruptConversationParams,
+    ) -> Result<InterruptConversationResponse, String> {
+        let params_value = serde_json::to_value(params).map_err(|err| err.to_string())?;
+        self.request("interruptConversation", Some(params_value)).await
     }
 
     pub async fn respond_exec_command_request(

@@ -12,6 +12,7 @@ import { useCodexStore } from "@/stores/useCodexStore";
 import { useCodexEvents } from "@/hooks/useCodexEvents";
 import { useCodexApprovalRequests } from "@/hooks/useCodexApprovalRequests";
 import { useChatInputStore } from "@/stores/chatInputStore";
+import type { InterruptConversationResponse } from "@/bindings/InterruptConversationResponse";
 import type { NewConversationResponse } from "@/bindings/NewConversationResponse";
 import type { SendUserMessageParams } from "@/bindings/SendUserMessageParams";
 import type { SendUserMessageResponse } from "@/bindings/SendUserMessageResponse";
@@ -191,6 +192,8 @@ export function useChatSession() {
 
     setIsSending(true);
 
+    let shouldResetSending = false;
+
     try {
       let targetConversationId = activeConversationId;
       if (!targetConversationId) {
@@ -222,6 +225,7 @@ export function useChatSession() {
       );
       await sendConversationMessage(params);
     } catch (error) {
+      shouldResetSending = true;
       const message = error instanceof Error ? error.message : String(error);
       console.error("Failed to send message", error);
 
@@ -238,12 +242,15 @@ export function useChatSession() {
               trimmed,
             );
             await sendConversationMessage(resendParams);
+            shouldResetSending = false;
           } catch (resendErr) {
             console.error("Failed to resend message", resendErr);
           }
         }
       }
-    } finally {
+    }
+
+    if (shouldResetSending) {
       setIsSending(false);
     }
   }, [
@@ -253,6 +260,29 @@ export function useChatSession() {
     sendConversationMessage,
     setIsSending,
   ]);
+
+  const handleInterrupt = useCallback(async () => {
+    if (!activeConversationId) {
+      console.warn("No active conversation to interrupt.");
+      return;
+    }
+
+    if (!isSending) {
+      console.debug("Interrupt ignored; nothing is streaming.");
+      return;
+    }
+
+    const conversationId = activeConversationId;
+
+    try {
+      console.info("[chat] interrupt_conversation", conversationId);
+      await invoke<InterruptConversationResponse>("interrupt_conversation", {
+        params: { conversationId },
+      });
+    } catch (error) {
+      console.error("Failed to interrupt conversation", error);
+    }
+  }, [activeConversationId, isSending]);
 
   const handlePrepareNewConversation = useCallback(() => {
     if (!cwd) {
@@ -270,6 +300,7 @@ export function useChatSession() {
     activeEvents,
     activeDeltaEvents,
     handleSendMessage,
+    handleInterrupt,
     isSending,
     isInitializing,
     canCompose: Boolean(cwd),

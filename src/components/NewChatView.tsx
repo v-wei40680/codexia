@@ -17,6 +17,7 @@ export const NewChatView = ({ showChatTabs = false }: NewChatViewProps) => {
       isInitializing,
       canCompose,
       handleSendMessage,
+      handleInterrupt,
     } = useChatSession();
     const { inputValue, setInputValue } = useChatInputStore();
     if (showChatTabs) {
@@ -31,6 +32,7 @@ export const NewChatView = ({ showChatTabs = false }: NewChatViewProps) => {
         inputValue={inputValue}
         setInputValue={setInputValue}
         handleSendMessage={handleSendMessage}
+        handleInterrupt={handleInterrupt}
         isSending={isSending}
         isInitializing={isInitializing}
         canCompose={canCompose}
