@@ -1,20 +1,17 @@
 mod cmd;
 mod codex;
-mod codex_client;
 mod commands;
 pub mod config;
 mod export_bindings;
 mod filesystem;
-mod jsonrpc;
 mod mcp;
-mod protocol;
 mod services;
 mod state;
 mod utils;
 
 use commands::{
-    approve_execution, approve_patch, check_codex_version, create_new_window, disable_remote_ui,
-    enable_remote_ui, get_remote_ui_status, pause_session, start_codex_session, send_message
+    check_codex_version, create_new_window, disable_remote_ui,
+    enable_remote_ui, get_remote_ui_status
 };
 use crate::config::provider::ensure_default_providers;
 
@@ -29,7 +26,7 @@ use filesystem::{
     watch::{start_watch_directory, stop_watch_directory},
 };
 use mcp::{add_mcp_server, delete_mcp_server, read_mcp_servers};
-use state::{AppState, CodexState, RemoteAccessState};
+use state::{AppState, RemoteAccessState};
 use tauri::{AppHandle, Emitter, Manager};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -56,14 +53,8 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .manage(AppState::new())
-        .manage(CodexState::new())
         .manage(RemoteAccessState::default())
         .invoke_handler(tauri::generate_handler![
-            start_codex_session,
-            send_message,
-            approve_execution,
-            approve_patch,
-            pause_session,
             check_codex_version,
             create_new_window,
             read_directory,

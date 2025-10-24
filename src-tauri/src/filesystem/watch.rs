@@ -1,4 +1,4 @@
-use crate::state::CodexState;
+use crate::state::AppState;
 use notify::{recommended_watcher, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
 use serde::Serialize;
 use std::path::{Path, PathBuf};
@@ -37,7 +37,7 @@ fn kind_to_string(kind: &EventKind) -> String {
 #[tauri::command]
 pub async fn start_watch_directory(
     app: AppHandle,
-    state: State<'_, CodexState>,
+    state: State<'_, AppState>,
     folder_path: String,
 ) -> Result<(), String> {
     let abs = expand_path(&folder_path)?;
@@ -88,7 +88,7 @@ pub async fn start_watch_directory(
 #[tauri::command]
 pub async fn stop_watch_directory(
     _app: AppHandle,
-    state: State<'_, CodexState>,
+    state: State<'_, AppState>,
     folder_path: String,
 ) -> Result<(), String> {
     let abs = expand_path(&folder_path)?;

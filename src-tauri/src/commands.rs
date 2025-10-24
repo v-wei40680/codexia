@@ -1,54 +1,8 @@
-use crate::protocol::CodexConfig;
 use crate::services::{codex, remote};
-use crate::state::{CodexState, RemoteAccessState, RemoteUiStatus};
+use crate::state::{RemoteAccessState, RemoteUiStatus};
 use tauri::{AppHandle, State};
 
 pub use remote::RemoteUiConfigPayload;
-
-#[tauri::command]
-pub async fn start_codex_session(
-    app: AppHandle,
-    state: State<'_, CodexState>,
-    session_id: String,
-    config: CodexConfig,
-) -> Result<(), String> {
-    log::info!("Starting codex session: {}", session_id);
-    codex::start_codex_session(app, state, session_id, config).await
-}
-
-#[tauri::command]
-pub async fn send_message(
-    state: State<'_, CodexState>,
-    session_id: String,
-    message: String,
-) -> Result<(), String> {
-    codex::send_message(state, session_id, message).await
-}
-
-#[tauri::command]
-pub async fn approve_execution(
-    state: State<'_, CodexState>,
-    session_id: String,
-    approval_id: String,
-    approved: bool,
-) -> Result<(), String> {
-    codex::approve_execution(state, session_id, approval_id, approved).await
-}
-
-#[tauri::command]
-pub async fn approve_patch(
-    state: State<'_, CodexState>,
-    session_id: String,
-    approval_id: String,
-    approved: bool,
-) -> Result<(), String> {
-    codex::approve_patch(state, session_id, approval_id, approved).await
-}
-
-#[tauri::command]
-pub async fn pause_session(state: State<'_, CodexState>, session_id: String) -> Result<(), String> {
-    codex::pause_session(state, session_id).await
-}
 
 #[tauri::command]
 pub async fn check_codex_version() -> Result<String, String> {

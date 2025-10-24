@@ -1,4 +1,4 @@
-use crate::codex_client::CodexClient;
+
 use notify::RecommendedWatcher;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -11,12 +11,15 @@ use crate::codex::CodexAppServerClient;
 
 pub struct AppState {
     pub client: Arc<Mutex<Option<Arc<CodexAppServerClient>>>>,
+    // Active filesystem watchers keyed by absolute folder path with ref-count
+    pub watchers: Arc<Mutex<HashMap<String, (RecommendedWatcher, usize)>>>,
 }
 
 impl AppState {
     pub fn new() -> Self {
         Self {
             client: Arc::new(Mutex::new(None)),
+            watchers: Arc::new(Mutex::new(HashMap::new())),
         }
     }
 }
@@ -42,21 +45,6 @@ pub async fn get_client(
     }
     *guard = Some(client.clone());
     Ok(client)
-}
-
-pub struct CodexState {
-    pub sessions: Arc<Mutex<HashMap<String, CodexClient>>>,
-    // Active filesystem watchers keyed by absolute folder path with ref-count
-    pub watchers: Arc<Mutex<HashMap<String, (RecommendedWatcher, usize)>>>,
-}
-
-impl CodexState {
-    pub fn new() -> Self {
-        Self {
-            sessions: Arc::new(Mutex::new(HashMap::new())),
-            watchers: Arc::new(Mutex::new(HashMap::new())),
-        }
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
