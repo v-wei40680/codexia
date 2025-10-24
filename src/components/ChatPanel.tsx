@@ -6,6 +6,8 @@ import { Sandbox } from "@/components/config/Sandbox";
 import { ProviderModels } from "@/components/config/provider-models";
 import { ReasoningEffortSelector } from "@/components/config/ReasoningEffortSelector";
 import type { ConversationEvent, EventWithId } from "@/types/chat";
+import { Badge } from "./ui/badge";
+import { cn } from "@/lib/utils";
 
 interface ChatPanelProps {
   conversationId: string | null;
@@ -64,11 +66,21 @@ export function ChatPanel({
         ) : (
           <>
             {events.map((event, index) => (
-              <EventItem
-                key={`${event.id}-${index}`}
-                event={event}
-                conversationId={conversationId}
-              />
+              <>
+                <EventItem
+                  key={`${event.id}-${index}`}
+                  event={event}
+                  conversationId={conversationId}
+                />
+                {event.msg.type.endsWith("_message") && 
+                  <div className={cn(
+                    "flex w-full",event.msg.type === "user_message" ? "justify-end" : "justify-start")}>
+                    <Badge variant="outline" className="px-2">
+                      {event.msg.type}
+                    </Badge>
+                  </div>
+                }
+              </>
             ))}
 
             {deltaEvents.length > 0 && (

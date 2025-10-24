@@ -8,7 +8,6 @@ import { toast } from "@/components/ui/use-toast";
 import { useApprovalStore } from "@/stores/useApprovalStore";
 import type { ConversationEvent } from "@/types/chat";
 
-import { DefaultEventContent } from "./DefaultEventContent";
 import { EventBubble } from "./EventBubble";
 import { OutputBlock } from "./OutputBlock";
 import {
@@ -17,6 +16,7 @@ import {
   formatAbortReason,
 } from "./helpers";
 import { PlanDisplay } from "../chat/messages/PlanDisplay";
+import { TurnDiffView } from "./TurnDiffView";
 
 type ExecDecision = "approved" | "approved_for_session" | "denied" | "abort";
 
@@ -94,7 +94,7 @@ export const EventItem = memo(function EventItem({
       return <MarkdownRenderer content={msg.message} />;
     case "agent_reasoning":
     case "agent_reasoning_raw_content":
-      return <span>✨<MarkdownRenderer content={msg.text} /></span>;
+      return <span className="flex">✨<MarkdownRenderer content={msg.text} /></span>;
     case "exec_approval_request": {
       const commandText = msg.command.join(" ");
       const awaitingDecision = Boolean(execApprovalRequest);
@@ -157,28 +157,17 @@ export const EventItem = memo(function EventItem({
       );
     }
     case "exec_command_begin":
+      const title = msg.parsed_cmd.map(item => describeParsedCommand(item)).join("")
       return (
         <EventBubble
           align="start"
           variant="system"
-          title="Command Started"
+          title={title}
         >
           <div className="space-y-2">
             <code className="block whitespace-pre-wrap rounded bg-muted/40 px-2 py-1 font-mono text-xs">
               {msg.command.join(" ")}
             </code>
-            {msg.parsed_cmd.length > 0 && (
-              <div className="flex flex-wrap gap-2 pt-1">
-                {msg.parsed_cmd.map((item, index) => (
-                  <Badge
-                    key={`${item.type}-${index}`}
-                    variant="secondary"
-                  >
-                    {describeParsedCommand(item)}
-                  </Badge>
-                ))}
-              </div>
-            )}
           </div>
         </EventBubble>
       );
@@ -255,13 +244,7 @@ export const EventItem = memo(function EventItem({
         </EventBubble>
       );
     case "turn_diff":
-      return (
-        <EventBubble align="start" variant="system" title="Turn Diff">
-          <pre className="max-h-64 overflow-auto whitespace-pre text-xs font-mono leading-relaxed">
-            {msg.unified_diff}
-          </pre>
-        </EventBubble>
-      );
+      return <TurnDiffView content={msg.unified_diff} />
     case "task_complete":
     case "task_started":
     case "exec_command_output_delta":
@@ -272,21 +255,6 @@ export const EventItem = memo(function EventItem({
     case "plan_update":
       return <PlanDisplay steps={msg.plan} />
     default:
-      return (
-        <EventBubble
-          align="start"
-          variant="system"
-          title={msg.type}
-        >
-          <DefaultEventContent
-            message={
-              "message" in msg && typeof msg.message === "string"
-                ? msg.message
-                : undefined
-            }
-            type={msg.type}
-          />
-        </EventBubble>
-      );
+      return <div>{JSON.stringify(msg, null,)}</div>
   }
 });

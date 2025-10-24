@@ -43,7 +43,7 @@ export function EventBubble({
         {title ? (
           <div
             className={cn(
-              "mb-2 text-xs font-semibold uppercase tracking-wide",
+              "mb-2 text-xs font-semibold tracking-wide",
               TITLE_CLASSES[variant],
             )}
           >
