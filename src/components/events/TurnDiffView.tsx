@@ -41,7 +41,7 @@ export function TurnDiffView({ content }: TurnDiffViewProps) {
       className="w-full"
     >
       <AccordionItem value="item-1">
-        <AccordionTrigger className="bg-gray-200 px-2">{getDiffName(content)}</AccordionTrigger>
+        <AccordionTrigger className="bg-gray-200 dark:bg-gray-700 px-2">{getDiffName(content)}</AccordionTrigger>
         <AccordionContent className="flex flex-col gap-4 text-balance">
           <DiffViewer unifiedDiff={content} />
         </AccordionContent>
