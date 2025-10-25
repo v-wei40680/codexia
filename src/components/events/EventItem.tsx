@@ -46,14 +46,9 @@ export const EventItem = memo(function EventItem({
     }
     return entry;
   });
-  const removeExecRequest = useApprovalStore((state) => state.removeExecRequest);
-  const setInputValue = useChatInputStore((state) => state.setInputValue);
-  const requestFocus = useChatInputStore((state) => state.requestFocus);
-  const setEditingTarget = useChatInputStore((state) => state.setEditingTarget);
-  const clearEditingTarget = useChatInputStore((state) => state.clearEditingTarget);
-  const setActiveConversationId = useActiveConversationStore(
-    (state) => state.setActiveConversationId,
-  );
+  const { removeExecRequest } = useApprovalStore();
+  const {setInputValue, requestFocus, setEditingTarget, clearEditingTarget } = useChatInputStore();
+  const { setActiveConversationId } = useActiveConversationStore();
 
   const handleExecDecision = async (decision: ExecDecision) => {
     if (!execApprovalRequest || isSubmitting) {

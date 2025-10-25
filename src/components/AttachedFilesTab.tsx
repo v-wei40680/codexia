@@ -52,7 +52,7 @@ export function AttachedFilesTab() {
               entry={{
                 name: ref.name,
                 path: ref.path,
-                is_directory: ref.isDirectory,
+                is_directory: ref.is_directory,
                 relativePath: ref.relativePath,
               }}
               level={0}

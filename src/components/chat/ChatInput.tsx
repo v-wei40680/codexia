@@ -11,6 +11,7 @@ import { PromptOptimizerControl } from './PromptOptimizerControl';
 import { usePromptOptimization } from '@/hooks/usePromptOptimization';
 import type { MediaAttachment } from '@/types/chat';
 import { createMediaAttachment } from '@/utils/mediaUtils';
+import { FileSearchPopover } from './FileSearchPopover';
 
 interface ChatInputProps {
   inputValue: string;
@@ -117,6 +118,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
     if (disabled || isLoading) {
       return;
     }
+
     if (e.key === 'Enter') {
       if (e.shiftKey) {
         // allow newline
@@ -140,6 +142,12 @@ export const ChatInput: React.FC<ChatInputProps> = ({
             />
           </div>
         )}
+
+        <FileSearchPopover
+          inputValue={inputValue}
+          onInputChange={onInputChange}
+          textareaRef={textareaRef}
+        />
         
         <Textarea
           ref={textareaRef}

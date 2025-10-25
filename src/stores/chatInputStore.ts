@@ -2,17 +2,22 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { MediaAttachment } from '@/types/chat';
 
-interface FileReference {
+export interface FileReference {
   path: string;
   relativePath: string;
   name: string;
-  isDirectory: boolean;
+  is_directory: boolean;
+  size?: number;
+  extension?: string;
 }
 
 interface ChatInputStore {
   // File references for current input
   fileReferences: FileReference[];
   
+  // Recently accessed files for quick selectionw
+  recentFiles: FileReference[];
+
   // Media attachments (images, audio)
   mediaAttachments: MediaAttachment[];
   
@@ -23,10 +28,11 @@ interface ChatInputStore {
   promptHistory: string[];
   
   // Actions for file references
-  addFileReference: (path: string, relativePath: string, name: string, isDirectory: boolean) => void;
+  addFileReference: (path: string, relativePath: string, name: string, is_directory: boolean) => void;
   removeFileReference: (path: string) => void;
   clearFileReferences: () => void;
   replaceFileReferences: (files: FileReference[]) => void;
+  addRecentFile: (file: FileReference) => void;
   
   // Actions for media attachments
   addMediaAttachment: (attachment: MediaAttachment) => void;
@@ -68,6 +74,7 @@ export const useChatInputStore = create<ChatInputStore>()(
   persist(
     (set, get) => ({
       fileReferences: [],
+      recentFiles: [],
       mediaAttachments: [],
       inputValue: "",
       promptHistory: [],
@@ -77,15 +84,26 @@ export const useChatInputStore = create<ChatInputStore>()(
       editingTarget: null,
 
       // File reference actions
-      addFileReference: (path: string, relativePath: string, name: string, isDirectory: boolean) => {
-        const { fileReferences } = get();
+      addFileReference: (path: string, relativePath: string, name: string, is_directory: boolean) => {
+        const { fileReferences, addRecentFile } = get();
         const exists = fileReferences.some(ref => ref.path === path);
         
+        const newFileRef = { path, relativePath, name, is_directory };
+
         if (!exists) {
           set({
-            fileReferences: [...fileReferences, { path, relativePath, name, isDirectory }]
+            fileReferences: [...fileReferences, newFileRef]
           });
         }
+        addRecentFile(newFileRef);
+      },
+
+      addRecentFile: (file: FileReference) => {
+        const { recentFiles } = get();
+        // Remove if already exists to move to front
+        const filtered = recentFiles.filter(ref => ref.path !== file.path);
+        // Add to front, limit to 10
+        set({ recentFiles: [file, ...filtered].slice(0, 10) });
       },
 
       removeFileReference: (path: string) => {
