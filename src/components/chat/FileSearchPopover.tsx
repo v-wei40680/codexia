@@ -142,7 +142,7 @@ export const FileSearchPopover: React.FC<FileSearchPopoverProps> = ({
         {/* This is an invisible trigger, the popover is controlled by state */}
         <span className="absolute top-0 left-0 w-0 h-0" />
       </PopoverTrigger>
-      <PopoverContent className="w-[300px] p-0" align="start">
+      <PopoverContent className="w-full p-0" align="start">
         <Command onKeyDown={handleKeyDown}>
           <CommandInput
             placeholder="Search files..."
@@ -157,20 +157,25 @@ export const FileSearchPopover: React.FC<FileSearchPopoverProps> = ({
             {filteredFiles.length === 0 ? (
               <div className="py-6 text-center text-sm">No files found.</div>
             ) : (
-              filteredFiles.map((file, index) => (
-                <CommandItem
-                  key={file.path}
-                  onSelect={() => handleFileSelection(file)}
-                  className={`flex items-center gap-2 cursor-pointer ${index === selectedFileIndex ? 'bg-accent text-accent-foreground' : ''}`}
-                  value={file.relativePath}
-                >
-                  <div className="flex flex-col">
-                    <span>{file.name}</span>
-                    <span className="text-xs text-muted-foreground">{file.path}</span>
-                  </div>
-                  <span className="ml-auto text-xs text-muted-foreground">{index}</span>
-                </CommandItem>
-              ))
+              filteredFiles.map((file, index) => {
+                const relativePath = cwd && file.path.startsWith(cwd)
+                  ? file.path.substring(cwd.length + 1)
+                  : file.path;
+                return (
+                  <CommandItem
+                    key={file.path}
+                    onSelect={() => handleFileSelection(file)}
+                    className={`flex items-center gap-2 cursor-pointer ${index === selectedFileIndex ? 'bg-accent text-accent-foreground' : ''}`}
+                    value={relativePath}
+                  >
+                    <div className="flex flex-col">
+                      <span>{file.name}</span>
+                      <span className="text-xs text-muted-foreground">{relativePath}</span>
+                    </div>
+                    <span className="ml-auto text-xs text-muted-foreground">{index}</span>
+                  </CommandItem>
+                );
+              })
             )}
           </CommandList>
         </Command>
