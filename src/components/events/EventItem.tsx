@@ -308,6 +308,8 @@ export const EventItem = memo(function EventItem({
     case "task_started":
     case "exec_command_output_delta":
     case "token_count":
+    case "item_started":
+    case "item_completed":
       return null;
     case "agent_reasoning_section_break":
       return null;

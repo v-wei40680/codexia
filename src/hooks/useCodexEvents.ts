@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import { v4 as uuidv4 } from "uuid";
+import { v4 } from "uuid";
 
 import type { EventMsg } from "@/bindings/EventMsg";
 import type { ConversationEventPayload, EventWithId } from "@/types/chat";
@@ -75,10 +75,7 @@ export function useCodexEvents({
           return;
         }
 
-        const eventId =
-          typeof incomingId === "string" && incomingId.length > 0
-            ? incomingId
-            : uuidv4();
+        const eventId = v4()
 
         const eventRecord: EventWithId = {
           id: eventId,
@@ -86,7 +83,7 @@ export function useCodexEvents({
         };
 
         if (!eventMsg.type.endsWith("_delta")) {
-          console.debug("[codex:event]", conversationId, eventMsg.type, eventRecord);
+          console.debug("[codex:event]", conversationId, incomingId, eventMsg.type, eventRecord);
         }
 
         if (DELTA_EVENT_TYPES.has(eventMsg.type)) {
@@ -103,8 +100,10 @@ export function useCodexEvents({
           return;
         }
 
-        if (eventMsg.type !== "exec_command_output_delta") {
-          appendEvent(conversationId, eventRecord);
+        if (eventMsg.type !== "exec_command_output_delta" || !eventMsg.type.startsWith("item")) {
+          if (eventMsg.type !== "user_message") {
+            appendEvent(conversationId, eventRecord);
+          }
         }
 
         if (

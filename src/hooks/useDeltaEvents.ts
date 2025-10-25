@@ -3,11 +3,7 @@ import { listen } from "@tauri-apps/api/event";
 import { EventWithId } from "@/types/Message";
 
 /**
- * Hook that captures streaming delta events (agent_message_delta and
- * agent_reasoning_raw_content_delta) for a specific conversation.
- * It does **not** persist data to the conversation store – the events are kept in a
- * local state and cleared when a final agent_message or
- * agent_reasoning_raw_content event arrives.
+ * Hook that captures streaming delta events
  */
 export function useDeltaEvents(conversationId: string | null) {
   const [eventsMap, setEventsMap] = useState<Record<string, EventWithId[]>>({});

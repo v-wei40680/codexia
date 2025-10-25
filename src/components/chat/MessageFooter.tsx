@@ -122,14 +122,14 @@ export function MessageFooter({
     <TooltipProvider>
       <div
         className={cn(
-          "mt-2 flex w-full opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100",
+          "flex w-full opacity-0 transition-opacity duration-150 ease-out group-hover:opacity-100",
           align === "end" ? "justify-end" : "justify-start",
           className,
         )}
       >
         <div
           className={cn(
-            "flex items-center gap-4 rounded-md border border-border/40 bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground shadow-sm backdrop-blur-sm",
+            "flex items-center gap-4 rounded-md border border-border/40 bg-muted/40 px-3 text-xs text-muted-foreground shadow-sm backdrop-blur-sm",
             align === "end" && "flex-row-reverse",
           )}
         >
