@@ -7,7 +7,8 @@ use codex_app_server_protocol::{
     AddConversationListenerParams, AddConversationSubscriptionResponse, ClientInfo,
     InitializeParams, InterruptConversationParams, InterruptConversationResponse,
     JSONRPCErrorError, JSONRPCNotification, JSONRPCRequest, NewConversationParams,
-    NewConversationResponse, RequestId, SendUserMessageParams, SendUserMessageResponse,
+    NewConversationResponse, RequestId, ResumeConversationParams, ResumeConversationResponse,
+    SendUserMessageParams, SendUserMessageResponse,
 };
 use codex_protocol::protocol::ReviewDecision;
 use serde::de::DeserializeOwned;
@@ -126,6 +127,14 @@ impl CodexAppServerClient {
     ) -> Result<NewConversationResponse, String> {
         let params_value = serde_json::to_value(params).map_err(|err| err.to_string())?;
         self.request("newConversation", Some(params_value)).await
+    }
+
+    pub async fn resume_conversation(
+        &self,
+        params: ResumeConversationParams,
+    ) -> Result<ResumeConversationResponse, String> {
+        let params_value = serde_json::to_value(params).map_err(|err| err.to_string())?;
+        self.request("resumeConversation", Some(params_value)).await
     }
 
     pub async fn add_conversation_listener(

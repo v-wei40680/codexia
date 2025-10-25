@@ -119,14 +119,7 @@ export function useCodexEvents({
           setIsInitializing(false);
         }
 
-        setDeltaEventMap((prev) => {
-          if (!prev[conversationId] || prev[conversationId].length === 0) {
-            return prev;
-          }
-          console.debug("[chat] flushing delta events", conversationId);
-          const { [conversationId]: _removed, ...rest } = prev;
-          return rest;
-        });
+        // Preserve delta events for the active conversation so live streaming output remains visible.
       },
     );
 

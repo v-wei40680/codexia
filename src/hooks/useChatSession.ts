@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 
 import { getNewConversationParams } from "@/components/config/ConversationParams";
@@ -18,6 +18,23 @@ import type { SendUserMessageParams } from "@/bindings/SendUserMessageParams";
 import type { SendUserMessageResponse } from "@/bindings/SendUserMessageResponse";
 import type { InputItem } from "@/bindings/InputItem";
 import { type ConversationEvent, type EventWithId, type MediaAttachment } from "@/types/chat";
+
+type ResumeConversationResult = {
+  conversation_id: string;
+  model: string;
+  initial_messages?: EventWithId["msg"][] | null;
+  initialMessages?: EventWithId["msg"][] | null;
+};
+
+const extractInitialMessages = (
+  response: ResumeConversationResult,
+): EventWithId["msg"][] | null => {
+  return (
+    response.initial_messages ??
+    response.initialMessages ??
+    null
+  );
+};
 
 function buildTextMessageParams(
   conversationId: string,
@@ -76,8 +93,11 @@ export function useChatSession() {
 
   const {
     eventsByConversation,
+    hydrationByConversation,
     appendEvent,
     replaceEvents,
+    applyInitialHistory,
+    setHydrationStatus,
   } = useConversationStore();
 
   const { addConversation } = useConversationListStore();
@@ -131,6 +151,87 @@ export function useChatSession() {
     return newDeltaEvents;
   }, [deltaEventMap, activeConversationId]);
 
+  useEffect(() => {
+    if (!activeConversationId) {
+      return;
+    }
+
+    const hydration = hydrationByConversation[activeConversationId];
+    const existing = eventsByConversation[activeConversationId] ?? [];
+    if (existing.length > 0) {
+      if (hydration?.status !== "ready") {
+        setHydrationStatus(activeConversationId, "ready");
+      }
+      return;
+    }
+
+    if (hydration?.status === "ready") {
+      return;
+    }
+
+    if (hydration?.status === "loading") {
+      return;
+    }
+
+    const listState = useConversationListStore.getState();
+    const conversationCwd =
+      listState.conversationIndex[activeConversationId] ?? cwd ?? "";
+    const summaries = listState.conversationsByCwd[conversationCwd] ?? [];
+    const summary = summaries.find(
+      (item) => item.conversationId === activeConversationId,
+    );
+    const rolloutPath = summary?.path;
+    if (!rolloutPath) {
+      return;
+    }
+
+    setHydrationStatus(activeConversationId, "loading");
+    void (async () => {
+      try {
+        const response = await invoke<ResumeConversationResult>(
+          "resume_conversation",
+          {
+            params: {
+              path: rolloutPath,
+              overrides: null,
+            },
+          },
+        );
+        const initialMessages = extractInitialMessages(response);
+        if (
+          Array.isArray(initialMessages) &&
+          initialMessages.length > 0
+        ) {
+          applyInitialHistory(activeConversationId, initialMessages);
+        } else {
+          setHydrationStatus(activeConversationId, "ready");
+        }
+      } catch (error) {
+        const message =
+          error instanceof Error ? error.message : String(error);
+        console.error(
+          "Failed to resume conversation",
+          error,
+        );
+        setHydrationStatus(activeConversationId, "error", message);
+      }
+    })();
+  }, [
+    activeConversationId,
+    applyInitialHistory,
+    cwd,
+    eventsByConversation,
+    hydrationByConversation,
+    setHydrationStatus,
+  ]);
+
+  const activeHydration = useMemo(() => {
+    if (!activeConversationId) {
+      return undefined;
+    }
+    return hydrationByConversation[activeConversationId];
+  }, [activeConversationId, hydrationByConversation]);
+
   const createConversation = useCallback(
     async (initialMessage?: string): Promise<string | null> => {
     if (createConversationPromiseRef.current) {
@@ -177,6 +278,7 @@ export function useChatSession() {
         setActiveConversationId(conversationId);
         replaceEvents(conversationId, []);
         initializeConversationBuffer(conversationId);
+        setHydrationStatus(conversationId, "ready");
         return conversationId;
       } catch (error) {
         console.error("Failed to start Codex conversation", error);
@@ -375,6 +477,7 @@ export function useChatSession() {
     activeConversationId,
     activeEvents,
     activeDeltaEvents,
+    activeHydration,
     handleSendMessage,
     handleInterrupt,
     isSending,

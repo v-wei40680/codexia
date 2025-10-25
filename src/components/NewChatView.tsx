@@ -27,12 +27,12 @@ export const NewChatView = ({ showChatTabs = false }: NewChatViewProps) => {
       textAreaRef,
       activeConversationId,
       activeEvents,
-      activeDeltaEvents,
       isSending,
       isInitializing,
       canCompose,
       handleSendMessage,
       handleInterrupt,
+      activeHydration,
     } = useChatSession();
     const { inputValue, setInputValue } = useChatInputStore();
     if (showChatTabs) {
@@ -177,7 +177,6 @@ export const NewChatView = ({ showChatTabs = false }: NewChatViewProps) => {
       <ChatPanel
         conversationId={activeConversationId}
         events={activeEvents}
-        deltaEvents={activeDeltaEvents}
         inputValue={inputValue}
         setInputValue={setInputValue}
         handleSendMessage={handleSendMessage}
@@ -186,6 +185,7 @@ export const NewChatView = ({ showChatTabs = false }: NewChatViewProps) => {
         isInitializing={isInitializing}
         canCompose={canCompose}
         textAreaRef={textAreaRef}
+        hydration={activeHydration}
       />
     );
 };

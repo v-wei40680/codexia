@@ -3,7 +3,8 @@ use std::path::PathBuf;
 use codex_app_server_protocol::{ 
     AddConversationListenerParams, InterruptConversationParams,
     InterruptConversationResponse, NewConversationParams, NewConversationResponse,
-    SendUserMessageParams, SendUserMessageResponse,
+    ResumeConversationParams, ResumeConversationResponse, SendUserMessageParams,
+    SendUserMessageResponse,
 };
 use codex_protocol::protocol::ReviewDecision;
 use log::{error, info, warn};
@@ -123,6 +124,42 @@ pub async fn respond_exec_command_request(
     client
         .respond_exec_command_request(&request_token, parsed)
         .await
+}
+
+#[tauri::command]
+pub async fn resume_conversation(
+    params: ResumeConversationParams,
+    state: State<'_, AppState>,
+    app_handle: AppHandle,
+) -> Result<ResumeConversationResponse, String> {
+    let path = params.path.clone();
+    info!("Resuming conversation from {:?}", path);
+    let client = get_client(&state, &app_handle).await?;
+    match client.resume_conversation(params).await {
+        Ok(conversation) => {
+            if let Err(err) = client
+                .add_conversation_listener(AddConversationListenerParams {
+                    conversation_id: conversation.conversation_id.clone(),
+                })
+                .await
+            {
+                error!(
+                    "Failed to register conversation listener for {}: {err}",
+                    conversation.conversation_id
+                );
+                return Err(err);
+            }
+            info!(
+                "Listener registered for resumed conversation {}",
+                conversation.conversation_id
+            );
+            Ok(conversation)
+        }
+        Err(err) => {
+            error!("Failed to resume conversation from {:?}: {err}", path);
+            Err(err)
+        }
+    }
 }
 
 #[tauri::command]

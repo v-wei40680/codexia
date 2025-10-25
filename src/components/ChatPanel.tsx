@@ -1,18 +1,15 @@
 import { useEffect, useRef, type RefObject } from "react";
-import DeltaEventLog from "@/components/DeltaEventLog";
 import { EventItem } from "@/components/events/EventItem";
 import { ChatInput } from "@/components/chat/ChatInput";
 import { Sandbox } from "@/components/config/Sandbox";
 import { ProviderModels } from "@/components/config/provider-models";
 import { ReasoningEffortSelector } from "@/components/config/ReasoningEffortSelector";
-import type { ConversationEvent, EventWithId, MediaAttachment } from "@/types/chat";
-import { Badge } from "./ui/badge";
-import { cn } from "@/lib/utils";
+import type { ConversationEvent, MediaAttachment } from "@/types/chat";
+import { Loader2 } from "lucide-react";
 
 interface ChatPanelProps {
   conversationId: string | null;
   events: ConversationEvent[];
-  deltaEvents: EventWithId[];
   inputValue: string;
   setInputValue: (value: string) => void;
   handleSendMessage: (messageOverride: string, attachments: MediaAttachment[]) => Promise<void>;
@@ -21,12 +18,15 @@ interface ChatPanelProps {
   isInitializing: boolean;
   canCompose: boolean;
   textAreaRef: RefObject<HTMLTextAreaElement | null>;
+  hydration?: {
+    status: "idle" | "loading" | "ready" | "error";
+    error?: string;
+  };
 }
 
 export function ChatPanel({
   conversationId,
   events,
-  deltaEvents,
   inputValue,
   setInputValue,
   handleSendMessage,
@@ -35,6 +35,7 @@ export function ChatPanel({
   isInitializing,
   canCompose,
   textAreaRef,
+  hydration,
 }: ChatPanelProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -42,13 +43,19 @@ export function ChatPanel({
     const container = scrollRef.current;
     if (!container) return;
     container.scrollTop = container.scrollHeight;
-  }, [events, deltaEvents]);
+  }, [events]);
 
   const composerDisabled =
     isInitializing || isSending || !canCompose;
 
-  const hasContent = events.length > 0 || deltaEvents.length > 0;
-  const shouldShowEmptyState = !conversationId || !hasContent;
+  const hydrationStatus = hydration?.status ?? "idle";
+  const isHydrating = hydrationStatus === "loading";
+  const hydrationError = hydrationStatus === "error" ? hydration?.error ?? null : null;
+
+  const hasContent = events.length > 0;
+  const showHistoryLoader = Boolean(conversationId) && !hasContent && isHydrating;
+  const shouldShowEmptyState =
+    !conversationId || (!hasContent && !isHydrating && !hydrationError);
   const emptyStateMessage = canCompose
     ? "Send a message to start the conversation."
     : "Choose a project before starting a conversation.";
@@ -59,38 +66,36 @@ export function ChatPanel({
         ref={scrollRef}
         className="flex-1 min-h-0 space-y-4 overflow-y-auto px-6 py-4"
       >
-        {shouldShowEmptyState ? (
+        {showHistoryLoader ? (
+          <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Loading conversation history…
+          </div>
+        ) : hydrationError && !hasContent ? (
+          <div className="flex h-full flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
+            <span>Failed to load conversation history.</span>
+            <span className="text-xs text-destructive/80">
+              {hydrationError}
+            </span>
+          </div>
+        ) : shouldShowEmptyState ? (
           <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
             {emptyStateMessage}
           </div>
         ) : (
           <>
+            {isHydrating && hasContent ? (
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                Syncing previous messages…
+              </div>
+            ) : null}
             {events.map((event, index) => (
-              <>
-                <EventItem
-                  key={`${event.id}-${index}`}
-                  event={event}
-                  conversationId={conversationId}
-                />
-                {event.msg.type.endsWith("_message") && 
-                  <div className={cn(
-                    "flex w-full",event.msg.type === "user_message" ? "justify-end" : "justify-start")}>
-                    <Badge variant="outline" className="px-2">
-                      {event.msg.type}
-                    </Badge>
-                  </div>
-                }
-              </>
+              <div key={`${event.id}-${index}`} className="space-y-2">
+                <EventItem event={event} conversationId={conversationId} />
+              </div>
             ))}
 
-            {deltaEvents.length > 0 && (
-              <div className="rounded-lg border bg-muted/40 px-4 py-3 text-sm shadow-sm">
-                <div className="text-xs font-medium uppercase text-muted-foreground mb-2">
-                  Streaming updates
-                </div>
-                <DeltaEventLog events={deltaEvents} />
-              </div>
-            )}
           </>
         )}
       </div>
