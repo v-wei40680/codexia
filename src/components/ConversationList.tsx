@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useMemo, type SetStateAction, type Dispatch } from "react";
 import { Button } from "@/components/ui/button";
 import { Trash2, MoreVertical, Star, StarOff, FolderPlus } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
@@ -11,6 +11,7 @@ import {
 import { useConversationListStore } from "@/stores/useConversationListStore";
 import { useCodexStore } from "@/stores/useCodexStore";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface ConversationListProps {
   mode?: "all" | "favorites";
@@ -18,6 +19,9 @@ interface ConversationListProps {
   selectedCategoryId?: string | null;
   conversationCategoryMap?: Record<string, string | undefined>;
   onRequestCategoryAssignment?: (conversationId: string) => void;
+  showBulkDeleteButtons: boolean;
+  selectedConversations: Set<string>;
+  setSelectedConversations: Dispatch<SetStateAction<Set<string>>>;
 }
 
 export function ConversationList({
@@ -26,6 +30,9 @@ export function ConversationList({
   selectedCategoryId = null,
   conversationCategoryMap,
   onRequestCategoryAssignment,
+  showBulkDeleteButtons,
+  selectedConversations,
+  setSelectedConversations,
 }: ConversationListProps) {
   const {
     conversationsByCwd,
@@ -98,6 +105,23 @@ export function ConversationList({
                 <li key={conv.conversationId}>
                   <DropdownMenu>
                     <div className="flex items-center justify-between w-full">
+                      {showBulkDeleteButtons && (
+                        <Checkbox
+                          checked={selectedConversations.has(conv.conversationId)}
+                          onCheckedChange={(checked) => {
+                            setSelectedConversations((prev) => {
+                              const next = new Set(prev);
+                              if (checked) {
+                                next.add(conv.conversationId);
+                              } else {
+                                next.delete(conv.conversationId);
+                              }
+                              return next;
+                            });
+                          }}
+                          className="mr-2"
+                        />
+                      )}
                       <button
                         onClick={() => setActiveConversationId(conv.conversationId)}
                         className={`flex-1 min-w-0 truncate text-left rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${

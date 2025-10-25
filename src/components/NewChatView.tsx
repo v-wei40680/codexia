@@ -1,13 +1,16 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { ConversationList } from "@/components/ConversationList";
 import { ChatPanel } from "@/components/ChatPanel";
 import { useChatSession } from "@/hooks/useChatSession";
 import { useChatInputStore } from "@/stores/chatInputStore";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Tags } from "lucide-react";
+import { Tags } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConversationCategoryDialog } from "@/components/chat/ConversationCategoryDialog";
+import { BulkDeleteButtons } from "@/components/chat/BulkDeleteButtons";
+import { useConversationListStore } from "@/stores/useConversationListStore";
+import { useCodexStore } from "@/stores/useCodexStore";
 
 interface NewChatViewProps {
   showChatTabs?: boolean;
@@ -22,6 +25,8 @@ export const NewChatView = ({ showChatTabs = false }: NewChatViewProps) => {
     const [dialogSelectedCategory, setDialogSelectedCategory] = useState<string | null>(null);
     const [conversationCategoryMap, setConversationCategoryMap] = useState<Record<string, string>>({});
     const [pendingCategoryConversation, setPendingCategoryConversation] = useState<string | null>(null);
+    const [showBulkDeleteButtons, setShowBulkDeleteButtons] = useState(false);
+    const [selectedConversations, setSelectedConversations] = useState<Set<string>>(new Set());
 
     const {
       textAreaRef,
@@ -35,6 +40,13 @@ export const NewChatView = ({ showChatTabs = false }: NewChatViewProps) => {
       activeHydration,
     } = useChatSession();
     const { inputValue, setInputValue } = useChatInputStore();
+    const { conversationsByCwd } = useConversationListStore();
+    const { cwd } = useCodexStore();
+
+    const conversations = useMemo(() => {
+      return (conversationsByCwd[cwd || ""] || []).slice().reverse();
+    }, [conversationsByCwd, cwd]);
+
     if (showChatTabs) {
       const handleOpenCategoryDialogForFilter = () => {
         setPendingCategoryConversation(null);
@@ -118,12 +130,10 @@ export const NewChatView = ({ showChatTabs = false }: NewChatViewProps) => {
           <div className="border-b bg-muted/40">
             <div className="flex items-center gap-2">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={searchQuery}
                   onChange={(event) => setSearchQuery(event.target.value)}
                   placeholder="Search conversations..."
-                  className="pl-9"
                 />
               </div>
               <Button
@@ -134,10 +144,17 @@ export const NewChatView = ({ showChatTabs = false }: NewChatViewProps) => {
               >
                 <Tags className="h-4 w-4" />
               </Button>
+              <BulkDeleteButtons
+                showBulkDeleteButtons={showBulkDeleteButtons}
+                setShowBulkDeleteButtons={setShowBulkDeleteButtons}
+                selectedConversations={selectedConversations}
+                setSelectedConversations={setSelectedConversations}
+                conversations={conversations}
+              />
             </div>
           </div>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-            <TabsList className="grid grid-cols-2 w-64">
+            <TabsList className="grid grid-cols-2 w-63">
               <TabsTrigger value="all">All</TabsTrigger>
               <TabsTrigger value="favorites">Favorites</TabsTrigger>
             </TabsList>
@@ -148,6 +165,9 @@ export const NewChatView = ({ showChatTabs = false }: NewChatViewProps) => {
                 selectedCategoryId={selectedCategoryId}
                 conversationCategoryMap={conversationCategoryMap}
                 onRequestCategoryAssignment={handleRequestCategoryAssignment}
+                showBulkDeleteButtons={showBulkDeleteButtons}
+                selectedConversations={selectedConversations}
+                setSelectedConversations={setSelectedConversations}
               />
             </TabsContent>
             <TabsContent value="favorites" className="flex-1 mt-0">
@@ -157,6 +177,9 @@ export const NewChatView = ({ showChatTabs = false }: NewChatViewProps) => {
                 selectedCategoryId={selectedCategoryId}
                 conversationCategoryMap={conversationCategoryMap}
                 onRequestCategoryAssignment={handleRequestCategoryAssignment}
+                showBulkDeleteButtons={showBulkDeleteButtons}
+                selectedConversations={selectedConversations}
+                setSelectedConversations={setSelectedConversations}
               />
             </TabsContent>
           </Tabs>
