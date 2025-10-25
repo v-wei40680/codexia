@@ -1,6 +1,5 @@
 import { MediaAttachment } from '@/types/chat';
 import { generateUniqueId } from './genUniqueId';
-import { isRemoteRuntime } from "@/lib/tauri-proxy";
 
 // Supported image formats
 export const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg'];
@@ -77,36 +76,11 @@ export const createMediaAttachment = async (filePath: string): Promise<MediaAtta
   const type = isImageFile(filename) ? 'image' : 'audio';
   const mimeType = getMimeType(filename);
   
-  // For images, we'll let the backend handle the base64 conversion
-  // Just store the file path - the Rust backend will read and encode it
-  const dataUrl = `file://${filePath}`;
-  
   return {
     id: `${type}_${generateUniqueId()}`,
     type,
     path: filePath,
     name: filename,
     mimeType,
-    dataUrl,
   };
-};
-
-/**
- * Read file content as base64 (if needed)
- */
-export const readFileAsBase64 = async (filePath: string): Promise<string> => {
-  try {
-    if (isRemoteRuntime()) {
-      throw new Error("Reading local files is not supported in remote mode");
-    }
-
-    const { readFile } = await import('@tauri-apps/plugin-fs');
-    const bytes = await readFile(filePath);
-    const base64 = btoa(String.fromCharCode(...new Uint8Array(bytes)));
-    const mimeType = getMimeType(filePath);
-    return `data:${mimeType};base64,${base64}`;
-  } catch (error) {
-    console.error('Failed to read file as base64:', error);
-    throw error;
-  }
 };

@@ -43,11 +43,6 @@ interface ChatInputStore {
   setInputValue: (value: string) => void;
   appendToInput: (value: string) => void;
 
-  // Optional external setter to keep legacy props in sync
-  setExternalSetter: (setter: ((value: string) => void) | null) => void;
-  // Internal reference used by the setter above (not persisted)
-  _externalSetter?: ((value: string) => void) | null;
-
   // Prompt optimization history actions
   pushPromptHistory: (value: string) => void;
   popPromptHistory: () => string | null;
@@ -145,8 +140,6 @@ export const useChatInputStore = create<ChatInputStore>()(
       // Input actions – also sync with optional external setter for compatibility
       setInputValue: (value: string) => {
         set({ inputValue: value });
-        const external = get()._externalSetter;
-        if (external) external(value);
       },
 
       appendToInput: (value: string) => {
@@ -154,8 +147,6 @@ export const useChatInputStore = create<ChatInputStore>()(
         const separator = inputValue.trim() ? '\n\n' : '';
         const newVal = inputValue + separator + value;
         set({ inputValue: newVal });
-        const external = get()._externalSetter;
-        if (external) external(newVal);
       },
 
       pushPromptHistory: (value: string) => {
@@ -188,13 +179,6 @@ export const useChatInputStore = create<ChatInputStore>()(
       // Focus control: bump signal to notify listeners
       requestFocus: () => {
         set((state) => ({ focusSignal: state.focusSignal + 1 }));
-      },
-
-      // Register an external setter (used by components still relying on
-      // currentMessage/setCurrentMessage props). Syncs store updates to the
-      // external state.
-      setExternalSetter: (setter) => {
-        set({ _externalSetter: setter });
       },
 
       // Clear all

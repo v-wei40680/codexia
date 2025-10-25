@@ -38,7 +38,6 @@ export interface MediaAttachment {
   path: string;
   name: string;
   mimeType?: string;
-  dataUrl?: string; // base64 data URL
 }
 
 export type Provider =
