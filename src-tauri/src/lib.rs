@@ -6,7 +6,9 @@ mod export_bindings;
 mod filesystem;
 mod mcp;
 mod services;
+mod session_files;
 mod state;
+mod terminal;
 mod utils;
 
 use commands::{
