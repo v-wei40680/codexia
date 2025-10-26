@@ -1,4 +1,4 @@
-import { useMemo, type SetStateAction, type Dispatch } from "react";
+import { useMemo, useEffect, type SetStateAction, type Dispatch } from "react";
 import { Button } from "@/components/ui/button";
 import { Trash2, MoreVertical, Star, StarOff, FolderPlus } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
@@ -8,7 +8,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { useConversationListStore } from "@/stores/useConversationListStore";
+import { useConversationListStore, loadProjectSessions } from "@/stores/useConversationListStore";
 import { useCodexStore } from "@/stores/useCodexStore";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -41,6 +41,13 @@ export function ConversationList({
   } = useConversationListStore();
   const { activeConversationId, setActiveConversationId } = useActiveConversationStore();
   const { cwd } = useCodexStore();
+
+  useEffect(() => {
+    if (cwd) {
+      console.log("cwd", cwd)
+      loadProjectSessions(cwd);
+    }
+  }, [cwd]);
 
   const favoriteIds = useMemo(() => {
     const list = favoriteConversationIdsByCwd[cwd || ""] ?? [];
@@ -145,9 +152,9 @@ export function ConversationList({
                     </div>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
-                        onClick={(event) => {
+                        onClick={async (event) => {
                           event.stopPropagation();
-                          toggleFavorite(conv.conversationId);
+                          await toggleFavorite(conv.conversationId);
                         }}
                       >
                         {isFavorite ? (

@@ -18,8 +18,8 @@ use commands::{
 use crate::config::provider::ensure_default_providers;
 use session_files::{
     delete::{delete_session_file, delete_sessions_files},
-    save::get_project_sessions,
-    scan::scan_projects,
+    cache::{load_project_sessions, write_project_cache},
+    scanner::scan_projects,
     update::update_cache_title,
 };
 use terminal::open_terminal_with_command;
@@ -107,11 +107,12 @@ pub fn run() {
             cmd::respond_exec_command_request,
             cmd::delete_file,
             scan_projects,
-            get_project_sessions,
+            load_project_sessions,
             delete_session_file,
             update_cache_title,
             open_terminal_with_command,
             delete_sessions_files,
+            write_project_cache,
         ])
         .setup(|_app| {
             #[cfg(debug_assertions)]

@@ -6,6 +6,7 @@ use std::collections::HashSet;
 use std::path::Path;
 use walkdir::WalkDir;
 
+/// Walk through all `.jsonl` files in sessions directory
 pub fn scan_jsonl_files<P: AsRef<Path>>(dir_path: P) -> impl Iterator<Item = walkdir::DirEntry> {
     WalkDir::new(dir_path)
         .into_iter()
@@ -14,7 +15,8 @@ pub fn scan_jsonl_files<P: AsRef<Path>>(dir_path: P) -> impl Iterator<Item = wal
         .filter(|e| e.path().extension().and_then(|s| s.to_str()) == Some("jsonl"))
 }
 
-pub fn scan_project_sessions_incremental(
+/// Scan sessions incrementally — only include files modified after cutoff
+pub fn scan_sessions_after(
     project_path: &str,
     after: Option<DateTime<Utc>>,
 ) -> Result<Vec<Value>, String> {
@@ -24,19 +26,21 @@ pub fn scan_project_sessions_incremental(
     for entry in scan_jsonl_files(&sessions_dir) {
         let path = entry.path();
 
-        // Skip files that haven't been modified since last scan
+        // Skip unmodified files
         if let Some(cutoff) = after {
             if let Ok(metadata) = std::fs::metadata(path) {
                 if let Ok(modified) = metadata.modified() {
                     let modified_datetime: DateTime<Utc> = modified.into();
                     if modified_datetime <= cutoff {
-                        continue; // Skip this file
+                        continue;
                     }
                 }
             }
         }
 
         let file_path = path.to_string_lossy().to_string();
+
+        // Read first line and parse JSON
         match read_first_line(path) {
             Ok(line) => {
                 if let Ok(value) = serde_json::from_str::<Value>(&line) {
@@ -57,6 +61,7 @@ pub fn scan_project_sessions_incremental(
         }
     }
 
+    // Sort newest first
     results.sort_by(|a, b| {
         let a_dt = extract_datetime(a["path"].as_str().unwrap_or_default());
         let b_dt = extract_datetime(b["path"].as_str().unwrap_or_default());
@@ -71,6 +76,7 @@ pub fn scan_project_sessions_incremental(
     Ok(results)
 }
 
+/// Scan all projects that appear in sessions folder
 #[tauri::command]
 pub async fn scan_projects() -> Result<Vec<Value>, String> {
     let sessions_dir = get_sessions_path()?;
@@ -79,6 +85,7 @@ pub async fn scan_projects() -> Result<Vec<Value>, String> {
     for entry in scan_jsonl_files(&sessions_dir) {
         let file_path = entry.path().to_path_buf();
 
+        // Filter out invalid small files
         match count_lines(&file_path) {
             Ok(line_count) if line_count < 4 => {
                 eprintln!("Deleting file with {} lines: {:?}", line_count, file_path);
@@ -87,7 +94,7 @@ pub async fn scan_projects() -> Result<Vec<Value>, String> {
                 }
                 continue;
             }
-            Ok(_) => { /* File has enough lines, proceed */ }
+            Ok(_) => {}
             Err(e) => {
                 eprintln!("Failed to count lines for {:?}: {}", file_path, e);
                 continue;
@@ -95,7 +102,7 @@ pub async fn scan_projects() -> Result<Vec<Value>, String> {
         }
 
         let mut project_path: Option<String> = None;
-        match read_first_line(file_path.clone()) {
+        match read_first_line(&file_path) {
             Ok(line) => {
                 if let Ok(value) = serde_json::from_str::<Value>(&line) {
                     if let Some(cwd) = value["payload"]["cwd"].as_str() {
@@ -116,7 +123,7 @@ pub async fn scan_projects() -> Result<Vec<Value>, String> {
         .map(|path| {
             json!({
                 "path": path,
-                "trust_level": Some("no"),
+                "trust_level": "no",
             })
         })
         .collect();
