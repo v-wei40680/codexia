@@ -14,8 +14,13 @@ use commands::{
     enable_remote_ui, get_remote_ui_status
 };
 use crate::config::provider::ensure_default_providers;
-
-
+use session_files::{
+    delete::{delete_session_file, delete_sessions_files},
+    save::get_project_sessions,
+    scan::scan_projects,
+    update::update_cache_title,
+};
+use terminal::open_terminal_with_command;
 use filesystem::{
     directory_ops::{canonicalize_path, get_default_directories, read_directory, search_files},
     file_analysis::calculate_file_tokens,
@@ -93,13 +98,18 @@ pub fn run() {
             enable_remote_ui,
             disable_remote_ui,
             get_remote_ui_status,
-            services::session::delete_session_file,
             cmd::send_user_message,
             cmd::new_conversation,
             cmd::resume_conversation,
             cmd::interrupt_conversation,
             cmd::respond_exec_command_request,
             cmd::delete_file,
+            scan_projects,
+            get_project_sessions,
+            delete_session_file,
+            update_cache_title,
+            open_terminal_with_command,
+            delete_sessions_files,
         ])
         .setup(|_app| {
             #[cfg(debug_assertions)]
