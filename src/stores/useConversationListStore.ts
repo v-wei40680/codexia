@@ -20,7 +20,12 @@ interface ConversationListActions {
 async function syncCacheToBackend(cwd: string) {
   const state = useConversationListStore.getState();
   const conversations = state.conversationsByCwd[cwd] ?? [];
-  await invoke("write_project_cache", { projectPath: cwd, sessions: conversations, favorites: [] });
+  const favorites = state.favoriteConversationIdsByCwd[cwd] ?? [];
+  await invoke("write_project_cache", { 
+    projectPath: cwd, 
+    sessions: conversations, 
+    favorites 
+  });
 }
 
 export const useConversationListStore = create<
@@ -170,17 +175,20 @@ export const useConversationListStore = create<
 // Helper to load project sessions from backend and update the store
 export async function loadProjectSessions(cwd: string) {
   const { sessions, favorites } = await invoke("load_project_sessions", { projectPath: cwd }) as { sessions: any[], favorites: string[] };
+  
   // Reset the store
   useConversationListStore.getState().reset();
-  // Add each conversation/session
-  for (const summary of sessions) {
-    await useConversationListStore.getState().addConversation(cwd, summary);
-  }
-  // Set favorites for cwd
+  
+  // First set the favorites to prevent them from being cleared during sync
   useConversationListStore.setState(state => ({
     favoriteConversationIdsByCwd: {
       ...state.favoriteConversationIdsByCwd,
       [cwd]: favorites ?? [],
     }
   }));
+  
+  // Then add each conversation/session (this will sync with the correct favorites)
+  for (const summary of sessions) {
+    await useConversationListStore.getState().addConversation(cwd, summary);
+  }
 }

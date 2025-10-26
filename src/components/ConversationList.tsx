@@ -55,7 +55,7 @@ export function ConversationList({
   }, [favoriteConversationIdsByCwd, cwd]);
 
   const conversations = useMemo(() => {
-    const base = (conversationsByCwd[cwd || ""] || []).slice().reverse();
+    const base = (conversationsByCwd[cwd || ""] || []);
     const query = searchQuery.trim().toLowerCase();
     return base.filter((conv) => {
       if (mode === "favorites" && !favoriteIds.has(conv.conversationId)) {
