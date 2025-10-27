@@ -83,14 +83,14 @@ export function useApproval(conversationId: string | null) {
 
     if (request.type === "exec") {
       await invoke("respond_exec_command_request", {
-        request_token: request.callId,
-        decision: "Allow",
+        requestToken: request.callId,
+        decision: "approved",
       });
     } else {
       // Patch approval uses different methods
       await invoke("respond_apply_patch_request", {
-        request_token: request.callId,
-        decision: "Allow",
+        requestToken: request.callId,
+        decision: "approved",
       });
     }
 
@@ -106,12 +106,12 @@ export function useApproval(conversationId: string | null) {
     const decision = "Deny";
     if (request.type === "exec") {
       await invoke("respond_exec_command_request", {
-        request_token: request.callId,
+        requestToken: request.callId,
         decision,
       });
     } else {
       await invoke("respond_apply_patch_request", {
-        request_token: request.callId,
+        requestToken: request.callId,
         decision,
       });
     }

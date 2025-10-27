@@ -181,6 +181,15 @@ impl CodexAppServerClient {
             .await
     }
 
+    pub async fn respond_apply_patch_request(
+        &self,
+        request_token: &str,
+        decision: ReviewDecision,
+    ) -> Result<(), String> {
+        self.respond_pending_request(request_token, PendingRequestKind::ApplyPatch, decision)
+            .await
+    }
+
     async fn send_notification(
         &self,
         method: &str,

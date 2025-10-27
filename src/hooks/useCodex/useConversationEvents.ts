@@ -101,6 +101,9 @@ export function useConversationEvents(
             case "agent_reasoning_delta":
               handlers.onAgentReasoningDelta?.(eventMsg);
               break;
+            case "agent_reasoning_raw_content_delta":
+              handlers.onAgentReasoningDelta?.(eventMsg);
+              break 
             case "agent_reasoning_section_break":
               handlers.onAgentReasoningSectionBreak?.(eventMsg);
               break;
@@ -143,8 +146,13 @@ export function useConversationEvents(
             case "stream_error":
               handlers.onStreamError?.(eventMsg);
               break
+            case "item_started":
+            case "item_completed":
+            case "agent_reasoning_raw_content":
+            case "exec_command_output_delta":
+              break
             default:
-              console.warn("Unknown event type:", eventMsg.type);
+              console.warn(`Unknown event.id ${event.id} event.type:`, eventMsg.type);
           }
         });
       } catch (err) {

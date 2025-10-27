@@ -32,7 +32,7 @@ export function useCodexEvents({
 }: UseCodexEventsParams): UseCodexEventsResult {
   const [deltaEventMap, setDeltaEventMap] = useState<EventsByConversation>({});
   const { activeConversationId } = useActiveConversationStore();
-  let subscriptionId: string | null = null;
+  const [subscriptionId, setSubscriptionId] = useState<string | null>(null);
 
   useEffect(() => {
     setDeltaEventMap((prev) => {
@@ -62,16 +62,11 @@ export function useCodexEvents({
 
     const setupListener = async () => {
       if (activeConversationId) {
-        const newsubscriptionId = v4();
         try {
-          subscriptionId = await invoke("add_conversation_listener", {
+          const id = await invoke("add_conversation_listener", {
             params: {conversationId: activeConversationId},
           });
-          console.debug(
-            "[codex:event] added conversation listener",
-            activeConversationId,
-            newsubscriptionId,
-          );
+          setSubscriptionId(id as string);
         } catch (error) {
           console.error("Failed to add conversation listener", error);
         }

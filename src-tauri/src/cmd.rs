@@ -132,6 +132,20 @@ pub async fn respond_exec_command_request(
 }
 
 #[tauri::command]
+pub async fn respond_apply_patch_request(
+    request_token: String,
+    decision: String,
+    state: State<'_, AppState>,
+    app_handle: AppHandle,
+) -> Result<(), String> {
+    let client = get_client(&state, &app_handle).await?;
+    let parsed = parse_review_decision(&decision)?;
+    client
+        .respond_apply_patch_request(&request_token, parsed)
+        .await
+}
+
+#[tauri::command]
 pub async fn resume_conversation(
     params: ResumeConversationParams,
     state: State<'_, AppState>,

@@ -4,7 +4,6 @@ use codex_app_server_protocol::{
     ApplyPatchApprovalParams, ExecCommandApprovalParams, JSONRPCErrorError, JSONRPCNotification,
     JSONRPCRequest, RequestId, ServerNotification, ServerRequest,
 };
-use codex_protocol::protocol::ReviewDecision;
 use log::{debug, error, info, warn};
 use serde::Serialize;
 use serde_json::Value;
@@ -129,22 +128,31 @@ pub(super) async fn handle_server_request(
                 params.conversation_id,
                 params.file_changes.len()
             );
+            let token = request_id_key(&request_id);
+            {
+                let mut pending = pending_server_requests.lock().await;
+                if pending
+                    .insert(
+                        token.clone(),
+                        PendingServerRequest {
+                            request_id: request_id.clone(),
+                            kind: PendingRequestKind::ApplyPatch,
+                        },
+                    )
+                    .is_some()
+                {
+                    warn!(
+                        "Overwriting pending apply patch approval for token {}",
+                        token
+                    );
+                }
+            }
             let payload = ApplyPatchApprovalNotification {
-                request_token: request_id_key(&request_id),
+                request_token: token.clone(),
                 params: params.clone(),
             };
             if let Err(err) = app.emit("codex:apply-patch-request", payload) {
                 error!("Failed to emit apply patch request: {err}");
-            }
-            if let Err(err) = respond_with_review_decision(
-                stdin,
-                request_id,
-                PendingRequestKind::ApplyPatch,
-                ReviewDecision::Denied,
-            )
-            .await
-            {
-                error!("Failed to auto-deny patch approval request: {err}");
             }
         }
         Err(err) => {

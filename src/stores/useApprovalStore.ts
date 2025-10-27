@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { FileChange } from "@/bindings/FileChange";
 
 export type ExecApprovalRequest = {
   requestToken: string;
@@ -10,15 +11,29 @@ export type ExecApprovalRequest = {
   createdAt: number;
 };
 
+export type PatchApprovalRequest = {
+  requestToken: string;
+  conversationId: string;
+  callId: string;
+  reason: string | null;
+  grantRoot: string | null;
+  changes: Record<string, FileChange>;
+  createdAt: number;
+};
+
 interface ApprovalState {
   execRequests: Record<string, ExecApprovalRequest>;
+  patchRequests: Record<string, PatchApprovalRequest>;
   upsertExecRequest: (request: ExecApprovalRequest) => void;
   removeExecRequest: (callId: string) => void;
+  upsertPatchRequest: (request: PatchApprovalRequest) => void;
+  removePatchRequest: (callId: string) => void;
   clearAll: () => void;
 }
 
 export const useApprovalStore = create<ApprovalState>((set) => ({
   execRequests: {},
+  patchRequests: {},
   upsertExecRequest: (request) =>
     set((state) => ({
       execRequests: {
@@ -36,5 +51,22 @@ export const useApprovalStore = create<ApprovalState>((set) => ({
         execRequests: rest,
       };
     }),
-  clearAll: () => set({ execRequests: {} }),
+  upsertPatchRequest: (request) =>
+    set((state) => ({
+      patchRequests: {
+        ...state.patchRequests,
+        [request.callId]: request,
+      },
+    })),
+  removePatchRequest: (callId) =>
+    set((state) => {
+      if (!state.patchRequests[callId]) {
+        return state;
+      }
+      const { [callId]: _removed, ...rest } = state.patchRequests;
+      return {
+        patchRequests: rest,
+      };
+    }),
+  clearAll: () => set({ execRequests: {}, patchRequests: {} }),
 }));

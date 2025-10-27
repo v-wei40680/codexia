@@ -105,6 +105,7 @@ pub fn run() {
             cmd::resume_conversation,
             cmd::interrupt_conversation,
             cmd::respond_exec_command_request,
+            cmd::respond_apply_patch_request,
             cmd::delete_file,
             cmd::add_conversation_listener,
             cmd::remove_conversation_listener,
