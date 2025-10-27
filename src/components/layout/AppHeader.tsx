@@ -8,6 +8,7 @@ import {
   Moon,
   Brain,
   ExternalLink,
+  AlarmClockCheck,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -117,6 +118,14 @@ export function AppHeader() {
           title={t("header.projects")}
         >
           <PartyPopper className="w-5 h-5" /> {t("header.projects")}
+        </Link>
+
+        <Link
+          to="/task"
+          className="flex hover:text-primary items-center gap-1"
+          title={t("header.task")}
+        >
+          <AlarmClockCheck className="w-5 h-5" /> {t("header.task")}
         </Link>
 
         <Button

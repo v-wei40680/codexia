@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { listen, type UnlistenFn } from "@tauri-apps/api/event";
 import { v4 } from "uuid";
-
+import { invoke } from "@/lib/tauri-proxy";
 import type { EventMsg } from "@/bindings/EventMsg";
 import type { ConversationEventPayload, EventWithId } from "@/types/chat";
 import { DELTA_EVENT_TYPES } from "@/types/chat";
@@ -32,6 +32,7 @@ export function useCodexEvents({
 }: UseCodexEventsParams): UseCodexEventsResult {
   const [deltaEventMap, setDeltaEventMap] = useState<EventsByConversation>({});
   const { activeConversationId } = useActiveConversationStore();
+  let subscriptionId: string | null = null;
 
   useEffect(() => {
     setDeltaEventMap((prev) => {
@@ -57,88 +58,124 @@ export function useCodexEvents({
 
   useEffect(() => {
     let isActive = true;
-    const listenerPromise = listen<ConversationEventPayload>(
-      "codex:event",
-      (event) => {
-        if (!isActive) {
-          return;
-        }
+    let unlistenTauri: UnlistenFn | undefined;
 
-        const payload = event.payload;
-        if (!payload || !payload.params) return;
-
-        const { conversationId, msg, id: incomingId } = payload.params;
-        if (!conversationId || !msg) return;
-
-        const eventMsg = msg as EventMsg;
-        if (typeof eventMsg !== "object" || typeof eventMsg.type !== "string") {
-          return;
-        }
-
-        const eventId = v4()
-
-        const eventRecord: EventWithId = {
-          id: eventId,
-          msg: eventMsg,
-        };
-
-        if (!eventMsg.type.endsWith("_delta")) {
-          console.debug("[codex:event]", conversationId, incomingId, eventMsg.type, eventRecord);
-        }
-
-        if (DELTA_EVENT_TYPES.has(eventMsg.type)) {
-          setDeltaEventMap((prev) => {
-            const current = prev[conversationId] ?? [];
-            if (current.some((item) => item.id === eventId)) {
-              return prev;
-            }
-            return {
-              ...prev,
-              [conversationId]: [...current, eventRecord],
-            };
+    const setupListener = async () => {
+      if (activeConversationId) {
+        const newsubscriptionId = v4();
+        try {
+          subscriptionId = await invoke("add_conversation_listener", {
+            params: {conversationId: activeConversationId},
           });
-          return;
+          console.debug(
+            "[codex:event] added conversation listener",
+            activeConversationId,
+            newsubscriptionId,
+          );
+        } catch (error) {
+          console.error("Failed to add conversation listener", error);
         }
+      }
 
-        if (eventMsg.type !== "exec_command_output_delta" || !eventMsg.type.startsWith("item")) {
-          if (eventMsg.type !== "user_message") {
-            appendEvent(conversationId, eventRecord);
+      unlistenTauri = await listen<ConversationEventPayload>(
+        "codex:event",
+        (event) => {
+          if (!isActive) {
+            return;
           }
-        }
 
-        if (
-          eventMsg.type === "task_complete" ||
-          eventMsg.type === "error" ||
-          eventMsg.type === "turn_aborted"
-        ) {
-          setIsSending(false);
-        }
+          const payload = event.payload;
+          if (!payload || !payload.params) return;
 
-        if (isInitializing && conversationId === activeConversationId) {
-          setIsInitializing(false);
-        }
+          const { conversationId, msg, id: incomingId } = payload.params;
+          if (!conversationId || !msg) return;
 
-        // Preserve delta events for the active conversation so live streaming output remains visible.
-      },
-    );
+          const eventMsg = msg as EventMsg;
+          if (
+            typeof eventMsg !== "object" ||
+            typeof eventMsg.type !== "string"
+          ) {
+            return;
+          }
 
-    listenerPromise.catch((error) => {
+          const eventId = v4();
+
+          const eventRecord: EventWithId = {
+            id: eventId,
+            msg: eventMsg,
+          };
+
+          if (!eventMsg.type.endsWith("_delta")) {
+            console.debug(
+              "[codex:event]",
+              conversationId,
+              incomingId,
+              eventMsg.type,
+              eventRecord,
+            );
+          }
+
+          if (DELTA_EVENT_TYPES.has(eventMsg.type)) {
+            setDeltaEventMap((prev) => {
+              const current = prev[conversationId] ?? [];
+              if (current.some((item) => item.id === eventId)) {
+                return prev;
+              }
+              return {
+                ...prev,
+                [conversationId]: [...current, eventRecord],
+              };
+            });
+            return;
+          }
+
+          if (
+            eventMsg.type !== "exec_command_output_delta" ||
+            !eventMsg.type.startsWith("item")
+          ) {
+            if (eventMsg.type !== "user_message") {
+              appendEvent(conversationId, eventRecord);
+            }
+          }
+
+          if (
+            eventMsg.type === "task_complete" ||
+            eventMsg.type === "error" ||
+            eventMsg.type === "turn_aborted"
+          ) {
+            setIsSending(false);
+          }
+
+          if (isInitializing && conversationId === activeConversationId) {
+            setIsInitializing(false);
+          }
+
+          // Preserve delta events for the active conversation so live streaming output remains visible.
+        },
+      );
+    };
+
+    void setupListener().catch((error) => {
       console.error("Failed to initialize Codex listeners", error);
     });
 
     return () => {
       isActive = false;
-      listenerPromise
-        .then((unlisten: UnlistenFn) => {
-          try {
-            unlisten();
-          } catch (error) {
-            console.warn("Failed to remove Codex listener", error);
-          }
-        })
-        .catch((error) => {
-          console.warn("Codex listener cleanup skipped", error);
+      if (subscriptionId && activeConversationId) {
+        console.warn("emove conversation listener", activeConversationId, subscriptionId);
+        void invoke<void>("remove_conversation_listener", {
+          params: {subscriptionId},
+        }).catch((error) => {
+          console.warn("Failed to remove conversation listener", error);
         });
+      }
+      if (unlistenTauri) {
+        try {
+          unlistenTauri();
+        } catch (error) {
+          console.warn("Failed to remove Codex event listener", error);
+        }
+      }
     };
   }, [
     appendEvent,
@@ -146,6 +183,7 @@ export function useCodexEvents({
     setIsSending,
     isInitializing,
     activeConversationId,
+    subscriptionId,
   ]);
 
   const initializeConversationBuffer = useCallback((conversationId: string) => {
@@ -165,5 +203,9 @@ export function useCodexEvents({
     });
   }, []);
 
-  return { deltaEventMap, initializeConversationBuffer, clearConversationBuffer };
+  return {
+    deltaEventMap,
+    initializeConversationBuffer,
+    clearConversationBuffer,
+  };
 }

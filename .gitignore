@@ -35,3 +35,5 @@ CLAUDE.md
 .env.local
 .env.development
 .env.production
+
+docs/design.md

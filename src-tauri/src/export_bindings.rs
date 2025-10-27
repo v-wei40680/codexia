@@ -3,6 +3,7 @@ use codex_app_server_protocol::{
     ConversationSummary, ExecCommandApprovalParams, InitializeParams, InitializeResponse,
     InputItem, InterruptConversationParams, InterruptConversationResponse, ListConversationsResponse,
     NewConversationParams, NewConversationResponse, SendUserMessageParams, SendUserMessageResponse,
+    ResumeConversationParams, ResumeConversationResponse, RemoveConversationListenerParams
 };
 use codex_protocol::protocol::EventMsg;
 use std::path::Path;
@@ -18,6 +19,8 @@ pub fn export_ts_types() {
     AuthMode::export_all_to(&out_dir).unwrap();
     NewConversationParams::export_all_to(&out_dir).unwrap();
     NewConversationResponse::export_all_to(&out_dir).unwrap();
+    ResumeConversationParams::export_all_to(&out_dir).unwrap();
+    ResumeConversationResponse::export_all_to(&out_dir).unwrap();
     ConversationSummary::export_all_to(&out_dir).unwrap();
     EventMsg::export_all_to(&out_dir).unwrap();
     InitializeParams::export_all_to(&out_dir).unwrap();
@@ -28,6 +31,7 @@ pub fn export_ts_types() {
     ExecCommandApprovalParams::export_all_to(&out_dir).unwrap();
     ListConversationsResponse::export_all_to(&out_dir).unwrap();
     AddConversationListenerParams::export_all_to(&out_dir).unwrap();
+    RemoveConversationListenerParams::export_all_to(&out_dir).unwrap();
     AddConversationSubscriptionResponse::export_all_to(&out_dir).unwrap();
     InputItem::export_all_to(&out_dir).unwrap();
     InterruptConversationParams::export_all_to(&out_dir).unwrap();

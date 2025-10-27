@@ -2,14 +2,10 @@ import { NotesView } from "@/components/NotesView";
 import { useLayoutStore } from "@/stores/layoutStore";
 import { useFolderStore } from "@/stores/FolderStore";
 import { FileTree } from "@/components/filetree/FileTreeView";
-
 import { FileViewer } from "@/components/filetree/FileViewer";
 import { useNoteStore } from "@/stores/NoteStore";
 import { DiffViewer } from "@/components/filetree/DiffViewer";
-import { useState } from "react";
-import { ConfigDialog } from "@/components/dialogs/ConfigDialog";
 import { AppToolbar } from "@/components/layout/AppToolbar";
-import { useCodexStore } from "@/stores/CodexStore";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Files, GitBranch, Bot, NotebookPen } from "lucide-react";
 import { AttachedFilesTab } from "@/components/AttachedFilesTab";
@@ -17,6 +13,7 @@ import { NoteList } from "@/components/notes";
 import { WebPreview } from "@/components/WebPreview";
 import { SourceControl } from "@/components/SourceControl";
 import { NewChatView } from "@/components/NewChatView";
+import { ChatTab } from "@/components/ChatTab";
 
 export default function ChatPage() {
   const {
@@ -34,11 +31,7 @@ export default function ChatPage() {
     diffFile,
     closeDiffFile,
   } = useLayoutStore();
-
-  const { config, setConfig } = useCodexStore();
-
   const { currentFolder } = useFolderStore();
-  const [isConfigOpen, setIsConfigOpen] = useState(false);
 
   return (
     <div className="h-full flex overflow-hidden">
@@ -85,9 +78,7 @@ export default function ChatPage() {
               <AttachedFilesTab />
             </TabsContent>
             <TabsContent value="chat" className="flex-1 overflow-y-auto mt-0">
-              <NewChatView
-                showChatTabs={true}
-              />
+              <ChatTab />
             </TabsContent>
             <TabsContent value="notes">
               <NoteList />
@@ -101,11 +92,7 @@ export default function ChatPage() {
         {/* Middle Panel - Chat/Notes */}
         {showChatPane && (
           <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-            <AppToolbar
-              onOpenConfig={() => setIsConfigOpen(true)}
-              currentTab={selectedLeftPanelTab}
-              onSwitchToTab={setSelectedLeftPanelTab}
-            />
+            <AppToolbar />
             {selectedLeftPanelTab === "notes" ? (
               <NotesView />
             ) : (
@@ -167,15 +154,6 @@ export default function ChatPage() {
           </div>
         )}
       </div>
-
-      <ConfigDialog
-        isOpen={isConfigOpen}
-        config={config}
-        onClose={() => setIsConfigOpen(false)}
-        onSave={(newConfig) => {
-          setConfig(newConfig);
-        }}
-      />
     </div>
   );
 }

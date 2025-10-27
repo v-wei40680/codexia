@@ -1,4 +1,4 @@
-import { generateUniqueId } from "@/utils/genUniqueId";
+import { v4 } from "uuid";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
@@ -30,8 +30,6 @@ interface NoteStore {
   getNoteById: (id: string) => Note | null;
 }
 
-const generateId = () => `note_${generateUniqueId()}`;
-
 const generateTitle = (content: string): string => {
   if (!content.trim()) return "New Note";
   
@@ -54,7 +52,7 @@ export const useNoteStore = create<NoteStore>()(
       createNote: (title, content = "") => {
         const now = Date.now();
         const note: Note = {
-          id: generateId(),
+          id: v4(),
           title: title || generateTitle(content) || "New Note",
           content,
           createdAt: now,

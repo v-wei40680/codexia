@@ -14,7 +14,7 @@ import { useActiveConversationStore } from "@/stores/useActiveConversationStore"
 import { Checkbox } from "@/components/ui/checkbox";
 
 interface ConversationListProps {
-  mode?: "all" | "favorites";
+  mode: string;
   searchQuery?: string;
   selectedCategoryId?: string | null;
   conversationCategoryMap?: Record<string, string | undefined>;

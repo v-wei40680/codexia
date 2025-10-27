@@ -2,6 +2,7 @@ export const ja = {
   header: {
     chat: "チャット",
     projects: "プロジェクト",
+    task: "タスク",
     openNewWindow: "新しいウィンドウを開く",
     codexUnavailable: "利用不可",
     usage: "使用状況",

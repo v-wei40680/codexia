@@ -2,6 +2,7 @@ export const en = {
   header: {
     chat: "Chat",
     projects: "Projects",
+    task: "Task",
     openNewWindow: "Open New Window",
     codexUnavailable: "Not available",
     usage: "Usage",

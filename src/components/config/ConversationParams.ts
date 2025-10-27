@@ -39,7 +39,6 @@ export const SANDBOX_MODES: Record<
   },
 };
 
-
 const defaultConfig = {
   "tools.web_search": false,
   "model_reasoning_effort": 'medium',
@@ -48,7 +47,7 @@ const defaultConfig = {
 }
 
 export const getNewConversationParams = (
-  provider: any, // Replace 'any' with the actual type of provider
+  provider: any,
   selectedModel: string | null,
   cwd: string | null,
   approvalPolicy: AskForApproval,

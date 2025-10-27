@@ -9,6 +9,7 @@ use codex_app_server_protocol::{
     JSONRPCErrorError, JSONRPCNotification, JSONRPCRequest, NewConversationParams,
     NewConversationResponse, RequestId, ResumeConversationParams, ResumeConversationResponse,
     SendUserMessageParams, SendUserMessageResponse,
+    RemoveConversationListenerParams, RemoveConversationSubscriptionResponse
 };
 use codex_protocol::protocol::ReviewDecision;
 use serde::de::DeserializeOwned;
@@ -143,6 +144,15 @@ impl CodexAppServerClient {
     ) -> Result<AddConversationSubscriptionResponse, String> {
         let params_value = serde_json::to_value(params).map_err(|err| err.to_string())?;
         self.request("addConversationListener", Some(params_value))
+            .await
+    }
+
+    pub async fn remove_conversation_listener(
+        &self,
+        params: RemoveConversationListenerParams,
+    ) -> Result<RemoveConversationSubscriptionResponse, String> {
+        let params_value = serde_json::to_value(params).map_err(|err| err.to_string())?;
+        self.request("removeConversationListener", Some(params_value))
             .await
     }
 

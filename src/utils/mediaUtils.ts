@@ -1,5 +1,5 @@
+import { v4 } from 'uuid';
 import { MediaAttachment } from '@/types/chat';
-import { generateUniqueId } from './genUniqueId';
 
 // Supported image formats
 export const IMAGE_EXTENSIONS = ['.jpg', '.jpeg', '.png', '.gif', '.bmp', '.webp', '.svg'];
@@ -77,7 +77,7 @@ export const createMediaAttachment = async (filePath: string): Promise<MediaAtta
   const mimeType = getMimeType(filename);
   
   return {
-    id: `${type}_${generateUniqueId()}`,
+    id: v4(),
     type,
     path: filePath,
     name: filename,

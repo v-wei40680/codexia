@@ -1,9 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "../ui/button";
 import {
   Settings,
   PencilIcon,
-  History,
   Globe,
 } from "lucide-react";
 import { useNoteStore } from "@/stores/NoteStore";
@@ -11,39 +10,31 @@ import { useLayoutStore } from "@/stores/layoutStore";
 import { useFolderStore } from "@/stores/FolderStore";
 import { detectWebFramework } from "@/utils/webFrameworkDetection";
 import { useChatSession } from "@/hooks/useChatSession";
+import { useNavigate } from "react-router-dom";
+import { useCodexStore } from "@/stores/CodexStore";
+import { ConfigDialog } from "@/components/dialogs/ConfigDialog";
 
-interface AppToolbarProps {
-  onOpenConfig: () => void;
-  onCreateNewSession?: () => void;
-  currentTab?: string;
-  onSwitchToTab?: (tab: string) => void;
-}
-
-export const AppToolbar: React.FC<AppToolbarProps> = ({
-  onOpenConfig,
-  currentTab,
-  onSwitchToTab,
-}) => {
+export const AppToolbar: React.FC = () => {
   const { createNote, setCurrentNote } = useNoteStore();
-  const { showWebPreview, setWebPreviewUrl } = useLayoutStore();
+  const { showWebPreview, setWebPreviewUrl, selectedLeftPanelTab } = useLayoutStore();
   const { currentFolder } = useFolderStore();
-  const { handlePrepareNewConversation } = useChatSession()
-
-  const handleToggleLeftPanel = () => {
-    if (!onSwitchToTab) return;
-    
-    if (currentTab === "notes") {
-      // Switch to notes tab in left panel
-      onSwitchToTab("notes");
-    } else {
-      // Switch to chat tab in left panel for conversation management
-      onSwitchToTab("chat");
-    }
-  };
+  const { createConversation } = useChatSession();
+  const navigate = useNavigate();
+  const { config, setConfig } = useCodexStore();
+  const [isConfigOpen, setIsConfigOpen] = useState(false);
 
   const handleCreateNote = () => {
     const newNote = createNote();
     setCurrentNote(newNote.id);
+  };
+
+  const handleCreateNewConversation = async () => {
+    try {
+      await createConversation();
+      navigate("/chat");
+    } catch (error) {
+      console.error("Failed to create new conversation:", error);
+    }
   };
 
   const handleToggleWebPreview = async () => {
@@ -68,33 +59,20 @@ export const AppToolbar: React.FC<AppToolbarProps> = ({
     }
   };
 
-  const PanelToggleButton = () => (
-    <Button
-      variant="ghost"
-      size="icon"
-      className="h-7 w-7 shrink-0"
-      onClick={handleToggleLeftPanel}
-      title="Toggle Panel"
-    >
-      <History />
-    </Button>
-  );
-
   return (
     <div className="flex items-center justify-end gap-2">
 
-      {currentTab !== "notes" && (
+      {selectedLeftPanelTab !== "notes" && (
         <>
           <Button
             variant="ghost"
             size="icon"
             className="h-7 w-7 shrink-0"
-            onClick={handlePrepareNewConversation}
+            onClick={handleCreateNewConversation}
             title="New Conversation"
           >
             <PencilIcon className="h-4 w-4" />
           </Button>
-          <PanelToggleButton />
 
           {/* Web Preview Button */}
           <Button
@@ -111,7 +89,7 @@ export const AppToolbar: React.FC<AppToolbarProps> = ({
           <Button
             variant="ghost"
             size="icon"
-            onClick={onOpenConfig}
+            onClick={() => setIsConfigOpen(true)}
             className="h-7 w-7 shrink-0"
             title="Configuration Settings"
           >
@@ -120,19 +98,25 @@ export const AppToolbar: React.FC<AppToolbarProps> = ({
         </>
       )}
 
-      {currentTab === "notes" && (
-        <>
-          <Button
-            onClick={handleCreateNote}
-            size="icon"
-            className="h-7 w-7 p-0"
-            title="Create New Note"
-          >
-            <PencilIcon className="h-3 w-3" />
-          </Button>
-          <PanelToggleButton />
-        </>
+      {selectedLeftPanelTab === "notes" && (
+        <Button
+          onClick={handleCreateNote}
+          size="icon"
+          className="h-7 w-7 p-0"
+          title="Create New Note"
+        >
+          <PencilIcon className="h-3 w-3" />
+        </Button>
       )}
+
+      <ConfigDialog
+        isOpen={isConfigOpen}
+        config={config}
+        onClose={() => setIsConfigOpen(false)}
+        onSave={(newConfig) => {
+          setConfig(newConfig);
+        }}
+      />
     </div>
   );
 };

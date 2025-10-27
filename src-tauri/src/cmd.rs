@@ -4,7 +4,7 @@ use codex_app_server_protocol::{
     AddConversationListenerParams, InterruptConversationParams,
     InterruptConversationResponse, NewConversationParams, NewConversationResponse,
     ResumeConversationParams, ResumeConversationResponse, SendUserMessageParams,
-    SendUserMessageResponse,
+    SendUserMessageResponse, RemoveConversationListenerParams
 };
 use codex_protocol::protocol::ReviewDecision;
 use log::{error, info, warn};
@@ -26,22 +26,6 @@ pub async fn new_conversation(
                 "New conversation created: {}",
                 conversation.conversation_id
             );
-            if let Err(err) = client
-                .add_conversation_listener(AddConversationListenerParams {
-                    conversation_id: conversation.conversation_id.clone(),
-                })
-                .await
-            {
-                error!(
-                    "Failed to register conversation listener for {}: {err}",
-                    conversation.conversation_id
-                );
-                return Err(err);
-            }
-            info!(
-                "Listener registered for conversation {}",
-                conversation.conversation_id
-            );
             Ok(conversation)
         }
         Err(err) => {
@@ -50,6 +34,27 @@ pub async fn new_conversation(
         }
     }
 }
+
+#[tauri::command]
+pub async fn add_conversation_listener(
+    params: AddConversationListenerParams,
+    state: State<'_, AppState>,
+    app_handle: AppHandle,
+) -> Result<(), String> {
+    let client = get_client(&state, &app_handle).await?;
+    client.add_conversation_listener(params).await.map(|_| ())
+}
+
+#[tauri::command]
+pub async fn remove_conversation_listener(
+    params: RemoveConversationListenerParams,
+    state: State<'_, AppState>,
+    app_handle: AppHandle,
+) -> Result<(), String> {
+    let client = get_client(&state, &app_handle).await?;
+    client.remove_conversation_listener(params).await.map(|_| ())
+}
+
 
 #[tauri::command]
 pub async fn send_user_message(
@@ -137,22 +142,6 @@ pub async fn resume_conversation(
     let client = get_client(&state, &app_handle).await?;
     match client.resume_conversation(params).await {
         Ok(conversation) => {
-            if let Err(err) = client
-                .add_conversation_listener(AddConversationListenerParams {
-                    conversation_id: conversation.conversation_id.clone(),
-                })
-                .await
-            {
-                error!(
-                    "Failed to register conversation listener for {}: {err}",
-                    conversation.conversation_id
-                );
-                return Err(err);
-            }
-            info!(
-                "Listener registered for resumed conversation {}",
-                conversation.conversation_id
-            );
             Ok(conversation)
         }
         Err(err) => {
