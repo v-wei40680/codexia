@@ -16,7 +16,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { open as openUrl } from "@tauri-apps/plugin-shell"
+import { open as openUrl } from "@tauri-apps/plugin-shell";
 
 function AddProviderForm({ onAdd }: { onAdd: () => void }) {
   const [name, setName] = useState("");
@@ -171,7 +171,13 @@ export function ProviderModels() {
       <PopoverContent className="w-[480px] h-[480px] p-0" align="end">
         <div className="flex p-4 pb-3">
           <h3 className="font-semibold text-lg">Model Settings</h3>
-          <Button onClick={() => openUrl("https://github.com/milisp/codexia/blob/main/docs/config.toml")}>
+          <Button
+            onClick={() =>
+              openUrl(
+                "https://github.com/milisp/codexia/blob/main/docs/config.toml",
+              )
+            }
+          >
             online config.toml example
           </Button>
         </div>
@@ -316,21 +322,24 @@ export function ProviderModels() {
                   <ScrollArea className="h-56 rounded-md border">
                     <div className="p-2 space-y-1">
                       {selectedProvider.models.map((m) => (
-                        <Button
-                          key={m}
-                          variant={m === selectedModel ? "secondary" : "ghost"}
-                          size="sm"
-                          className="w-full justify-start font-mono text-xs relative group"
-                          onClick={() => {
-                            setSelectedModel(m);
-                            setIsPopoverOpen(false);
-                          }}
-                        >
-                          <span className="flex-grow text-left">{m}</span>
+                        <div className="flex" key={m}>
+                          <Button
+                            variant={
+                              m === selectedModel ? "secondary" : "ghost"
+                            }
+                            size="sm"
+                            className="w-full justify-start font-mono text-xs relative group"
+                            onClick={() => {
+                              setSelectedModel(m);
+                              setIsPopoverOpen(false);
+                            }}
+                          >
+                            <span className="flex-grow text-left">{m}</span>
+                          </Button>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute right-2"
+                            className="h-6 w-6 transition-opacity absolute right-2 hover:bg-red-200"
                             onClick={(e) => {
                               e.stopPropagation(); // Prevent the model selection when clicking the delete button
                               if (selectedProviderId) {
@@ -340,7 +349,7 @@ export function ProviderModels() {
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
-                        </Button>
+                        </div>
                       ))}
                     </div>
                   </ScrollArea>
