@@ -27,6 +27,7 @@ type ProviderActions = {
   setSelectedProviderId: (id: string) => void;
   setSelectedModel: (model: string) => void;
   addModel: (providerId: string, model: string) => void;
+  deleteModel: (providerId: string, model: string) => void;
   setReasoningEffort: (effort: ReasoningEffort) => void;
   setOllamaModels: (models: string[]) => void;
 };
@@ -139,6 +140,15 @@ export const useProviderStore = create<ProviderState & ProviderActions>()(
         set((state) => ({
           providers: state.providers.map((p) =>
             p.id === "ollama" ? { ...p, models: models } : p,
+          ),
+        }));
+      },
+      deleteModel: (providerId, modelToDelete) => {
+        set((state) => ({
+          providers: state.providers.map((p) =>
+            p.id === providerId
+              ? { ...p, models: p.models.filter((m) => m !== modelToDelete) }
+              : p,
           ),
         }));
       },    }),

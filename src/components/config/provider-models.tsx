@@ -8,7 +8,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useProviderStore } from "@/stores/useProviderStore";
-import { ChevronDown, PlusCircle } from "lucide-react";
+import { ChevronDown, PlusCircle, Trash2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import {
@@ -106,6 +106,7 @@ export function ProviderModels() {
     setApiKeyVar,
     setBaseUrl,
     setOllamaModels,
+    deleteModel,
   } = useProviderStore();
 
   useEffect(() => {
@@ -315,13 +316,26 @@ export function ProviderModels() {
                           key={m}
                           variant={m === selectedModel ? "secondary" : "ghost"}
                           size="sm"
-                          className="w-full justify-start font-mono text-xs relative"
+                          className="w-full justify-start font-mono text-xs relative group"
                           onClick={() => {
                             setSelectedModel(m);
                             setIsPopoverOpen(false);
                           }}
                         >
-                          {m}
+                          <span className="flex-grow text-left">{m}</span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity absolute right-2"
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent the model selection when clicking the delete button
+                              if (selectedProviderId) {
+                                deleteModel(selectedProviderId, m);
+                              }
+                            }}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
                         </Button>
                       ))}
                     </div>
