@@ -4,6 +4,9 @@ import {
   loadProjectSessions,
 } from "@/stores/useConversationListStore";
 import { useCodexStore } from "@/stores/useCodexStore";
+import { Button } from "./ui/button";
+import { invoke } from "@/lib/tauri-proxy";
+import { Trash2 } from "lucide-react";
 
 interface SimpleConversationListProps {
   activeConversationId: string | null;
@@ -14,8 +17,7 @@ export function SimpleConversationList({
   activeConversationId,
   setActiveConversationId,
 }: SimpleConversationListProps) {
-  const { conversationsByCwd } =
-    useConversationListStore();
+  const { conversationsByCwd } = useConversationListStore();
   const { cwd } = useCodexStore();
 
   useEffect(() => {
@@ -41,11 +43,11 @@ export function SimpleConversationList({
             {conversations.map((conv) => {
               const isActive = activeConversationId === conv.conversationId;
               return (
-                <li key={conv.conversationId}>
+                <li key={conv.conversationId} className="flex">
                   <button
                     onClick={() => {
-                      setActiveConversationId(conv.conversationId)
-                      console.log("selected", conv.conversationId)
+                      setActiveConversationId(conv.conversationId);
+                      console.log("selected", conv.conversationId);
                     }}
                     className={`flex-1 min-w-0 truncate text-left rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
                       isActive
@@ -53,10 +55,22 @@ export function SimpleConversationList({
                         : "text-muted-foreground"
                     }`}
                   >
-                    <span className="flex items-center gap-2 truncate">
-                      <span className="truncate">{conv.preview}</span>
-                    </span>
+                    <span className="truncate">{conv.preview}</span>
                   </button>
+
+                  <Button
+                    onClick={async (event) => {
+                      event.stopPropagation();
+                      if (conv.path) {
+                        useConversationListStore
+                          .getState()
+                          .removeConversation(conv.conversationId);
+                        await invoke("delete_file", { path: conv.path });
+                      }
+                    }}
+                  >
+                    <Trash2 />
+                  </Button>
                 </li>
               );
             })}

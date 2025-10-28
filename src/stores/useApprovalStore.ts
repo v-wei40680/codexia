@@ -1,5 +1,6 @@
 import { create } from "zustand";
 import type { FileChange } from "@/bindings/FileChange";
+import { ParsedCommand } from "@/bindings/ParsedCommand";
 
 export type ExecApprovalRequest = {
   requestToken: string;
@@ -7,6 +8,7 @@ export type ExecApprovalRequest = {
   callId: string;
   command: string[];
   cwd: string;
+  parsedCmd: Array<ParsedCommand>;
   reason: string | null;
   createdAt: number;
 };

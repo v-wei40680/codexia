@@ -2,9 +2,7 @@ import { InputItem } from "@/bindings/InputItem";
 import { invoke } from "@/lib/tauri-proxy";
 import { useState } from "react";
 
-interface SendMessageOptions {}
-
-export function useSendMessage({}: SendMessageOptions) {
+export function useSendMessage() {
   const [isSending, setIsSending] = useState(false);
 
   const sendMessage = async (conversationId: string, items: InputItem[]) => {
@@ -23,7 +21,7 @@ export function useSendMessage({}: SendMessageOptions) {
 
   const interrupt = async (conversationId: string) => {
     await invoke("interrupt_conversation", {
-      params: {conversationId},
+      params: { conversationId },
     });
   };
 

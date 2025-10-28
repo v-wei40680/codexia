@@ -1,13 +1,12 @@
+import { memo, useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
+import { Button } from "@/components/ui/button";
+import { toast } from "@/components/ui/use-toast";
+import { useApprovalStore } from "@/stores/useApprovalStore";
+import type { ConversationEvent } from "@/types/chat";
+import { EventBubble } from "./EventBubble";
 
-import { memo, useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
-import { Button } from '@/components/ui/button';
-import { toast } from '@/components/ui/use-toast';
-import { useApprovalStore } from '@/stores/useApprovalStore';
-import type { ConversationEvent } from '@/types/chat';
-import { EventBubble } from './EventBubble';
-
-type ExecDecision = 'approved' | 'approved_for_session' | 'denied' | 'abort';
+type ExecDecision = "approved" | "approved_for_session" | "denied" | "abort";
 
 export const ExecApprovalRequestItem = memo(function ExecApprovalRequestItem({
   event,
@@ -17,15 +16,22 @@ export const ExecApprovalRequestItem = memo(function ExecApprovalRequestItem({
   conversationId: string | null;
 }) {
   const { msg } = event;
+  if (msg.type !== "exec_approval_request") {
+    return null;
+  }
+  console.log(msg);
   const [isSubmitting, setIsSubmitting] = useState(false);
+
   const execApprovalRequest = useApprovalStore((state) => {
-    if (msg.type !== 'exec_approval_request') {
+    if (msg.type !== "exec_approval_request") {
       return null;
     }
     const entry = state.execRequests[msg.call_id] ?? null;
+    console.debug(entry);
     if (!entry) {
       return null;
     }
+    console.debug(conversationId);
     if (conversationId && entry.conversationId !== conversationId) {
       return null;
     }
@@ -40,40 +46,36 @@ export const ExecApprovalRequestItem = memo(function ExecApprovalRequestItem({
 
     setIsSubmitting(true);
     try {
-      await invoke('respond_exec_command_request', {
+      await invoke("respond_exec_command_request", {
         requestToken: execApprovalRequest.requestToken,
         decision,
       });
       removeExecRequest(execApprovalRequest.callId);
       const decisionLabel: Record<ExecDecision, string> = {
-        approved: 'approved',
-        approved_for_session: 'approved for this session',
-        denied: 'denied',
-        abort: 'aborted',
+        approved: "approved",
+        approved_for_session: "approved for this session",
+        denied: "denied",
+        abort: "aborted",
       };
       toast({
-        title: 'Decision submitted',
+        title: "Decision submitted",
         description: `You ${decisionLabel[decision]} the command.`,
       });
     } catch (error) {
-      console.error('Failed to send exec approval decision', error);
+      console.error("Failed to send exec approval decision", error);
       const description =
         error instanceof Error ? error.message : String(error);
       toast({
-        title: 'Failed to send approval',
+        title: "Failed to send approval",
         description,
-        variant: 'destructive',
+        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  if (msg.type !== 'exec_approval_request') {
-    return null;
-  }
-
-  const commandText = msg.command.join(' ');
+  const commandText = msg.command.join(" ");
   const awaitingDecision = Boolean(execApprovalRequest);
   return (
     <EventBubble
@@ -93,7 +95,7 @@ export const ExecApprovalRequestItem = memo(function ExecApprovalRequestItem({
               <Button
                 size="sm"
                 disabled={isSubmitting}
-                onClick={() => handleExecDecision('approved')}
+                onClick={() => handleExecDecision("approved")}
               >
                 Approve
               </Button>
@@ -101,7 +103,7 @@ export const ExecApprovalRequestItem = memo(function ExecApprovalRequestItem({
                 size="sm"
                 variant="secondary"
                 disabled={isSubmitting}
-                onClick={() => handleExecDecision('approved_for_session')}
+                onClick={() => handleExecDecision("approved_for_session")}
               >
                 Approve for session
               </Button>
@@ -109,7 +111,7 @@ export const ExecApprovalRequestItem = memo(function ExecApprovalRequestItem({
                 size="sm"
                 variant="outline"
                 disabled={isSubmitting}
-                onClick={() => handleExecDecision('denied')}
+                onClick={() => handleExecDecision("denied")}
               >
                 Deny
               </Button>
@@ -117,7 +119,7 @@ export const ExecApprovalRequestItem = memo(function ExecApprovalRequestItem({
                 size="sm"
                 variant="destructive"
                 disabled={isSubmitting}
-                onClick={() => handleExecDecision('abort')}
+                onClick={() => handleExecDecision("abort")}
               >
                 Abort turn
               </Button>

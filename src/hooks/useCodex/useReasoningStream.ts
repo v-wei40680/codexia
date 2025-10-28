@@ -2,6 +2,7 @@ import { AgentReasoningDeltaEvent } from "@/bindings/AgentReasoningDeltaEvent";
 import { useState } from "react";
 import { v4 } from "uuid";
 import { useConversationEvents } from "./useConversationEvents";
+import { AgentReasoningRawContentDeltaEvent } from "@/bindings/AgentReasoningRawContentDeltaEvent";
 
 interface ReasoningSection {
   id: string;
@@ -13,15 +14,20 @@ export function useReasoningStream(conversationId: string | null) {
   const [sections, setSections] = useState<ReasoningSection[]>([]);
   const [currentSectionId, setCurrentSectionId] = useState<string | null>(null);
 
-  const handleReasoningDelta = (event: AgentReasoningDeltaEvent) => {
+  const handleReasoningDelta = (
+    event: AgentReasoningDeltaEvent | AgentReasoningRawContentDeltaEvent,
+  ) => {
     setSections((prev) => {
-      if (currentSectionId) {
+      const lastSection = prev[prev.length - 1];
+      if (lastSection && lastSection.isStreaming) {
+        // Append to existing streaming section
         return prev.map((section) =>
-          section.id === currentSectionId
+          section.id === lastSection.id
             ? { ...section, content: section.content + event.delta }
             : section,
         );
       } else {
+        // Create new section
         const newId = v4();
         setCurrentSectionId(newId);
         return [
@@ -37,16 +43,19 @@ export function useReasoningStream(conversationId: string | null) {
   };
 
   const handleReasoningSectionBreak = () => {
-    if (currentSectionId) {
-      setSections((prev) =>
-        prev.map((section) =>
-          section.id === currentSectionId
+    setSections((prev) => {
+      const lastSection = prev[prev.length - 1];
+      if (lastSection && lastSection.isStreaming) {
+        return prev.map((section) =>
+          section.id === lastSection.id
             ? { ...section, isStreaming: false }
             : section,
-        ),
-      );
-      setCurrentSectionId(null);
-    }
+        );
+      }
+      return prev;
+    });
+    console.log(currentSectionId);
+    setCurrentSectionId(null);
   };
 
   useConversationEvents(conversationId, {

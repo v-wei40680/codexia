@@ -1,7 +1,7 @@
 import { AgentMessageDeltaEvent } from "@/bindings/AgentMessageDeltaEvent";
 import { AgentMessageEvent } from "@/bindings/AgentMessageEvent";
 import { UserMessageEvent } from "@/bindings/UserMessageEvent";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { v4 } from "uuid";
 import { useConversationEvents } from "./useConversationEvents";
 
@@ -19,6 +19,11 @@ export function useMessageStream(conversationId: string | null) {
   const [currentStreamingId, setCurrentStreamingId] = useState<string | null>(
     null,
   );
+
+  useEffect(() => {
+    setMessages([]);
+    setCurrentStreamingId(null);
+  }, [conversationId]);
 
   // Handle incremental updates
   const handleAgentMessageDelta = (event: AgentMessageDeltaEvent) => {

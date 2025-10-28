@@ -64,7 +64,7 @@ export function useCodexEvents({
       if (activeConversationId) {
         try {
           const id = await invoke("add_conversation_listener", {
-            params: {conversationId: activeConversationId},
+            params: { conversationId: activeConversationId },
           });
           setSubscriptionId(id as string);
         } catch (error) {
@@ -157,9 +157,13 @@ export function useCodexEvents({
     return () => {
       isActive = false;
       if (subscriptionId && activeConversationId) {
-        console.warn("emove conversation listener", activeConversationId, subscriptionId);
+        console.warn(
+          "emove conversation listener",
+          activeConversationId,
+          subscriptionId,
+        );
         void invoke<void>("remove_conversation_listener", {
-          params: {subscriptionId},
+          params: { subscriptionId },
         }).catch((error) => {
           console.warn("Failed to remove conversation listener", error);
         });

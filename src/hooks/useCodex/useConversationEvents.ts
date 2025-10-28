@@ -76,83 +76,94 @@ export function useConversationEvents(
         });
 
         unlisten = await listen("codex:event", (event) => {
-          console.info("codex:event", event)
-          const eventMsg = (event.payload as CodexEvent['payload']).params.msg;
+          const msg = (event.payload as CodexEvent["payload"]).params.msg;
+          if (!msg.type.endsWith("_delta") || !msg.type.startsWith("item")) {
+            console.info(`codex:event ${event.id} ${msg.type}`, event);
+          }
 
-          switch (eventMsg.type) {
+          switch (msg.type) {
             case "task_started":
-              handlers.onTaskStarted?.(eventMsg);
+              handlers.onTaskStarted?.(msg);
               break;
             case "task_complete":
-              handlers.onTaskComplete?.(eventMsg);
+              handlers.onTaskComplete?.(msg);
               break;
             case "agent_message":
-              handlers.onAgentMessage?.(eventMsg);
+              handlers.onAgentMessage?.(msg);
               break;
             case "agent_message_delta":
-              handlers.onAgentMessageDelta?.(eventMsg);
+              handlers.onAgentMessageDelta?.(msg);
               break;
             case "user_message":
-              handlers.onUserMessage?.(eventMsg);
+              handlers.onUserMessage?.(msg);
               break;
             case "agent_reasoning":
-              handlers.onAgentReasoning?.(eventMsg);
+              handlers.onAgentReasoning?.(msg);
               break;
             case "agent_reasoning_delta":
-              handlers.onAgentReasoningDelta?.(eventMsg);
+              handlers.onAgentReasoningDelta?.(msg);
               break;
             case "agent_reasoning_raw_content_delta":
-              handlers.onAgentReasoningDelta?.(eventMsg);
-              break 
+              handlers.onAgentReasoningDelta?.(msg);
+              break;
             case "agent_reasoning_section_break":
-              handlers.onAgentReasoningSectionBreak?.(eventMsg);
+              handlers.onAgentReasoningSectionBreak?.(msg);
               break;
             case "exec_approval_request":
-              handlers.onExecApprovalRequest?.(eventMsg);
+              handlers.onExecApprovalRequest?.(msg);
               break;
             case "apply_patch_approval_request":
-              handlers.onApplyPatchApprovalRequest?.(eventMsg);
+              handlers.onApplyPatchApprovalRequest?.(msg);
               break;
             case "exec_command_begin":
-              handlers.onExecCommandBegin?.(eventMsg);
+              handlers.onExecCommandBegin?.(msg);
               break;
             case "exec_command_end":
-              handlers.onExecCommandEnd?.(eventMsg);
+              handlers.onExecCommandEnd?.(msg);
               break;
             case "patch_apply_begin":
-              handlers.onPatchApplyBegin?.(eventMsg);
+              handlers.onPatchApplyBegin?.(msg);
               break;
             case "patch_apply_end":
-              handlers.onPatchApplyEnd?.(eventMsg);
+              handlers.onPatchApplyEnd?.(msg);
               break;
             case "web_search_begin":
-              handlers.onWebSearchBegin?.(eventMsg);
+              handlers.onWebSearchBegin?.(msg);
               break;
             case "web_search_end":
-              handlers.onWebSearchEnd?.(eventMsg);
+              handlers.onWebSearchEnd?.(msg);
               break;
             case "mcp_tool_call_begin":
-              handlers.onMcpToolCallBegin?.(eventMsg);
+              handlers.onMcpToolCallBegin?.(msg);
               break;
             case "mcp_tool_call_end":
-              handlers.onMcpToolCallEnd?.(eventMsg);
+              handlers.onMcpToolCallEnd?.(msg);
               break;
             case "turn_diff":
-              handlers.onTurnDiff?.(eventMsg);
+              handlers.onTurnDiff?.(msg);
               break;
             case "token_count":
-              handlers.onTokenCount?.(eventMsg);
-              break
+              handlers.onTokenCount?.(msg);
+              break;
             case "stream_error":
-              handlers.onStreamError?.(eventMsg);
-              break
+              console.log("stream_error:", msg);
+              handlers.onStreamError?.(msg);
+              break;
+            case "error":
+              console.log("error:", msg);
+              handlers.onError?.(msg);
+              break;
             case "item_started":
             case "item_completed":
             case "agent_reasoning_raw_content":
             case "exec_command_output_delta":
-              break
+            case "turn_aborted":
+              break;
             default:
-              console.warn(`Unknown event.id ${event.id} event.type:`, eventMsg.type);
+              console.warn(
+                `Unknown event.id ${event.id} event.type:`,
+                msg.type,
+              );
           }
         });
       } catch (err) {
@@ -162,9 +173,13 @@ export function useConversationEvents(
 
     return () => {
       unlisten?.();
-      invoke("remove_conversation_listener", {
-        params: { subscriptionId },
-      });
+      // Only attempt to remove the listener if we have a valid subscription ID.
+      // The backend expects a UUID string; passing null triggers a type error.
+      if (subscriptionId) {
+        invoke("remove_conversation_listener", {
+          params: { subscriptionId },
+        });
+      }
     };
   }, [conversationId]);
 }

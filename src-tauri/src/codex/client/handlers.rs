@@ -11,7 +11,7 @@ use tauri::{AppHandle, Emitter};
 use tokio::process::ChildStdin;
 use tokio::sync::Mutex;
 
-use super::transport::{respond_with_review_decision, send_error};
+use super::transport::send_error;
 use super::{PendingRequestKind, PendingServerRequest, PendingServerRequestMap};
 
 #[derive(Clone, Serialize)]
@@ -36,10 +36,7 @@ struct ApplyPatchApprovalNotification {
     params: ApplyPatchApprovalParams,
 }
 
-pub(super) async fn handle_notification(
-    notification: JSONRPCNotification,
-    app: &AppHandle,
-) {
+pub(super) async fn handle_notification(notification: JSONRPCNotification, app: &AppHandle) {
     if notification.method.starts_with("codex/event/") {
         debug!("Forwarding event notification {}", notification.method);
         let payload = NotificationPayload {

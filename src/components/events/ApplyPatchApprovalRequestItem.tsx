@@ -22,13 +22,18 @@ export const ApplyPatchApprovalRequestItem = memo(function ApplyPatchApprovalReq
     if (msg.type !== 'apply_patch_approval_request') {
       return null;
     }
+    console.log('Looking for patch request:', msg.call_id);
+    console.log('Available requests:', Object.keys(state.patchRequests));
     const entry = state.patchRequests[msg.call_id] ?? null;
     if (!entry) {
+      console.log('Patch request not found in store');
       return null;
     }
     if (conversationId && entry.conversationId !== conversationId) {
+      console.log('Conversation ID mismatch:', entry.conversationId, conversationId);
       return null;
     }
+    console.log('Found patch request:', entry);
     return entry;
   });
   const { removePatchRequest } = useApprovalStore();
