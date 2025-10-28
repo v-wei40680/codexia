@@ -1,5 +1,5 @@
 import { AgentReasoningDeltaEvent } from "@/bindings/AgentReasoningDeltaEvent";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { v4 } from "uuid";
 import { useConversationEvents } from "./useConversationEvents";
 import { AgentReasoningRawContentDeltaEvent } from "@/bindings/AgentReasoningRawContentDeltaEvent";
@@ -13,6 +13,12 @@ interface ReasoningSection {
 export function useReasoningStream(conversationId: string | null) {
   const [sections, setSections] = useState<ReasoningSection[]>([]);
   const [currentSectionId, setCurrentSectionId] = useState<string | null>(null);
+
+  // Reset sections when conversationId changes
+  useEffect(() => {
+    setSections([]);
+    setCurrentSectionId(null);
+  }, [conversationId]);
 
   const handleReasoningDelta = (
     event: AgentReasoningDeltaEvent | AgentReasoningRawContentDeltaEvent,
