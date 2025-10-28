@@ -16,6 +16,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { open as openUrl } from "@tauri-apps/plugin-shell"
 
 function AddProviderForm({ onAdd }: { onAdd: () => void }) {
   const [name, setName] = useState("");
@@ -168,8 +169,11 @@ export function ProviderModels() {
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[480px] h-[480px] p-0" align="end">
-        <div className="p-4 pb-3">
+        <div className="flex p-4 pb-3">
           <h3 className="font-semibold text-lg">Model Settings</h3>
+          <Button onClick={() => openUrl("https://github.com/milisp/codexia/blob/main/docs/config.toml")}>
+            online config.toml example
+          </Button>
         </div>
         <Separator />
         <div className="flex h-96">
