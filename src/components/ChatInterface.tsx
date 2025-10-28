@@ -1,64 +1,52 @@
-import { useState, useMemo } from "react";
+import { useState } from "react";
 import {
   useConversation,
-  useMessageStream,
-  useReasoningStream,
   useSendMessage,
-  useTurnDiff,
 } from "@/hooks/useCodex";
 import { Button } from "./ui/button";
-import { DiffViewer } from "./filetree/DiffViewer";
-import { ChatInput } from "./chat/ChatInput";
-import type { MediaAttachment } from "@/types/chat";
+import type { CodexEvent, MediaAttachment } from "@/types/chat";
 import { buildMessageParams } from "@/utils/buildParams";
-import { Sandbox } from "./config/Sandbox";
-import { ProviderModels } from "@/components/config/provider-models";
-import { ReasoningEffortSelector } from "./config/ReasoningEffortSelector";
+import { ChatCompose } from "./chat/ChatCompose";
 import { SimpleConversationList } from "./SimpleConversationList";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
-import { useApprovalStore } from "@/stores/useApprovalStore";
 import { PenSquare } from "lucide-react";
-import { v4 as uuidv4 } from "uuid";
 import { useBuildNewConversationParams } from "@/hooks/useBuildNewConversationParams";
 import { useCodexApprovalRequests } from "@/hooks/useCodexApprovalRequests";
-import { ExecApprovalRequestItem } from "./events/ExecApprovalRequestItem";
-import { ApplyPatchApprovalRequestItem } from "./events/ApplyPatchApprovalRequestItem";
-import MessageList from "./MessageList";
-import ReasoningPanel from "./ReasoningPanel";
+import { useConversationEvents } from "@/hooks/useCodex/useConversationEvents";
+import { useEventStreamStore } from "@/stores/useEventStreamStore";
+import { EventItem } from "@/components/events/EventItem";
+import { v4 } from "uuid";
 
 export function ChatInterface() {
   useCodexApprovalRequests();
   const { createConversation } = useConversation();
   const { activeConversationId: conversationId } = useActiveConversationStore();
   const [inputValue, setInputValue] = useState("");
-
-  const { messages } = useMessageStream(conversationId);
-  const { sections } = useReasoningStream(conversationId);
+  const [events, setEvents] = useState<CodexEvent[]>([]);
+  const { appendDelta, finalizeMessage } = useEventStreamStore()
   const { sendMessage, interrupt, isSending } = useSendMessage();
-  const { diffs, canUndo, undo } = useTurnDiff(conversationId);
   const buildNewConversationParams = useBuildNewConversationParams();
   const { activeConversationId, setActiveConversationId } =
     useActiveConversationStore();
 
-  // Get approval requests from store
-  const { execRequests, patchRequests } = useApprovalStore();
-
-  // Filter requests for current conversation
-  const currentExecRequests = useMemo(() => {
-    if (!conversationId) return [];
-    console.log(execRequests);
-    return Object.values(execRequests).filter(
-      (req) => req.conversationId === conversationId,
-    );
-  }, [execRequests, conversationId]);
-
-  const currentPatchRequests = useMemo(() => {
-    if (!conversationId) return [];
-    console.log("patchRequests:", patchRequests);
-    return Object.values(patchRequests).filter(
-      (req) => req.conversationId === conversationId,
-    );
-  }, [patchRequests, conversationId]);
+    useConversationEvents(conversationId, {
+      onAnyEvent: (event: CodexEvent) => {
+        const { msg } = event.payload.params;
+  
+        if (!msg.type.endsWith("_delta")) {
+          const newEvent: CodexEvent = event
+          setEvents((prev) => [...prev, newEvent]);
+        }
+      },
+  
+      onAgentMessageDelta: (event) => {
+        appendDelta(event);
+      },
+  
+      onAgentMessage: (event) => {
+        finalizeMessage(event);
+      },
+    });
 
   const handleInputChange = (value: string) => {
     setInputValue(value);
@@ -91,6 +79,7 @@ export function ChatInterface() {
   const handleCreateConversation = async () => {
     const newConversation = await createConversation(buildNewConversationParams);
     setActiveConversationId(newConversation.conversationId);
+    setEvents([])
   };
 
   return (
@@ -109,75 +98,22 @@ export function ChatInterface() {
       </div>
       <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
         <div className="flex-1 space-y-4 overflow-y-auto p-4">
-          {messages.length > 0 ? (
-            <>
-              <MessageList messages={messages} />
-              {sections.length > 0 && <ReasoningPanel sections={sections} />}
-              {currentExecRequests.map((req) => (
-                <ExecApprovalRequestItem
-                  key={req.callId}
-                  event={{
-                    msg: {
-                      type: "exec_approval_request",
-                      call_id: req.callId,
-                      command: req.command,
-                      cwd: req.cwd,
-                      reason: req.reason,
-                      parsed_cmd: req.parsedCmd,
-                    },
-                    id: "",
-                  }}
-                  conversationId={conversationId}
-                />
-              ))}
-              {currentPatchRequests.map((req) => (
-                <ApplyPatchApprovalRequestItem
-                  key={req.callId}
-                  conversationId={conversationId}
-                  event={{
-                    msg: {
-                      type: "apply_patch_approval_request",
-                      call_id: req.callId,
-                      changes: req.changes,
-                      reason: req.reason,
-                      grant_root: req.grantRoot,
-                    },
-                    id: uuidv4(),
-                  }}
-                />
-              ))}{" "}
-              {diffs.map((diff) => (
-                <DiffViewer key={diff.turnId} unifiedDiff={diff.unifiedDiff} />
-              ))}
-              {canUndo && (
-                <div className="flex justify-center">
-                  <Button onClick={undo} variant="outline">
-                    Undo last change
-                  </Button>
-                </div>
-              )}
-            </>
-          ) : (
-            <div className="flex h-full items-center justify-center text-muted-foreground">
-              Start a new conversation
-            </div>
-          )}
+        {events.map((ev) => (
+          <EventItem
+            key={v4()}
+            event={ev}
+            conversationId={ev.payload.params.conversationId}
+          />
+        ))}
         </div>
 
-        <div className="border-t bg-background p-4">
-          <ChatInput
+        <ChatCompose
             inputValue={inputValue}
             onInputChange={handleInputChange}
             onSendMessage={handleSendMessage}
             onStopStreaming={() => conversationId && interrupt(conversationId)}
             disabled={isSending}
-          />
-          <div className="mt-2 flex flex-wrap items-center gap-2">
-            <Sandbox />
-            <ProviderModels />
-            <ReasoningEffortSelector />
-          </div>
-        </div>
+        />
       </div>
     </div>
   );

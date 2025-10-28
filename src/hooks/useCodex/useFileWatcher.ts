@@ -1,7 +1,7 @@
-import { PatchApplyBeginEvent } from "@/bindings/PatchApplyBeginEvent";
 import { invoke } from "@/lib/tauri-proxy";
 import { useState } from "react";
 import { useConversationEvents } from "./useConversationEvents";
+import { CodexEvent } from "@/types/chat";
 
 interface FileSnapshot {
   path: string;
@@ -15,8 +15,10 @@ export function useFileWatcher(conversationId: string | null) {
   );
 
   // Listen before patch application, save file snapshots
-  const handlePatchBegin = async (event: PatchApplyBeginEvent) => {
-    const filesToSnapshot = Object.keys(event.changes || {});
+  const handlePatchBegin = async (event: CodexEvent) => {
+    const {msg} = event.payload.params
+    if (msg.type !== "patch_apply_begin") return;
+    const filesToSnapshot = Object.keys(msg.changes || {});
 
     for (const filePath of filesToSnapshot) {
       try {

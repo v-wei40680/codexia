@@ -1,8 +1,9 @@
 import { create } from "zustand";
-import type { ConversationEvent, EventWithId } from "@/types/chat";
+import type { CodexEvent } from "@/types/chat";
 import { DELTA_EVENT_TYPES } from "@/types/chat";
+import { v4 } from "uuid";
 
-const DEDUPE_EXEMPT_TYPES = new Set<EventWithId["msg"]["type"]>([
+const DEDUPE_EXEMPT_TYPES = new Set<CodexEvent["payload"]["params"]["msg"]["type"]>([
   "user_message",
 ]);
 
@@ -15,30 +16,30 @@ interface HydrationEntry {
 }
 
 function shouldSkipDuplicate(
-  previous: ConversationEvent,
-  incoming: ConversationEvent,
+  previous: CodexEvent,
+  incoming: CodexEvent,
 ): boolean {
-  if (DEDUPE_EXEMPT_TYPES.has(incoming.msg.type)) {
+  if (DEDUPE_EXEMPT_TYPES.has(incoming.payload.params.msg.type)) {
     return false;
   }
-  if (previous.msg.type !== incoming.msg.type) {
+  if (previous.payload.params.msg.type !== incoming.payload.params.msg.type) {
     return false;
   }
-  return JSON.stringify(previous.msg) === JSON.stringify(incoming.msg);
+  return JSON.stringify(previous.payload.params.msg) === JSON.stringify(incoming.payload.params.msg);
 }
 
 interface ConversationState {
-  eventsByConversation: Record<string, ConversationEvent[]>;
+  eventsByConversation: Record<string, CodexEvent[]>;
   hydrationByConversation: Record<string, HydrationEntry>;
   currentMessage: string;
 }
 
 interface ConversationActions {
   setCurrentMessage: (value: string) => void;
-  appendEvent: (conversationId: string, event: EventWithId) => void;
-  replaceEvents: (conversationId: string, events: ConversationEvent[]) => void;
+  appendEvent: (conversationId: string, event: CodexEvent) => void;
+  replaceEvents: (conversationId: string, events: CodexEvent[]) => void;
   clearConversation: (conversationId: string) => void;
-  applyInitialHistory: (conversationId: string, messages: EventWithId["msg"][]) => void;
+  applyInitialHistory: (conversationId: string, messages: CodexEvent["payload"]["params"]["msg"][]) => void;
   setHydrationStatus: (
     conversationId: string,
     status: HydrationStatus,
@@ -47,18 +48,11 @@ interface ConversationActions {
   reset: () => void;
 }
 
-const generateEventId = (prefix: string) => {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return `${prefix}-${crypto.randomUUID()}`;
-  }
-  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
-};
-
 const normalizeEvent = (
-  event: EventWithId,
+  event: CodexEvent,
   source: "live" | "history",
   createdAt?: number,
-): ConversationEvent => {
+): CodexEvent => {
   return {
     ...event,
     createdAt: createdAt ?? event.createdAt ?? Date.now(),
@@ -67,18 +61,27 @@ const normalizeEvent = (
 };
 
 const normalizeInitialMessages = (
-  messages: EventWithId["msg"][],
-): ConversationEvent[] => {
+  messages: CodexEvent["payload"]["params"]["msg"][],
+): CodexEvent[] => {
   const baseTimestamp = Date.now() - messages.length * 1000;
-  const normalized: ConversationEvent[] = [];
+  const normalized: CodexEvent[] = [];
   messages.forEach((msg, index) => {
     if (!msg || typeof msg.type !== "string") {
       return;
     }
-    const eventId = generateEventId(`history-${msg.type.toLowerCase()}`);
     const createdAt = baseTimestamp + index * 1000;
-    const event = normalizeEvent(
-      { id: eventId, msg },
+    const id = createdAt
+    const event: CodexEvent = normalizeEvent(
+      {
+        id: id,
+        event: "codex/event",
+        payload: {
+          method: "",
+          params: { conversationId: "", id: v4(), msg },
+        },
+        createdAt: createdAt,
+        source: "history",
+      },
       "history",
       createdAt,
     );
@@ -127,7 +130,7 @@ export const useConversationStore = create<
     }));
   },
   appendEvent: (conversationId, event) => {
-    if (DELTA_EVENT_TYPES.has(event.msg.type)) {
+    if (DELTA_EVENT_TYPES.has(event.payload.params.msg.type)) {
       return;
     }
     const normalized = normalizeEvent(event, "live");
@@ -153,9 +156,9 @@ export const useConversationStore = create<
   },
   replaceEvents: (conversationId, events) =>
     set((state) => {
-      const filtered: ConversationEvent[] = [];
+      const filtered: CodexEvent[] = [];
       for (const event of events) {
-        if (DELTA_EVENT_TYPES.has(event.msg.type)) {
+        if (DELTA_EVENT_TYPES.has(event.payload.params.msg.type)) {
           continue;
         }
         const normalized = normalizeEvent(event, event.source ?? "live");

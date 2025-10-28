@@ -1,9 +1,9 @@
-import { TaskStartedEvent } from "@/bindings/TaskStartedEvent";
-import { TurnDiffEvent } from "@/bindings/TurnDiffEvent";
+// imports removed: TaskStartedEvent, TurnDiffEvent (not needed here)
 import { invoke } from "@/lib/tauri-proxy";
 import { useEffect, useState } from "react";
 import { v4 } from "uuid";
 import { useConversationEvents } from "./useConversationEvents";
+import { CodexEvent } from "@/types/chat";
 
 interface FileDiff {
   turnId: string;
@@ -17,20 +17,21 @@ export function useTurnDiff(conversationId: string | null) {
   const [currentTurnId, setCurrentTurnId] = useState<string | null>(null);
 
   // Listen for turn start, record turn ID
-  const handleTaskStarted = (_event: TaskStartedEvent) => {
+  const handleTaskStarted = (_event: CodexEvent) => {
     const turnId = v4();
     setCurrentTurnId(turnId);
   };
 
   // Listen for file modification diffs
-  const handleTurnDiff = (event: TurnDiffEvent) => {
+  const handleTurnDiff = (event: CodexEvent) => {
     if (!currentTurnId) return;
-
+    const { msg } = event.payload.params;
+    if (msg.type !== "turn_diff") return;
     setDiffs((prev) => [
       ...prev,
       {
         turnId: currentTurnId,
-        unifiedDiff: event.unified_diff,
+        unifiedDiff: msg.unified_diff,
         timestamp: Date.now(),
         canRevert: true,
       },

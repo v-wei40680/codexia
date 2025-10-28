@@ -11,17 +11,17 @@ import { useCodexApprovalRequests } from "@/hooks/useCodexApprovalRequests";
 import { useSendMessage } from "@/hooks/useSendMessage";
 import type { InterruptConversationResponse } from "@/bindings/InterruptConversationResponse";
 
-import { type ConversationEvent, type EventWithId } from "@/types/chat";
+import { type CodexEvent } from "@/types/chat";
 
 type ResumeConversationResult = {
   conversation_id: string;
   model: string;
-  initialMessages?: EventWithId["msg"][] | null;
+  initialMessages?: CodexEvent["payload"]["params"]["msg"][] | null;
 };
 
 const extractInitialMessages = (
   response: ResumeConversationResult,
-): EventWithId["msg"][] | null => {
+): CodexEvent["payload"]["params"]["msg"][] | null => {
   return (
     response.initialMessages ??
     null
@@ -60,14 +60,14 @@ export function useChatSession() {
 
   useCodexApprovalRequests();
 
-  const activeEvents: ConversationEvent[] = useMemo(() => {
+  const activeEvents: CodexEvent[] = useMemo(() => {
     if (!activeConversationId) return [];
     return eventsByConversation[activeConversationId] ?? [];
   }, [eventsByConversation, activeConversationId]);
 
-  const activeDeltaEventsRef = useRef<EventWithId[]>([]);
+  const activeDeltaEventsRef = useRef<CodexEvent[]>([]);
 
-  const activeDeltaEvents: EventWithId[] = useMemo(() => {
+  const activeDeltaEvents: CodexEvent[] = useMemo(() => {
     if (!activeConversationId) return [];
     const newDeltaEvents = deltaEventMap[activeConversationId] ?? [];
 

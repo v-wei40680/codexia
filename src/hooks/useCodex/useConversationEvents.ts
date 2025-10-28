@@ -1,63 +1,32 @@
 import { invoke, listen } from "@/lib/tauri-proxy";
 import { useEffect } from "react";
-import { EventMsg } from "@/bindings/EventMsg";
-import { AgentMessageDeltaEvent } from "@/bindings/AgentMessageDeltaEvent";
-import { AgentMessageEvent } from "@/bindings/AgentMessageEvent";
-import { AgentReasoningDeltaEvent } from "@/bindings/AgentReasoningDeltaEvent";
-import { AgentReasoningEvent } from "@/bindings/AgentReasoningEvent";
-import { AgentReasoningSectionBreakEvent } from "@/bindings/AgentReasoningSectionBreakEvent";
-import { ApplyPatchApprovalRequestEvent } from "@/bindings/ApplyPatchApprovalRequestEvent";
-import { ExecApprovalRequestEvent } from "@/bindings/ExecApprovalRequestEvent";
-import { ExecCommandEndEvent } from "@/bindings/ExecCommandEndEvent";
-import { PatchApplyEndEvent } from "@/bindings/PatchApplyEndEvent";
-import { TaskCompleteEvent } from "@/bindings/TaskCompleteEvent";
-import { TaskStartedEvent } from "@/bindings/TaskStartedEvent";
-import { UserMessageEvent } from "@/bindings/UserMessageEvent";
-import { PatchApplyBeginEvent } from "@/bindings/PatchApplyBeginEvent";
-import { ExecCommandBeginEvent } from "@/bindings/ExecCommandBeginEvent";
-import { TurnDiffEvent } from "@/bindings/TurnDiffEvent";
 import { ConversationId } from "@/bindings/ConversationId";
-import { WebSearchBeginEvent } from "@/bindings/WebSearchBeginEvent";
-import { WebSearchEndEvent } from "@/bindings/WebSearchEndEvent";
-import { McpToolCallBeginEvent } from "@/bindings/McpToolCallBeginEvent";
-import { McpToolCallEndEvent } from "@/bindings/McpToolCallEndEvent";
-import { ErrorEvent } from "@/bindings/ErrorEvent";
-import { TokenCountEvent } from "@/bindings/TokenCountEvent";
-import { StreamErrorEvent } from "@/bindings/StreamErrorEvent";
-
-interface CodexEvent {
-  payload: {
-    params: {
-      msg: EventMsg;
-    };
-  };
-}
+import { CodexEvent } from "@/types/chat";
 
 interface EventHandlers {
-  onTaskStarted?: (event: TaskStartedEvent) => void;
-  onTaskComplete?: (event: TaskCompleteEvent) => void;
-  onAgentMessage?: (event: AgentMessageEvent) => void;
-  onAgentMessageDelta?: (event: AgentMessageDeltaEvent) => void;
-  onUserMessage?: (event: UserMessageEvent) => void;
-  onAgentReasoning?: (event: AgentReasoningEvent) => void;
-  onAgentReasoningDelta?: (event: AgentReasoningDeltaEvent) => void;
-  onAgentReasoningSectionBreak?: (
-    event: AgentReasoningSectionBreakEvent,
-  ) => void;
-  onExecApprovalRequest?: (event: ExecApprovalRequestEvent) => void;
-  onApplyPatchApprovalRequest?: (event: ApplyPatchApprovalRequestEvent) => void;
-  onExecCommandBegin?: (event: ExecCommandBeginEvent) => void;
-  onExecCommandEnd?: (event: ExecCommandEndEvent) => void;
-  onPatchApplyBegin?: (event: PatchApplyBeginEvent) => void;
-  onPatchApplyEnd?: (event: PatchApplyEndEvent) => void;
-  onWebSearchBegin?: (event: WebSearchBeginEvent) => void;
-  onWebSearchEnd?: (event: WebSearchEndEvent) => void;
-  onMcpToolCallBegin?: (event: McpToolCallBeginEvent) => void;
-  onMcpToolCallEnd?: (event: McpToolCallEndEvent) => void;
-  onTurnDiff?: (event: TurnDiffEvent) => void;
-  onTokenCount?: (event: TokenCountEvent) => void;
-  onStreamError?: (event: StreamErrorEvent) => void;
-  onError?: (event: ErrorEvent) => void;
+  onAnyEvent?: (event: CodexEvent) => void;
+  onTaskStarted?: (event: CodexEvent) => void;
+  onTaskComplete?: (event: CodexEvent) => void;
+  onAgentMessage?: (event: CodexEvent) => void;
+  onAgentMessageDelta?: (event: CodexEvent) => void;
+  onUserMessage?: (event: CodexEvent) => void;
+  onAgentReasoning?: (event: CodexEvent) => void;
+  onAgentReasoningDelta?: (event: CodexEvent) => void;
+  onAgentReasoningSectionBreak?: (event: CodexEvent) => void;
+  onExecApprovalRequest?: (event: CodexEvent) => void;
+  onApplyPatchApprovalRequest?: (event: CodexEvent) => void;
+  onExecCommandBegin?: (event: CodexEvent) => void;
+  onExecCommandEnd?: (event: CodexEvent) => void;
+  onPatchApplyBegin?: (event: CodexEvent) => void;
+  onPatchApplyEnd?: (event: CodexEvent) => void;
+  onWebSearchBegin?: (event: CodexEvent) => void;
+  onWebSearchEnd?: (event: CodexEvent) => void;
+  onMcpToolCallBegin?: (event: CodexEvent) => void;
+  onMcpToolCallEnd?: (event: CodexEvent) => void;
+  onTurnDiff?: (event: CodexEvent) => void;
+  onTokenCount?: (event: CodexEvent) => void;
+  onStreamError?: (event: CodexEvent) => void;
+  onError?: (event: CodexEvent) => void;
 }
 
 export function useConversationEvents(
@@ -75,83 +44,85 @@ export function useConversationEvents(
           params: { conversationId },
         });
 
-        unlisten = await listen("codex:event", (event) => {
+        unlisten = await listen("codex:event", (event: CodexEvent) => {
           const msg = (event.payload as CodexEvent["payload"]).params.msg;
           if (!msg.type.endsWith("_delta") && !msg.type.startsWith("item")) {
             console.info(`codex:event ${event.id} ${msg.type}`, event);
           }
 
+          handlers.onAnyEvent?.(event);
+
           switch (msg.type) {
             case "task_started":
-              handlers.onTaskStarted?.(msg);
+              handlers.onTaskStarted?.(event);
               break;
             case "task_complete":
-              handlers.onTaskComplete?.(msg);
+              handlers.onTaskComplete?.(event);
               break;
             case "agent_message":
-              handlers.onAgentMessage?.(msg);
+              handlers.onAgentMessage?.(event);
               break;
             case "agent_message_delta":
-              handlers.onAgentMessageDelta?.(msg);
+              handlers.onAgentMessageDelta?.(event);
               break;
             case "user_message":
-              handlers.onUserMessage?.(msg);
+              handlers.onUserMessage?.(event);
               break;
             case "agent_reasoning":
-              handlers.onAgentReasoning?.(msg);
+              handlers.onAgentReasoning?.(event);
               break;
             case "agent_reasoning_delta":
-              handlers.onAgentReasoningDelta?.(msg);
+              handlers.onAgentReasoningDelta?.(event);
               break;
             case "agent_reasoning_raw_content_delta":
-              handlers.onAgentReasoningDelta?.(msg);
+              handlers.onAgentReasoningDelta?.(event);
               break;
             case "agent_reasoning_section_break":
-              handlers.onAgentReasoningSectionBreak?.(msg);
+              handlers.onAgentReasoningSectionBreak?.(event);
               break;
             case "exec_approval_request":
-              handlers.onExecApprovalRequest?.(msg);
+              handlers.onExecApprovalRequest?.(event);
               break;
             case "apply_patch_approval_request":
-              handlers.onApplyPatchApprovalRequest?.(msg);
+              handlers.onApplyPatchApprovalRequest?.(event);
               break;
             case "exec_command_begin":
-              handlers.onExecCommandBegin?.(msg);
+              handlers.onExecCommandBegin?.(event);
               break;
             case "exec_command_end":
-              handlers.onExecCommandEnd?.(msg);
+              handlers.onExecCommandEnd?.(event);
               break;
             case "patch_apply_begin":
-              handlers.onPatchApplyBegin?.(msg);
+              handlers.onPatchApplyBegin?.(event);
               break;
             case "patch_apply_end":
-              handlers.onPatchApplyEnd?.(msg);
+              handlers.onPatchApplyEnd?.(event);
               break;
             case "web_search_begin":
-              handlers.onWebSearchBegin?.(msg);
+              handlers.onWebSearchBegin?.(event);
               break;
             case "web_search_end":
-              handlers.onWebSearchEnd?.(msg);
+              handlers.onWebSearchEnd?.(event);
               break;
             case "mcp_tool_call_begin":
-              handlers.onMcpToolCallBegin?.(msg);
+              handlers.onMcpToolCallBegin?.(event);
               break;
             case "mcp_tool_call_end":
-              handlers.onMcpToolCallEnd?.(msg);
+              handlers.onMcpToolCallEnd?.(event);
               break;
             case "turn_diff":
-              handlers.onTurnDiff?.(msg);
+              handlers.onTurnDiff?.(event);
               break;
             case "token_count":
-              handlers.onTokenCount?.(msg);
+              handlers.onTokenCount?.(event);
               break;
             case "stream_error":
-              console.log("stream_error:", msg);
-              handlers.onStreamError?.(msg);
+              console.log("stream_error:", event);
+              handlers.onStreamError?.(event);
               break;
             case "error":
-              console.log("error:", msg);
-              handlers.onError?.(msg);
+              console.log("error:", event);
+              handlers.onError?.(event);
               break;
             case "item_started":
             case "item_completed":
@@ -160,10 +131,7 @@ export function useConversationEvents(
             case "turn_aborted":
               break;
             default:
-              console.warn(
-                `Unknown event.id ${event.id} event.type:`,
-                msg.type,
-              );
+              console.warn(`Unknown event.id ${event.id} msg.type:`, msg.type);
           }
         });
       } catch (err) {

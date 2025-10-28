@@ -1,17 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
-import { listen, type UnlistenFn } from "@tauri-apps/api/event";
-import { v4 } from "uuid";
+import { listen, type UnlistenFn, type Event as TauriEvent } from "@tauri-apps/api/event";
 import { invoke } from "@/lib/tauri-proxy";
-import type { EventMsg } from "@/bindings/EventMsg";
-import type { ConversationEventPayload, EventWithId } from "@/types/chat";
+import type { CodexEvent } from "@/types/chat";
 import { DELTA_EVENT_TYPES } from "@/types/chat";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
 
-type EventsByConversation = Record<string, EventWithId[]>;
+type EventsByConversation = Record<string, CodexEvent[]>;
 
 interface UseCodexEventsParams {
   eventsByConversation: EventsByConversation;
-  appendEvent: (conversationId: string, event: EventWithId) => void;
+  appendEvent: (conversationId: string, event: CodexEvent) => void;
   setIsInitializing: (value: boolean) => void;
   setIsSending: (value: boolean) => void;
   isInitializing: boolean;
@@ -72,71 +70,63 @@ export function useCodexEvents({
         }
       }
 
-      unlistenTauri = await listen<ConversationEventPayload>(
+      unlistenTauri = await listen<CodexEvent["payload"]>(
         "codex:event",
-        (event) => {
+        (event: TauriEvent<CodexEvent["payload"]>) => {
           if (!isActive) {
             return;
           }
 
-          const payload = event.payload;
-          if (!payload || !payload.params) return;
+          const { params } = event.payload;
+           if (!params) return;
 
-          const { conversationId, msg, id: incomingId } = payload.params;
-          if (!conversationId || !msg) return;
+           const { conversationId, msg, id: incomingId } = params;
 
-          const eventMsg = msg as EventMsg;
-          if (
-            typeof eventMsg !== "object" ||
-            typeof eventMsg.type !== "string"
-          ) {
-            return;
-          }
+           const newEvent: CodexEvent = {
+             id: event.id,
+             event: "codex:event",
+             payload: event.payload,
+             createdAt: Date.now(),
+             source: "live",
+           };
 
-          const eventId = v4();
-
-          const eventRecord: EventWithId = {
-            id: eventId,
-            msg: eventMsg,
-          };
-
-          if (!eventMsg.type.endsWith("_delta")) {
+          if (!msg.type.endsWith("_delta")) {
             console.debug(
               "[codex:event]",
               conversationId,
               incomingId,
-              eventMsg.type,
-              eventRecord,
+              msg.type,
+              newEvent,
             );
           }
 
-          if (DELTA_EVENT_TYPES.has(eventMsg.type)) {
+          if (DELTA_EVENT_TYPES.has(msg.type)) {
             setDeltaEventMap((prev) => {
               const current = prev[conversationId] ?? [];
-              if (current.some((item) => item.id === eventId)) {
+              if (current.some((item) => item.payload.params.id === incomingId)) {
                 return prev;
               }
               return {
                 ...prev,
-                [conversationId]: [...current, eventRecord],
+                [conversationId]: [...current, newEvent],
               };
             });
             return;
           }
 
           if (
-            eventMsg.type !== "exec_command_output_delta" ||
-            !eventMsg.type.startsWith("item")
+            msg.type !== "exec_command_output_delta" ||
+            !msg.type.startsWith("item")
           ) {
-            if (eventMsg.type !== "user_message") {
-              appendEvent(conversationId, eventRecord);
+            if (msg.type !== "user_message") {
+              appendEvent(conversationId, newEvent);
             }
           }
 
           if (
-            eventMsg.type === "task_complete" ||
-            eventMsg.type === "error" ||
-            eventMsg.type === "turn_aborted"
+            msg.type === "task_complete" ||
+            msg.type === "error" ||
+            msg.type === "turn_aborted"
           ) {
             setIsSending(false);
           }

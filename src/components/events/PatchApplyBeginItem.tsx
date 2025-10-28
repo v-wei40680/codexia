@@ -1,15 +1,15 @@
 import { memo } from "react";
 import { Badge } from "@/components/ui/badge";
-import type { ConversationEvent } from "@/types/chat";
+import type { CodexEvent } from "@/types/chat";
 import { EventBubble } from "./EventBubble";
 import { describeFileChange } from "./helpers";
 
 export const PatchApplyBeginItem = memo(function PatchApplyBeginItem({
   event,
 }: {
-  event: ConversationEvent;
+  event: CodexEvent;
 }) {
-  const { msg } = event;
+  const { msg } = event.payload.params;
 
   if (msg.type !== "patch_apply_begin") {
     return null;

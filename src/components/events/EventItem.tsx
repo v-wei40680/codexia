@@ -4,7 +4,6 @@ import { MarkdownRenderer } from "@/components/chat/MarkdownRenderer";
 import { Badge } from "@/components/ui/badge";
 import { useChatInputStore } from "@/stores/chatInputStore";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
-import type { ConversationEvent } from "@/types/chat";
 import { EventBubble } from "./EventBubble";
 import { OutputBlock } from "./OutputBlock";
 import {
@@ -18,15 +17,16 @@ import { MessageFooter } from "@/components/chat/MessageFooter";
 import { ExecApprovalRequestItem } from "./ExecApprovalRequestItem";
 import { PatchApplyBeginItem } from "./PatchApplyBeginItem";
 import { ApplyPatchApprovalRequestItem } from "./ApplyPatchApprovalRequestItem";
+import { CodexEvent } from "@/types/chat";
 
 export const EventItem = memo(function EventItem({
   event,
   conversationId,
 }: {
-  event: ConversationEvent;
+  event: CodexEvent;
   conversationId: string | null;
 }) {
-  const { msg } = event;
+  const { msg, id } = event.payload.params;
   const {setInputValue, requestFocus, setEditingTarget, clearEditingTarget } = useChatInputStore();
   const { setActiveConversationId } = useActiveConversationStore();
 
@@ -38,7 +38,7 @@ export const EventItem = memo(function EventItem({
         const handleEdit = () => {
           setInputValue(messageText);
           if (conversationId) {
-            setEditingTarget(conversationId, event.id);
+            setEditingTarget(conversationId, id);
           }
           requestFocus();
         };
@@ -52,7 +52,7 @@ export const EventItem = memo(function EventItem({
             </EventBubble>
             <MessageFooter
               align="end"
-              messageId={event.id}
+              messageId={id}
               messageContent={messageText}
               messageRole="user"
               timestamp={createdAt}
@@ -78,7 +78,7 @@ export const EventItem = memo(function EventItem({
           <div className="group space-y-1">
             <MarkdownRenderer content={messageText} />
             <MessageFooter
-              messageId={event.id}
+              messageId={id}
               messageContent={messageText}
               messageRole="assistant"
               timestamp={createdAt}

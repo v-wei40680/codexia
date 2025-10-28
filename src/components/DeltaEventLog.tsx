@@ -1,18 +1,18 @@
 import React, { useMemo } from "react";
-import type { EventWithId } from "@/types/chat";
+import type { CodexEvent } from "@/types/chat";
 
 interface DeltaEventLogProps {
-  events: EventWithId[];
+  events: CodexEvent[];
 }
 
-const collectDeltaText = (events: EventWithId[], targetType: string) =>
+const collectDeltaText = (events: CodexEvent[], targetType: string) =>
   events
     .filter(
       (event) =>
-        event.msg.type === targetType &&
-        typeof (event.msg as { delta?: unknown }).delta === "string",
+        event.payload.params.msg.type === targetType &&
+        typeof (event.payload.params.msg as { delta?: unknown }).delta === "string",
     )
-    .map((event) => (event.msg as { delta: string }).delta)
+    .map((event) => (event.payload.params.msg as { delta: string }).delta)
     .join("");
 
 const DeltaEventLog: React.FC<DeltaEventLogProps> = ({ events }) => {

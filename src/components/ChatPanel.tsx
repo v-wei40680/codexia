@@ -4,12 +4,12 @@ import { ChatInput } from "@/components/chat/ChatInput";
 import { Sandbox } from "@/components/config/Sandbox";
 import { ProviderModels } from "@/components/config/provider-models";
 import { ReasoningEffortSelector } from "@/components/config/ReasoningEffortSelector";
-import type { ConversationEvent, MediaAttachment } from "@/types/chat";
+import type { CodexEvent, MediaAttachment } from "@/types/chat";
 import { Loader2 } from "lucide-react";
 
 interface ChatPanelProps {
   conversationId: string | null;
-  events: ConversationEvent[];
+  events: CodexEvent[];
   inputValue: string;
   setInputValue: (value: string) => void;
   handleSendMessage: (messageOverride: string, attachments: MediaAttachment[]) => Promise<void>;

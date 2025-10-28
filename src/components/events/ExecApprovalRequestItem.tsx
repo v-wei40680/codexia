@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
 import { useApprovalStore } from "@/stores/useApprovalStore";
-import type { ConversationEvent } from "@/types/chat";
+import type { CodexEvent } from "@/types/chat";
 import { EventBubble } from "./EventBubble";
 
 type ExecDecision = "approved" | "approved_for_session" | "denied" | "abort";
@@ -12,10 +12,10 @@ export const ExecApprovalRequestItem = memo(function ExecApprovalRequestItem({
   event,
   conversationId,
 }: {
-  event: ConversationEvent;
+  event: CodexEvent;
   conversationId: string | null;
 }) {
-  const { msg } = event;
+  const { msg } = event.payload.params;
   if (msg.type !== "exec_approval_request") {
     return null;
   }

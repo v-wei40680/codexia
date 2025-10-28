@@ -111,14 +111,22 @@ export function useSendMessage() {
         (attachment) => attachment.type === "image",
       );
       appendEvent(targetConversationId, {
-        id: v4(),
-        msg: {
-          type: "user_message",
-          message: trimmed,
-          images:
-            imageAttachments.length > 0
-              ? imageAttachments.map((attachment) => attachment.path)
-              : null,
+        id: Date.now(),
+        event: "",
+        payload: { 
+          method: "",
+          params: {
+            msg: {
+              type: "user_message",
+              message: trimmed,
+              images:
+                imageAttachments.length > 0
+                  ? imageAttachments.map((attachment) => attachment.path)
+                  : null,
+            },
+            id: v4(),
+            conversationId: targetConversationId
+          }
         },
       });
 

@@ -3,7 +3,7 @@ import { invoke } from '@tauri-apps/api/core';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { useApprovalStore } from '@/stores/useApprovalStore';
-import type { ConversationEvent } from '@/types/chat';
+import type { CodexEvent } from '@/types/chat';
 import { EventBubble } from './EventBubble';
 import { FileChange } from '@/bindings/FileChange';
 
@@ -13,10 +13,10 @@ export const ApplyPatchApprovalRequestItem = memo(function ApplyPatchApprovalReq
   event,
   conversationId,
 }: {
-  event: ConversationEvent;
+  event: CodexEvent;
   conversationId: string | null;
 }) {
-  const { msg } = event;
+  const { msg } = event.payload.params;
   const [isSubmitting, setIsSubmitting] = useState(false);
   const patchApprovalRequest = useApprovalStore((state) => {
     if (msg.type !== 'apply_patch_approval_request') {

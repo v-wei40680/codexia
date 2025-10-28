@@ -1,8 +1,7 @@
-import { AgentReasoningDeltaEvent } from "@/bindings/AgentReasoningDeltaEvent";
 import { useState, useEffect } from "react";
 import { v4 } from "uuid";
 import { useConversationEvents } from "./useConversationEvents";
-import { AgentReasoningRawContentDeltaEvent } from "@/bindings/AgentReasoningRawContentDeltaEvent";
+import { CodexEvent } from "@/types/chat";
 
 interface ReasoningSection {
   id: string;
@@ -21,15 +20,17 @@ export function useReasoningStream(conversationId: string | null) {
   }, [conversationId]);
 
   const handleReasoningDelta = (
-    event: AgentReasoningDeltaEvent | AgentReasoningRawContentDeltaEvent,
+    event: CodexEvent
   ) => {
+    const {msg} = event.payload.params
+    if (msg.type !== "agent_reasoning_delta" && msg.type !== "agent_reasoning_raw_content_delta") return;
     setSections((prev) => {
       const lastSection = prev[prev.length - 1];
       if (lastSection && lastSection.isStreaming) {
         // Append to existing streaming section
         return prev.map((section) =>
           section.id === lastSection.id
-            ? { ...section, content: section.content + event.delta }
+            ? { ...section, content: section.content + msg.delta }
             : section,
         );
       } else {
@@ -40,7 +41,7 @@ export function useReasoningStream(conversationId: string | null) {
           ...prev,
           {
             id: newId,
-            content: event.delta,
+            content: msg.delta,
             isStreaming: true,
           },
         ];
