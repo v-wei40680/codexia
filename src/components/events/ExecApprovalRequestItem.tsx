@@ -78,11 +78,7 @@ export const ExecApprovalRequestItem = memo(function ExecApprovalRequestItem({
   const commandText = msg.command.join(" ");
   const awaitingDecision = Boolean(execApprovalRequest);
   return (
-    <EventBubble
-      align="start"
-      variant="system"
-      title="Command Approval Requested"
-    >
+    <EventBubble align="start" variant="system">
       <div className="space-y-3">
         <div className="space-y-1">
           <code className="block whitespace-pre-wrap rounded bg-muted/50 px-2 py-1 font-mono text-xs">
