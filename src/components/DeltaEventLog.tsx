@@ -1,53 +1,51 @@
-import React, { useMemo } from "react";
-import type { CodexEvent } from "@/types/chat";
+import React from "react";
+import { useEventStreamStore } from "@/stores/useEventStreamStore";
+import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
+import { MarkdownRenderer } from "@/components/chat/MarkdownRenderer";
 
-interface DeltaEventLogProps {
-  events: CodexEvent[];
-}
+const DeltaEventLog: React.FC = () => {
+  const { activeConversationId } = useActiveConversationStore();
+  const streamingMessages = useEventStreamStore((state: any) =>
+    activeConversationId ? state.streaming[activeConversationId] : undefined
+  );
 
-const collectDeltaText = (events: CodexEvent[], targetType: string) =>
-  events
-    .filter(
-      (event) =>
-        event.payload.params.msg.type === targetType &&
-        typeof (event.payload.params.msg as { delta?: unknown }).delta === "string",
-    )
-    .map((event) => (event.payload.params.msg as { delta: string }).delta)
-    .join("");
+  if (!streamingMessages) {
+    return null;
+  }
 
-const DeltaEventLog: React.FC<DeltaEventLogProps> = ({ events }) => {
-  const { messageText, reasoningText, rawReasoningText } = useMemo(() => {
-    return {
-      messageText: collectDeltaText(events, "agent_message_delta"),
-      reasoningText: collectDeltaText(events, "agent_reasoning_delta"),
-      rawReasoningText: collectDeltaText(
-        events,
-        "agent_reasoning_raw_content_delta",
-      ),
-    };
-  }, [events]);
+  const streamingMessageList = Object.values(streamingMessages).filter(
+    (msg: any) =>
+      (msg.type === "agent_message" ||
+        msg.type === "agent_reasoning" ||
+        msg.type === "agent_reasoning_raw_content") &&
+      msg.state === "streaming"
+  );
 
-  if (!messageText && !reasoningText && !rawReasoningText) {
+  if (streamingMessageList.length === 0) {
     return null;
   }
 
   return (
     <div className="space-y-3">
-      {messageText && (
-        <p className="text-sm leading-relaxed whitespace-pre-wrap text-foreground">
-          {messageText}
-        </p>
-      )}
-      {reasoningText && (
-        <p className="text-xs whitespace-pre-wrap text-muted-foreground">
-          {reasoningText}
-        </p>
-      )}
-      {rawReasoningText && (
-        <p className="text-xs whitespace-pre-wrap text-muted-foreground/80">
-          {rawReasoningText}
-        </p>
-      )}
+      {streamingMessageList.map((msg: any, index: number) => {
+        if (msg.type === "agent_message") {
+          return (
+            <div key={index} className="group space-y-1">
+              <MarkdownRenderer content={msg.partialContent} />
+            </div>
+          );
+        } else if (
+          msg.type === "agent_reasoning" ||
+          msg.type === "agent_reasoning_raw_content"
+        ) {
+          return (
+            <span key={index} className="flex">
+              ✨<MarkdownRenderer content={msg.partialContent} />
+            </span>
+          );
+        }
+        return null;
+      })}
     </div>
   );
 };

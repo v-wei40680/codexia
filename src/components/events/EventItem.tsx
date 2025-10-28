@@ -6,10 +6,7 @@ import { useChatInputStore } from "@/stores/chatInputStore";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
 import { EventBubble } from "./EventBubble";
 import { OutputBlock } from "./OutputBlock";
-import {
-  describeParsedCommand,
-  formatAbortReason,
-} from "./helpers";
+import { describeParsedCommand, formatAbortReason } from "./helpers";
 import { PlanDisplay } from "../chat/messages/PlanDisplay";
 import { TurnDiffView } from "./TurnDiffView";
 import { AccordionMsg } from "./AccordionMsg";
@@ -27,72 +24,80 @@ export const EventItem = memo(function EventItem({
   conversationId: string | null;
 }) {
   const { msg, id } = event.payload.params;
-  const {setInputValue, requestFocus, setEditingTarget, clearEditingTarget } = useChatInputStore();
+  const { setInputValue, requestFocus, setEditingTarget, clearEditingTarget } =
+    useChatInputStore();
   const { setActiveConversationId } = useActiveConversationStore();
 
   switch (msg.type) {
-    case "user_message":
-      {
-        const messageText = msg.message ?? "";
-        const createdAt = event.createdAt ?? Date.now();
-        const handleEdit = () => {
-          setInputValue(messageText);
-          if (conversationId) {
-            setEditingTarget(conversationId, id);
-          }
-          requestFocus();
-        };
+    case "user_message": {
+      const messageText = msg.message ?? "";
+      const createdAt = event.createdAt ?? Date.now();
+      const handleEdit = () => {
+        setInputValue(messageText);
+        if (conversationId) {
+          setEditingTarget(conversationId, id);
+        }
+        requestFocus();
+      };
 
-        return (
-          <div className="group space-y-1">
-            <EventBubble align="end" variant="user">
-              <p className="whitespace-pre-wrap leading-relaxed">
-                {messageText}
-              </p>
-            </EventBubble>
-            <MessageFooter
-              align="end"
-              messageId={id}
-              messageContent={messageText}
-              messageRole="user"
-              timestamp={createdAt}
-              selectedText=""
-              messageType="normal"
-              eventType={msg.type}
-              onEdit={messageText.trim().length > 0 ? handleEdit : undefined}
-            />
-          </div>
-        );
-      }
-    case "agent_message":
-      {
-        const messageText = msg.message ?? "";
-        const createdAt = event.createdAt ?? Date.now();
-        const handleFork = () => {
-          clearEditingTarget();
-          setActiveConversationId(null);
-          setInputValue(messageText);
-          requestFocus();
-        };
-        return (
-          <div className="group space-y-1">
-            <MarkdownRenderer content={messageText} />
-            <MessageFooter
-              messageId={id}
-              messageContent={messageText}
-              messageRole="assistant"
-              timestamp={createdAt}
-              selectedText=""
-              messageType="normal"
-              eventType={msg.type}
-              onFork={messageText.trim().length > 0 ? handleFork : undefined}
-            />
-          </div>
-        );
-      }
+      return (
+        <div className="group space-y-1">
+          <EventBubble align="end" variant="user">
+            <p className="whitespace-pre-wrap leading-relaxed">{messageText}</p>
+          </EventBubble>
+          <MessageFooter
+            align="end"
+            messageId={id}
+            messageContent={messageText}
+            messageRole="user"
+            timestamp={createdAt}
+            selectedText=""
+            messageType="normal"
+            eventType={msg.type}
+            onEdit={messageText.trim().length > 0 ? handleEdit : undefined}
+          />
+        </div>
+      );
+    }
+    case "agent_message": {
+      const messageText = msg.message ?? "";
+      const createdAt = event.createdAt ?? Date.now();
+      const handleFork = () => {
+        clearEditingTarget();
+        setActiveConversationId(null);
+        setInputValue(messageText);
+        requestFocus();
+      };
+      return (
+        <div className="group space-y-1">
+          <MarkdownRenderer content={messageText} />
+          <MessageFooter
+            messageId={id}
+            messageContent={messageText}
+            messageRole="assistant"
+            timestamp={createdAt}
+            selectedText=""
+            messageType="normal"
+            eventType={msg.type}
+            onFork={messageText.trim().length > 0 ? handleFork : undefined}
+          />
+        </div>
+      );
+    }
+    case "agent_message_delta":
+      return null;
     case "agent_reasoning":
     case "agent_reasoning_raw_content":
-      return <span className="flex">✨<MarkdownRenderer content={msg.text} /></span>;
+      return (
+        <span className="flex">
+          ✨<MarkdownRenderer content={msg.text} />
+        </span>
+      );
+    case "agent_reasoning_delta":
+      return null;
+    case "agent_reasoning_raw_content_delta": {
+      return null;
+    }
     case "exec_approval_request":
       return (
         <ExecApprovalRequestItem
@@ -101,13 +106,11 @@ export const EventItem = memo(function EventItem({
         />
       );
     case "exec_command_begin":
-      const title = msg.parsed_cmd.map(item => describeParsedCommand(item)).join("")
+      const title = msg.parsed_cmd
+        .map((item) => describeParsedCommand(item))
+        .join("");
       return (
-        <EventBubble
-          align="start"
-          variant="system"
-          title={title}
-        >
+        <EventBubble align="start" variant="system" title={title}>
           <div className="space-y-2">
             <code className="block whitespace-pre-wrap rounded bg-muted/40 px-2 py-1 font-mono text-xs">
               {msg.command.join(" ")}
@@ -128,11 +131,7 @@ export const EventItem = memo(function EventItem({
       );
     case "patch_apply_end":
       return (
-        <EventBubble
-          align="start"
-          variant="system"
-          title="Patch Result"
-        >
+        <EventBubble align="start" variant="system" title="Patch Result">
           <div className="space-y-3">
             <Badge variant={msg.success ? "secondary" : "destructive"}>
               {msg.success ? "Succeeded" : "Failed"}
@@ -154,7 +153,7 @@ export const EventItem = memo(function EventItem({
         </EventBubble>
       );
     case "turn_diff":
-      return <TurnDiffView content={msg.unified_diff} />
+      return <TurnDiffView content={msg.unified_diff} />;
     case "task_complete":
     case "task_started":
     case "exec_command_output_delta":
@@ -165,10 +164,12 @@ export const EventItem = memo(function EventItem({
     case "agent_reasoning_section_break":
       return null;
     case "plan_update":
-      return <PlanDisplay steps={msg.plan} />
+      return <PlanDisplay steps={msg.plan} />;
     case "session_configured":
       return null;
     default:
-      return <AccordionMsg title={msg.type} content={JSON.stringify(msg, null, 2)} />
+      return (
+        <AccordionMsg title={msg.type} content={JSON.stringify(msg, null, 2)} />
+      );
   }
 });

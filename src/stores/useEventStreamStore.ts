@@ -6,7 +6,7 @@ interface StreamState {
     string,
     Record<
       string,
-      { partialContent: string; state: "streaming" | "done" }
+      { partialContent: string; state: "streaming" | "done"; type?: string }
     >
   >;
   appendDelta: (event: CodexEvent) => void;
@@ -25,14 +25,17 @@ export const useEventStreamStore = create<StreamState>((set, get) => ({
     ) {
       delta = msg.delta;
     }
+  
     const s = get().streaming;
     const conversationStream = s[conversationId] ?? {};
+  
     set({
       streaming: {
         ...s,
         [conversationId]: {
           ...conversationStream,
           [id]: {
+            type: msg.type.replace("_delta", ""),
             partialContent: (conversationStream[id]?.partialContent ?? "") + delta,
             state: "streaming",
           },

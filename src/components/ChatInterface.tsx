@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import {
   useConversation,
   useSendMessage,
@@ -15,7 +15,21 @@ import { useCodexApprovalRequests } from "@/hooks/useCodexApprovalRequests";
 import { useConversationEvents } from "@/hooks/useCodex/useConversationEvents";
 import { useEventStreamStore } from "@/stores/useEventStreamStore";
 import { EventItem } from "@/components/events/EventItem";
-import { v4 } from "uuid";
+import DeltaEventLog from "./DeltaEventLog";
+
+const STREAM_TYPE_NORMALIZATION: Record<string, string> = {
+  agent_message_delta: "agent_message",
+  agent_reasoning_delta: "agent_reasoning",
+  agent_reasoning_raw_content_delta: "agent_reasoning_raw_content",
+};
+
+const getEventKey = (event: CodexEvent) => {
+  const {
+    params: { id, msg },
+  } = event.payload;
+  const normalizedType = STREAM_TYPE_NORMALIZATION[msg.type] ?? msg.type;
+  return `${id}:${normalizedType}`;
+};
 
 export function ChatInterface() {
   useCodexApprovalRequests();
@@ -23,30 +37,40 @@ export function ChatInterface() {
   const { activeConversationId: conversationId } = useActiveConversationStore();
   const [inputValue, setInputValue] = useState("");
   const [events, setEvents] = useState<CodexEvent[]>([]);
-  const { appendDelta, finalizeMessage } = useEventStreamStore()
+  const { appendDelta, finalizeMessage } = useEventStreamStore();
   const { sendMessage, interrupt, isSending } = useSendMessage();
   const buildNewConversationParams = useBuildNewConversationParams();
   const { activeConversationId, setActiveConversationId } =
     useActiveConversationStore();
 
-    useConversationEvents(conversationId, {
-      onAnyEvent: (event: CodexEvent) => {
-        const { msg } = event.payload.params;
-  
-        if (!msg.type.endsWith("_delta")) {
-          const newEvent: CodexEvent = event
-          setEvents((prev) => [...prev, newEvent]);
-        }
-      },
-  
-      onAgentMessageDelta: (event) => {
-        appendDelta(event);
-      },
-  
-      onAgentMessage: (event) => {
-        finalizeMessage(event);
-      },
+  const upsertEvent = useCallback((event: CodexEvent) => {
+    setEvents((prev) => {
+      const key = getEventKey(event);
+      const index = prev.findIndex((existing) => getEventKey(existing) === key);
+
+      if (index === -1) {
+        return [...prev, event];
+      }
+
+      const next = [...prev];
+      next[index] = event;
+      return next;
     });
+  }, []);
+
+  useConversationEvents(conversationId, {
+    onAnyEvent: (event: CodexEvent) => {
+      if (event.payload.params.msg.type.endsWith("_delta")) {
+        appendDelta(event);
+      } else {
+        upsertEvent(event);
+      }
+    },
+
+    onAgentMessage: (event) => {
+      finalizeMessage(event);
+    },
+  });
 
   const handleInputChange = (value: string) => {
     setInputValue(value);
@@ -79,7 +103,7 @@ export function ChatInterface() {
   const handleCreateConversation = async () => {
     const newConversation = await createConversation(buildNewConversationParams);
     setActiveConversationId(newConversation.conversationId);
-    setEvents([])
+    setEvents([]);
   };
 
   return (
@@ -98,13 +122,14 @@ export function ChatInterface() {
       </div>
       <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
         <div className="flex-1 space-y-4 overflow-y-auto p-4">
-        {events.map((ev) => (
-          <EventItem
-            key={v4()}
-            event={ev}
-            conversationId={ev.payload.params.conversationId}
-          />
-        ))}
+          {events.map((ev) => (
+            <EventItem
+              key={getEventKey(ev)}
+              event={ev}
+              conversationId={ev.payload.params.conversationId}
+            />
+          ))}
+          <DeltaEventLog />
         </div>
 
         <ChatCompose
