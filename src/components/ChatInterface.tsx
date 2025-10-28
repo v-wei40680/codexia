@@ -34,14 +34,12 @@ const getEventKey = (event: CodexEvent) => {
 export function ChatInterface() {
   useCodexApprovalRequests();
   const { createConversation } = useConversation();
-  const { activeConversationId: conversationId } = useActiveConversationStore();
   const [inputValue, setInputValue] = useState("");
   const [events, setEvents] = useState<CodexEvent[]>([]);
   const { appendDelta, finalizeMessage } = useEventStreamStore();
   const { sendMessage, interrupt, isSending } = useSendMessage();
   const buildNewConversationParams = useBuildNewConversationParams();
-  const { activeConversationId, setActiveConversationId } =
-    useActiveConversationStore();
+  const { activeConversationId, setActiveConversationId } = useActiveConversationStore();
 
   const upsertEvent = useCallback((event: CodexEvent) => {
     setEvents((prev) => {
@@ -58,7 +56,7 @@ export function ChatInterface() {
     });
   }, []);
 
-  useConversationEvents(conversationId, {
+  useConversationEvents(activeConversationId, {
     onAnyEvent: (event: CodexEvent) => {
       if (event.payload.params.msg.type.endsWith("_delta")) {
         appendDelta(event);
@@ -80,7 +78,7 @@ export function ChatInterface() {
     text: string,
     attachments: MediaAttachment[],
   ) => {
-    let currentConversationId = conversationId;
+    let currentConversationId = activeConversationId;
     if (!currentConversationId) {
       console.log("createConversation", buildNewConversationParams);
       const newConversation = await createConversation(
@@ -136,7 +134,7 @@ export function ChatInterface() {
             inputValue={inputValue}
             onInputChange={handleInputChange}
             onSendMessage={handleSendMessage}
-            onStopStreaming={() => conversationId && interrupt(conversationId)}
+            onStopStreaming={() => activeConversationId && interrupt(activeConversationId)}
             disabled={isSending}
         />
       </div>
