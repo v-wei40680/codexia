@@ -77,7 +77,7 @@ export function useConversationEvents(
 
         unlisten = await listen("codex:event", (event) => {
           const msg = (event.payload as CodexEvent["payload"]).params.msg;
-          if (!msg.type.endsWith("_delta") || !msg.type.startsWith("item")) {
+          if (!msg.type.endsWith("_delta") && !msg.type.startsWith("item")) {
             console.info(`codex:event ${event.id} ${msg.type}`, event);
           }
 
