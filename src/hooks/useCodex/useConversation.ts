@@ -66,6 +66,11 @@ export function useConversation() {
         { params: { path, overrides } },
       );
       setActiveConversationId(response.conversationId);
+      setMetadata((prev) => ({
+        ...prev,
+        status: "ready",
+        error: null,
+      }));
       return response;
     } catch (err: any) {
       setMetadata((prev) => ({
