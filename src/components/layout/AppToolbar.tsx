@@ -1,7 +1,6 @@
-import React, { useState } from "react";
+import React from "react";
 import { Button } from "../ui/button";
 import {
-  Settings,
   PencilIcon,
   Globe,
 } from "lucide-react";
@@ -11,8 +10,6 @@ import { useFolderStore } from "@/stores/FolderStore";
 import { detectWebFramework } from "@/utils/webFrameworkDetection";
 import { useChatSession } from "@/hooks/useChatSession";
 import { useNavigate } from "react-router-dom";
-import { useCodexStore } from "@/stores/CodexStore";
-import { ConfigDialog } from "@/components/dialogs/ConfigDialog";
 
 export const AppToolbar: React.FC = () => {
   const { createNote, setCurrentNote } = useNoteStore();
@@ -20,8 +17,6 @@ export const AppToolbar: React.FC = () => {
   const { currentFolder } = useFolderStore();
   const { createConversation } = useChatSession();
   const navigate = useNavigate();
-  const { config, setConfig } = useCodexStore();
-  const [isConfigOpen, setIsConfigOpen] = useState(false);
 
   const handleCreateNote = () => {
     const newNote = createNote();
@@ -84,17 +79,6 @@ export const AppToolbar: React.FC = () => {
           >
             <Globe />
           </Button>
-
-          {/* Settings Button */}
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsConfigOpen(true)}
-            className="h-7 w-7 shrink-0"
-            title="Configuration Settings"
-          >
-            <Settings />
-          </Button>
         </>
       )}
 
@@ -108,15 +92,6 @@ export const AppToolbar: React.FC = () => {
           <PencilIcon className="h-3 w-3" />
         </Button>
       )}
-
-      <ConfigDialog
-        isOpen={isConfigOpen}
-        config={config}
-        onClose={() => setIsConfigOpen(false)}
-        onSave={(newConfig) => {
-          setConfig(newConfig);
-        }}
-      />
     </div>
   );
 };
