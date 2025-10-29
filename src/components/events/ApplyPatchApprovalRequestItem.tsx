@@ -106,7 +106,6 @@ export const ApplyPatchApprovalRequestItem = memo(function ApplyPatchApprovalReq
     <EventBubble
       align="start"
       variant="system"
-      title="Patch Apply Approval Requested"
     >
       <div className="space-y-3">
         {msg.reason && (
