@@ -67,6 +67,9 @@ export function ChatInterface() {
   useConversationEvents(activeConversationId, {
     isConversationReady: conversationStatus === "ready",
     onAnyEvent: (event: CodexEvent) => {
+      if (!event.createdAt) {
+        event.createdAt = Date.now();
+      }
       if (event.payload.params.msg.type.endsWith("_delta")) {
         appendDelta(event);
       } else {
@@ -75,6 +78,9 @@ export function ChatInterface() {
     },
 
     onAgentMessage: (event) => {
+      if (!event.createdAt) {
+        event.createdAt = Date.now();
+      }
       finalizeMessage(event);
     },
   });
@@ -135,9 +141,12 @@ export function ChatInterface() {
         addConversationId(resumedConversation.conversationId);
         const initialMessages = extractInitialMessages(resumedConversation);
         if (initialMessages) {
-          initialMessages.forEach((msg: CodexEvent["payload"]["params"]["msg"]) => {
+          // Use timestamps far in the past to ensure history always appears before new messages
+          const baseTimestamp = Date.now() - 1000000000; // ~11.5 days ago
+          initialMessages.forEach((msg: CodexEvent["payload"]["params"]["msg"], index: number) => {
+            const timestamp = baseTimestamp + index * 1000;
             addEvent(resumedConversation.conversationId, {
-              id: Date.now(),
+              id: timestamp,
               event: "codex:event",
               payload: {
                 method: `codex/event/${msg.type}`,
@@ -147,7 +156,7 @@ export function ChatInterface() {
                   msg,
                 },
               },
-              createdAt: Date.now(),
+              createdAt: timestamp,
               source: "history",
             });
           });
