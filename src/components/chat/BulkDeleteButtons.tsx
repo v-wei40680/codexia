@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "@/lib/tauri-proxy";
 import { ConversationSummary } from "@/bindings/ConversationSummary";
 import { useConversationListStore } from "@/stores/useConversationListStore";
 

@@ -1,7 +1,7 @@
 import { useMemo, useEffect, type SetStateAction, type Dispatch } from "react";
 import { Button } from "@/components/ui/button";
 import { Trash2, MoreVertical, Star, StarOff, FolderPlus } from "lucide-react";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "@/lib/tauri-proxy";
 import {
   DropdownMenu,
   DropdownMenuContent,

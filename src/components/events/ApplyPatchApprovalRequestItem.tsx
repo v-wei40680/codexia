@@ -1,5 +1,5 @@
 import { memo, useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
+import { invoke } from '@/lib/tauri-proxy';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { useApprovalStore } from '@/stores/useApprovalStore';
