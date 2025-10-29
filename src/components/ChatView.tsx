@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useCallback } from "react";
 import { useConversation, useSendMessage } from "@/hooks/useCodex";
 import { Button } from "./ui/button";
 import { type CodexEvent } from "@/types/chat";
@@ -12,6 +12,7 @@ import { useEventStore } from "@/stores/useEventStore";
 import { EventItem } from "@/components/events/EventItem";
 import DeltaEventLog from "./DeltaEventLog";
 import { ChatToolbar } from "./layout/ChatToolBar";
+import { useChatInputStore } from "@/stores/chatInputStore";
 
 const STREAM_TYPE_NORMALIZATION: Record<string, string> = {
   agent_message_delta: "agent_message",
@@ -30,10 +31,13 @@ const getEventKey = (event: CodexEvent) => {
 export function ChatView() {
   useCodexApprovalRequests();
   const { status: conversationStatus } = useConversation();
-  const [inputValue, setInputValue] = useState("");
   const { appendDelta, finalizeMessage } = useEventStreamStore();
   const { events, addEvent } = useEventStore();
   const { activeConversationId } = useActiveConversationStore();
+  const inputValue = useChatInputStore((state) => state.inputValue);
+  const setInputValue = useChatInputStore((state) => state.setInputValue);
+  const clearAll = useChatInputStore((state) => state.clearAll);
+  const requestFocus = useChatInputStore((state) => state.requestFocus);
   const currentEvents = activeConversationId
     ? events[activeConversationId] || []
     : [];
@@ -70,9 +74,12 @@ export function ChatView() {
     },
   });
 
-  const handleInputChange = (value: string) => {
-    setInputValue(value);
-  };
+  const handleInputChange = useCallback(
+    (value: string) => {
+      setInputValue(value);
+    },
+    [setInputValue],
+  );
 
   return (
     <div className="flex flex-col h-full">
@@ -81,7 +88,8 @@ export function ChatView() {
           size="icon"
           onClick={() => {
             beginPendingConversation();
-            setInputValue("");
+            clearAll();
+            requestFocus();
           }}
         >
           <PenSquare />
