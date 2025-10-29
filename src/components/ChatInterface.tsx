@@ -99,7 +99,7 @@ export function ChatInterface() {
     useConversationListStore.getState().addConversation(cwd, {
       conversationId: newConversation.conversationId,
       preview: preview,
-      timestamp: null,
+      timestamp: new Date().toISOString(),
       path: newConversation.rolloutPath,
     });
     setActiveConversationId(newConversation.conversationId);
