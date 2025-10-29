@@ -5,14 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { useChatInputStore } from "@/stores/chatInputStore";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
 import { EventBubble } from "./EventBubble";
-import { OutputBlock } from "./OutputBlock";
-import { describeParsedCommand, formatAbortReason } from "./helpers";
+import { formatAbortReason } from "./helpers";
 import { PlanDisplay } from "../chat/messages/PlanDisplay";
 import { TurnDiffView } from "./TurnDiffView";
 import { AccordionMsg } from "./AccordionMsg";
 import { MessageFooter } from "@/components/chat/MessageFooter";
 import { ExecApprovalRequestItem } from "./ExecApprovalRequestItem";
-import { PatchApplyBeginItem } from "./PatchApplyBeginItem";
 import { ApplyPatchApprovalRequestItem } from "./ApplyPatchApprovalRequestItem";
 import { CodexEvent } from "@/types/chat";
 
@@ -84,8 +82,6 @@ export const EventItem = memo(function EventItem({
         </div>
       );
     }
-    case "agent_message_delta":
-      return null;
     case "agent_reasoning":
     case "agent_reasoning_raw_content":
       return (
@@ -93,11 +89,7 @@ export const EventItem = memo(function EventItem({
           ✨<MarkdownRenderer content={msg.text} />
         </span>
       );
-    case "agent_reasoning_delta":
       return null;
-    case "agent_reasoning_raw_content_delta": {
-      return null;
-    }
     case "exec_approval_request":
       return (
         <ExecApprovalRequestItem
@@ -105,41 +97,12 @@ export const EventItem = memo(function EventItem({
           conversationId={conversationId}
         />
       );
-    case "exec_command_begin":
-      const title = msg.parsed_cmd
-        .map((item) => describeParsedCommand(item))
-        .join("");
-      return (
-        <EventBubble align="start" variant="system" title={title}>
-          <div className="space-y-2">
-            <code className="block whitespace-pre-wrap rounded bg-muted/40 px-2 py-1 font-mono text-xs">
-              {msg.command.join(" ")}
-            </code>
-          </div>
-        </EventBubble>
-      );
-    case "exec_command_end":
-      return null;
-    case "patch_apply_begin":
-      return <PatchApplyBeginItem event={event} />;
     case "apply_patch_approval_request":
       return (
         <ApplyPatchApprovalRequestItem
           event={event}
           conversationId={conversationId}
         />
-      );
-    case "patch_apply_end":
-      return (
-        <EventBubble align="start" variant="system" title="Patch Result">
-          <div className="space-y-3">
-            <Badge variant={msg.success ? "secondary" : "destructive"}>
-              {msg.success ? "Succeeded" : "Failed"}
-            </Badge>
-            <OutputBlock label="stdout" value={msg.stdout} />
-            <OutputBlock label="stderr" value={msg.stderr} />
-          </div>
-        </EventBubble>
       );
     case "turn_aborted":
       return (
@@ -154,17 +117,22 @@ export const EventItem = memo(function EventItem({
       );
     case "turn_diff":
       return <TurnDiffView content={msg.unified_diff} />;
+    case "plan_update":
+      return <PlanDisplay steps={msg.plan} />;
+    case "agent_message_delta":
+    case "agent_reasoning_delta":
+    case "agent_reasoning_raw_content_delta":
+    case "exec_command_begin":
+    case "exec_command_end":
+    case "patch_apply_begin":
+    case "patch_apply_end":
     case "task_complete":
     case "task_started":
     case "exec_command_output_delta":
     case "token_count":
     case "item_started":
     case "item_completed":
-      return null;
     case "agent_reasoning_section_break":
-      return null;
-    case "plan_update":
-      return <PlanDisplay steps={msg.plan} />;
     case "session_configured":
       return null;
     default:
