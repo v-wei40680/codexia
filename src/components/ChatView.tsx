@@ -1,33 +1,17 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback } from "react";
 import { useConversation, useSendMessage } from "@/hooks/useCodex";
 import { Button } from "./ui/button";
-import { type CodexEvent } from "@/types/chat";
 import { ChatCompose } from "./chat/ChatCompose";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
-import { ArrowDown, ArrowUp, PenSquare } from "lucide-react";
+import { PenSquare } from "lucide-react";
 import { useCodexApprovalRequests } from "@/hooks/useCodexApprovalRequests";
 import { useConversationEvents } from "@/hooks/useCodex/useConversationEvents";
 import { useEventStreamStore } from "@/stores/useEventStreamStore";
 import { useEventStore } from "@/stores/useEventStore";
-import { EventItem } from "@/components/events/EventItem";
-import DeltaEventLog from "./DeltaEventLog";
 import { ChatToolbar } from "./layout/ChatToolBar";
 import { useChatInputStore } from "@/stores/chatInputStore";
-import { ScrollArea } from "@/components/ui/scroll-area";
-
-const STREAM_TYPE_NORMALIZATION: Record<string, string> = {
-  agent_message_delta: "agent_message",
-  agent_reasoning_delta: "agent_reasoning",
-  agent_reasoning_raw_content_delta: "agent_reasoning_raw_content",
-};
-
-const getEventKey = (event: CodexEvent) => {
-  const {
-    params: { id, msg },
-  } = event.payload;
-  const normalizedType = STREAM_TYPE_NORMALIZATION[msg.type] ?? msg.type;
-  return `${id}:${normalizedType}`;
-};
+import { ChatScrollArea } from "./chat/ChatScrollArea";
+import { type CodexEvent } from "@/types/chat";
 
 export function ChatView() {
   useCodexApprovalRequests();
@@ -47,12 +31,6 @@ export function ChatView() {
   const streamingMessages = useEventStreamStore((state) =>
     activeConversationId ? state.streaming[activeConversationId] : undefined,
   );
-  const scrollContentRef = useRef<HTMLDivElement | null>(null);
-  const viewportRef = useRef<HTMLElement | null>(null);
-  const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(true);
-  const [isManualOverride, setIsManualOverride] = useState(false);
-  const autoScrollRef = useRef(isAutoScrollEnabled);
-  const manualOverrideRef = useRef(isManualOverride);
 
   const upsertEvent = useCallback(
     (event: CodexEvent) => {
@@ -91,129 +69,6 @@ export function ChatView() {
     [setInputValue],
   );
 
-  const handleScrollToBottom = useCallback(() => {
-    const viewport = viewportRef.current;
-    if (!viewport) {
-      return;
-    }
-    manualOverrideRef.current = false;
-    autoScrollRef.current = true;
-    viewport.scrollTo({ top: viewport.scrollHeight, behavior: "smooth" });
-    setIsManualOverride(false);
-    setIsAutoScrollEnabled(true);
-  }, []);
-
-  const handleScrollToTop = useCallback(() => {
-    const viewport = viewportRef.current;
-    if (!viewport) {
-      return;
-    }
-    manualOverrideRef.current = true;
-    autoScrollRef.current = false;
-    viewport.scrollTo({ top: 0, behavior: "smooth" });
-    setIsManualOverride(true);
-    setIsAutoScrollEnabled(false);
-  }, []);
-
-  useEffect(() => {
-    autoScrollRef.current = isAutoScrollEnabled;
-  }, [isAutoScrollEnabled]);
-
-  useEffect(() => {
-    manualOverrideRef.current = isManualOverride;
-  }, [isManualOverride]);
-
-  useEffect(() => {
-    const content = scrollContentRef.current;
-    if (!content) {
-      return;
-    }
-    const viewport = content.closest(
-      "[data-slot='scroll-area-viewport']",
-    ) as HTMLElement | null;
-    if (!viewport) {
-      return;
-    }
-
-    viewportRef.current = viewport;
-
-    const handleScroll = () => {
-      const distanceToBottom =
-        viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
-      const shouldStick = distanceToBottom <= 64;
-      if (shouldStick) {
-        if (manualOverrideRef.current && viewport.scrollTop === 0) {
-          return;
-        }
-        if (manualOverrideRef.current && viewport.scrollTop > 0) {
-          manualOverrideRef.current = false;
-          setIsManualOverride(false);
-        }
-        if (!autoScrollRef.current) {
-          autoScrollRef.current = true;
-          setIsAutoScrollEnabled(true);
-        }
-      } else {
-        if (autoScrollRef.current) {
-          autoScrollRef.current = false;
-          setIsAutoScrollEnabled(false);
-        }
-        if (!manualOverrideRef.current) {
-          manualOverrideRef.current = true;
-          setIsManualOverride(true);
-        }
-      }
-    };
-
-    viewport.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
-
-    return () => {
-      viewport.removeEventListener("scroll", handleScroll);
-      if (viewportRef.current === viewport) {
-        viewportRef.current = null;
-      }
-    };
-  }, [activeConversationId]);
-
-  useEffect(() => {
-    autoScrollRef.current = true;
-    manualOverrideRef.current = false;
-    setIsAutoScrollEnabled(true);
-    setIsManualOverride(false);
-  }, [activeConversationId]);
-
-  useEffect(() => {
-    const viewport = viewportRef.current;
-    if (!viewport) {
-      return;
-    }
-
-    if (!isAutoScrollEnabled) {
-      return;
-    }
-
-    const hasActiveStream =
-      streamingMessages &&
-      Object.values(streamingMessages).some(
-        (message) => message.state === "streaming",
-      );
-
-    if (!hasActiveStream) {
-      return;
-    }
-
-    viewport.scrollTo({
-      top: viewport.scrollHeight,
-      behavior: hasActiveStream ? "auto" : "smooth",
-    });
-  }, [
-    activeConversationId,
-    currentEvents,
-    isAutoScrollEnabled,
-    streamingMessages,
-  ]);
-
   return (
     <div className="flex flex-col h-full">
       <div className="flex px-2 justify-between">
@@ -230,39 +85,11 @@ export function ChatView() {
         <ChatToolbar />
       </div>
       <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
-        <div className="relative flex-1 min-h-0">
-          <ScrollArea className="h-full">
-            <div ref={scrollContentRef} className="space-y-4 p-4">
-              {currentEvents.map((ev) => (
-                <EventItem
-                  key={getEventKey(ev)}
-                  event={ev}
-                  conversationId={ev.payload.params.conversationId}
-                />
-              ))}
-              <DeltaEventLog />
-            </div>
-          </ScrollArea>
-          <div className="pointer-events-none absolute right-2 top-2 flex flex-col gap-2">
-            <Button
-              size="icon"
-              variant="secondary"
-              onClick={handleScrollToTop}
-              className="pointer-events-auto shadow-md"
-            >
-              <ArrowUp />
-            </Button>
-            <Button
-              size="icon"
-              variant="secondary"
-              onClick={handleScrollToBottom}
-              className="pointer-events-auto shadow-md"
-            >
-              <ArrowDown />
-            </Button>
-          </div>
-        </div>
-
+        <ChatScrollArea
+          events={currentEvents}
+          activeConversationId={activeConversationId}
+          streamingMessages={streamingMessages}
+        />
         <ChatCompose
           inputValue={inputValue}
           onInputChange={handleInputChange}
