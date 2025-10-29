@@ -20,7 +20,7 @@ export function ChatCompose({
   disabled,
 }: ChatComposeProps) {
   return (
-    <div className="border-t bg-background p-4">
+    <div className="border-t bg-background px-2">
       <ChatInput
         inputValue={inputValue}
         onInputChange={onInputChange}
@@ -28,7 +28,7 @@ export function ChatCompose({
         onStopStreaming={onStopStreaming}
         disabled={disabled}
       />
-      <div className="mt-2 flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center">
         <Sandbox />
         <ProviderModels />
         <ReasoningEffortSelector />
