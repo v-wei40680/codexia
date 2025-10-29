@@ -1,4 +1,4 @@
-name: Publish Cross-Platform
+name: CI MacOS
 
 on:
   workflow_dispatch:
