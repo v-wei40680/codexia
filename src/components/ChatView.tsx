@@ -26,7 +26,7 @@ export function ChatView() {
   const currentEvents = activeConversationId
     ? events[activeConversationId] || []
     : [];
-  const { interrupt, isSending, beginPendingConversation, handleSendMessage } =
+  const { interrupt, isBusy, beginPendingConversation, handleSendMessage } =
     useSendMessage();
   const streamingMessages = useEventStreamStore((state) =>
     activeConversationId ? state.streaming[activeConversationId] : undefined,
@@ -97,7 +97,7 @@ export function ChatView() {
           onStopStreaming={() =>
             activeConversationId && interrupt(activeConversationId)
           }
-          disabled={isSending}
+          isBusy={isBusy}
         />
       </div>
     </div>

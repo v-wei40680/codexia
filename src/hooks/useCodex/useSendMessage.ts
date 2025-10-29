@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { invoke } from "@/lib/tauri-proxy";
 import { InputItem } from "@/bindings/InputItem";
 import { useBuildNewConversationParams } from "@/hooks/useBuildNewConversationParams";
@@ -9,9 +8,11 @@ import { useCodexStore } from "@/stores/useCodexStore";
 import { useEventStore } from "@/stores/useEventStore";
 import { useConversation } from "./useConversation";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
+import { useSessionStore } from "@/stores/useSessionStore";
 
 export function useSendMessage() {
-  const [isSending, setIsSending] = useState(false);
+  const isBusy = useSessionStore((state) => state.isBusy);
+  const setIsBusy = useSessionStore((state) => state.setIsBusy);
   const buildNewConversationParams = useBuildNewConversationParams();
   const { cwd } = useCodexStore();
   const { clearEvents } = useEventStore();
@@ -21,7 +22,7 @@ export function useSendMessage() {
   );
 
   const sendMessage = async (conversationId: string, items: InputItem[]) => {
-    setIsSending(true);
+    setIsBusy(true);
     try {
       await invoke("send_user_message", {
         params: {
@@ -30,8 +31,9 @@ export function useSendMessage() {
         },
       });
       markConversationReady();
-    } finally {
-      setIsSending(false);
+    } catch (error) {
+      setIsBusy(false);
+      throw error;
     }
   };
 
@@ -69,7 +71,9 @@ export function useSendMessage() {
       attachments,
     );
     console.log("sendMessage params:", params);
-    sendMessage(currentConversationId, params.items);
+    void sendMessage(currentConversationId, params.items).catch((error) => {
+      console.error("Failed to send message:", error);
+    });
   };
 
   const handleCreateConversation = async (
@@ -100,7 +104,7 @@ export function useSendMessage() {
   return {
     sendMessage,
     interrupt,
-    isSending,
+    isBusy,
     handleCreateConversation,
     handleSendMessage,
     beginPendingConversation,

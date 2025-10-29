@@ -2,6 +2,7 @@ import { invoke, listen } from "@/lib/tauri-proxy";
 import { useEffect, useRef } from "react";
 import { ConversationId } from "@/bindings/ConversationId";
 import { CodexEvent } from "@/types/chat";
+import { useSessionStore } from "@/stores/useSessionStore";
 
 interface EventHandlers {
   isConversationReady?: boolean;
@@ -35,6 +36,7 @@ export function useConversationEvents(
   { isConversationReady = false, ...handlers }: EventHandlers,
 ) {
   const handlersRef = useRef<EventHandlers>(handlers);
+  const setIsBusy = useSessionStore((state) => state.setIsBusy);
 
   useEffect(() => {
     handlersRef.current = handlers;
@@ -63,6 +65,11 @@ export function useConversationEvents(
           }
 
           currentHandlers.onAnyEvent?.(event);
+          const busyOff =
+            msg.type === "error" ||
+            msg.type === "task_complete" ||
+            msg.type === "turn_aborted";
+          setIsBusy(!busyOff);
 
           switch (msg.type) {
             case "task_started":
@@ -160,6 +167,7 @@ export function useConversationEvents(
           params: { subscriptionId },
         });
       }
+      setIsBusy(false);
     };
-  }, [conversationId, isConversationReady]);
+  }, [conversationId, isConversationReady, setIsBusy]);
 }

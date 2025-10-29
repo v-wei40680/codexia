@@ -2,21 +2,21 @@ import { create } from "zustand";
 
 interface SessionState {
   isInitializing: boolean;
-  isSending: boolean;
+  isBusy: boolean;
 }
 
 interface SessionActions {
   setIsInitializing: (value: boolean) => void;
-  setIsSending: (value: boolean) => void;
+  setIsBusy: (value: boolean) => void;
   reset: () => void;
 }
 
 export const useSessionStore = create<SessionState & SessionActions>()(
   (set) => ({
     isInitializing: false,
-    isSending: false,
+    isBusy: false,
     setIsInitializing: (value) => set({ isInitializing: value }),
-    setIsSending: (value) => set({ isSending: value }),
-    reset: () => set({ isInitializing: false, isSending: false }),
+    setIsBusy: (value) => set({ isBusy: value }),
+    reset: () => set({ isInitializing: false, isBusy: false }),
   }),
 );

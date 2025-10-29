@@ -9,7 +9,7 @@ interface ChatComposeProps {
   onInputChange: (value: string) => void;
   onSendMessage: (text: string, attachments: MediaAttachment[]) => void;
   onStopStreaming: () => void;
-  disabled: boolean;
+  isBusy: boolean;
 }
 
 export function ChatCompose({
@@ -17,7 +17,7 @@ export function ChatCompose({
   onInputChange,
   onSendMessage,
   onStopStreaming,
-  disabled,
+  isBusy,
 }: ChatComposeProps) {
   return (
     <div className="border-t bg-background px-2">
@@ -26,7 +26,8 @@ export function ChatCompose({
         onInputChange={onInputChange}
         onSendMessage={onSendMessage}
         onStopStreaming={onStopStreaming}
-        disabled={disabled}
+        disabled={isBusy}
+        isLoading={isBusy}
       />
       <div className="flex flex-wrap items-center">
         <Sandbox />
