@@ -22,7 +22,7 @@ export function AccordionMsg({
       className="w-full"
     >
       <AccordionItem value="item-1">
-        <AccordionTrigger className="bg-gray-200 dark:bg-gray-700 px-2">{title}</AccordionTrigger>
+        <AccordionTrigger className="bg-gray-200 dark:bg-gray-700 px-2 py-2">{title}</AccordionTrigger>
         <AccordionContent className="flex flex-col gap-2 text-balance">
           <MarkdownRenderer content={content} />
         </AccordionContent>

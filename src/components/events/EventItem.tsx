@@ -13,6 +13,7 @@ import { MessageFooter } from "@/components/chat/MessageFooter";
 import { ExecApprovalRequestItem } from "./ExecApprovalRequestItem";
 import { ApplyPatchApprovalRequestItem } from "./ApplyPatchApprovalRequestItem";
 import { CodexEvent } from "@/types/chat";
+import { Bot } from "lucide-react";
 
 export const EventItem = memo(function EventItem({
   event,
@@ -68,7 +69,9 @@ export const EventItem = memo(function EventItem({
       };
       return (
         <div className="group space-y-1">
-          <MarkdownRenderer content={messageText} />
+          <div className="flex gap-2">
+            <Bot /><MarkdownRenderer content={messageText} />
+          </div>
           <MessageFooter
             messageId={id}
             messageContent={messageText}
@@ -86,7 +89,7 @@ export const EventItem = memo(function EventItem({
     case "agent_reasoning_raw_content":
       return (
         <span className="flex">
-          ✨<MarkdownRenderer content={msg.text} />
+          <AccordionMsg title="🧠 Reasoning" content={msg.text} />
         </span>
       );
       return null;

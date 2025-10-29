@@ -2,6 +2,7 @@ import React from "react";
 import { useEventStreamStore } from "@/stores/useEventStreamStore";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
 import { MarkdownRenderer } from "@/components/chat/MarkdownRenderer";
+import { AccordionMsg } from "./events/AccordionMsg";
 
 const DeltaEventLog: React.FC = () => {
   const { activeConversationId } = useActiveConversationStore();
@@ -40,7 +41,7 @@ const DeltaEventLog: React.FC = () => {
         ) {
           return (
             <span key={index} className="flex">
-              ✨<MarkdownRenderer content={msg.partialContent} />
+              <AccordionMsg title="🧠 Reasoning" content={msg.partialContent} />
             </span>
           );
         }
