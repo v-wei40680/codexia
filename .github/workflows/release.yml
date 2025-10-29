@@ -39,7 +39,7 @@ jobs:
       - name: setup node
         uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          node-version: 20
 
       - name: Install Bun
         uses: oven-sh/setup-bun@v2
@@ -50,15 +50,6 @@ jobs:
           # Those targets are only used on macos runners so it's in an `if` to slightly speed up windows and linux builds.
           targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || '' }}
 
-      - name: Cache cargo
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            src-tauri/target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-
       - name: install dependencies (ubuntu only)
         if: runner.os == 'Linux'
         run: |
@@ -66,15 +57,9 @@ jobs:
           sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
       - name: install frontend dependencies
-        if: runner.os == 'macOS'
-        run: |
-          bun pm add -D node-gyp nan
-          npm_config_build_from_source=false bun install
-      - name: install frontend dependencies (non-mac)
-        if: runner.os != 'macOS'
         run: bun install
 
-      - name: Export TS bindings (needed before bun build)
+      - name: Export TS bindings
         run: bun run export:bindings
 
       - uses: tauri-apps/tauri-action@v0
