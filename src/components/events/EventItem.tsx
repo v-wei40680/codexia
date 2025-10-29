@@ -25,7 +25,9 @@ export const EventItem = memo(function EventItem({
   const { msg, id } = event.payload.params;
   const { setInputValue, requestFocus, setEditingTarget, clearEditingTarget } =
     useChatInputStore();
-  const { setActiveConversationId } = useActiveConversationStore();
+  const startPendingConversation = useActiveConversationStore(
+    (state) => state.startPendingConversation,
+  );
 
   switch (msg.type) {
     case "user_message": {
@@ -63,7 +65,7 @@ export const EventItem = memo(function EventItem({
       const createdAt = event.createdAt ?? Date.now();
       const handleFork = () => {
         clearEditingTarget();
-        setActiveConversationId(null);
+        startPendingConversation();
         setInputValue(messageText);
         requestFocus();
       };

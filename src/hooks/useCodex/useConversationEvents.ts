@@ -1,5 +1,5 @@
 import { invoke, listen } from "@/lib/tauri-proxy";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { ConversationId } from "@/bindings/ConversationId";
 import { CodexEvent } from "@/types/chat";
 
@@ -34,6 +34,12 @@ export function useConversationEvents(
   conversationId: ConversationId | null,
   { isConversationReady = false, ...handlers }: EventHandlers,
 ) {
+  const handlersRef = useRef<EventHandlers>(handlers);
+
+  useEffect(() => {
+    handlersRef.current = handlers;
+  }, [handlers]);
+
   useEffect(() => {
     if (!conversationId || !isConversationReady) return;
     let unlisten: (() => void) | null = null;
@@ -50,84 +56,85 @@ export function useConversationEvents(
         );
 
         unlisten = await listen("codex:event", (event: CodexEvent) => {
+          const currentHandlers = handlersRef.current;
           const msg = (event.payload as CodexEvent["payload"]).params.msg;
           if (!msg.type.endsWith("_delta") && !msg.type.startsWith("item")) {
             console.info(`codex:event ${event.id} ${msg.type}`, event);
           }
 
-          handlers.onAnyEvent?.(event);
+          currentHandlers.onAnyEvent?.(event);
 
           switch (msg.type) {
             case "task_started":
-              handlers.onTaskStarted?.(event);
+              currentHandlers.onTaskStarted?.(event);
               break;
             case "task_complete":
-              handlers.onTaskComplete?.(event);
+              currentHandlers.onTaskComplete?.(event);
               break;
             case "agent_message":
-              handlers.onAgentMessage?.(event);
+              currentHandlers.onAgentMessage?.(event);
               break;
             case "agent_message_delta":
-              handlers.onAgentMessageDelta?.(event);
+              currentHandlers.onAgentMessageDelta?.(event);
               break;
             case "user_message":
-              handlers.onUserMessage?.(event);
+              currentHandlers.onUserMessage?.(event);
               break;
             case "agent_reasoning":
-              handlers.onAgentReasoning?.(event);
+              currentHandlers.onAgentReasoning?.(event);
               break;
             case "agent_reasoning_delta":
-              handlers.onAgentReasoningDelta?.(event);
+              currentHandlers.onAgentReasoningDelta?.(event);
               break;
             case "agent_reasoning_raw_content_delta":
-              handlers.onAgentReasoningDelta?.(event);
+              currentHandlers.onAgentReasoningDelta?.(event);
               break;
             case "agent_reasoning_section_break":
-              handlers.onAgentReasoningSectionBreak?.(event);
+              currentHandlers.onAgentReasoningSectionBreak?.(event);
               break;
             case "exec_approval_request":
-              handlers.onExecApprovalRequest?.(event);
+              currentHandlers.onExecApprovalRequest?.(event);
               break;
             case "apply_patch_approval_request":
-              handlers.onApplyPatchApprovalRequest?.(event);
+              currentHandlers.onApplyPatchApprovalRequest?.(event);
               break;
             case "exec_command_begin":
-              handlers.onExecCommandBegin?.(event);
+              currentHandlers.onExecCommandBegin?.(event);
               break;
             case "exec_command_end":
-              handlers.onExecCommandEnd?.(event);
+              currentHandlers.onExecCommandEnd?.(event);
               break;
             case "patch_apply_begin":
-              handlers.onPatchApplyBegin?.(event);
+              currentHandlers.onPatchApplyBegin?.(event);
               break;
             case "patch_apply_end":
-              handlers.onPatchApplyEnd?.(event);
+              currentHandlers.onPatchApplyEnd?.(event);
               break;
             case "web_search_begin":
-              handlers.onWebSearchBegin?.(event);
+              currentHandlers.onWebSearchBegin?.(event);
               break;
             case "web_search_end":
-              handlers.onWebSearchEnd?.(event);
+              currentHandlers.onWebSearchEnd?.(event);
               break;
             case "mcp_tool_call_begin":
-              handlers.onMcpToolCallBegin?.(event);
+              currentHandlers.onMcpToolCallBegin?.(event);
               break;
             case "mcp_tool_call_end":
-              handlers.onMcpToolCallEnd?.(event);
+              currentHandlers.onMcpToolCallEnd?.(event);
               break;
             case "turn_diff":
-              handlers.onTurnDiff?.(event);
+              currentHandlers.onTurnDiff?.(event);
               break;
             case "token_count":
-              handlers.onTokenCount?.(event);
+              currentHandlers.onTokenCount?.(event);
               break;
             case "stream_error":
               console.log("stream_error:", event);
-              handlers.onStreamError?.(event);
+              currentHandlers.onStreamError?.(event);
               break;
             case "error":
               console.log("error:", event);
-              handlers.onError?.(event);
+              currentHandlers.onError?.(event);
               break;
             case "item_started":
             case "item_completed":
@@ -154,5 +161,5 @@ export function useConversationEvents(
         });
       }
     };
-  }, [conversationId]);
+  }, [conversationId, isConversationReady]);
 }

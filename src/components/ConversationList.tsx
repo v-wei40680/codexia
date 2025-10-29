@@ -44,8 +44,12 @@ export function ConversationList({
 }: ConversationListProps) {
   const { conversationsByCwd, favoriteConversationIdsByCwd, toggleFavorite } =
     useConversationListStore();
-  const { activeConversationId, setActiveConversationId, conversationIds } =
-    useActiveConversationStore();
+  const {
+    activeConversationId,
+    setActiveConversationId,
+    conversationIds,
+    clearPendingConversation,
+  } = useActiveConversationStore();
   const { cwd } = useCodexStore();
   const { resumeConversation } = useConversation();
   const buildNewConversationParams = useBuildNewConversationParams();
@@ -110,6 +114,7 @@ export function ConversationList({
     conversationId: string,
     path: string,
   ) => {
+    clearPendingConversation();
     if (!conversationIds.includes(conversationId)) {
       console.log(conversationId, path);
       const resumedConversation = await resumeConversation(

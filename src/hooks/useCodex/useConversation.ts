@@ -1,29 +1,15 @@
 import { NewConversationParams } from "@/bindings/NewConversationParams";
 import { NewConversationResponse } from "@/bindings/NewConversationResponse";
-import { ReasoningEffort } from "@/bindings/ReasoningEffort";
 import { invoke } from "@/lib/tauri-proxy";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
-import { useState } from "react";
 import { ResumeConversationResult } from "@/types/chat";
-
-interface ConversationMetadata {
-  model: string | null;
-  reasoningEffort: ReasoningEffort | null;
-  rolloutPath: string | null;
-  status: "idle" | "initializing" | "ready" | "error";
-  error: string | null;
-}
+import { useConversationMetadataStore } from "@/stores/useConversationMetadataStore";
 
 export function useConversation() {
   const { activeConversationId, setActiveConversationId } =
     useActiveConversationStore();
-  const [metadata, setMetadata] = useState<ConversationMetadata>({
-    model: null,
-    reasoningEffort: null,
-    rolloutPath: null,
-    status: "idle",
-    error: null,
-  });
+  const metadata = useConversationMetadataStore((state) => state.metadata);
+  const setMetadata = useConversationMetadataStore((state) => state.setMetadata);
 
   const createConversation = async (
     params: NewConversationParams,
@@ -56,6 +42,10 @@ export function useConversation() {
     }
   };
 
+  const markConversationReady = () => {
+    setMetadata({ status: "ready", error: null });
+  };
+
   const resumeConversation = async (
     path: string,
     overrides: NewConversationParams | null,
@@ -69,6 +59,7 @@ export function useConversation() {
       setActiveConversationId(response.conversationId);
       setMetadata((prev) => ({
         ...prev,
+        model: response.model ?? prev.model,
         status: "ready",
         error: null,
       }));
@@ -100,6 +91,7 @@ export function useConversation() {
     ...metadata,
     createConversation,
     resumeConversation,
+    markConversationReady,
     archiveConversation,
   };
 }

@@ -1,18 +1,11 @@
 import { useState, useCallback } from "react";
 import { useConversation, useSendMessage } from "@/hooks/useCodex";
 import { Button } from "./ui/button";
-import {
-  type CodexEvent,
-  type MediaAttachment,
-} from "@/types/chat";
-import { buildMessageParams } from "@/utils/buildParams";
+import { type CodexEvent } from "@/types/chat";
 import { ChatCompose } from "./chat/ChatCompose";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
-import { useConversationListStore } from "@/stores/useConversationListStore";
 import { PenSquare } from "lucide-react";
-import { useBuildNewConversationParams } from "@/hooks/useBuildNewConversationParams";
 import { useCodexApprovalRequests } from "@/hooks/useCodexApprovalRequests";
-import { useCodexStore } from "@/stores/useCodexStore";
 import { useConversationEvents } from "@/hooks/useCodex/useConversationEvents";
 import { useEventStreamStore } from "@/stores/useEventStreamStore";
 import { useEventStore } from "@/stores/useEventStore";
@@ -36,23 +29,16 @@ const getEventKey = (event: CodexEvent) => {
 
 export function ChatView() {
   useCodexApprovalRequests();
-  const {
-    createConversation,
-    status: conversationStatus,
-  } = useConversation();
+  const { status: conversationStatus } = useConversation();
   const [inputValue, setInputValue] = useState("");
   const { appendDelta, finalizeMessage } = useEventStreamStore();
-  const { events, addEvent, clearEvents } = useEventStore();
-  const {
-    activeConversationId,
-    setActiveConversationId,
-  } = useActiveConversationStore();
-  const { cwd } = useCodexStore();
+  const { events, addEvent } = useEventStore();
+  const { activeConversationId } = useActiveConversationStore();
   const currentEvents = activeConversationId
     ? events[activeConversationId] || []
     : [];
-  const { sendMessage, interrupt, isSending } = useSendMessage();
-  const buildNewConversationParams = useBuildNewConversationParams();
+  const { interrupt, isSending, beginPendingConversation, handleSendMessage } =
+    useSendMessage();
 
   const upsertEvent = useCallback(
     (event: CodexEvent) => {
@@ -88,49 +74,19 @@ export function ChatView() {
     setInputValue(value);
   };
 
-  const handleSendMessage = async (
-    text: string,
-    attachments: MediaAttachment[],
-  ) => {
-    let currentConversationId = activeConversationId;
-    if (!currentConversationId) {
-      await handleCreateConversation(text);
-    }
-    if (currentConversationId) {
-      const params = buildMessageParams(
-        currentConversationId,
-        text.trim(),
-        attachments,
-      );
-      console.log("sendMessage params:", params);
-      sendMessage(currentConversationId, params.items);
-    }
-  };
-
-  const handleCreateConversation = async (preview = "New Chat") => {
-    const newConversation = await createConversation(
-      buildNewConversationParams,
-    );
-    useConversationListStore.getState().addConversation(cwd, {
-      conversationId: newConversation.conversationId,
-      preview: preview,
-      timestamp: new Date().toISOString(),
-      path: newConversation.rolloutPath,
-    });
-    setActiveConversationId(newConversation.conversationId);
-    useActiveConversationStore
-      .getState()
-      .addConversationId(newConversation.conversationId);
-    clearEvents(newConversation.conversationId);
-  };
-
   return (
     <div className="flex flex-col h-full">
       <div className="flex px-2 justify-between">
-          <Button size="icon" onClick={() => handleCreateConversation()}>
-            <PenSquare />
-          </Button>
-          <ChatToolbar />
+        <Button
+          size="icon"
+          onClick={() => {
+            beginPendingConversation();
+            setInputValue("");
+          }}
+        >
+          <PenSquare />
+        </Button>
+        <ChatToolbar />
       </div>
       <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
         <div className="flex-1 space-y-4 overflow-y-auto p-4">
