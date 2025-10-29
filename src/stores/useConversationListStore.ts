@@ -55,7 +55,7 @@ export const useConversationListStore = create<
             ? existingList.map((item, idx) =>
                 idx === index ? { ...item, ...summaryWithTimestamp } : item,
               )
-            : [...existingList, summaryWithTimestamp];
+            : [summaryWithTimestamp, ...existingList];
 
         return {
           conversationsByCwd: {

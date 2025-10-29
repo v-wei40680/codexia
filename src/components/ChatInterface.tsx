@@ -1,19 +1,19 @@
 import { useState, useCallback } from "react";
-import {
-  useConversation,
-  useSendMessage,
-} from "@/hooks/useCodex";
+import { useConversation, useSendMessage } from "@/hooks/useCodex";
 import { Button } from "./ui/button";
 import type { CodexEvent, MediaAttachment } from "@/types/chat";
 import { buildMessageParams } from "@/utils/buildParams";
 import { ChatCompose } from "./chat/ChatCompose";
 import { SimpleConversationList } from "./SimpleConversationList";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
+import { useConversationListStore } from "@/stores/useConversationListStore";
 import { PenSquare } from "lucide-react";
 import { useBuildNewConversationParams } from "@/hooks/useBuildNewConversationParams";
 import { useCodexApprovalRequests } from "@/hooks/useCodexApprovalRequests";
+import { useCodexStore } from "@/stores/useCodexStore";
 import { useConversationEvents } from "@/hooks/useCodex/useConversationEvents";
 import { useEventStreamStore } from "@/stores/useEventStreamStore";
+import { useEventStore } from "@/stores/useEventStore";
 import { EventItem } from "@/components/events/EventItem";
 import DeltaEventLog from "./DeltaEventLog";
 
@@ -35,26 +35,25 @@ export function ChatInterface() {
   useCodexApprovalRequests();
   const { createConversation } = useConversation();
   const [inputValue, setInputValue] = useState("");
-  const [events, setEvents] = useState<CodexEvent[]>([]);
   const { appendDelta, finalizeMessage } = useEventStreamStore();
+  const { events, addEvent, clearEvents } = useEventStore();
+  const { activeConversationId, setActiveConversationId } =
+    useActiveConversationStore();
+  const { cwd } = useCodexStore();
+  const currentEvents = activeConversationId
+    ? events[activeConversationId] || []
+    : [];
   const { sendMessage, interrupt, isSending } = useSendMessage();
   const buildNewConversationParams = useBuildNewConversationParams();
-  const { activeConversationId, setActiveConversationId } = useActiveConversationStore();
 
-  const upsertEvent = useCallback((event: CodexEvent) => {
-    setEvents((prev) => {
-      const key = getEventKey(event);
-      const index = prev.findIndex((existing) => getEventKey(existing) === key);
-
-      if (index === -1) {
-        return [...prev, event];
+  const upsertEvent = useCallback(
+    (event: CodexEvent) => {
+      if (activeConversationId) {
+        addEvent(activeConversationId, event);
       }
-
-      const next = [...prev];
-      next[index] = event;
-      return next;
-    });
-  }, []);
+    },
+    [activeConversationId, addEvent],
+  );
 
   useConversationEvents(activeConversationId, {
     onAnyEvent: (event: CodexEvent) => {
@@ -80,12 +79,7 @@ export function ChatInterface() {
   ) => {
     let currentConversationId = activeConversationId;
     if (!currentConversationId) {
-      console.log("createConversation", buildNewConversationParams);
-      const newConversation = await createConversation(
-        buildNewConversationParams,
-      );
-      currentConversationId = newConversation.conversationId;
-      setActiveConversationId(currentConversationId);
+      await handleCreateConversation(text);
     }
     if (currentConversationId) {
       const params = buildMessageParams(
@@ -98,17 +92,25 @@ export function ChatInterface() {
     }
   };
 
-  const handleCreateConversation = async () => {
-    const newConversation = await createConversation(buildNewConversationParams);
+  const handleCreateConversation = async (preview = "New Chat") => {
+    const newConversation = await createConversation(
+      buildNewConversationParams,
+    );
+    useConversationListStore.getState().addConversation(cwd, {
+      conversationId: newConversation.conversationId,
+      preview: preview,
+      timestamp: null,
+      path: newConversation.rolloutPath,
+    });
     setActiveConversationId(newConversation.conversationId);
-    setEvents([]);
+    clearEvents(newConversation.conversationId);
   };
 
   return (
     <div className="flex h-full">
       <div className="flex flex-col border-r">
         <div className="p-2">
-          <Button onClick={handleCreateConversation} className="w-full">
+          <Button onClick={() => handleCreateConversation()} className="w-full">
             <PenSquare className="mr-2 h-4 w-4" />
             New Chat
           </Button>
@@ -120,7 +122,7 @@ export function ChatInterface() {
       </div>
       <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
         <div className="flex-1 space-y-4 overflow-y-auto p-4">
-          {events.map((ev) => (
+          {currentEvents.map((ev) => (
             <EventItem
               key={getEventKey(ev)}
               event={ev}
@@ -131,11 +133,13 @@ export function ChatInterface() {
         </div>
 
         <ChatCompose
-            inputValue={inputValue}
-            onInputChange={handleInputChange}
-            onSendMessage={handleSendMessage}
-            onStopStreaming={() => activeConversationId && interrupt(activeConversationId)}
-            disabled={isSending}
+          inputValue={inputValue}
+          onInputChange={handleInputChange}
+          onSendMessage={handleSendMessage}
+          onStopStreaming={() =>
+            activeConversationId && interrupt(activeConversationId)
+          }
+          disabled={isSending}
         />
       </div>
     </div>
