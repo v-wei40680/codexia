@@ -125,16 +125,30 @@ impl CodexAppServerClient {
     pub async fn new_conversation(
         &self,
         params: NewConversationParams,
+        overrides: Option<NewConversationParams>,
     ) -> Result<NewConversationResponse, String> {
-        let params_value = serde_json::to_value(params).map_err(|err| err.to_string())?;
+        let mut params_value = serde_json::to_value(params).map_err(|err| err.to_string())?;
+        if let Some(overrides_params) = overrides {
+            let overrides_value = serde_json::to_value(overrides_params).map_err(|err| err.to_string())?;
+            if let (Some(map), Some(overrides_map)) = (params_value.as_object_mut(), overrides_value.as_object()) {
+                map.extend(overrides_map.clone());
+            }
+        }
         self.request("newConversation", Some(params_value)).await
     }
 
     pub async fn resume_conversation(
         &self,
         params: ResumeConversationParams,
+        overrides: Option<NewConversationParams>,
     ) -> Result<ResumeConversationResponse, String> {
-        let params_value = serde_json::to_value(params).map_err(|err| err.to_string())?;
+        let mut params_value = serde_json::to_value(params).map_err(|err| err.to_string())?;
+        if let Some(overrides_params) = overrides {
+            let overrides_value = serde_json::to_value(overrides_params).map_err(|err| err.to_string())?;
+            if let (Some(map), Some(overrides_map)) = (params_value.as_object_mut(), overrides_value.as_object()) {
+                map.extend(overrides_map.clone());
+            }
+        }
         self.request("resumeConversation", Some(params_value)).await
     }
 

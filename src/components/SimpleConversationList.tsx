@@ -10,12 +10,12 @@ import { Trash2 } from "lucide-react";
 
 interface SimpleConversationListProps {
   activeConversationId: string | null;
-  setActiveConversationId: (id: string | null) => void;
+  onSelectConversation: (conversationId: string, path: string | null) => void;
 }
 
 export function SimpleConversationList({
   activeConversationId,
-  setActiveConversationId,
+  onSelectConversation,
 }: SimpleConversationListProps) {
   const { conversationsByCwd } = useConversationListStore();
   const { cwd } = useCodexStore();
@@ -28,7 +28,7 @@ export function SimpleConversationList({
   }, [cwd]);
 
   const conversations = useMemo(() => {
-    return conversationsByCwd[cwd || ""] || [];
+    return conversationsByCwd[cwd] || [];
   }, [conversationsByCwd, cwd]);
 
   return (
@@ -46,8 +46,7 @@ export function SimpleConversationList({
                 <li key={conv.conversationId} className="flex">
                   <button
                     onClick={() => {
-                      setActiveConversationId(conv.conversationId);
-                      console.log("selected", conv.conversationId);
+                      onSelectConversation(conv.conversationId, conv.path);
                     }}
                     className={`flex-1 min-w-0 truncate text-left rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
                       isActive

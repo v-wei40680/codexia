@@ -4,22 +4,7 @@ import { useConversationStore } from "@/stores/useConversationStore";
 import { useConversationListStore } from "@/stores/useConversationListStore";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
 import { useCodexStore } from "@/stores/useCodexStore";
-import type { CodexEvent } from "@/types/chat";
-
-type ResumeConversationResult = {
-  conversation_id: string;
-  model: string;
-  initialMessages?: CodexEvent["payload"]["params"]["msg"][] | null;
-};
-
-const extractInitialMessages = (
-  response: ResumeConversationResult,
-): CodexEvent["payload"]["params"]["msg"][] | null => {
-  return (
-    response.initialMessages ??
-    null
-  );
-};
+import { extractInitialMessages, ResumeConversationResult } from "@/types/chat";
 
 export function useResumeConversation() {
   const {
@@ -77,6 +62,7 @@ export function useResumeConversation() {
           },
         );
         const initialMessages = extractInitialMessages(response);
+        console.log("resume_conversation initialMessages: ", initialMessages)
         if (
           Array.isArray(initialMessages) &&
           initialMessages.length > 0

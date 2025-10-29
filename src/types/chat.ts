@@ -15,6 +15,21 @@ export interface CodexEvent {
   source?: "live" | "history";
 }
 
+export type ResumeConversationResult = {
+  conversationId: string;
+  model: string;
+  initialMessages?: CodexEvent["payload"]["params"]["msg"][] | null;
+};
+
+export const extractInitialMessages = (
+  response: ResumeConversationResult,
+): CodexEvent["payload"]["params"]["msg"][] | null => {
+  return (
+    response.initialMessages ??
+    null
+  );
+};
+
 export const DELTA_EVENT_TYPES = new Set<EventMsg["type"]>([
   "agent_message_delta",
   "agent_reasoning_delta",

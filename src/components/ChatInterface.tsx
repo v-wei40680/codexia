@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useConversation, useSendMessage } from "@/hooks/useCodex";
 import { Button } from "./ui/button";
-import type { CodexEvent, MediaAttachment } from "@/types/chat";
+import { extractInitialMessages, type CodexEvent, type MediaAttachment } from "@/types/chat";
 import { buildMessageParams } from "@/utils/buildParams";
 import { ChatCompose } from "./chat/ChatCompose";
 import { SimpleConversationList } from "./SimpleConversationList";
@@ -16,6 +16,7 @@ import { useEventStreamStore } from "@/stores/useEventStreamStore";
 import { useEventStore } from "@/stores/useEventStore";
 import { EventItem } from "@/components/events/EventItem";
 import DeltaEventLog from "./DeltaEventLog";
+import { v4 } from "uuid";
 
 const STREAM_TYPE_NORMALIZATION: Record<string, string> = {
   agent_message_delta: "agent_message",
@@ -33,12 +34,20 @@ const getEventKey = (event: CodexEvent) => {
 
 export function ChatInterface() {
   useCodexApprovalRequests();
-  const { createConversation } = useConversation();
+  const {
+    createConversation,
+    resumeConversation,
+    status: conversationStatus,
+  } = useConversation();
   const [inputValue, setInputValue] = useState("");
   const { appendDelta, finalizeMessage } = useEventStreamStore();
   const { events, addEvent, clearEvents } = useEventStore();
-  const { activeConversationId, setActiveConversationId } =
-    useActiveConversationStore();
+  const {
+    activeConversationId,
+    setActiveConversationId,
+    conversationIds,
+    addConversationId,
+  } = useActiveConversationStore();
   const { cwd } = useCodexStore();
   const currentEvents = activeConversationId
     ? events[activeConversationId] || []
@@ -56,6 +65,7 @@ export function ChatInterface() {
   );
 
   useConversationEvents(activeConversationId, {
+    isConversationReady: conversationStatus === "ready",
     onAnyEvent: (event: CodexEvent) => {
       if (event.payload.params.msg.type.endsWith("_delta")) {
         appendDelta(event);
@@ -103,7 +113,53 @@ export function ChatInterface() {
       path: newConversation.rolloutPath,
     });
     setActiveConversationId(newConversation.conversationId);
+    useActiveConversationStore
+      .getState()
+      .addConversationId(newConversation.conversationId);
     clearEvents(newConversation.conversationId);
+  };
+
+  const handleSelectConversation = async (
+    conversationId: string,
+    path: string | null,
+  ) => {
+    if (!conversationIds.includes(conversationId)) {
+      console.log("resumedConversation", conversationId, path);
+      if (path) {
+        const resumedConversation = await resumeConversation(
+          path,
+          buildNewConversationParams,
+        );
+        console.log("resumedConversation", resumedConversation);
+        setActiveConversationId(resumedConversation.conversationId);
+        addConversationId(resumedConversation.conversationId);
+        const initialMessages = extractInitialMessages(resumedConversation);
+        if (initialMessages) {
+          initialMessages.forEach((msg: CodexEvent["payload"]["params"]["msg"]) => {
+            addEvent(resumedConversation.conversationId, {
+              id: Date.now(),
+              event: "codex:event",
+              payload: {
+                method: `codex/event/${msg.type}`,
+                params: {
+                  conversationId: resumedConversation.conversationId,
+                  id: v4(),
+                  msg,
+                },
+              },
+              createdAt: Date.now(),
+              source: "history",
+            });
+          });
+        }
+      } else {
+        console.error("Cannot resume conversation without a path.");
+        return;
+      }
+    } else {
+      setActiveConversationId(conversationId);
+    }
+    console.log("selected", conversationId);
   };
 
   return (
@@ -117,7 +173,7 @@ export function ChatInterface() {
         </div>
         <SimpleConversationList
           activeConversationId={activeConversationId}
-          setActiveConversationId={setActiveConversationId}
+          onSelectConversation={handleSelectConversation}
         />
       </div>
       <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">

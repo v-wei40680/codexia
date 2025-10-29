@@ -4,6 +4,7 @@ import { ReasoningEffort } from "@/bindings/ReasoningEffort";
 import { invoke } from "@/lib/tauri-proxy";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
 import { useState } from "react";
+import { ResumeConversationResult } from "@/types/chat";
 
 interface ConversationMetadata {
   model: string | null;
@@ -14,7 +15,8 @@ interface ConversationMetadata {
 }
 
 export function useConversation() {
-  const { activeConversationId, setActiveConversationId } = useActiveConversationStore();
+  const { activeConversationId, setActiveConversationId } =
+    useActiveConversationStore();
   const [metadata, setMetadata] = useState<ConversationMetadata>({
     model: null,
     reasoningEffort: null,
@@ -23,48 +25,55 @@ export function useConversation() {
     error: null,
   });
 
-  const createConversation = async (params: NewConversationParams): Promise<NewConversationResponse> => {
+  const createConversation = async (
+    params: NewConversationParams,
+  ): Promise<NewConversationResponse> => {
     setMetadata((prev) => ({ ...prev, status: "initializing", error: null }));
     try {
       const response = await invoke<NewConversationResponse>(
         "new_conversation",
         { params },
       );
-      console.log("new_conversation response", response);
-      
       setActiveConversationId(response.conversationId);
-      
+
       setMetadata({
         model: response.model,
         reasoningEffort: response.reasoningEffort,
         rolloutPath: response.rolloutPath,
-        status: 'ready',
+        status: "ready",
         error: null,
       });
       return response;
     } catch (err: any) {
       console.log("new_conversation err:", err);
-      setMetadata((prev) => ({ ...prev, status: "error", error: err.toString() }));
+      setMetadata((prev) => ({
+        ...prev,
+        status: "error",
+        error: err.toString(),
+      }));
       throw err;
     }
   };
 
-  const resumeConversation = async (path: string) => {
+  const resumeConversation = async (
+    path: string,
+    overrides: NewConversationParams | null,
+  ): Promise<ResumeConversationResult> => {
     setMetadata((prev) => ({ ...prev, status: "initializing", error: null }));
     try {
-      const response = await invoke<NewConversationResponse>("resume_conversation", { path });
-      
+      const response = await invoke<ResumeConversationResult>(
+        "resume_conversation",
+        { params: { path, overrides } },
+      );
       setActiveConversationId(response.conversationId);
-      
-      setMetadata({
-        model: response.model,
-        reasoningEffort: response.reasoningEffort,
-        rolloutPath: response.rolloutPath,
-        status: 'ready',
-        error: null,
-      });
+      return response;
     } catch (err: any) {
-      setMetadata((prev) => ({ ...prev, status: "error", error: err.toString() }));
+      setMetadata((prev) => ({
+        ...prev,
+        status: "error",
+        error: err.toString(),
+      }));
+      throw err;
     }
   };
 

@@ -15,12 +15,13 @@ use crate::state::{AppState, get_client};
 #[tauri::command]
 pub async fn new_conversation(
     params: NewConversationParams,
+    overrides: Option<NewConversationParams>,
     state: State<'_, AppState>,
     app_handle: AppHandle,
 ) -> Result<NewConversationResponse, String> {
     info!("Creating new conversation; params {:?} ", params);
     let client = get_client(&state, &app_handle).await?;
-    match client.new_conversation(params).await {
+    match client.new_conversation(params, overrides).await {
         Ok(conversation) => {
             info!(
                 "New conversation created: {}",
@@ -148,13 +149,14 @@ pub async fn respond_apply_patch_request(
 #[tauri::command]
 pub async fn resume_conversation(
     params: ResumeConversationParams,
+    overrides: Option<NewConversationParams>,
     state: State<'_, AppState>,
     app_handle: AppHandle,
 ) -> Result<ResumeConversationResponse, String> {
     let path = params.path.clone();
-    info!("Resuming conversation from {:?}", path);
+    info!("Resuming conversation from {:?} ", path);
     let client = get_client(&state, &app_handle).await?;
-    match client.resume_conversation(params).await {
+    match client.resume_conversation(params, overrides).await {
         Ok(conversation) => {
             Ok(conversation)
         }

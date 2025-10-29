@@ -4,6 +4,7 @@ import { ConversationId } from "@/bindings/ConversationId";
 import { CodexEvent } from "@/types/chat";
 
 interface EventHandlers {
+  isConversationReady?: boolean;
   onAnyEvent?: (event: CodexEvent) => void;
   onTaskStarted?: (event: CodexEvent) => void;
   onTaskComplete?: (event: CodexEvent) => void;
@@ -31,10 +32,10 @@ interface EventHandlers {
 
 export function useConversationEvents(
   conversationId: ConversationId | null,
-  handlers: EventHandlers,
+  { isConversationReady = false, ...handlers }: EventHandlers,
 ) {
   useEffect(() => {
-    if (!conversationId) return;
+    if (!conversationId || !isConversationReady) return;
     let unlisten: (() => void) | null = null;
     let subscriptionId: string | null = null;
 
@@ -43,6 +44,10 @@ export function useConversationEvents(
         subscriptionId = await invoke("add_conversation_listener", {
           params: { conversationId },
         });
+        console.debug(
+          "add_conversation_listener subscriptionId:",
+          subscriptionId,
+        );
 
         unlisten = await listen("codex:event", (event: CodexEvent) => {
           const msg = (event.payload as CodexEvent["payload"]).params.msg;
