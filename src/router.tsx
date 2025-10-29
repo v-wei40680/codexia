@@ -5,7 +5,6 @@ import ChatPage from "@/pages/chat";
 import ProjectsPage from "@/pages/projects";
 import SettingsPage from "./pages/settings";
 import UsagePage from "./pages/usage";
-import TaskPage from "./pages/task";
 import { useDeepLink } from "./hooks/useDeepLink";
 import PublicUserPage from "./pages/user";
 import { useEffect } from "react";
@@ -45,10 +44,6 @@ export const router = createHashRouter([
       {
         index: true,
         element: <ProjectsPage />,
-      },
-      {
-        path: "task",
-        element: <TaskPage />
       },
       {
         path: "login",

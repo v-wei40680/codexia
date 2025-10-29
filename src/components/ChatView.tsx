@@ -1,10 +1,12 @@
 import { useState, useCallback } from "react";
 import { useConversation, useSendMessage } from "@/hooks/useCodex";
 import { Button } from "./ui/button";
-import { extractInitialMessages, type CodexEvent, type MediaAttachment } from "@/types/chat";
+import {
+  type CodexEvent,
+  type MediaAttachment,
+} from "@/types/chat";
 import { buildMessageParams } from "@/utils/buildParams";
 import { ChatCompose } from "./chat/ChatCompose";
-import { SimpleConversationList } from "./SimpleConversationList";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
 import { useConversationListStore } from "@/stores/useConversationListStore";
 import { PenSquare } from "lucide-react";
@@ -16,7 +18,7 @@ import { useEventStreamStore } from "@/stores/useEventStreamStore";
 import { useEventStore } from "@/stores/useEventStore";
 import { EventItem } from "@/components/events/EventItem";
 import DeltaEventLog from "./DeltaEventLog";
-import { v4 } from "uuid";
+import { ChatToolbar } from "./layout/ChatToolBar";
 
 const STREAM_TYPE_NORMALIZATION: Record<string, string> = {
   agent_message_delta: "agent_message",
@@ -32,11 +34,10 @@ const getEventKey = (event: CodexEvent) => {
   return `${id}:${normalizedType}`;
 };
 
-export function ChatInterface() {
+export function ChatView() {
   useCodexApprovalRequests();
   const {
     createConversation,
-    resumeConversation,
     status: conversationStatus,
   } = useConversation();
   const [inputValue, setInputValue] = useState("");
@@ -45,8 +46,6 @@ export function ChatInterface() {
   const {
     activeConversationId,
     setActiveConversationId,
-    conversationIds,
-    addConversationId,
   } = useActiveConversationStore();
   const { cwd } = useCodexStore();
   const currentEvents = activeConversationId
@@ -125,65 +124,13 @@ export function ChatInterface() {
     clearEvents(newConversation.conversationId);
   };
 
-  const handleSelectConversation = async (
-    conversationId: string,
-    path: string | null,
-  ) => {
-    if (!conversationIds.includes(conversationId)) {
-      console.log("resumedConversation", conversationId, path);
-      if (path) {
-        const resumedConversation = await resumeConversation(
-          path,
-          buildNewConversationParams,
-        );
-        console.log("resumedConversation", resumedConversation);
-        setActiveConversationId(resumedConversation.conversationId);
-        addConversationId(resumedConversation.conversationId);
-        const initialMessages = extractInitialMessages(resumedConversation);
-        if (initialMessages) {
-          // Use timestamps far in the past to ensure history always appears before new messages
-          const baseTimestamp = Date.now() - 1000000000; // ~11.5 days ago
-          initialMessages.forEach((msg: CodexEvent["payload"]["params"]["msg"], index: number) => {
-            const timestamp = baseTimestamp + index * 1000;
-            addEvent(resumedConversation.conversationId, {
-              id: timestamp,
-              event: "codex:event",
-              payload: {
-                method: `codex/event/${msg.type}`,
-                params: {
-                  conversationId: resumedConversation.conversationId,
-                  id: v4(),
-                  msg,
-                },
-              },
-              createdAt: timestamp,
-              source: "history",
-            });
-          });
-        }
-      } else {
-        console.error("Cannot resume conversation without a path.");
-        return;
-      }
-    } else {
-      setActiveConversationId(conversationId);
-    }
-    console.log("selected", conversationId);
-  };
-
   return (
-    <div className="flex h-full">
-      <div className="flex flex-col border-r">
-        <div className="p-2">
-          <Button onClick={() => handleCreateConversation()} className="w-full">
-            <PenSquare className="mr-2 h-4 w-4" />
-            New Chat
+    <div className="flex flex-col h-full">
+      <div className="flex px-2 justify-between">
+          <Button size="icon" onClick={() => handleCreateConversation()}>
+            <PenSquare />
           </Button>
-        </div>
-        <SimpleConversationList
-          activeConversationId={activeConversationId}
-          onSelectConversation={handleSelectConversation}
-        />
+          <ChatToolbar />
       </div>
       <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
         <div className="flex-1 space-y-4 overflow-y-auto p-4">

@@ -35,6 +35,7 @@ export function useConversation() {
         { params },
       );
       setActiveConversationId(response.conversationId);
+      console.log("createConversation response", response);
 
       setMetadata({
         model: response.model,
@@ -45,7 +46,7 @@ export function useConversation() {
       });
       return response;
     } catch (err: any) {
-      console.log("new_conversation err:", err);
+      console.error("new_conversation err:", err);
       setMetadata((prev) => ({
         ...prev,
         status: "error",
@@ -86,8 +87,8 @@ export function useConversation() {
     if (!activeConversationId) return;
     try {
       await invoke("archive_conversation", {
-        conversation_id: activeConversationId,
-        rollout_path: metadata.rolloutPath,
+        conversationId: activeConversationId,
+        rolloutPath: metadata.rolloutPath,
       });
     } catch (err: any) {
       console.error("Failed to archive conversation:", err);

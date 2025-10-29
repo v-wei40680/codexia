@@ -7,11 +7,19 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { useConversationListStore, loadProjectSessions } from "@/stores/useConversationListStore";
+} from "@/components/ui/dropdown-menu";
+import {
+  useConversationListStore,
+  loadProjectSessions,
+} from "@/stores/useConversationListStore";
 import { useCodexStore } from "@/stores/useCodexStore";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
 import { Checkbox } from "@/components/ui/checkbox";
+import { extractInitialMessages, type CodexEvent } from "@/types/chat";
+import { v4 } from "uuid";
+import { useConversation } from "@/hooks/useCodex";
+import { useBuildNewConversationParams } from "@/hooks/useBuildNewConversationParams";
+import { useEventStore } from "@/stores/useEventStore";
 
 interface ConversationListProps {
   mode: string;
@@ -34,17 +42,17 @@ export function ConversationList({
   selectedConversations,
   setSelectedConversations,
 }: ConversationListProps) {
-  const {
-    conversationsByCwd,
-    favoriteConversationIdsByCwd,
-    toggleFavorite,
-  } = useConversationListStore();
-  const { activeConversationId, setActiveConversationId } = useActiveConversationStore();
+  const { conversationsByCwd, favoriteConversationIdsByCwd, toggleFavorite } =
+    useConversationListStore();
+  const { activeConversationId, setActiveConversationId, conversationIds } =
+    useActiveConversationStore();
   const { cwd } = useCodexStore();
+  const { resumeConversation } = useConversation();
+  const buildNewConversationParams = useBuildNewConversationParams();
+  const { addEvent } = useEventStore();
 
   useEffect(() => {
     if (cwd) {
-      console.log("cwd", cwd)
       loadProjectSessions(cwd);
     }
   }, [cwd]);
@@ -55,7 +63,7 @@ export function ConversationList({
   }, [favoriteConversationIdsByCwd, cwd]);
 
   const conversations = useMemo(() => {
-    const base = (conversationsByCwd[cwd || ""] || []);
+    const base = conversationsByCwd[cwd || ""] || [];
     const query = searchQuery.trim().toLowerCase();
     return base.filter((conv) => {
       if (mode === "favorites" && !favoriteIds.has(conv.conversationId)) {
@@ -98,11 +106,58 @@ export function ConversationList({
     return "No conversations yet.";
   }, [mode, searchQuery]);
 
+  const handleSelectConversation = async (
+    conversationId: string,
+    path: string,
+  ) => {
+    if (!conversationIds.includes(conversationId)) {
+      console.log(conversationId, path);
+      const resumedConversation = await resumeConversation(
+        path,
+        buildNewConversationParams,
+      );
+      console.log(resumedConversation);
+      setActiveConversationId(resumedConversation.conversationId);
+      useActiveConversationStore
+        .getState()
+        .addConversationId(resumedConversation.conversationId);
+      const initialMessages = extractInitialMessages(resumedConversation);
+      if (initialMessages) {
+        // Use timestamps far in the past to ensure history always appears before new messages
+        const baseTimestamp = Date.now() - 1000000000; // ~11.5 days ago
+        initialMessages.forEach(
+          (msg: CodexEvent["payload"]["params"]["msg"], index: number) => {
+            const timestamp = baseTimestamp + index * 1000;
+            addEvent(resumedConversation.conversationId, {
+              id: timestamp,
+              event: "codex:event",
+              payload: {
+                method: `codex/event/${msg.type}`,
+                params: {
+                  conversationId: resumedConversation.conversationId,
+                  id: v4(),
+                  msg,
+                },
+              },
+              createdAt: timestamp,
+              source: "history",
+            });
+          },
+        );
+      }
+    } else {
+      setActiveConversationId(conversationId);
+    }
+    console.log("selected", conversationId);
+  };
+
   return (
     <nav className="flex flex-col h-full bg-muted/30">
       <div className="flex-1 overflow-y-auto">
         {conversations.length === 0 ? (
-          <div className="p-4 text-sm text-muted-foreground">{emptyStateMessage}</div>
+          <div className="p-4 text-sm text-muted-foreground">
+            {emptyStateMessage}
+          </div>
         ) : (
           <ul className="space-y-1 p-2">
             {conversations.map((conv) => {
@@ -114,7 +169,9 @@ export function ConversationList({
                     <div className="flex items-center justify-between w-full">
                       {showBulkDeleteButtons && (
                         <Checkbox
-                          checked={selectedConversations.has(conv.conversationId)}
+                          checked={selectedConversations.has(
+                            conv.conversationId,
+                          )}
                           onCheckedChange={(checked) => {
                             setSelectedConversations((prev) => {
                               const next = new Set(prev);
@@ -130,7 +187,12 @@ export function ConversationList({
                         />
                       )}
                       <button
-                        onClick={() => setActiveConversationId(conv.conversationId)}
+                        onClick={() =>
+                          handleSelectConversation(
+                            conv.conversationId,
+                            conv.path,
+                          )
+                        }
                         className={`flex-1 min-w-0 truncate text-left rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
                           isActive
                             ? "bg-accent text-accent-foreground"
@@ -182,8 +244,10 @@ export function ConversationList({
                         onClick={async (event) => {
                           event.stopPropagation();
                           if (conv.path) {
-                            useConversationListStore.getState().removeConversation(conv.conversationId);
-                            await invoke('delete_file', { path: conv.path });
+                            useConversationListStore
+                              .getState()
+                              .removeConversation(conv.conversationId);
+                            await invoke("delete_file", { path: conv.path });
                           }
                         }}
                         className="text-red-600 focus:text-red-600"

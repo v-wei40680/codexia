@@ -5,14 +5,13 @@ import { FileTree } from "@/components/filetree/FileTreeView";
 import { FileViewer } from "@/components/filetree/FileViewer";
 import { useNoteStore } from "@/stores/NoteStore";
 import { DiffViewer } from "@/components/filetree/DiffViewer";
-import { AppToolbar } from "@/components/layout/AppToolbar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Files, GitBranch, Bot, NotebookPen } from "lucide-react";
 import { AttachedFilesTab } from "@/components/AttachedFilesTab";
 import { NoteList } from "@/components/notes";
 import { WebPreview } from "@/components/WebPreview";
 import { SourceControl } from "@/components/SourceControl";
-import { NewChatView } from "@/components/NewChatView";
+import { ChatView } from "@/components/ChatView";
 import { ChatTab } from "@/components/ChatTab";
 
 export default function ChatPage() {
@@ -92,11 +91,10 @@ export default function ChatPage() {
         {/* Middle Panel - Chat/Notes */}
         {showChatPane && (
           <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-            <AppToolbar />
             {selectedLeftPanelTab === "notes" ? (
               <NotesView />
             ) : (
-              <NewChatView />
+              <ChatView />
             )}
           </div>
         )}
