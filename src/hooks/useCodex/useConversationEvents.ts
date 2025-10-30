@@ -3,6 +3,13 @@ import { useEffect, useRef } from "react";
 import { ConversationId } from "@/bindings/ConversationId";
 import { CodexEvent } from "@/types/chat";
 import { useSessionStore } from "@/stores/useSessionStore";
+import { toast } from "sonner";
+
+export interface BackendErrorPayload {
+  code: number;
+  message: string;
+  data?: unknown;
+}
 
 interface EventHandlers {
   isConversationReady?: boolean;
@@ -43,8 +50,34 @@ export function useConversationEvents(
   }, [handlers]);
 
   useEffect(() => {
+    let backendErrorUnlisten: (() => void) | null = null;
+
+    (async () => {
+      try {
+        backendErrorUnlisten = await listen<BackendErrorPayload>(
+          "codex:backend-error",
+          (event) => {
+            const { code, message } = event.payload;
+            toast.error(
+              `Backend error (code: ${code}): ${message || "Unknown error"}`
+            );
+            setIsBusy(false);
+          },
+        );
+      } catch (err) {
+        const message = err && typeof err === "object" && "message" in err ? (err as any).message : String(err);
+        toast.error("Failed to listen for backend errors:" + (message ? ` ${message}` : ""));
+      }
+    })();
+
+    return () => {
+      backendErrorUnlisten?.();
+    };
+  }, [setIsBusy]);
+
+  useEffect(() => {
     if (!conversationId || !isConversationReady) return;
-    let unlisten: (() => void) | null = null;
+    let conversationUnlisten: (() => void) | null = null;
     let subscriptionId: string | null = null;
 
     (async () => {
@@ -57,7 +90,7 @@ export function useConversationEvents(
           subscriptionId,
         );
 
-        unlisten = await listen("codex:event", (event: CodexEvent) => {
+        conversationUnlisten = await listen("codex:event", (event: CodexEvent) => {
           const currentHandlers = handlersRef.current;
           const msg = (event.payload as CodexEvent["payload"]).params.msg;
           if (!msg.type.endsWith("_delta") && !msg.type.startsWith("item")) {
@@ -159,9 +192,7 @@ export function useConversationEvents(
     })();
 
     return () => {
-      unlisten?.();
-      // Only attempt to remove the listener if we have a valid subscription ID.
-      // The backend expects a UUID string; passing null triggers a type error.
+      conversationUnlisten?.();
       if (subscriptionId) {
         invoke("remove_conversation_listener", {
           params: { subscriptionId },

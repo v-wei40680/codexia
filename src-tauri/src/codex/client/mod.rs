@@ -1,22 +1,22 @@
 use std::collections::HashMap;
 use std::process::Stdio;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicI64, Ordering};
+use std::sync::Arc;
 
 use codex_app_server_protocol::{
     AddConversationListenerParams, AddConversationSubscriptionResponse, ClientInfo,
     InitializeParams, InterruptConversationParams, InterruptConversationResponse,
     JSONRPCErrorError, JSONRPCNotification, JSONRPCRequest, NewConversationParams,
-    NewConversationResponse, RequestId, ResumeConversationParams, ResumeConversationResponse,
-    SendUserMessageParams, SendUserMessageResponse,
-    RemoveConversationListenerParams, RemoveConversationSubscriptionResponse
+    NewConversationResponse, RemoveConversationListenerParams,
+    RemoveConversationSubscriptionResponse, RequestId, ResumeConversationParams,
+    ResumeConversationResponse, SendUserMessageParams, SendUserMessageResponse,
 };
 use codex_protocol::protocol::ReviewDecision;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use tauri::AppHandle;
 use tokio::process::{Child, ChildStdin, Command};
-use tokio::sync::{Mutex, oneshot};
+use tokio::sync::{oneshot, Mutex};
 
 use crate::utils::codex_discovery::discover_codex_command;
 
@@ -28,8 +28,7 @@ use readers::{spawn_stderr_reader, spawn_stdout_reader};
 use transport::{respond_with_review_decision, write_message};
 
 type JsonRpcResult = Result<Value, JSONRPCErrorError>;
-pub(super) type PendingRequestMap =
-    Arc<Mutex<HashMap<RequestId, oneshot::Sender<JsonRpcResult>>>>;
+pub(super) type PendingRequestMap = Arc<Mutex<HashMap<RequestId, oneshot::Sender<JsonRpcResult>>>>;
 pub(super) type PendingServerRequestMap = Arc<Mutex<HashMap<String, PendingServerRequest>>>;
 
 #[derive(Clone)]
@@ -51,6 +50,14 @@ pub(super) enum PendingRequestKind {
 pub(super) struct PendingServerRequest {
     pub request_id: RequestId,
     pub kind: PendingRequestKind,
+}
+
+#[derive(Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BackendErrorPayload {
+    pub code: i64,
+    pub message: String,
+    pub data: Option<serde_json::Value>,
 }
 
 impl CodexAppServerClient {
@@ -84,8 +91,7 @@ impl CodexAppServerClient {
         let child = Arc::new(Mutex::new(child_process));
         let stdin = Arc::new(Mutex::new(stdin));
         let pending_requests: PendingRequestMap = Arc::new(Mutex::new(HashMap::new()));
-        let pending_server_requests: PendingServerRequestMap =
-            Arc::new(Mutex::new(HashMap::new()));
+        let pending_server_requests: PendingServerRequestMap = Arc::new(Mutex::new(HashMap::new()));
         let client = Arc::new(Self {
             _child: child.clone(),
             stdin: stdin.clone(),
@@ -118,7 +124,8 @@ impl CodexAppServerClient {
             },
         };
         let params_value = serde_json::to_value(params).map_err(|err| err.to_string())?;
-        self.request::<Value>("initialize", Some(params_value)).await?;
+        self.request::<Value>("initialize", Some(params_value))
+            .await?;
         self.send_notification("initialized", None).await
     }
 
@@ -129,8 +136,11 @@ impl CodexAppServerClient {
     ) -> Result<NewConversationResponse, String> {
         let mut params_value = serde_json::to_value(params).map_err(|err| err.to_string())?;
         if let Some(overrides_params) = overrides {
-            let overrides_value = serde_json::to_value(overrides_params).map_err(|err| err.to_string())?;
-            if let (Some(map), Some(overrides_map)) = (params_value.as_object_mut(), overrides_value.as_object()) {
+            let overrides_value =
+                serde_json::to_value(overrides_params).map_err(|err| err.to_string())?;
+            if let (Some(map), Some(overrides_map)) =
+                (params_value.as_object_mut(), overrides_value.as_object())
+            {
                 map.extend(overrides_map.clone());
             }
         }
@@ -144,8 +154,11 @@ impl CodexAppServerClient {
     ) -> Result<ResumeConversationResponse, String> {
         let mut params_value = serde_json::to_value(params).map_err(|err| err.to_string())?;
         if let Some(overrides_params) = overrides {
-            let overrides_value = serde_json::to_value(overrides_params).map_err(|err| err.to_string())?;
-            if let (Some(map), Some(overrides_map)) = (params_value.as_object_mut(), overrides_value.as_object()) {
+            let overrides_value =
+                serde_json::to_value(overrides_params).map_err(|err| err.to_string())?;
+            if let (Some(map), Some(overrides_map)) =
+                (params_value.as_object_mut(), overrides_value.as_object())
+            {
                 map.extend(overrides_map.clone());
             }
         }
@@ -183,7 +196,8 @@ impl CodexAppServerClient {
         params: InterruptConversationParams,
     ) -> Result<InterruptConversationResponse, String> {
         let params_value = serde_json::to_value(params).map_err(|err| err.to_string())?;
-        self.request("interruptConversation", Some(params_value)).await
+        self.request("interruptConversation", Some(params_value))
+            .await
     }
 
     pub async fn respond_exec_command_request(
@@ -204,11 +218,7 @@ impl CodexAppServerClient {
             .await
     }
 
-    async fn send_notification(
-        &self,
-        method: &str,
-        params: Option<Value>,
-    ) -> Result<(), String> {
+    async fn send_notification(&self, method: &str, params: Option<Value>) -> Result<(), String> {
         let notification = JSONRPCNotification {
             method: method.to_string(),
             params,
@@ -224,11 +234,7 @@ impl CodexAppServerClient {
         serde_json::from_value(result).map_err(|err| err.to_string())
     }
 
-    async fn send_request(
-        &self,
-        method: &str,
-        params: Option<Value>,
-    ) -> Result<Value, String> {
+    async fn send_request(&self, method: &str, params: Option<Value>) -> Result<Value, String> {
         let request_id = RequestId::Integer(self.next_request_id.fetch_add(1, Ordering::Relaxed));
         let request = JSONRPCRequest {
             id: request_id.clone(),

@@ -37,6 +37,15 @@ pub(super) fn spawn_stdout_reader(
                         "JSON-RPC error for {:?}: code={} message={}",
                         error.id, error.error.code, error.error.message
                     );
+                    let inner_error = &error.error;
+                    let payload = super::BackendErrorPayload {
+                        code: inner_error.code,
+                        message: inner_error.message.clone(),
+                        data: inner_error.data.clone(),
+                    };
+                    if let Err(err) = app_handle.emit("codex:backend-error", payload) {
+                        error!("Failed to emit codex:backend-error: {err}");
+                    }
                     notify_pending_error(&pending_requests, error).await;
                 }
                 Ok(JSONRPCMessage::Notification(notification)) => {
@@ -45,13 +54,8 @@ pub(super) fn spawn_stdout_reader(
                 }
                 Ok(JSONRPCMessage::Request(request)) => {
                     info!("JSON-RPC request {}", request.method);
-                    handle_server_request(
-                        request,
-                        &stdin,
-                        &app_handle,
-                        &pending_server_requests,
-                    )
-                    .await;
+                    handle_server_request(request, &stdin, &app_handle, &pending_server_requests)
+                        .await;
                 }
                 Err(err) => {
                     error!("Failed to parse JSON-RPC message: {err}. Payload: {trimmed}");
