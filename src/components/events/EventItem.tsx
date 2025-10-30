@@ -72,7 +72,8 @@ export const EventItem = memo(function EventItem({
       return (
         <div className="group space-y-1">
           <div className="flex gap-2">
-            <Bot /><MarkdownRenderer content={messageText} />
+            <Bot />
+            <MarkdownRenderer content={messageText} />
           </div>
           <MessageFooter
             messageId={id}
@@ -140,6 +141,10 @@ export const EventItem = memo(function EventItem({
     case "agent_reasoning_section_break":
     case "session_configured":
       return null;
+    case "error":
+      return <span className="bg-red-500">{msg.message}</span>;
+    case "stream_error":
+      return <span className="bg-red-500">{msg.message}</span>;
     default:
       return (
         <AccordionMsg title={msg.type} content={JSON.stringify(msg, null, 2)} />
