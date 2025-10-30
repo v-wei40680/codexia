@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState, useCallback } from 'react';
-import { toast } from 'sonner';
-import { optimizePromptRequest } from '@/services/promptOptimizer';
-import { usePromptOptimizerStore } from '@/stores/PromptOptimizerStore';
-import { Provider, useProvidersStore } from '@/stores/ProvidersStore';
+import { useEffect, useMemo, useState, useCallback } from "react";
+import { toast } from "sonner";
+import { optimizePromptRequest } from "@/services/promptOptimizer";
+import { useProviderStore } from "@/stores/useProviderStore";
+import { usePromptOptimizerStore } from "@/stores/PromptOptimizerStore";
 
 interface UsePromptOptimizationOptions {
   inputValue: string;
@@ -21,25 +21,29 @@ export const usePromptOptimization = ({
   popPromptHistory,
   promptHistoryLength,
 }: UsePromptOptimizationOptions) => {
-  const providers = useProvidersStore((state) => state.providers);
-  const optimizerProvider = usePromptOptimizerStore((state) => state.provider);
-  const optimizerModel = usePromptOptimizerStore((state) => state.model);
+  const { providers } = useProviderStore();
+  const { provider: optimizerProviderId, model: optimizerModel } =
+    usePromptOptimizerStore();
 
-  const typedProvider = optimizerProvider as Provider;
-  const optimizerConfig = providers[typedProvider];
+  const fallbackProvider = providers[0];
+  const optimizerConfig =
+    providers.find((item) => item.id === optimizerProviderId) ??
+    fallbackProvider;
   const availableOptimizerModels = optimizerConfig?.models ?? [];
-  const activeOptimizerModel = useMemo(() => (
-    availableOptimizerModels.includes(optimizerModel)
-      ? optimizerModel
-      : availableOptimizerModels[0] ?? ''
-  ), [availableOptimizerModels, optimizerModel]);
+  const activeOptimizerModel = useMemo(
+    () =>
+      availableOptimizerModels.includes(optimizerModel)
+        ? optimizerModel
+        : (availableOptimizerModels[0] ?? ""),
+    [availableOptimizerModels, optimizerModel],
+  );
 
-  const trimmedApiKey = optimizerConfig?.apiKey?.trim() ?? '';
-  const requiresApiKey = typedProvider !== 'ollama';
+  const trimmedApiKey = optimizerConfig?.apiKey?.trim() ?? "";
+  const requiresApiKey = optimizerConfig?.id !== "ollama";
   const hasCredentials = !requiresApiKey || Boolean(trimmedApiKey);
   const credentialMessage = hasCredentials
-    ? ''
-    : 'Configure the prompt optimizer under Settings > Prompt optimizer.';
+    ? ""
+    : "Configure the prompt optimizer under Settings > Prompt optimizer.";
 
   const [isOptimizing, setIsOptimizing] = useState(false);
   const [hasOptimized, setHasOptimized] = useState(false);
@@ -52,12 +56,21 @@ export const usePromptOptimization = ({
 
   const handleOptimizePrompt = useCallback(async () => {
     const trimmed = inputValue.trim();
-    if (!trimmed || isOptimizing || hasOptimized || !activeOptimizerModel || disabled) {
+    if (
+      !trimmed ||
+      isOptimizing ||
+      hasOptimized ||
+      !activeOptimizerModel ||
+      disabled ||
+      !optimizerConfig
+    ) {
       return;
     }
 
     if (!hasCredentials) {
-      toast.error(credentialMessage || 'Configure the prompt optimizer under Settings.');
+      toast.error(
+        credentialMessage || "Configure the prompt optimizer under Settings.",
+      );
       return;
     }
 
@@ -67,7 +80,7 @@ export const usePromptOptimization = ({
     try {
       const optimized = await optimizePromptRequest({
         prompt: trimmed,
-        provider: optimizerProvider,
+        provider: optimizerConfig.id,
         model: activeOptimizerModel,
         apiKey: optimizerConfig?.apiKey || undefined,
         baseUrl: optimizerConfig?.baseUrl || undefined,
@@ -80,7 +93,7 @@ export const usePromptOptimization = ({
         popPromptHistory();
       }
     } catch (error) {
-      console.error('Failed to optimize prompt:', error);
+      console.error("Failed to optimize prompt:", error);
       popPromptHistory();
       setHasOptimized(false);
     } finally {
@@ -93,7 +106,7 @@ export const usePromptOptimization = ({
     activeOptimizerModel,
     disabled,
     pushPromptHistory,
-    optimizerProvider,
+    optimizerConfig?.id,
     optimizerConfig?.apiKey,
     optimizerConfig?.baseUrl,
     onInputChange,
@@ -113,7 +126,13 @@ export const usePromptOptimization = ({
     setIsOptimizing(false);
   }, []);
 
-  const canOptimize = Boolean(inputValue.trim()) && !disabled && !!activeOptimizerModel && !isOptimizing && !hasOptimized && hasCredentials;
+  const canOptimize =
+    Boolean(inputValue.trim()) &&
+    !disabled &&
+    !!activeOptimizerModel &&
+    !isOptimizing &&
+    !hasOptimized &&
+    hasCredentials;
   const canUndo = hasOptimized && promptHistoryLength > 0;
 
   return {
@@ -122,6 +141,7 @@ export const usePromptOptimization = ({
     canOptimize,
     canUndo,
     activeOptimizerModel,
+    optimizerProvider: optimizerConfig?.id ?? "",
     optimizePrompt: handleOptimizePrompt,
     undoOptimization: handleUndoOptimization,
     resetOptimizationState,

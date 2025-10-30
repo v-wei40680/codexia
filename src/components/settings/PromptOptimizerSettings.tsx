@@ -1,35 +1,53 @@
-import { useEffect, type ChangeEvent } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { usePromptOptimizerStore } from '@/stores/PromptOptimizerStore';
-import { Provider, useProvidersStore } from '@/stores/ProvidersStore';
+import { useEffect, type ChangeEvent } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import { usePromptOptimizerStore } from "@/stores/PromptOptimizerStore";
+import {
+  type ModelProvider,
+  useProviderStore,
+} from "@/stores/useProviderStore";
 
 export function PromptOptimizerSettings() {
   const { provider, model, setProvider, setModel } = usePromptOptimizerStore();
-  const providers = useProvidersStore((state) => state.providers);
+  const { providers } = useProviderStore();
 
-  const providerKeys = Object.keys(providers) as Provider[];
-  const fallbackProvider = providerKeys[0] ?? 'openai';
-  const normalizedProvider = providerKeys.includes(provider as Provider)
+  const fallbackProviderId = providers[0]?.id ?? "openai";
+  const normalizedProvider = providers.some(
+    (item: ModelProvider) => item.id === provider,
+  )
     ? provider
-    : fallbackProvider;
-  const activeProvider = normalizedProvider as Provider;
+    : fallbackProviderId;
 
   useEffect(() => {
     if (provider !== normalizedProvider) {
       setProvider(normalizedProvider);
     }
   }, [normalizedProvider, provider, setProvider]);
-  const availableModels = providers[activeProvider]?.models ?? [];
+
+  const activeProvider = providers.find(
+    (item: ModelProvider) => item.id === normalizedProvider,
+  );
+  const availableModels = activeProvider?.models ?? [];
 
   const handleProviderChange = (event: ChangeEvent<HTMLSelectElement>) => {
-    const nextProvider = event.target.value;
-    setProvider(nextProvider);
+    const nextProviderId = event.target.value;
+    setProvider(nextProviderId);
+    const nextProvider = providers.find(
+      (item: ModelProvider) => item.id === nextProviderId,
+    );
+    const nextModel = nextProvider?.models[0] ?? "";
+    setModel(nextModel);
   };
 
   useEffect(() => {
     if (!availableModels.includes(model)) {
-      setModel(availableModels[0] ?? '');
+      setModel(availableModels[0] ?? "");
     }
   }, [availableModels, model, setModel]);
 
@@ -38,7 +56,8 @@ export function PromptOptimizerSettings() {
       <CardHeader>
         <CardTitle>Prompt Optimization Model</CardTitle>
         <CardDescription>
-          Choose the provider and model used exclusively for prompt polishing. This setting does not affect chat sessions.
+          Choose the provider and model used exclusively for prompt polishing.
+          This setting does not affect chat sessions.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -50,9 +69,9 @@ export function PromptOptimizerSettings() {
             onChange={handleProviderChange}
             className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
           >
-            {providerKeys.map((key) => (
-              <option key={key} value={key}>
-                {key}
+            {providers.map((item: ModelProvider) => (
+              <option key={item.id} value={item.id}>
+                {item.name}
               </option>
             ))}
           </select>
@@ -67,7 +86,7 @@ export function PromptOptimizerSettings() {
               onChange={(event) => setModel(event.target.value)}
               className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
             >
-              {availableModels.map((availableModel) => (
+              {availableModels.map((availableModel: string) => (
                 <option key={availableModel} value={availableModel}>
                   {availableModel}
                 </option>
@@ -75,7 +94,9 @@ export function PromptOptimizerSettings() {
             </select>
           ) : (
             <p className="text-sm text-muted-foreground">
-              No saved models for {activeProvider}. Add one in the Provider section first.
+              No saved models for {activeProvider?.name ?? "this provider"}. Add
+              one in the Provider
+              section first.
             </p>
           )}
         </div>

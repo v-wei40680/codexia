@@ -10,7 +10,7 @@ export interface ModelProvider {
   baseUrl?: string;
 }
 
-type ReasoningEffort = 'minimal' | 'low' | 'medium' | 'high';
+type ReasoningEffort = "minimal" | "low" | "medium" | "high";
 
 type ProviderState = {
   providers: ModelProvider[];
@@ -31,8 +31,6 @@ type ProviderActions = {
   setReasoningEffort: (effort: ReasoningEffort) => void;
   setOllamaModels: (models: string[]) => void;
 };
-
-
 
 const initialProviders: ModelProvider[] = [
   {
@@ -91,7 +89,7 @@ export const useProviderStore = create<ProviderState & ProviderActions>()(
       providers: initialProviders,
       selectedProviderId: initialProviders[0].id,
       selectedModel: initialProviders[0].models[0],
-      reasoningEffort: 'medium',
+      reasoningEffort: "medium",
 
       setSelectedProviderId: (id: string) => {
         const provider = get().providers.find((p) => p.id === id);
@@ -159,9 +157,10 @@ export const useProviderStore = create<ProviderState & ProviderActions>()(
               : p,
           ),
         }));
-      },    }),
+      },
+    }),
     {
-      name: "provider"
+      name: "provider",
     },
   ),
 );
