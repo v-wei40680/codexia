@@ -49,7 +49,7 @@ const initialProviders: ModelProvider[] = [
     models: [],
     apiKey: "",
     apiKeyVar: "",
-    baseUrl: "",
+    baseUrl: "http://localhost:11434/v1",
   },
   {
     id: "google",
@@ -57,7 +57,7 @@ const initialProviders: ModelProvider[] = [
     models: ["gemini-2.5-pro", "gemini-2.5-flash"],
     apiKey: "",
     apiKeyVar: "GEMINI_API_KEY",
-    baseUrl: "",
+    baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
   },
   {
     id: "openrouter",
@@ -74,6 +74,14 @@ const initialProviders: ModelProvider[] = [
     apiKey: "",
     apiKeyVar: "HF_API_TOKEN",
     baseUrl: "https://router.huggingface.co/v1",
+  },
+  {
+    id: "xai",
+    name: "grok",
+    models: ["grok-4"],
+    apiKey: "",
+    apiKeyVar: "XAI_API_KEY",
+    baseUrl: "https://api.x.ai/v1",
   },
 ];
 
