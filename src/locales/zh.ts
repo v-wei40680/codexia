@@ -3,6 +3,7 @@ export const zh = {
     chat: "聊天",
     projects: "项目",
     task: "任务",
+    review: "审查",
     openNewWindow: "打开新窗口",
     codexUnavailable: "不可用",
     usage: "使用情况",

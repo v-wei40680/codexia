@@ -23,6 +23,10 @@
     "process:default",
     "shell:default",
     "fs:default",
+    {
+      "identifier": "fs:allow-app-read",
+      "allow": [{ "path": "$HOME/.codex/*" },{ "path": "$HOME/.codex/sessions/**/*" }]
+    },
     "screenshots:default",
     "log:default",
     "deep-link:default",

@@ -8,6 +8,7 @@ import {
   Moon,
   Brain,
   ExternalLink,
+  History,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -128,6 +129,14 @@ export function AppHeader() {
         >
           <ExternalLink />
         </Button>
+
+        <Link
+          to="/review"
+          className="flex hover:text-primary items-center gap-1"
+          title={t("header.review")}
+        >
+          <History className="w-5 h-5" /> {t("header.review")}
+        </Link>
 
         {location.pathname === "/chat" && (
           <Button
