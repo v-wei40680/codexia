@@ -6,18 +6,28 @@ import { FileViewer } from "@/components/filetree/FileViewer";
 import { useNoteStore } from "@/stores/NoteStore";
 import { DiffViewer } from "@/components/filetree/DiffViewer";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Files, GitBranch, Bot, NotebookPen } from "lucide-react";
+import {
+  Files,
+  GitBranch,
+  Bot,
+  NotebookPen,
+  Brain,
+  Folder,
+} from "lucide-react";
 import { AttachedFilesTab } from "@/components/AttachedFilesTab";
 import { NoteList } from "@/components/notes";
 import { WebPreview } from "@/components/WebPreview";
 import { SourceControl } from "@/components/SourceControl";
 import { ChatView } from "@/components/ChatView";
 import { ChatTab } from "@/components/ChatTab";
+import { Button } from "@/components/ui/button";
 
 export default function ChatPage() {
   const {
     showChatPane,
+    setChatPane,
     showFileTree,
+    setFileTree,
     showFilePanel,
     showWebPreview,
     selectedFile,
@@ -36,7 +46,7 @@ export default function ChatPage() {
     <div className="h-full flex overflow-hidden">
       {/* Left Panel - File Tree and Git Status */}
       {showFileTree && (
-        <div className="w-64 border-r h-full flex-shrink-0">
+        <div className="w-64 border-r h-full shrink-0">
           <Tabs
             value={selectedLeftPanelTab}
             onValueChange={setSelectedLeftPanelTab}
@@ -89,17 +99,26 @@ export default function ChatPage() {
       {/* Main Content Area */}
       <div className="flex-1 min-h-0 h-full flex min-w-0 overflow-hidden">
         {/* Middle Panel - Chat/Notes */}
-        {showChatPane && (
+        {showChatPane ? (
           <div className="flex flex-col flex-1 min-w-0 overflow-hidden">
-            {selectedLeftPanelTab === "notes" ? (
-              <NotesView />
-            ) : (
-              <ChatView />
+            {selectedLeftPanelTab === "notes" ? <NotesView /> : <ChatView />}
+          </div>
+        ) : (
+          <div className="w-full flex gap-2 justify-center items-center">
+            <Button onClick={() => setChatPane(true)}>
+              <Brain />
+              Open Codexia Chat
+            </Button>
+            {!showFileTree && (
+              <Button onClick={() => setFileTree(true)}>
+                <Folder />
+                Open FileTree
+              </Button>
             )}
           </div>
         )}
 
-        {/* Right Panel - FileViewer, DiffViewer, or WebPreview */}
+        {/* Right Panel - FileViewer, source control DiffViewer, or WebPreview */}
         {((showFilePanel && selectedFile) ||
           diffFile ||
           (showWebPreview && webPreviewUrl)) && (

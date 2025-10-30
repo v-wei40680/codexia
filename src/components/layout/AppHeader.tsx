@@ -35,6 +35,7 @@ import { useTranslation } from "react-i18next";
 import { useLocaleStore } from "@/stores/LocaleStore";
 import type { AppLocale } from "@/locales";
 import { supportedLocales } from "@/lib/i18n";
+import { PublishCloudDialog } from "../dialogs/PublishCloudDialog";
 
 export function AppHeader() {
   const { showFileTree, toggleFileTree, toggleChatPane } = useLayoutStore();
@@ -220,7 +221,6 @@ export function AppHeader() {
           className="flex hover:text-primary items-center gap-1"
         >
           <Settings className="w-4 h-4" />
-          {t("header.settings")}
         </Link>
 
         {user ? (
@@ -258,6 +258,7 @@ export function AppHeader() {
             {t("header.login")}
           </Link>
         )}
+        <PublishCloudDialog />
       </span>
     </div>
   );

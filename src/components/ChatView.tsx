@@ -12,6 +12,7 @@ import { ChatToolbar } from "./layout/ChatToolBar";
 import { useChatInputStore } from "@/stores/chatInputStore";
 import { ChatScrollArea } from "./chat/ChatScrollArea";
 import { type CodexEvent } from "@/types/chat";
+import { Introduce } from "./common/Introduce";
 
 export function ChatView() {
   useCodexApprovalRequests();
@@ -85,11 +86,15 @@ export function ChatView() {
         <ChatToolbar />
       </div>
       <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
-        <ChatScrollArea
-          events={currentEvents}
-          activeConversationId={activeConversationId}
-          streamingMessages={streamingMessages}
-        />
+        {currentEvents.length > 0 ? (
+          <ChatScrollArea
+            events={currentEvents}
+            activeConversationId={activeConversationId}
+            streamingMessages={streamingMessages}
+          />
+        ) : (
+          <Introduce />
+        )}
         <ChatCompose
           inputValue={inputValue}
           onInputChange={handleInputChange}
