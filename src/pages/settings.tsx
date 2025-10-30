@@ -1,11 +1,11 @@
 import { useState } from "react";
-import SettingsSidebar from "@/components/SettingsSidebar";
-import ProviderList from "@/components/ProviderList";
-import ProviderModels from "@/components/ProviderModels";
-import ExcludeFolders from "@/components/ExcludeFolders";
+import SettingsSidebar from "@/components/settings/SettingsSidebar";
+import ProviderList from "@/components/settings/ProviderList";
+import ProviderModels from "@/components/settings/ProviderModels";
+import ExcludeFolders from "@/components/settings/ExcludeFolders";
 import { useSettingsStore } from "@/stores/SettingsStore";
-import { PromptOptimizerSettings } from "@/components/PromptOptimizerSettings";
-import { RemoteAccessSettings } from "@/components/RemoteAccessSettings";
+import { PromptOptimizerSettings } from "@/components/settings/PromptOptimizerSettings";
+import { RemoteAccessSettings } from "@/components/settings/RemoteAccessSettings";
 
 export default function SettingsPage() {
   const { activeSection, setActiveSection } = useSettingsStore();
