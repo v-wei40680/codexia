@@ -8,6 +8,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import type { Update } from "@tauri-apps/plugin-updater";
+import { check } from "@tauri-apps/plugin-updater";
 import { useEffect, useState } from "react";
 import { isRemoteRuntime } from "@/lib/tauri-proxy";
 
@@ -85,7 +86,6 @@ export function UpdateChecker() {
     }
 
     try {
-      const { check } = await import("@tauri-apps/plugin-updater");
       const update = await check();
       localStorage.setItem(STORAGE_KEYS.LAST_CHECK_TIME, new Date().toISOString());
       
