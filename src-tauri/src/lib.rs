@@ -96,6 +96,7 @@ pub fn run() {
             config::profile::add_or_update_profile,
             config::profile::delete_profile,
             config::provider::add_or_update_model_provider,
+            config::provider::delete_model_provider,
             config::provider::ensure_default_providers,
             enable_remote_ui,
             disable_remote_ui,

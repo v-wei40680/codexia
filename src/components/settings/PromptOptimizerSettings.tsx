@@ -9,7 +9,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { usePromptOptimizerStore } from "@/stores/PromptOptimizerStore";
 import {
-  type ModelProvider,
+  type ProviderStateModelProvider,
   useProviderStore,
 } from "@/stores/useProviderStore";
 
@@ -19,7 +19,7 @@ export function PromptOptimizerSettings() {
 
   const fallbackProviderId = providers[0]?.id ?? "openai";
   const normalizedProvider = providers.some(
-    (item: ModelProvider) => item.id === provider,
+    (item: ProviderStateModelProvider) => item.id === provider,
   )
     ? provider
     : fallbackProviderId;
@@ -31,7 +31,7 @@ export function PromptOptimizerSettings() {
   }, [normalizedProvider, provider, setProvider]);
 
   const activeProvider = providers.find(
-    (item: ModelProvider) => item.id === normalizedProvider,
+    (item: ProviderStateModelProvider) => item.id === normalizedProvider,
   );
   const availableModels = activeProvider?.models ?? [];
 
@@ -39,7 +39,7 @@ export function PromptOptimizerSettings() {
     const nextProviderId = event.target.value;
     setProvider(nextProviderId);
     const nextProvider = providers.find(
-      (item: ModelProvider) => item.id === nextProviderId,
+      (item: ProviderStateModelProvider) => item.id === nextProviderId,
     );
     const nextModel = nextProvider?.models[0] ?? "";
     setModel(nextModel);
@@ -69,7 +69,7 @@ export function PromptOptimizerSettings() {
             onChange={handleProviderChange}
             className="mt-2 w-full rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus:outline-none focus:ring-2 focus:ring-ring"
           >
-            {providers.map((item: ModelProvider) => (
+            {providers.map((item: ProviderStateModelProvider) => (
               <option key={item.id} value={item.id}>
                 {item.name}
               </option>

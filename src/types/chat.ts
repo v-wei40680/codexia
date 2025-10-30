@@ -24,10 +24,7 @@ export type ResumeConversationResult = {
 export const extractInitialMessages = (
   response: ResumeConversationResult,
 ): CodexEvent["payload"]["params"]["msg"][] | null => {
-  return (
-    response.initialMessages ??
-    null
-  );
+  return response.initialMessages ?? null;
 };
 
 export const DELTA_EVENT_TYPES = new Set<EventMsg["type"]>([
@@ -38,22 +35,8 @@ export const DELTA_EVENT_TYPES = new Set<EventMsg["type"]>([
 
 export interface MediaAttachment {
   id: string;
-  type: 'image' | 'audio';
+  type: "image" | "audio";
   path: string;
   name: string;
   mimeType?: string;
-}
-
-export type Provider =
-  | "anthropic"
-  | "openai"
-  | "openrouter"
-  | "google"
-  | "ollama";
-
-export interface ProviderConfig {
-  value: Provider;
-  label: string;
-  models: string[];
-  defaultBaseUrl?: string;
 }

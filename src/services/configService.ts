@@ -66,21 +66,6 @@ export class ConfigService {
     }
   }
 
-  // Helper method to get configuration for commonly used providers
-  static async getCommonProviders() {
-    const providers = ["google", "openrouter", "openai", "anthropic"];
-    const configs: Record<string, ProviderConfig> = {};
-
-    for (const providerName of providers) {
-      const config = await this.getProviderConfig(providerName);
-      if (config) {
-        configs[providerName] = config;
-      }
-    }
-
-    return configs;
-  }
-
   static async addOrUpdateProfile(
     profileName: string,
     profile: Profile,
@@ -88,7 +73,13 @@ export class ConfigService {
     try {
       await invoke("add_or_update_profile", {
         profileName,
-        profile,
+        profile: {
+          model_provider: profile.provider_id,
+          model: profile.model_id,
+          api_key: profile.api_key,
+          api_key_env: profile.api_key_env,
+          base_url: profile.base_url,
+        },
       });
     } catch (error) {
       console.error(`Failed to add/update profile ${profileName}:`, error);
@@ -122,6 +113,20 @@ export class ConfigService {
         error,
       );
       throw new Error(`Failed to add/update model provider: ${error}`);
+    }
+  }
+
+  static async deleteModelProvider(providerName: string): Promise<void> {
+    try {
+      await invoke("delete_model_provider", {
+        providerName,
+      });
+    } catch (error) {
+      console.error(
+        `Failed to delete model provider ${providerName}:`,
+        error,
+      );
+      throw new Error(`Failed to delete model provider: ${error}`);
     }
   }
 }
