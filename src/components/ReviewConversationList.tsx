@@ -1,12 +1,13 @@
-import { useMemo, useEffect } from "react";
+import { useMemo, useEffect, useState, useRef } from "react";
 import {
   useConversationListStore,
   loadProjectSessions,
 } from "@/stores/useConversationListStore";
 import { useCodexStore } from "@/stores/useCodexStore";
 import { Button } from "./ui/button";
+import { Input } from "./ui/input";
 import { invoke } from "@/lib/tauri-proxy";
-import { EllipsisVertical, Trash2 } from "lucide-react";
+import { EllipsisVertical, Trash2, Pencil } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -23,8 +24,12 @@ export function ReviewConversationList({
   activeSessionConversationId,
   onSelectSessionConversation,
 }: ReviewConversationListProps) {
-  const { conversationsByCwd, removeConversation } = useConversationListStore();
+  const { conversationsByCwd, removeConversation, updateConversationPreview } =
+    useConversationListStore();
   const { cwd } = useCodexStore();
+  const [editingConversationId, setEditingConversationId] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState("");
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (cwd) {
@@ -33,9 +38,56 @@ export function ReviewConversationList({
     }
   }, [cwd]);
 
+  useEffect(() => {
+    if (editingConversationId) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
+  }, [editingConversationId]);
+
   const conversations = useMemo(() => {
     return conversationsByCwd[cwd] || [];
   }, [conversationsByCwd, cwd]);
+
+  const handleRenameSubmit = async (conversationId: string) => {
+    const nextPreview = editingValue;
+    const trimmedPreview = nextPreview.trim();
+
+    if (!cwd || !trimmedPreview) {
+      setEditingConversationId(null);
+      setEditingValue("");
+      return;
+    }
+
+    const conversation = conversations.find((item) => item.conversationId === conversationId);
+    if (!conversation || !conversation.path) {
+      setEditingConversationId(null);
+      setEditingValue("");
+      return;
+    }
+
+    if (nextPreview === conversation.preview) {
+      setEditingConversationId(null);
+      setEditingValue("");
+      return;
+    }
+
+    updateConversationPreview(conversationId, nextPreview);
+
+    try {
+      await invoke("update_cache_title", {
+        projectPath: cwd,
+        sessionPath: conversation.path,
+        preview: nextPreview,
+      });
+    } catch (error) {
+      console.error("Failed to update conversation title", error);
+      updateConversationPreview(conversationId, conversation.preview ?? "");
+    } finally {
+      setEditingConversationId(null);
+      setEditingValue("");
+    }
+  };
 
   return (
     <nav className="flex flex-col h-full bg-muted/30 w-64">
@@ -49,18 +101,46 @@ export function ReviewConversationList({
             {conversations.map((conv) => {
               return (
                 <li key={conv.conversationId} className="flex">
-                  <button
-                    onClick={() => {
-                      onSelectSessionConversation(conv.conversationId);
-                    }}
-                    className={`flex-1 min-w-0 truncate text-left rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
-                      activeSessionConversationId === conv.conversationId
-                        ? "bg-accent text-accent-foreground"
-                        : "text-muted-foreground"
-                    }`}
-                  >
-                    <span className="truncate">{conv.preview}</span>
-                  </button>
+                  {editingConversationId === conv.conversationId ? (
+                    <form
+                      className={`flex-1 min-w-0 rounded-md px-3 py-1.5 text-sm font-medium ${
+                        activeSessionConversationId === conv.conversationId
+                          ? "bg-accent text-accent-foreground"
+                          : "text-muted-foreground"
+                      }`}
+                      onSubmit={(event) => {
+                        event.preventDefault();
+                        void handleRenameSubmit(conv.conversationId);
+                      }}
+                    >
+                      <Input
+                        ref={inputRef}
+                        value={editingValue}
+                        onChange={(event) => setEditingValue(event.target.value)}
+                        onKeyDown={(event) => {
+                          event.stopPropagation();
+                          if (event.key === "Escape") {
+                            setEditingConversationId(null);
+                            setEditingValue("");
+                          }
+                        }}
+                        className="h-7"
+                      />
+                    </form>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        onSelectSessionConversation(conv.conversationId);
+                      }}
+                      className={`flex-1 min-w-0 truncate text-left rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
+                        activeSessionConversationId === conv.conversationId
+                          ? "bg-accent text-accent-foreground"
+                          : "text-muted-foreground"
+                      }`}
+                    >
+                      <span className="truncate">{conv.preview}</span>
+                    </button>
+                  )}
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -71,6 +151,16 @@ export function ReviewConversationList({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setEditingConversationId(conv.conversationId);
+                          setEditingValue(conv.preview ?? "");
+                        }}
+                      >
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Rename
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
                         onClick={async (event) => {
                           event.stopPropagation();
                           if (conv.path) {
@@ -79,7 +169,8 @@ export function ReviewConversationList({
                           }
                         }}
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Delete
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
