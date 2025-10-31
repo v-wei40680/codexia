@@ -23,7 +23,7 @@ body:
     validations:
       required: true
   - type: input
-    id: version
+    id: codex-version
     attributes:
       label: What version of Codex is running?
       description: Copy the output of `codex --version`
