@@ -1,6 +1,21 @@
-import { useMemo, useEffect, type SetStateAction, type Dispatch } from "react";
+import {
+  useMemo,
+  useEffect,
+  useState,
+  useRef,
+  type SetStateAction,
+  type Dispatch,
+} from "react";
 import { Button } from "@/components/ui/button";
-import { Trash2, MoreVertical, Star, StarOff, FolderPlus } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import {
+  Trash2,
+  MoreVertical,
+  Star,
+  StarOff,
+  FolderPlus,
+  Pencil,
+} from "lucide-react";
 import { invoke } from "@/lib/tauri-proxy";
 import {
   DropdownMenu,
@@ -20,6 +35,7 @@ import { v4 } from "uuid";
 import { useConversation } from "@/hooks/useCodex";
 import { useBuildNewConversationParams } from "@/hooks/useBuildNewConversationParams";
 import { useEventStore } from "@/stores/useEventStore";
+import { renameConversation } from "@/utils/renameConversation";
 
 interface ConversationListProps {
   mode: string;
@@ -42,8 +58,12 @@ export function ConversationList({
   selectedConversations,
   setSelectedConversations,
 }: ConversationListProps) {
-  const { conversationsByCwd, favoriteConversationIdsByCwd, toggleFavorite } =
-    useConversationListStore();
+  const {
+    conversationsByCwd,
+    favoriteConversationIdsByCwd,
+    toggleFavorite,
+    updateConversationPreview,
+  } = useConversationListStore();
   const {
     activeConversationId,
     setActiveConversationId,
@@ -54,12 +74,22 @@ export function ConversationList({
   const { resumeConversation } = useConversation();
   const buildNewConversationParams = useBuildNewConversationParams();
   const { addEvent } = useEventStore();
+  const [editingConversationId, setEditingConversationId] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState("");
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (cwd) {
       loadProjectSessions(cwd);
     }
   }, [cwd]);
+
+  useEffect(() => {
+    if (editingConversationId) {
+      inputRef.current?.focus();
+      inputRef.current?.select();
+    }
+  }, [editingConversationId]);
 
   const favoriteIds = useMemo(() => {
     const list = favoriteConversationIdsByCwd[cwd || ""] ?? [];
@@ -156,6 +186,18 @@ export function ConversationList({
     console.log("selected", conversationId);
   };
 
+  const handleRenameSubmit = async (conversationId: string) => {
+    await renameConversation({
+      conversationId,
+      nextPreview: editingValue,
+      cwd,
+      conversations,
+      updateConversationPreview,
+    });
+    setEditingConversationId(null);
+    setEditingValue("");
+  };
+
   return (
     <nav className="flex flex-col h-full bg-muted/30">
       <div className="flex-1 overflow-y-auto">
@@ -168,6 +210,7 @@ export function ConversationList({
             {conversations.map((conv) => {
               const isActive = activeConversationId === conv.conversationId;
               const isFavorite = favoriteIds.has(conv.conversationId);
+              const isEditing = editingConversationId === conv.conversationId;
               return (
                 <li key={conv.conversationId}>
                   <DropdownMenu>
@@ -191,26 +234,56 @@ export function ConversationList({
                           className="mr-2"
                         />
                       )}
-                      <button
-                        onClick={() =>
-                          handleSelectConversation(
-                            conv.conversationId,
-                            conv.path,
-                          )
-                        }
-                        className={`flex-1 min-w-0 truncate text-left rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
-                          isActive
-                            ? "bg-accent text-accent-foreground"
-                            : "text-muted-foreground"
-                        }`}
-                      >
-                        <span className="flex items-center gap-2 truncate">
-                          <span className="truncate">{conv.preview}</span>
-                          {isFavorite ? (
-                            <Star className="h-3 w-3 text-yellow-500 fill-current flex-shrink-0" />
-                          ) : null}
-                        </span>
-                      </button>
+                      {isEditing ? (
+                        <form
+                          className={`flex-1 min-w-0 rounded-md px-3 py-1.5 text-sm font-medium ${
+                            isActive
+                              ? "bg-accent text-accent-foreground"
+                              : "text-muted-foreground"
+                          }`}
+                          onSubmit={(event) => {
+                            event.preventDefault();
+                            void handleRenameSubmit(conv.conversationId);
+                          }}
+                        >
+                          <Input
+                            ref={inputRef}
+                            value={editingValue}
+                            onChange={(event) =>
+                              setEditingValue(event.target.value)
+                            }
+                            onKeyDown={(event) => {
+                              event.stopPropagation();
+                              if (event.key === "Escape") {
+                                setEditingConversationId(null);
+                                setEditingValue("");
+                              }
+                            }}
+                            className="h-7"
+                          />
+                        </form>
+                      ) : (
+                        <button
+                          onClick={() =>
+                            handleSelectConversation(
+                              conv.conversationId,
+                              conv.path,
+                            )
+                          }
+                          className={`flex-1 min-w-0 truncate text-left rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
+                            isActive
+                              ? "bg-accent text-accent-foreground"
+                              : "text-muted-foreground"
+                          }`}
+                        >
+                          <span className="flex items-center gap-2 truncate">
+                            <span className="truncate">{conv.preview}</span>
+                            {isFavorite ? (
+                              <Star className="h-3 w-3 text-yellow-500 fill-current flex-shrink-0" />
+                            ) : null}
+                          </span>
+                        </button>
+                      )}
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="ml-1">
                           <MoreVertical className="h-4 w-4" />
@@ -235,6 +308,16 @@ export function ConversationList({
                             Add favorite
                           </>
                         )}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setEditingConversationId(conv.conversationId);
+                          setEditingValue(conv.preview ?? "");
+                        }}
+                      >
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Rename
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={(event) => {

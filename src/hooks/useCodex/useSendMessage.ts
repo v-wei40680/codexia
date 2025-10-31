@@ -9,6 +9,7 @@ import { useEventStore } from "@/stores/useEventStore";
 import { useConversation } from "./useConversation";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
 import { useSessionStore } from "@/stores/useSessionStore";
+import { useProviderStore } from "@/stores/useProviderStore";
 
 export function useSendMessage() {
   const isBusy = useSessionStore((state) => state.isBusy);
@@ -19,6 +20,9 @@ export function useSendMessage() {
   const { createConversation, markConversationReady } = useConversation();
   const setActiveConversationId = useActiveConversationStore(
     (state) => state.setActiveConversationId,
+  );
+  const selectedProviderId = useProviderStore(
+    (state) => state.selectedProviderId,
   );
 
   const sendMessage = async (conversationId: string, items: InputItem[]) => {
@@ -88,6 +92,10 @@ export function useSendMessage() {
       preview,
       timestamp: new Date().toISOString(),
       path: newConversation.rolloutPath,
+      modelProvider:
+        buildNewConversationParams.modelProvider ??
+        selectedProviderId ??
+        "openai",
     });
     setActiveConversationId(newConversation.conversationId);
     useActiveConversationStore

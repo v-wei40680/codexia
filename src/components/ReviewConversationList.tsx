@@ -14,6 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { renameConversation } from "@/utils/renameConversation";
 
 interface ReviewConversationListProps {
   activeSessionConversationId: string | null;
@@ -50,43 +51,15 @@ export function ReviewConversationList({
   }, [conversationsByCwd, cwd]);
 
   const handleRenameSubmit = async (conversationId: string) => {
-    const nextPreview = editingValue;
-    const trimmedPreview = nextPreview.trim();
-
-    if (!cwd || !trimmedPreview) {
-      setEditingConversationId(null);
-      setEditingValue("");
-      return;
-    }
-
-    const conversation = conversations.find((item) => item.conversationId === conversationId);
-    if (!conversation || !conversation.path) {
-      setEditingConversationId(null);
-      setEditingValue("");
-      return;
-    }
-
-    if (nextPreview === conversation.preview) {
-      setEditingConversationId(null);
-      setEditingValue("");
-      return;
-    }
-
-    updateConversationPreview(conversationId, nextPreview);
-
-    try {
-      await invoke("update_cache_title", {
-        projectPath: cwd,
-        sessionPath: conversation.path,
-        preview: nextPreview,
-      });
-    } catch (error) {
-      console.error("Failed to update conversation title", error);
-      updateConversationPreview(conversationId, conversation.preview ?? "");
-    } finally {
-      setEditingConversationId(null);
-      setEditingValue("");
-    }
+    await renameConversation({
+      conversationId,
+      nextPreview: editingValue,
+      cwd,
+      conversations,
+      updateConversationPreview,
+    });
+    setEditingConversationId(null);
+    setEditingValue("");
   };
 
   return (
