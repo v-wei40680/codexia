@@ -1,18 +1,17 @@
 <div align="center">
   <img src="src-tauri/icons/128x128@2x.png" alt="Codexia Logo" width="120" height="120" />
 
-  # [Codexia](https://github.com/milisp/codexia)
+  # Codexia
 </div>
 
 [![Downloads](https://img.shields.io/github/downloads/milisp/codexia/total.svg)](https://github.com/milisp/codexia/releases)
 [![Stars](https://img.shields.io/github/stars/milisp/codexia?style=social)](https://github.com/milisp/codexia/stargazers)
 [![Forks](https://img.shields.io/github/forks/milisp/codexia?style=social)](https://github.com/milisp/codexia/network/members)
-[![Feature Requests](https://img.shields.io/badge/Feature-Requests-blue?style=flat&logo=github&labelColor=24292e)](https://github.com/milisp/codexia/discussions/new?category=ideas)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](#-contributing)
-[![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](LICENSE)
 [![CI](https://github.com/milisp/codexia/actions/workflows/ci.yml/badge.svg)](https://github.com/milisp/codexia/actions/workflows/ci.yml)
 [![Follow on 𝕏](https://img.shields.io/badge/𝕏-@lisp__mi-1c9bf0)](http://x.com/intent/follow?screen_name=lisp_mi)
 [![Discord](https://img.shields.io/badge/Discord-Join-5865F2?style=for-the-badge&logo=discord&logoColor=white)](https://discord.gg/zAjtD4kf5K)
+[![Subreddit subscribers](https://img.shields.io/reddit/subreddit-subscribers/codexia?style=flat&logo=reddit&label=subreddit)](https://www.reddit.com/r/codexia/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-brightgreen.svg)](LICENSE)
 
 🚀 A powerful GUI and Toolkit for [Codex CLI](https://github.com/openai/codex)
 
@@ -44,12 +43,13 @@ fork chat, file-tree integration, notepad, git diff, build-in pdf csv/xlsx viewe
 
 ## News
 
-- [2025-10-24] Multilingual support - English, Chinese and Japanese.
-- [2025-10-04] change codex proto to app-server for codex 0.44.0
-- [2025-09-26] With multiple windows support, open multiple projects at the same time. Show token usage beside Reasoning Effort.
-- [2025-09-24] Remote control via browser, check [discussion comment](https://github.com/milisp/codexia/discussions/22#discussioncomment-14500403)
-- [2025-09-11] support codex built-in web search + file and filetree change detect and refresh
-- [2025-09-05] fork chat + edit chat
+- [10/29] Review page, Rename chat title, manage `~/.codex/session` from GUI.
+- [10/24] Multilingual support - En, Zh and Ja.
+- [10/04] change codex proto to app-server for codex 0.44.0
+- [09/26] With multiple windows support, open multiple projects at the same time. Show token usage beside Reasoning Effort.
+- [09/24] Remote control via browser, check [discussion comment](https://github.com/milisp/codexia/discussions/22#discussioncomment-14500403)
+- [09/11] support codex built-in web search + file and filetree change detect and refresh
+- [09/05] fork chat + edit chat
   * (theme select + category conversatin) ideas thanks to reddit user [rachelo3](https://racheluidesign.weebly.com/?utm_source=https://github.com/milisp/codexia)
 
 ## ✨ Features
@@ -107,8 +107,6 @@ Codexia prioritizes your privacy and security:
 
 ### FAQ
 
-- Why other providers no support
-codex 0.4.4 maybe change chat completions api to response api, you can try change base_url to response base_url
 - MacOS damaged warning
 [🎥Youtube](https://www.youtube.com/watch?v=MEHFd0PCQh4)
 The app not sign yet, You can open it by running the terminal command:
@@ -144,6 +142,7 @@ open -a /Applications/codexia.app  # or click the Codexia app
 
 If you’re a developer, designer, or AI tinkerer — Join us on this exciting journey to redefine the developer experience with AI. Contribute to the project, share your feedback, and help build the future of intelligent coding environments. Together, we can make Codexia the go-to platform for developers worldwide!
 
+## Contributing
 ## Development & Support Docs
 
 For development commands, troubleshooting/FAQ, and contribution guidance, see [CONTRIBUTING](CONTRIBUTING.md) and [USAGE](docs/USAGE.md).
