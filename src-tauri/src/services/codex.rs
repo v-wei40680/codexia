@@ -6,11 +6,14 @@ pub async fn check_codex_version() -> Result<String, String> {
         Some(p) => p.to_string_lossy().to_string(),
         None => "codex".to_string(),
     };
+    println!("Discovered codex path: {}", path);
 
     let output = Command::new(&path)
         .arg("-V")
         .output()
         .map_err(|e| format!("Failed to execute codex binary: {}", e))?;
+
+    println!("Codex command output: {:?}", output);
 
     if output.status.success() {
         let version = String::from_utf8_lossy(&output.stdout).trim().to_string();
