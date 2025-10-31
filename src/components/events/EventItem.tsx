@@ -92,7 +92,7 @@ export const EventItem = memo(function EventItem({
     case "agent_reasoning_raw_content":
       return (
         <span className="flex">
-          <AccordionMsg title="🧠 Reasoning" content={msg.text} />
+          <AccordionMsg title={`🧠 ${msg.text}`} content={msg.text} />
         </span>
       );
       return null;

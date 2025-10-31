@@ -17,7 +17,16 @@ import { Introduce } from "./common/Introduce";
 export function ChatView() {
   useCodexApprovalRequests();
   const { status: conversationStatus } = useConversation();
-  const { appendDelta, finalizeMessage } = useEventStreamStore();
+  const appendDelta = useEventStreamStore((state) => state.appendDelta);
+  const queueAgentMessage = useEventStreamStore(
+    (state) => state.queueAgentMessage,
+  );
+  const finalizeConversationStream = useEventStreamStore(
+    (state) => state.finalizeConversation,
+  );
+  const clearConversationStream = useEventStreamStore(
+    (state) => state.clearConversation,
+  );
   const { events, addEvent } = useEventStore();
   const { activeConversationId } = useActiveConversationStore();
   const inputValue = useChatInputStore((state) => state.inputValue);
@@ -48,18 +57,52 @@ export function ChatView() {
       if (!event.createdAt) {
         event.createdAt = Date.now();
       }
-      if (event.payload.params.msg.type.endsWith("_delta")) {
-        appendDelta(event);
-      } else {
-        upsertEvent(event);
+      const msgType = event.payload.params.msg.type;
+      if (msgType === "agent_message" || msgType.endsWith("_delta")) {
+        return;
       }
+      if (
+        msgType === "turn_aborted" ||
+        msgType === "error" ||
+        msgType === "stream_error"
+      ) {
+        clearConversationStream(event.payload.params.conversationId);
+      }
+      upsertEvent(event);
     },
+    onAgentMessageDelta: (event: CodexEvent) => {
+      appendDelta(event);
+    },
+    onAgentReasoningDelta: (event: CodexEvent) => {
+      appendDelta(event);
+    },
+    onAgentMessage: (event: CodexEvent) => {
+      const { conversationId } = event.payload.params;
+      const streamingState =
+        useEventStreamStore.getState().streaming[conversationId];
+      const hasActiveStream =
+        streamingState && Object.keys(streamingState).length > 0;
 
-    onAgentMessage: (event) => {
-      if (!event.createdAt) {
-        event.createdAt = Date.now();
+      if (hasActiveStream) {
+        queueAgentMessage(event);
+        return;
       }
-      finalizeMessage(event);
+
+      const nextEvent =
+        event.createdAt != null ? event : { ...event, createdAt: Date.now() };
+      upsertEvent(nextEvent);
+    },
+    onTaskComplete: (event: CodexEvent) => {
+      const { conversationId } = event.payload.params;
+      const queuedMessages = finalizeConversationStream(conversationId);
+      queuedMessages.forEach((queuedEvent) => {
+        const nextEvent =
+          queuedEvent.createdAt != null
+            ? queuedEvent
+            : { ...queuedEvent, createdAt: Date.now() };
+        upsertEvent(nextEvent);
+      });
+      upsertEvent(event);
     },
   });
 

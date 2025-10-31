@@ -1,56 +1,115 @@
 import { create } from "zustand";
 import type { CodexEvent } from "@/types/chat";
 
-interface StreamState {
-  streaming: Record<
-    string,
-    Record<
-      string,
-      { partialContent: string; state: "streaming" | "done"; type?: string }
-    >
-  >;
-  appendDelta: (event: CodexEvent) => void;
-  finalizeMessage: (event: CodexEvent) => void;
+export interface StreamingMessage {
+  payloadId: string;
+  type: string;
+  partialContent: string;
+  eventId: number;
+  updatedAt: number;
+  status: "streaming";
 }
 
-export const useEventStreamStore = create<StreamState>((set, get) => ({
+interface StreamState {
+  streaming: Record<string, Record<string, StreamingMessage>>;
+  pendingAgentMessages: Record<string, CodexEvent[]>;
+  appendDelta: (event: CodexEvent) => void;
+  queueAgentMessage: (event: CodexEvent) => void;
+  finalizeConversation: (conversationId: string) => CodexEvent[];
+  clearConversation: (conversationId: string) => void;
+}
+
+export const useEventStreamStore = create<StreamState>((set) => ({
   streaming: {},
+  pendingAgentMessages: {},
   appendDelta: (event) => {
     const { msg, conversationId, id } = event.payload.params;
-    let delta = "";
-    if (
-      msg.type === "agent_message_delta" ||
-      msg.type === "agent_reasoning_delta" ||
-      msg.type === "agent_reasoning_raw_content_delta"
-    ) {
-      delta = msg.delta;
+    if (!msg.type.endsWith("_delta")) {
+      return;
     }
-  
-    const s = get().streaming;
-    const conversationStream = s[conversationId] ?? {};
-  
-    set({
-      streaming: {
-        ...s,
-        [conversationId]: {
-          ...conversationStream,
-          [id]: {
-            type: msg.type.replace("_delta", ""),
-            partialContent: (conversationStream[id]?.partialContent ?? "") + delta,
-            state: "streaming",
+
+    const deltaContainer = msg as { delta?: unknown };
+    const deltaText =
+      typeof deltaContainer.delta === "string" ? deltaContainer.delta : "";
+    const timestamp = event.createdAt ?? Date.now();
+
+    const streamKey = `${id}:${msg.type}`;
+
+    set((state) => {
+      const conversationStream = state.streaming[conversationId] ?? {};
+      const previous = conversationStream[streamKey];
+      const nextEntry: StreamingMessage = {
+        payloadId: id,
+        type: msg.type,
+        partialContent: (previous?.partialContent ?? "") + deltaText,
+        eventId: previous
+          ? Math.max(previous.eventId, event.id)
+          : event.id,
+        updatedAt: timestamp,
+        status: "streaming",
+      };
+
+      return {
+        streaming: {
+          ...state.streaming,
+          [conversationId]: {
+            ...conversationStream,
+            [streamKey]: nextEntry,
           },
         },
-      },
+      };
     });
   },
-  finalizeMessage: (event) => {
-    const conversationId = event.payload.params.conversationId;
-    const id = event.payload.params.id;
-    const s = get().streaming;
-    const conversationStream = s[conversationId];
-    if (conversationStream && conversationStream[id]) {
-      conversationStream[id].state = "done";
-      set({ streaming: { ...s, [conversationId]: { ...conversationStream } } });
-    }
+  queueAgentMessage: (event) => {
+    const { conversationId } = event.payload.params;
+    set((state) => {
+      const existing = state.pendingAgentMessages[conversationId] ?? [];
+      return {
+        pendingAgentMessages: {
+          ...state.pendingAgentMessages,
+          [conversationId]: [...existing, event],
+        },
+      };
+    });
+  },
+  finalizeConversation: (conversationId) => {
+    let queued: CodexEvent[] = [];
+    set((state) => {
+      queued = state.pendingAgentMessages[conversationId] ?? [];
+      if (!state.streaming[conversationId] && queued.length === 0) {
+        return state;
+      }
+
+      const nextStreaming = { ...state.streaming };
+      const nextPending = { ...state.pendingAgentMessages };
+      delete nextStreaming[conversationId];
+      delete nextPending[conversationId];
+
+      return {
+        streaming: nextStreaming,
+        pendingAgentMessages: nextPending,
+      };
+    });
+    return queued;
+  },
+  clearConversation: (conversationId) => {
+    set((state) => {
+      if (
+        !state.streaming[conversationId] &&
+        !state.pendingAgentMessages[conversationId]
+      ) {
+        return state;
+      }
+
+      const nextStreaming = { ...state.streaming };
+      const nextPending = { ...state.pendingAgentMessages };
+      delete nextStreaming[conversationId];
+      delete nextPending[conversationId];
+
+      return {
+        streaming: nextStreaming,
+        pendingAgentMessages: nextPending,
+      };
+    });
   },
 }));

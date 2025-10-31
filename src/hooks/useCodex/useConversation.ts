@@ -14,6 +14,7 @@ export function useConversation() {
   const createConversation = async (
     params: NewConversationParams,
   ): Promise<NewConversationResponse> => {
+    console.log("NewConversationParams", params)
     setMetadata((prev) => ({ ...prev, status: "initializing", error: null }));
     try {
       const response = await invoke<NewConversationResponse>(

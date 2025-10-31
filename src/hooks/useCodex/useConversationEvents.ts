@@ -59,14 +59,20 @@ export function useConversationEvents(
           (event) => {
             const { code, message } = event.payload;
             toast.error(
-              `Backend error (code: ${code}): ${message || "Unknown error"}`
+              `Backend error (code: ${code}): ${message || "Unknown error"}`,
             );
             setIsBusy(false);
           },
         );
       } catch (err) {
-        const message = err && typeof err === "object" && "message" in err ? (err as any).message : String(err);
-        toast.error("Failed to listen for backend errors:" + (message ? ` ${message}` : ""));
+        const message =
+          err && typeof err === "object" && "message" in err
+            ? (err as any).message
+            : String(err);
+        toast.error(
+          "Failed to listen for backend errors:" +
+            (message ? ` ${message}` : ""),
+        );
       }
     })();
 
@@ -90,102 +96,121 @@ export function useConversationEvents(
           subscriptionId,
         );
 
-        conversationUnlisten = await listen("codex:event", (event: CodexEvent) => {
-          const currentHandlers = handlersRef.current;
-          const msg = (event.payload as CodexEvent["payload"]).params.msg;
-          if (!msg.type.endsWith("_delta") && !msg.type.startsWith("item")) {
-            console.info(`codex:event ${event.id} ${msg.type}`, event);
-          }
+        const uniqueLogSet: Set<string> = new Set();
 
-          currentHandlers.onAnyEvent?.(event);
-          const busyOff =
-            msg.type === "error" ||
-            msg.type === "task_complete" ||
-            msg.type === "turn_aborted";
-          setIsBusy(!busyOff);
+        function logOnceWithSet(uniqueId: string, msg: any): void {
+            if (!uniqueLogSet.has(uniqueId)) {
+                uniqueLogSet.add(uniqueId);
+                console.log(`codex:event ${uniqueId}`, msg)
+            }
+        }
 
-          switch (msg.type) {
-            case "task_started":
-              currentHandlers.onTaskStarted?.(event);
-              break;
-            case "task_complete":
-              currentHandlers.onTaskComplete?.(event);
-              break;
-            case "agent_message":
-              currentHandlers.onAgentMessage?.(event);
-              break;
-            case "agent_message_delta":
-              currentHandlers.onAgentMessageDelta?.(event);
-              break;
-            case "user_message":
-              currentHandlers.onUserMessage?.(event);
-              break;
-            case "agent_reasoning":
-              currentHandlers.onAgentReasoning?.(event);
-              break;
-            case "agent_reasoning_delta":
-              currentHandlers.onAgentReasoningDelta?.(event);
-              break;
-            case "agent_reasoning_raw_content_delta":
-              currentHandlers.onAgentReasoningDelta?.(event);
-              break;
-            case "agent_reasoning_section_break":
-              currentHandlers.onAgentReasoningSectionBreak?.(event);
-              break;
-            case "exec_approval_request":
-              currentHandlers.onExecApprovalRequest?.(event);
-              break;
-            case "apply_patch_approval_request":
-              currentHandlers.onApplyPatchApprovalRequest?.(event);
-              break;
-            case "exec_command_begin":
-              currentHandlers.onExecCommandBegin?.(event);
-              break;
-            case "exec_command_end":
-              currentHandlers.onExecCommandEnd?.(event);
-              break;
-            case "patch_apply_begin":
-              currentHandlers.onPatchApplyBegin?.(event);
-              break;
-            case "patch_apply_end":
-              currentHandlers.onPatchApplyEnd?.(event);
-              break;
-            case "web_search_begin":
-              currentHandlers.onWebSearchBegin?.(event);
-              break;
-            case "web_search_end":
-              currentHandlers.onWebSearchEnd?.(event);
-              break;
-            case "mcp_tool_call_begin":
-              currentHandlers.onMcpToolCallBegin?.(event);
-              break;
-            case "mcp_tool_call_end":
-              currentHandlers.onMcpToolCallEnd?.(event);
-              break;
-            case "turn_diff":
-              currentHandlers.onTurnDiff?.(event);
-              break;
-            case "token_count":
-              currentHandlers.onTokenCount?.(event);
-              break;
-            case "stream_error":
-              console.log("stream_error:", event);
-              currentHandlers.onStreamError?.(event);
-              break;
-            case "error":
-              console.log("error:", event);
-              currentHandlers.onError?.(event);
-              break;
-            case "item_started":
-            case "item_completed":
-            case "agent_reasoning_raw_content":
-            case "exec_command_output_delta":
-            case "turn_aborted":
-              break;
-            default:
-              console.warn(`Unknown event.id ${event.id} msg.type:`, msg.type);
-          }
-        });
+        conversationUnlisten = await listen(
+          "codex:event",
+          (event: CodexEvent) => {
+            const currentHandlers = handlersRef.current;
+            const msg = (event.payload as CodexEvent["payload"]).params.msg;
+            const uniqueId = `${event.payload.params.conversationId}:${event.id}:${event.payload.params.id}:${msg.type}`
+            logOnceWithSet(uniqueId, msg);
+
+            currentHandlers.onAnyEvent?.(event);
+            const busyOff =
+              msg.type === "error" ||
+              msg.type === "task_complete" ||
+              msg.type === "turn_aborted";
+            setIsBusy(!busyOff);
+
+            switch (msg.type) {
+              case "task_started":
+                currentHandlers.onTaskStarted?.(event);
+                break;
+              case "task_complete":
+                currentHandlers.onTaskComplete?.(event);
+                break;
+              case "agent_message":
+                currentHandlers.onAgentMessage?.(event);
+                break;
+              case "agent_message_content_delta":
+              case "agent_message_delta":
+                currentHandlers.onAgentMessageDelta?.(event);
+                break;
+              case "user_message":
+                currentHandlers.onUserMessage?.(event);
+                break;
+              case "agent_reasoning":
+                currentHandlers.onAgentReasoning?.(event);
+                break;
+              case "agent_reasoning_delta":
+                currentHandlers.onAgentReasoningDelta?.(event);
+                break;
+              case "agent_reasoning_raw_content_delta":
+                currentHandlers.onAgentReasoningDelta?.(event);
+                break;
+              case "reasoning_content_delta":
+              case "reasoning_raw_content_delta":
+                currentHandlers.onAgentReasoningDelta?.(event);
+                break;
+              case "agent_reasoning_section_break":
+                currentHandlers.onAgentReasoningSectionBreak?.(event);
+                break;
+              case "exec_approval_request":
+                currentHandlers.onExecApprovalRequest?.(event);
+                break;
+              case "apply_patch_approval_request":
+                currentHandlers.onApplyPatchApprovalRequest?.(event);
+                break;
+              case "exec_command_begin":
+                currentHandlers.onExecCommandBegin?.(event);
+                break;
+              case "exec_command_end":
+                currentHandlers.onExecCommandEnd?.(event);
+                break;
+              case "patch_apply_begin":
+                currentHandlers.onPatchApplyBegin?.(event);
+                break;
+              case "patch_apply_end":
+                currentHandlers.onPatchApplyEnd?.(event);
+                break;
+              case "web_search_begin":
+                currentHandlers.onWebSearchBegin?.(event);
+                break;
+              case "web_search_end":
+                currentHandlers.onWebSearchEnd?.(event);
+                break;
+              case "mcp_tool_call_begin":
+                currentHandlers.onMcpToolCallBegin?.(event);
+                break;
+              case "mcp_tool_call_end":
+                currentHandlers.onMcpToolCallEnd?.(event);
+                break;
+              case "turn_diff":
+                currentHandlers.onTurnDiff?.(event);
+                break;
+              case "token_count":
+                currentHandlers.onTokenCount?.(event);
+                break;
+              case "stream_error":
+                console.log("stream_error:", event);
+                currentHandlers.onStreamError?.(event);
+                break;
+              case "error":
+                console.log("error:", event);
+                currentHandlers.onError?.(event);
+                break;
+              case "item_started":
+              case "item_completed":
+              case "agent_reasoning_raw_content":
+              case "exec_command_output_delta":
+              case "turn_aborted":
+                break;
+              default:
+                console.warn(
+                  `Unknown event.id ${event.id} msg.type:`,
+                  msg.type,
+                );
+            }
+          },
+        );
       } catch (err) {
         console.error("Failed to add conversation listener:", err);
       }

@@ -1,23 +1,20 @@
-import React from "react";
 import { MarkdownRenderer } from "@/components/chat/MarkdownRenderer";
+import { StreamingMessage } from "@/stores/useEventStreamStore";
+import { Brain } from "lucide-react";
 
 interface DeltaEventItemProps {
-  type: string;
-  partialContent: string;
-  state: "streaming" | "done";
+  message: StreamingMessage;
 }
 
-export const DeltaEventItem: React.FC<DeltaEventItemProps> = ({
-  type,
-  partialContent,
-  state,
-}) => {
-  // Only render if streaming (done messages will be shown via EventItem)
-  if (state === "done") {
+export function DeltaEventItem({ message }: DeltaEventItemProps) {
+  if (message.status !== "streaming") {
     return null;
   }
 
-  if (type === "agent_message") {
+  const { type, partialContent } = message;
+  const lowerType = type.toLowerCase();
+
+  if (lowerType.startsWith("agent_message")) {
     return (
       <div className="group space-y-1">
         <MarkdownRenderer content={partialContent} />
@@ -25,13 +22,17 @@ export const DeltaEventItem: React.FC<DeltaEventItemProps> = ({
     );
   }
 
-  if (type === "agent_reasoning" || type === "agent_reasoning_raw_content") {
+  const isReasoning =
+    lowerType.startsWith("agent_reasoning") || lowerType.startsWith("reasoning");
+
+  if (isReasoning) {
     return (
-      <span className="flex">
-        ✨<MarkdownRenderer content={partialContent} />
+      <span className="flex items-start gap-2 rounded-md bg-muted p-3 text-sm">
+        <Brain className="h-4 w-4 shrink-0" />
+        <MarkdownRenderer content={partialContent} />
       </span>
     );
   }
 
   return null;
-};
+}
