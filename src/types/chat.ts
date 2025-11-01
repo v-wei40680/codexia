@@ -12,7 +12,6 @@ export interface CodexEvent {
     };
   };
   createdAt?: number;
-  source?: "live" | "history";
 }
 
 export type ResumeConversationResult = {

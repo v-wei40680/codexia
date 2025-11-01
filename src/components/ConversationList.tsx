@@ -175,7 +175,7 @@ export function ConversationList({
                 },
               },
               createdAt: timestamp,
-              source: "history",
+
             });
           },
         );

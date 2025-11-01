@@ -2,14 +2,11 @@ import { memo } from "react";
 
 import { MarkdownRenderer } from "@/components/chat/MarkdownRenderer";
 import { Badge } from "@/components/ui/badge";
-import { useChatInputStore } from "@/stores/chatInputStore";
-import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
 import { EventBubble } from "./EventBubble";
 import { formatAbortReason } from "./helpers";
 import { PlanDisplay } from "../chat/messages/PlanDisplay";
 import { TurnDiffView } from "./TurnDiffView";
 import { AccordionMsg } from "./AccordionMsg";
-import { MessageFooter } from "@/components/chat/MessageFooter";
 import { ExecApprovalRequestItem } from "./ExecApprovalRequestItem";
 import { ApplyPatchApprovalRequestItem } from "./ApplyPatchApprovalRequestItem";
 import { CodexEvent } from "@/types/chat";
@@ -22,69 +19,27 @@ export const EventItem = memo(function EventItem({
   event: CodexEvent;
   conversationId: string | null;
 }) {
-  const { msg, id } = event.payload.params;
-  const { setInputValue, requestFocus, setEditingTarget, clearEditingTarget } =
-    useChatInputStore();
-  const startPendingConversation = useActiveConversationStore(
-    (state) => state.startPendingConversation,
-  );
-
+  const { msg } = event.payload.params;
+  if (msg.type.endsWith("_delta")) return
   switch (msg.type) {
     case "user_message": {
-      const messageText = msg.message ?? "";
-      const createdAt = event.createdAt ?? Date.now();
-      const handleEdit = () => {
-        setInputValue(messageText);
-        if (conversationId) {
-          setEditingTarget(conversationId, id);
-        }
-        requestFocus();
-      };
-
+      const messageText = msg.message;
       return (
         <div className="group space-y-1">
           <EventBubble align="end" variant="user">
             <p className="whitespace-pre-wrap leading-relaxed">{messageText}</p>
           </EventBubble>
-          <MessageFooter
-            align="end"
-            messageId={id}
-            messageContent={messageText}
-            messageRole="user"
-            timestamp={createdAt}
-            selectedText=""
-            messageType="normal"
-            eventType={msg.type}
-            onEdit={messageText.trim().length > 0 ? handleEdit : undefined}
-          />
         </div>
       );
     }
     case "agent_message": {
-      const messageText = msg.message ?? "";
-      const createdAt = event.createdAt ?? Date.now();
-      const handleFork = () => {
-        clearEditingTarget();
-        startPendingConversation();
-        setInputValue(messageText);
-        requestFocus();
-      };
+      const messageText = msg.message;
       return (
-        <div className="group space-y-1">
+        <div className="space-y-1">
           <div className="flex gap-2">
             <Bot />
             <MarkdownRenderer content={messageText} />
           </div>
-          <MessageFooter
-            messageId={id}
-            messageContent={messageText}
-            messageRole="assistant"
-            timestamp={createdAt}
-            selectedText=""
-            messageType="normal"
-            eventType={msg.type}
-            onFork={messageText.trim().length > 0 ? handleFork : undefined}
-          />
         </div>
       );
     }
@@ -125,16 +80,12 @@ export const EventItem = memo(function EventItem({
       return <TurnDiffView content={msg.unified_diff} />;
     case "plan_update":
       return <PlanDisplay steps={msg.plan} />;
-    case "agent_message_delta":
-    case "agent_reasoning_delta":
-    case "agent_reasoning_raw_content_delta":
     case "exec_command_begin":
     case "exec_command_end":
     case "patch_apply_begin":
     case "patch_apply_end":
     case "task_complete":
     case "task_started":
-    case "exec_command_output_delta":
     case "token_count":
     case "item_started":
     case "item_completed":

@@ -96,22 +96,16 @@ export function useConversationEvents(
           subscriptionId,
         );
 
-        const uniqueLogSet: Set<string> = new Set();
-
-        function logOnceWithSet(uniqueId: string, msg: any): void {
-            if (!uniqueLogSet.has(uniqueId)) {
-                uniqueLogSet.add(uniqueId);
-                console.log(`codex:event ${uniqueId}`, msg)
-            }
-        }
-
         conversationUnlisten = await listen(
           "codex:event",
           (event: CodexEvent) => {
             const currentHandlers = handlersRef.current;
-            const msg = (event.payload as CodexEvent["payload"]).params.msg;
-            const uniqueId = `${event.payload.params.conversationId}:${event.id}:${event.payload.params.id}:${msg.type}`
-            logOnceWithSet(uniqueId, msg);
+            const {params} = event.payload
+            const {msg} = params
+            const uniqueId = `${msg.type}:${params.conversationId}:event_${event.id}:params_${params.id}`
+            if (!msg.type.endsWith("_delta") && !msg.type.startsWith("item_")) {
+              console.log(`event ${uniqueId}`, msg)
+            }
 
             currentHandlers.onAnyEvent?.(event);
             const busyOff =

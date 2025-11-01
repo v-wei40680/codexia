@@ -2,13 +2,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 interface UseChatScrollOptions {
   activeConversationId?: string | null;
-  hasActiveStream: boolean;
   scrollThreshold?: number;
 }
 
 export function useChatScroll({
   activeConversationId,
-  hasActiveStream,
   scrollThreshold = 64,
 }: UseChatScrollOptions) {
   const scrollContentRef = useRef<HTMLDivElement | null>(null);
@@ -111,13 +109,13 @@ export function useChatScroll({
   // Auto-scroll when content updates
   useEffect(() => {
     const viewport = viewportRef.current;
-    if (!viewport || !isAutoScrollEnabled || !hasActiveStream) return;
+    if (!viewport || !isAutoScrollEnabled) return;
 
     viewport.scrollTo({
       top: viewport.scrollHeight,
-      behavior: hasActiveStream ? "auto" : "smooth",
+      behavior: "smooth",
     });
-  }, [hasActiveStream, isAutoScrollEnabled]);
+  }, [isAutoScrollEnabled]);
 
   return {
     scrollContentRef,
