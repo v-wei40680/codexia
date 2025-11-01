@@ -1,12 +1,12 @@
 import { ChatInput } from "./ChatInput";
-import { Sandbox } from "../config/Sandbox";
+import { Sandbox } from "../../config/Sandbox";
 import { ProviderModels } from "@/components/config/provider-models";
-import { ReasoningEffortSelector } from "../config/ReasoningEffortSelector";
+import { ReasoningEffortSelector } from "../../config/ReasoningEffortSelector";
 import type { MediaAttachment } from "@/types/chat";
-import { Button } from "../ui/button";
+import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import type { TokenUsage } from "@/bindings/TokenUsage";
-import { TokenCountInfo } from "../common/TokenCountInfo";
+import { TokenCountInfo } from "../../common/TokenCountInfo";
 
 interface ChatComposeProps {
   inputValue: string;

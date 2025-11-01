@@ -1,18 +1,18 @@
 import React, { useState } from 'react';
-import { Button } from '../ui/button';
+import { Button } from '@/components/ui/button';
 import { Plus, FileText } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '../ui/tooltip';
+} from '@/components/ui/tooltip';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '../ui/popover';
-import { useNoteStore } from '../../stores/NoteStore';
+} from '@/components/ui/popover';
+import { useNoteStore } from '@/stores/NoteStore';
 
 interface MessageNoteActionsProps {
   messageId: string;

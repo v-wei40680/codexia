@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useConversation, useSendMessage } from "@/hooks/useCodex";
-import { ChatCompose } from "./chat/ChatCompose";
+import { ChatCompose } from "./chat/input/ChatCompose";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
 import { useCodexApprovalRequests } from "@/hooks/useCodexApprovalRequests";
 import { useConversationEvents } from "@/hooks/useCodex/useConversationEvents";

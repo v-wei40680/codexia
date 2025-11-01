@@ -4,7 +4,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { WelcomeSection } from "../chat/WelcomeSection";
+import { WelcomeSection } from "./WelcomeSection";
 import { Button } from "../ui/button";
 import { open } from "@tauri-apps/plugin-shell";
 import { Github, Twitter } from "lucide-react";

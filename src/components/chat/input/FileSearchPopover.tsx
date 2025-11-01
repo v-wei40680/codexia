@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Popover, PopoverContent, PopoverTrigger } from '../ui/popover';
-import { Command, CommandInput, CommandList, CommandItem } from '../ui/command';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandInput, CommandList, CommandItem } from '@/components/ui/command';
 import { invoke } from '@/lib/tauri-proxy';
 import { useChatInputStore, type FileReference } from '@/stores/chatInputStore';
 import { useCodexStore } from '@/stores/useCodexStore';

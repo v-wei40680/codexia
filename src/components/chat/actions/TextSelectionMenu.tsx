@@ -1,13 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { Button } from '../ui/button';
+import { Button } from '@/components/ui/button';
 import { FileText, Copy } from 'lucide-react';
-import { useTextSelection } from '../../hooks/useTextSelection';
-import { useNoteStore } from '../../stores/NoteStore';
+import { useTextSelection } from '@/hooks/useTextSelection';
+import { useNoteStore } from '@/stores/NoteStore';
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '../ui/popover';
+} from '@/components/ui/popover';
 
 interface TextSelectionMenuProps {}
 

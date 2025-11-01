@@ -1,12 +1,12 @@
 import React from 'react';
-import { Button } from '../ui/button';
+import { Button } from '@/components/ui/button';
 import { Paperclip, Image, Music } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '../ui/tooltip';
+} from '@/components/ui/tooltip';
 import { useChatInputStore } from '@/stores/chatInputStore';
 import { isMediaFile, createMediaAttachment } from '@/utils/mediaUtils';
 import { isRemoteRuntime } from "@/lib/tauri-proxy";

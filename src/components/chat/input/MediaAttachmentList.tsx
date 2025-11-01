@@ -1,12 +1,12 @@
 import React from 'react';
-import { Badge } from '../ui/badge';
+import { Badge } from '@/components/ui/badge';
 import { X, Image, Music } from 'lucide-react';
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from '../ui/tooltip';
+} from '@/components/ui/tooltip';
 import { MediaAttachment } from '@/types/chat';
 
 interface MediaAttachmentListProps {

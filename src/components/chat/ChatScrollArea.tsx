@@ -2,7 +2,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { EventItem } from "@/components/events/EventItem";
 import type { CodexEvent } from "@/types/chat";
 import { useChatScroll } from "@/hooks/useChatScroll";
-import { ScrollButtons } from "./ScrollButtons";
+import { ScrollButtons } from "./actions/ScrollButtons";
 import type { ExtendedCodexEvent } from "@/stores/useEventStore";
 
 interface ChatScrollAreaProps {
