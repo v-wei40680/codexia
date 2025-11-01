@@ -9,7 +9,6 @@ use walkdir::WalkDir;
 /// Result of a scan operation
 pub struct ScanResult {
     pub sessions: Vec<Value>,
-    pub file_names: Vec<String>,
 }
 
 /// Walk through all `.jsonl` files in sessions directory
@@ -54,10 +53,13 @@ pub fn scan_sessions_after(
                         if let Ok(info) = get_session_info(path) {
                             let original_text = info.user_message.unwrap_or_default();
                             let truncated_text: String = original_text.chars().take(50).collect();
+                            let timestamp = extract_datetime(&file_path)
+                                .map(|dt| dt.format("%Y-%m-%dT%H:%M:%S").to_string());
                             sessions.push(json!({
                                 "path": file_path,
                                 "conversationId": info.session_id,
-                                "preview": truncated_text
+                                "preview": truncated_text,
+                                "timestamp": timestamp
                             }));
                         }
                     }
@@ -79,21 +81,8 @@ pub fn scan_sessions_after(
         }
     });
 
-    let file_names = sessions
-        .iter()
-        .filter_map(|session| session["path"].as_str())
-        .map(|path| {
-            Path::new(path)
-                .file_name()
-                .and_then(|name| name.to_str())
-                .unwrap_or(path)
-                .to_string()
-        })
-        .collect();
-
     Ok(ScanResult {
         sessions,
-        file_names,
     })
 }
 

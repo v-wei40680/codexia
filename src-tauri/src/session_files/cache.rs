@@ -1,11 +1,14 @@
 use super::get::get_cache_path_for_project;
 use super::scanner::{scan_sessions_after, ScanResult};
 use chrono::{DateTime, Utc};
+use base64::engine::general_purpose;
+use base64::engine::Engine as _;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use std::collections::HashSet;
 use std::fs::{read_to_string, File};
 use std::io::Write;
+use std::path::Path;
 
 /// Structure stored in cache file
 #[derive(Serialize, Deserialize)]
@@ -21,7 +24,8 @@ struct ProjectCache {
 #[derive(Serialize, Deserialize, Clone, Default)]
 #[serde(rename_all = "camelCase")]
 struct ScanMetadata {
-    file_names: Vec<String>,
+    #[serde(default)]
+    cache_path_name: String,
     scanned_count: usize,
     added_count: usize,
 }
@@ -72,15 +76,27 @@ fn write_project_cache_with_metadata(
     favorites: Vec<String>,
     scan_metadata: Option<ScanMetadata>,
 ) -> Result<(), String> {
+    let cache_path = get_cache_path_for_project(project_path)?;
+    let decoded_cache_name = decode_cache_file_name(&cache_path)?;
+
     let metadata_to_write = match scan_metadata {
-        Some(meta) => Some(meta),
+        Some(mut meta) => {
+            if meta.cache_path_name.is_empty() {
+                meta.cache_path_name = decoded_cache_name.clone();
+            }
+            Some(meta)
+        }
         None => match read_project_cache(project_path)? {
-            Some(existing) => existing.scan_metadata,
+            Some(existing) => existing.scan_metadata.map(|mut meta| {
+                if meta.cache_path_name.is_empty() {
+                    meta.cache_path_name = decoded_cache_name.clone();
+                }
+                meta
+            }),
             None => None,
         },
     };
 
-    let cache_path = get_cache_path_for_project(project_path)?;
     let data = ProjectCache {
         last_scanned: Utc::now().to_rfc3339(),
         sessions,
@@ -114,26 +130,9 @@ pub async fn load_project_sessions(project_path: String) -> Result<Value, String
             let favorites = cache_data.favorites;
             let last_scanned = cache_data.last_scanned;
 
-            let existing_ids: HashSet<String> = cached_sessions
-                .iter()
-                .filter_map(|session| session["conversationId"].as_str().map(String::from))
-                .collect();
-
             let ScanResult {
                 sessions: mut new_sessions,
-                file_names,
             } = scan_sessions_after(&project_path, Some(last_scanned))?;
-            let scanned_count = file_names.len();
-
-            let added_count = new_sessions
-                .iter()
-                .filter(|session| {
-                    session["conversationId"]
-                        .as_str()
-                        .map(|id| !existing_ids.contains(id))
-                        .unwrap_or(true)
-                })
-                .count();
 
             let new_ids: HashSet<String> = new_sessions
                 .iter()
@@ -148,6 +147,7 @@ pub async fn load_project_sessions(project_path: String) -> Result<Value, String
                     .unwrap_or(true)
             });
 
+            let added_count = new_sessions.len();
             cached_sessions.append(&mut new_sessions);
 
             // Sort newest first
@@ -163,10 +163,12 @@ pub async fn load_project_sessions(project_path: String) -> Result<Value, String
                 }
             });
 
+            let cache_path = get_cache_path_for_project(&project_path)?;
+            let cache_path_name = decode_cache_file_name(&cache_path)?;
             let scan_metadata = ScanMetadata {
-                file_names,
-                scanned_count,
+                scanned_count: cached_sessions.len(),
                 added_count,
+                cache_path_name,
             };
 
             let metadata_for_cache = scan_metadata.clone();
@@ -184,13 +186,14 @@ pub async fn load_project_sessions(project_path: String) -> Result<Value, String
         }
         None => {
             // No cache or broken cache → full scan
-            let ScanResult { sessions, file_names } =
-                scan_sessions_after(&project_path, None)?;
+            let ScanResult { sessions } = scan_sessions_after(&project_path, None)?;
             let favorites: Vec<String> = Vec::new();
+            let cache_path = get_cache_path_for_project(&project_path)?;
+            let cache_path_name = decode_cache_file_name(&cache_path)?;
             let scan_metadata = ScanMetadata {
-                file_names,
                 scanned_count: sessions.len(),
                 added_count: sessions.len(),
+                cache_path_name,
             };
 
             let metadata_for_cache = scan_metadata.clone();
@@ -207,4 +210,16 @@ pub async fn load_project_sessions(project_path: String) -> Result<Value, String
             }))
         }
     }
+}
+
+fn decode_cache_file_name(cache_path: &Path) -> Result<String, String> {
+    let encoded_stem = cache_path
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .ok_or_else(|| "Failed to read cache file name".to_string())?;
+    let decoded_bytes = general_purpose::STANDARD
+        .decode(encoded_stem)
+        .map_err(|e| format!("Failed to decode cache file name: {}", e))?;
+    String::from_utf8(decoded_bytes)
+        .map_err(|e| format!("Cache file name is not valid UTF-8: {}", e))
 }
