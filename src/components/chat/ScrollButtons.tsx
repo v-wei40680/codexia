@@ -8,7 +8,7 @@ interface ScrollButtonsProps {
 
 export function ScrollButtons({ scrollToTop, scrollToBottom }: ScrollButtonsProps) {
   return (
-    <div className="pointer-events-none absolute right-2 top-2 flex flex-col gap-2">
+    <div className="pointer-events-none absolute right-2 bottom-2 flex flex-col gap-2">
       <Button
         size="icon"
         variant="secondary"
