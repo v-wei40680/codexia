@@ -69,14 +69,10 @@ export const EventItem = memo(function EventItem({
       );
     case "turn_aborted":
       return (
-        <EventBubble align="start" variant="system" title="Turn Aborted">
-          <div className="space-y-2">
-            <Badge variant="destructive">{msg.reason}</Badge>
-            <p className="text-sm text-muted-foreground">
-              {formatAbortReason(msg.reason)}
-            </p>
-          </div>
-        </EventBubble>
+        <div className="flex gap-2">
+          <Badge variant="destructive">{msg.reason}</Badge>
+          {formatAbortReason(msg.reason)}
+        </div>
       );
     case "turn_diff":
       return <TurnDiffView content={msg.unified_diff} />;
