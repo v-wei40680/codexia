@@ -1,9 +1,9 @@
 import { useRef } from "react";
-import { invoke } from "@/lib/tauri-proxy";
 import { useSessionData } from "@/hooks/useSessionData";
 import ReviewHeader from "./review/ReviewHeader";
 import ReviewMessages from "./review/ReviewMessages";
 import ScrollButtons from "./review/ScrollButtons";
+import { runCommand } from "@/utils/runCommand";
 
 export default function Review({ summary }: { summary: any }) {
   const {
@@ -31,15 +31,6 @@ export default function Review({ summary }: { summary: any }) {
       top: messagesContainerRef.current.scrollHeight,
       behavior: "smooth",
     });
-  };
-
-  const runCommand = async (conversationId: string, cwd: string) => {
-    const cmd = `cd ${cwd} && codex resume ${conversationId}`;
-    try {
-      await invoke("open_terminal_with_command", { command: cmd });
-    } catch (err) {
-      console.error("Failed to open terminal:", err);
-    }
   };
 
   return (

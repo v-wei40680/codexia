@@ -1,17 +1,20 @@
 import React from "react";
 import { Button } from "../ui/button";
-import { Globe, PenSquare } from "lucide-react";
+import { Globe, PenSquare, Terminal } from "lucide-react";
 import { useLayoutStore } from "@/stores/layoutStore";
 import { useFolderStore } from "@/stores/FolderStore";
 import { detectWebFramework } from "@/utils/webFrameworkDetection";
 import { useChatInputStore } from "@/stores/chatInputStore";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
+import { runCommand } from "@/utils/runCommand";
+import { useCodexStore } from "@/stores/useCodexStore";
 
 export const ChatToolbar: React.FC = () => {
+  const { cwd } = useCodexStore()
   const { showWebPreview, setWebPreviewUrl } = useLayoutStore();
   const { currentFolder } = useFolderStore();
   const { clearAll, requestFocus } = useChatInputStore();
-  const { startPendingConversation } = useActiveConversationStore();
+  const { startPendingConversation, activeConversationId } = useActiveConversationStore();
 
   const handleToggleWebPreview = async () => {
     if (showWebPreview) {
@@ -36,17 +39,27 @@ export const ChatToolbar: React.FC = () => {
   };
 
   return (
-    <div className="flex justify-between gap-2 w-full">
-      <Button
-        size="icon"
-        onClick={() => {
-          startPendingConversation();
-          clearAll();
-          requestFocus();
-        }}
-      >
-        <PenSquare />
-      </Button>
+    <div className="flex justify-between gap-2 px-2 w-full">
+      <span className="flex gap-2">
+        <Button
+          size="icon"
+          onClick={() => {
+            startPendingConversation();
+            clearAll();
+            requestFocus();
+          }}
+        >
+          <PenSquare />
+        </Button>
+        <Button
+          size="icon"
+          variant={"secondary"}
+          onClick={() => activeConversationId  && runCommand(activeConversationId, cwd)}
+        >
+          <Terminal />
+        </Button>
+      </span>
+      
       <Button
         variant="ghost"
         size="icon"
