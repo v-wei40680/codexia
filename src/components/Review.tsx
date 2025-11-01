@@ -43,7 +43,7 @@ export default function Review({ summary }: { summary: any }) {
   };
 
   return (
-    <div className="flex flex-col w-full h-screen">
+    <div className="flex flex-1 flex-col w-full h-full min-h-0">
       <ReviewHeader
         cwd={cwd}
         instructions={instructions}
@@ -55,13 +55,14 @@ export default function Review({ summary }: { summary: any }) {
         hasSelection={hasSelection}
         sessionError={sessionError}
       />
-      <ReviewMessages
-        messages={messages}
-        isSessionLoading={isSessionLoading}
-        hasSelection={hasSelection}
-        hasMessages={hasMessages}
-        messagesContainerRef={messagesContainerRef}
-      />
+      <div className="flex-1 overflow-y-auto" ref={messagesContainerRef}>
+        <ReviewMessages
+          messages={messages}
+          isSessionLoading={isSessionLoading}
+          hasSelection={hasSelection}
+          hasMessages={hasMessages}
+        />
+      </div>
       <ScrollButtons
         onScrollToTop={scrollToTop}
         onScrollToBottom={scrollToBottom}

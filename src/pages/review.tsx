@@ -24,7 +24,7 @@ export default function SessionPage() {
   };
 
   return (
-    <div className="flex">
+    <div className="flex h-full min-h-0 w-full overflow-hidden">
       <ReviewConversationList
         activeSessionConversationId={activeSessionConversationId}
         onSelectSessionConversation={handleSelectSession}

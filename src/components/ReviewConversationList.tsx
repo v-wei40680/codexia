@@ -63,7 +63,7 @@ export function ReviewConversationList({
   };
 
   return (
-    <nav className="flex flex-col h-full bg-muted/30 w-64">
+    <nav className="flex h-full min-h-0 flex-col bg-muted/30 w-64 flex-shrink-0">
       <div className="flex-1 overflow-y-auto">
         {conversations.length === 0 ? (
           <div className="p-4 text-sm text-muted-foreground">

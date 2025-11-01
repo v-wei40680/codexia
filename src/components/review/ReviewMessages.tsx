@@ -1,6 +1,5 @@
 import { renderMessage } from "./renderMessage";
 import EmptyState from "./EmptyState";
-import type { RefObject } from "react";
 import { Badge } from "../ui/badge";
 
 interface ReviewMessagesProps {
@@ -8,7 +7,6 @@ interface ReviewMessagesProps {
   isSessionLoading: boolean;
   hasSelection: boolean;
   hasMessages: boolean;
-  messagesContainerRef: RefObject<HTMLDivElement | null>;
 }
 
 export default function ReviewMessages({
@@ -16,12 +14,10 @@ export default function ReviewMessages({
   isSessionLoading,
   hasSelection,
   hasMessages,
-  messagesContainerRef,
 }: ReviewMessagesProps) {
   return (
     <section
       className="rounded-2xl border p-4 shadow-lg overflow-y-auto flex-1 min-h-0 relative"
-      ref={messagesContainerRef}
     >
       {hasMessages ? (
         <ul className="flex flex-col gap-3 pb-12">
@@ -33,7 +29,7 @@ export default function ReviewMessages({
                 className={`
                   flex
                   ${msg.type === "user_message" ? "justify-end" : "justify-start"}
-                  hidden group-hover:flex               {/* 关键 */}
+                  hidden group-hover:flex
                   transition-opacity duration-200
                 `}
               >
