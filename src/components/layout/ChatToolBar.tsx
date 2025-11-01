@@ -38,6 +38,20 @@ export const ChatToolbar: React.FC = () => {
     }
   };
 
+  React.useEffect(() => {
+    const handleShortcut = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "n") {
+        event.preventDefault();
+        startPendingConversation();
+        clearAll();
+        requestFocus();
+      }
+    };
+
+    window.addEventListener("keydown", handleShortcut);
+    return () => window.removeEventListener("keydown", handleShortcut);
+  }, [startPendingConversation, clearAll, requestFocus]);
+
   return (
     <div className="flex justify-between gap-2 px-2 w-full">
       <span className="flex gap-2">
