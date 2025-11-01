@@ -50,12 +50,16 @@ export const useConversationListStore = create<
             existingItem?.timestamp ??
             new Date().toISOString(),
         };
-        const nextList =
-          index >= 0
-            ? existingList.map((item, idx) =>
-                idx === index ? { ...item, ...summaryWithTimestamp } : item,
-              )
-            : [...existingList, summaryWithTimestamp];
+        const mergedConversation =
+          existingItem === null
+            ? summaryWithTimestamp
+            : { ...existingItem, ...summaryWithTimestamp };
+        const nextList = [
+          mergedConversation,
+          ...existingList.filter(
+            (item) => item.conversationId !== summaryWithTimestamp.conversationId,
+          ),
+        ];
 
         return {
           conversationsByCwd: {

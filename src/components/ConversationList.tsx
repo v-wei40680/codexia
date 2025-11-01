@@ -98,8 +98,13 @@ export function ConversationList({
 
   const conversations = useMemo(() => {
     const base = conversationsByCwd[cwd || ""] || [];
+    const sorted = [...base].sort((a, b) => {
+      const aTime = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+      const bTime = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+      return bTime - aTime;
+    });
     const query = searchQuery.trim().toLowerCase();
-    return base.filter((conv) => {
+    return sorted.filter((conv) => {
       if (mode === "favorites" && !favoriteIds.has(conv.conversationId)) {
         return false;
       }
