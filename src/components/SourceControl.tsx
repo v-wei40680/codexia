@@ -1,6 +1,6 @@
 import { GitStatusView } from "@/components/filetree/GitStatusView";
 import { useFolderStore } from "@/stores/FolderStore";
-import { useLayoutStore } from "@/stores/layoutStore";
+import { useLayoutStore } from "@/stores/settings/layoutStore";
 import { invoke } from "@/lib/tauri-proxy";
 
 export function SourceControl() {

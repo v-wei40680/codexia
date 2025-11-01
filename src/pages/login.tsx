@@ -7,7 +7,7 @@ import { ensureProfileRecord, mapProfileRow, type ProfileRecord } from "@/lib/pr
 import { Github } from "lucide-react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
-import { useSettingsStore } from "@/stores/SettingsStore";
+import { useSettingsStore } from "@/stores/settings/SettingsStore";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { isRemoteRuntime } from "@/lib/tauri-proxy";

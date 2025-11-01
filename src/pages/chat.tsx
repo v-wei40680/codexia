@@ -1,5 +1,5 @@
 import { NotesView } from "@/components/NotesView";
-import { useLayoutStore } from "@/stores/layoutStore";
+import { useLayoutStore } from "@/stores/settings/layoutStore";
 import { useFolderStore } from "@/stores/FolderStore";
 import { FileTree } from "@/components/filetree/FileTreeView";
 import { FileViewer } from "@/components/filetree/FileViewer";

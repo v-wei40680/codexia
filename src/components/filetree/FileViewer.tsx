@@ -5,8 +5,8 @@ import { Button } from "@/components/ui/button";
 import { X, Copy, Check, Send, FileText, GitBranch, Code } from "lucide-react";
 import { CodeEditor } from "./CodeEditor";
 import { DiffViewer } from "./DiffViewer";
-import { useThemeStore } from "@/stores/ThemeStore";
-import { useLayoutStore } from "@/stores/layoutStore";
+import { useThemeStore } from "@/stores/settings/ThemeStore";
+import { useLayoutStore } from "@/stores/settings/layoutStore";
 import { useChatInputStore } from "@/stores/chatInputStore";
 import { getErrorMessage } from "@/utils/errorUtils";
 

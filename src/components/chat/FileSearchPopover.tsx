@@ -4,7 +4,7 @@ import { Command, CommandInput, CommandList, CommandItem } from '../ui/command';
 import { invoke } from '@/lib/tauri-proxy';
 import { useChatInputStore, type FileReference } from '@/stores/chatInputStore';
 import { useCodexStore } from '@/stores/useCodexStore';
-import { useSettingsStore } from '@/stores/SettingsStore';
+import { useSettingsStore } from '@/stores/settings/SettingsStore';
 
 interface FileSearchPopoverProps {
   inputValue: string;

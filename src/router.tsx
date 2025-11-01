@@ -9,7 +9,7 @@ import UsagePage from "./pages/usage";
 import { useDeepLink } from "./hooks/useDeepLink";
 import PublicUserPage from "./pages/user";
 import { useEffect } from "react";
-import { useLayoutStore } from "./stores/layoutStore";
+import { useLayoutStore } from "./stores/settings/layoutStore";
 import { useAuth } from "./hooks/useAuth";
 
 function Root() {

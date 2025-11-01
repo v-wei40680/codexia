@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@/lib/tauri-proxy";
-import { useSettingsStore } from "@/stores/SettingsStore";
+import { useSettingsStore } from "@/stores/settings/SettingsStore";
 import { useFolderStore } from "@/stores/FolderStore";
 import { useContextFilesStore } from "@/stores/ContextFilesStore";
 import { useFileTokens } from "@/hooks/useFileTokens";

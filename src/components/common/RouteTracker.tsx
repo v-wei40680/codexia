@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import { useLayoutStore } from "@/stores/layoutStore";
+import { useLayoutStore } from "@/stores/settings/layoutStore";
 
 export function RouteTracker() {
   const location = useLocation();

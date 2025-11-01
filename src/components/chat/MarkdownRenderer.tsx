@@ -2,7 +2,7 @@ import { memo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypePrism from 'rehype-prism-plus';
-import { useThemeStore } from '@/stores/ThemeStore';
+import { useThemeStore } from '@/stores/settings/ThemeStore';
 import 'prismjs/themes/prism.css';
 import 'prismjs/themes/prism-dark.css';
 

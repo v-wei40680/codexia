@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { enableRemoteAccess, disableRemoteAccess, fetchRemoteAccessStatus } from "@/services/remoteAccessService";
-import { useRemoteAccessStore } from "@/stores/RemoteAccessStore";
+import { useRemoteAccessStore } from "@/stores/settings/RemoteAccessStore";
 import type { RemoteOriginOption } from "@/types/remote";
 import { toast } from "sonner";
 

@@ -1,6 +1,6 @@
 import SettingsSidebar from "@/components/settings/SettingsSidebar";
 import ExcludeFolders from "@/components/settings/ExcludeFolders";
-import { useSettingsStore } from "@/stores/SettingsStore";
+import { useSettingsStore } from "@/stores/settings/SettingsStore";
 import { PromptOptimizerSettings } from "@/components/settings/PromptOptimizerSettings";
 import { RemoteAccessSettings } from "@/components/settings/RemoteAccessSettings";
 

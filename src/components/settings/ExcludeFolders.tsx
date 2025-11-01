@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { X, Plus } from "lucide-react";
-import { useSettingsStore } from "@/stores/SettingsStore";
+import { useSettingsStore } from "@/stores/settings/SettingsStore";
 
 export default function ExcludeFolders() {
   const [newFolder, setNewFolder] = useState("");

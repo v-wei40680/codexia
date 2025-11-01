@@ -1,7 +1,7 @@
 import React from "react";
 import { Button } from "../ui/button";
 import { Globe, PenSquare, Terminal } from "lucide-react";
-import { useLayoutStore } from "@/stores/layoutStore";
+import { useLayoutStore } from "@/stores/settings/layoutStore";
 import { useFolderStore } from "@/stores/FolderStore";
 import { detectWebFramework } from "@/utils/webFrameworkDetection";
 import { useChatInputStore } from "@/stores/chatInputStore";

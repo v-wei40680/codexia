@@ -13,11 +13,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { useLayoutStore } from "@/stores/layoutStore";
+import { useLayoutStore } from "@/stores/settings/layoutStore";
 import { invoke } from "@/lib/tauri-proxy";
 import { useState, useEffect } from "react";
 import { McpDialog } from "../dialogs/McpDialog";
-import { useThemeStore } from "@/stores/ThemeStore";
+import { useThemeStore } from "@/stores/settings/ThemeStore";
 import { useAuth } from "@/hooks/useAuth";
 import {
   DropdownMenu,
@@ -32,7 +32,7 @@ import {
 import supabase from "@/lib/supabase";
 import { AccentColorSelector } from "../common/AccentColorSelector";
 import { useTranslation } from "react-i18next";
-import { useLocaleStore } from "@/stores/LocaleStore";
+import { useLocaleStore } from "@/stores/settings/LocaleStore";
 import type { AppLocale } from "@/locales";
 import { supportedLocales } from "@/lib/i18n";
 import { PublishCloudDialog } from "../dialogs/PublishCloudDialog";

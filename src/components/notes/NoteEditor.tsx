@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNoteStore } from "@/stores/NoteStore";
-import { useThemeStore } from "@/stores/ThemeStore";
+import { useThemeStore } from "@/stores/settings/ThemeStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Save, Edit3, Eye, Code } from "lucide-react";
