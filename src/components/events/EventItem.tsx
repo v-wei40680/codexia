@@ -1,5 +1,4 @@
 import { memo } from "react";
-
 import { MarkdownRenderer } from "@/components/chat/MarkdownRenderer";
 import { Badge } from "@/components/ui/badge";
 import { EventBubble } from "./EventBubble";
@@ -11,6 +10,7 @@ import { ExecApprovalRequestItem } from "./ExecApprovalRequestItem";
 import { ApplyPatchApprovalRequestItem } from "./ApplyPatchApprovalRequestItem";
 import { CodexEvent } from "@/types/chat";
 import { Bot, Terminal } from "lucide-react";
+import { MsgFooter } from "../chat/messages/MsgFooter";
 
 export const EventItem = memo(function EventItem({
   event,
@@ -29,6 +29,7 @@ export const EventItem = memo(function EventItem({
           <EventBubble align="end" variant="user">
             <p className="whitespace-pre-wrap leading-relaxed">{messageText}</p>
           </EventBubble>
+          <MsgFooter content={messageText} align="end" />
         </div>
       );
     }
@@ -40,6 +41,7 @@ export const EventItem = memo(function EventItem({
             <Bot />
             <MarkdownRenderer content={messageText} />
           </div>
+          <MsgFooter content={messageText} align="start" />
         </div>
       );
     }
@@ -81,10 +83,9 @@ export const EventItem = memo(function EventItem({
     case "plan_update":
       return <PlanDisplay steps={msg.plan} />;
     case "exec_command_begin":
-      return <div><div className="flex">
-          <Terminal /> {msg.call_id}</div>
-          <div>
-        <MarkdownRenderer content={msg.command.join(" ")} /></div>
+      return <div className="flex">
+          <Terminal />
+        <MarkdownRenderer content={msg.command.join(" ")} />
       </div>
     case "exec_command_end":
     case "patch_apply_begin":
