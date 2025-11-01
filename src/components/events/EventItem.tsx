@@ -10,7 +10,7 @@ import { AccordionMsg } from "./AccordionMsg";
 import { ExecApprovalRequestItem } from "./ExecApprovalRequestItem";
 import { ApplyPatchApprovalRequestItem } from "./ApplyPatchApprovalRequestItem";
 import { CodexEvent } from "@/types/chat";
-import { Bot } from "lucide-react";
+import { Bot, Terminal } from "lucide-react";
 
 export const EventItem = memo(function EventItem({
   event,
@@ -81,6 +81,11 @@ export const EventItem = memo(function EventItem({
     case "plan_update":
       return <PlanDisplay steps={msg.plan} />;
     case "exec_command_begin":
+      return <div><div className="flex">
+          <Terminal /> {msg.call_id}</div>
+          <div>
+        <MarkdownRenderer content={msg.command.join(" ")} /></div>
+      </div>
     case "exec_command_end":
     case "patch_apply_begin":
     case "patch_apply_end":

@@ -1,13 +1,18 @@
 import React from "react";
 import { Button } from "../ui/button";
-import { Globe } from "lucide-react";
+import { Globe, PenSquare } from "lucide-react";
 import { useLayoutStore } from "@/stores/layoutStore";
 import { useFolderStore } from "@/stores/FolderStore";
 import { detectWebFramework } from "@/utils/webFrameworkDetection";
+import { useChatInputStore } from "@/stores/chatInputStore";
+import { useSendMessage } from "@/hooks/useCodex";
 
 export const ChatToolbar: React.FC = () => {
   const { showWebPreview, setWebPreviewUrl } = useLayoutStore();
   const { currentFolder } = useFolderStore();
+  const { clearAll, requestFocus } = useChatInputStore();
+  const { beginPendingConversation } = useSendMessage();
+
   const handleToggleWebPreview = async () => {
     if (showWebPreview) {
       setWebPreviewUrl(null);
@@ -31,14 +36,26 @@ export const ChatToolbar: React.FC = () => {
   };
 
   return (
-    <Button
-      variant="ghost"
-      size="icon"
-      onClick={handleToggleWebPreview}
-      className={`h-7 w-7 shrink-0 ${showWebPreview ? "bg-accent" : ""}`}
-      title="Toggle Web Preview"
-    >
-      <Globe />
-    </Button>
+    <div className="flex justify-between gap-2 w-full">
+      <Button
+        size="icon"
+        onClick={() => {
+          beginPendingConversation();
+          clearAll();
+          requestFocus();
+        }}
+      >
+        <PenSquare />
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon"
+        onClick={handleToggleWebPreview}
+        className={`${showWebPreview ? "bg-accent" : ""}`}
+        title="Toggle Web Preview"
+      >
+        <Globe />
+      </Button>
+    </div>
   );
 };

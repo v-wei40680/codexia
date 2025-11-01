@@ -191,6 +191,7 @@ export function useConversationEvents(
                 console.log("error:", event);
                 currentHandlers.onError?.(event);
                 break;
+              case "plan_update":
               case "item_started":
               case "item_completed":
               case "agent_reasoning_raw_content":
