@@ -1,8 +1,9 @@
 use super::get::get_cache_path_for_project;
-use super::scanner::scan_sessions_after;
+use super::scanner::{scan_sessions_after, ScanResult};
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
+use std::collections::HashSet;
 use std::fs::{read_to_string, File};
 use std::io::Write;
 
@@ -13,10 +14,27 @@ struct ProjectCache {
     last_scanned: String,
     sessions: Vec<Value>,
     favorites: Vec<String>,
+    #[serde(default)]
+    scan_metadata: Option<ScanMetadata>,
+}
+
+#[derive(Serialize, Deserialize, Clone, Default)]
+#[serde(rename_all = "camelCase")]
+struct ScanMetadata {
+    file_names: Vec<String>,
+    scanned_count: usize,
+    added_count: usize,
+}
+
+struct CachedProjectData {
+    last_scanned: DateTime<Utc>,
+    sessions: Vec<Value>,
+    favorites: Vec<String>,
+    scan_metadata: Option<ScanMetadata>,
 }
 
 /// Read cache file for a project
-fn read_project_cache(project_path: &str) -> Result<Option<(DateTime<Utc>, Vec<Value>, Vec<String>)>, String> {
+fn read_project_cache(project_path: &str) -> Result<Option<CachedProjectData>, String> {
     let cache_path = get_cache_path_for_project(project_path)?;
     if !cache_path.exists() {
         return Ok(None);
@@ -38,19 +56,36 @@ fn read_project_cache(project_path: &str) -> Result<Option<(DateTime<Utc>, Vec<V
         .map(|dt| dt.with_timezone(&Utc));
 
     match last_scanned {
-        Some(dt) => Ok(Some((dt, cache.sessions, cache.favorites))),
+        Some(dt) => Ok(Some(CachedProjectData {
+            last_scanned: dt,
+            sessions: cache.sessions,
+            favorites: cache.favorites,
+            scan_metadata: cache.scan_metadata,
+        })),
         None => Ok(None),
     }
 }
 
-/// Write updated cache to disk
-#[tauri::command]
-pub fn write_project_cache(project_path: String, sessions: Vec<Value>, favorites: Vec<String>) -> Result<(), String> {
-    let cache_path = get_cache_path_for_project(&project_path)?;
+fn write_project_cache_with_metadata(
+    project_path: &str,
+    sessions: Vec<Value>,
+    favorites: Vec<String>,
+    scan_metadata: Option<ScanMetadata>,
+) -> Result<(), String> {
+    let metadata_to_write = match scan_metadata {
+        Some(meta) => Some(meta),
+        None => match read_project_cache(project_path)? {
+            Some(existing) => existing.scan_metadata,
+            None => None,
+        },
+    };
+
+    let cache_path = get_cache_path_for_project(project_path)?;
     let data = ProjectCache {
         last_scanned: Utc::now().to_rfc3339(),
         sessions,
         favorites,
+        scan_metadata: metadata_to_write,
     };
 
     let json_str =
@@ -63,25 +98,57 @@ pub fn write_project_cache(project_path: String, sessions: Vec<Value>, favorites
     Ok(())
 }
 
+/// Write updated cache to disk
+#[tauri::command]
+pub fn write_project_cache(project_path: String, sessions: Vec<Value>, favorites: Vec<String>) -> Result<(), String> {
+    write_project_cache_with_metadata(&project_path, sessions, favorites, None)
+}
+
 /// Main tauri command: load or refresh sessions for given project
 #[tauri::command]
 pub async fn load_project_sessions(project_path: String) -> Result<Value, String> {
     match read_project_cache(&project_path)? {
-        Some((last_scanned, mut cached_sessions, favorites)) => {
+        Some(cache_data) => {
             // Incremental scan
-            let new_sessions = scan_sessions_after(&project_path, Some(last_scanned))?;
+            let mut cached_sessions = cache_data.sessions;
+            let favorites = cache_data.favorites;
+            let last_scanned = cache_data.last_scanned;
 
-            // Deduplicate by conversationId
-            let new_ids: std::collections::HashSet<_> = new_sessions
+            let existing_ids: HashSet<String> = cached_sessions
                 .iter()
-                .filter_map(|s| s["conversationId"].as_str())
+                .filter_map(|session| session["conversationId"].as_str().map(String::from))
                 .collect();
 
+            let ScanResult {
+                sessions: mut new_sessions,
+                file_names,
+            } = scan_sessions_after(&project_path, Some(last_scanned))?;
+            let scanned_count = file_names.len();
+
+            let added_count = new_sessions
+                .iter()
+                .filter(|session| {
+                    session["conversationId"]
+                        .as_str()
+                        .map(|id| !existing_ids.contains(id))
+                        .unwrap_or(true)
+                })
+                .count();
+
+            let new_ids: HashSet<String> = new_sessions
+                .iter()
+                .filter_map(|session| session["conversationId"].as_str().map(String::from))
+                .collect();
+
+            // Deduplicate by conversationId
             cached_sessions.retain(|s| {
-                !new_ids.contains(s["conversationId"].as_str().unwrap_or_default())
+                s["conversationId"]
+                    .as_str()
+                    .map(|id| !new_ids.contains(id))
+                    .unwrap_or(true)
             });
 
-            cached_sessions.extend(new_sessions);
+            cached_sessions.append(&mut new_sessions);
 
             // Sort newest first
             cached_sessions.sort_by(|a, b| {
@@ -96,15 +163,48 @@ pub async fn load_project_sessions(project_path: String) -> Result<Value, String
                 }
             });
 
-            write_project_cache(project_path.clone(), cached_sessions.clone(), favorites.clone())?;
-            Ok(json!({ "sessions": cached_sessions, "favorites": favorites }))
+            let scan_metadata = ScanMetadata {
+                file_names,
+                scanned_count,
+                added_count,
+            };
+
+            let metadata_for_cache = scan_metadata.clone();
+            write_project_cache_with_metadata(
+                &project_path,
+                cached_sessions.clone(),
+                favorites.clone(),
+                Some(metadata_for_cache),
+            )?;
+            Ok(json!({
+                "sessions": cached_sessions,
+                "favorites": favorites,
+                "scanMetadata": scan_metadata
+            }))
         }
         None => {
             // No cache or broken cache → full scan
-            let sessions = scan_sessions_after(&project_path, None)?;
+            let ScanResult { sessions, file_names } =
+                scan_sessions_after(&project_path, None)?;
             let favorites: Vec<String> = Vec::new();
-            write_project_cache(project_path.clone(), sessions.clone(), favorites.clone())?;
-            Ok(json!({ "sessions": sessions, "favorites": favorites }))
+            let scan_metadata = ScanMetadata {
+                file_names,
+                scanned_count: sessions.len(),
+                added_count: sessions.len(),
+            };
+
+            let metadata_for_cache = scan_metadata.clone();
+            write_project_cache_with_metadata(
+                &project_path,
+                sessions.clone(),
+                favorites.clone(),
+                Some(metadata_for_cache),
+            )?;
+            Ok(json!({
+                "sessions": sessions,
+                "favorites": favorites,
+                "scanMetadata": scan_metadata
+            }))
         }
     }
 }
