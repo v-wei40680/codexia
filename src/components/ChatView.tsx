@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useConversation, useSendMessage } from "@/hooks/useCodex";
 import { ChatCompose } from "./chat/ChatCompose";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
@@ -10,6 +10,7 @@ import { type CodexEvent } from "@/types/chat";
 import { Introduce } from "./common/Introduce";
 import { useEventStore } from "@/stores/useEventStore";
 import { ChatScrollArea } from "./chat/ChatScrollArea";
+import type { TokenUsage } from "@/bindings/TokenUsage";
 
 export function ChatView() {
   useCodexApprovalRequests();
@@ -17,11 +18,18 @@ export function ChatView() {
   const { activeConversationId } = useActiveConversationStore();
   const { events, addEvent } = useEventStore();
   const {inputValue, setInputValue} = useChatInputStore();
+  const [tokenUsage, setTokenUsage] = useState<TokenUsage | null>(null);
   const currentEvents = activeConversationId
     ? events[activeConversationId] || []
     : [];
   const { interrupt, isBusy, handleSendMessage } =
     useSendMessage();
+
+  useEffect(() => {
+    if (!activeConversationId) {
+      setTokenUsage(null);
+    }
+  }, [activeConversationId]);
 
   useConversationEvents(activeConversationId, {
     isConversationReady: conversationStatus === "ready",
@@ -31,6 +39,20 @@ export function ChatView() {
       }
       if (activeConversationId) {
         addEvent(activeConversationId, event);
+      }
+    },
+    onTokenCount: (event) => {
+      const msg = event.payload.params.msg;
+      if (msg.type !== "token_count") {
+        return;
+      }
+
+      const usage = msg.info?.total_token_usage ?? null;
+
+      if (usage && typeof usage.total_tokens === "number") {
+        setTokenUsage({ ...usage });
+      } else {
+        setTokenUsage(null);
       }
     },
   });
@@ -62,6 +84,7 @@ export function ChatView() {
             activeConversationId && interrupt(activeConversationId)
           }
           isBusy={isBusy}
+          tokenUsage={tokenUsage}
         />
       </div>
     </div>

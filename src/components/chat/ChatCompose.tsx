@@ -5,6 +5,8 @@ import { ReasoningEffortSelector } from "../config/ReasoningEffortSelector";
 import type { MediaAttachment } from "@/types/chat";
 import { Button } from "../ui/button";
 import { useNavigate } from "react-router-dom";
+import type { TokenUsage } from "@/bindings/TokenUsage";
+import { TokenCountInfo } from "../common/TokenCountInfo";
 
 interface ChatComposeProps {
   inputValue: string;
@@ -12,6 +14,7 @@ interface ChatComposeProps {
   onSendMessage: (text: string, attachments: MediaAttachment[]) => void;
   onStopStreaming: () => void;
   isBusy: boolean;
+  tokenUsage: TokenUsage | null;
 }
 
 export function ChatCompose({
@@ -20,6 +23,7 @@ export function ChatCompose({
   onSendMessage,
   onStopStreaming,
   isBusy,
+  tokenUsage,
 }: ChatComposeProps) {
   const navigate = useNavigate();
   return (
@@ -33,13 +37,15 @@ export function ChatCompose({
         isLoading={isBusy}
       />
       <div className="flex flex-wrap items-center justify-between">
-        <span>
+        <span className="flex">
           <Sandbox />
           <ProviderModels />
           <ReasoningEffortSelector />
+          <TokenCountInfo usage={tokenUsage} />
         </span>
         <Button onClick={() => navigate("/review")}>Review</Button>
       </div>
     </div>
   );
 }
+

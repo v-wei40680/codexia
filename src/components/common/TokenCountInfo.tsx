@@ -1,13 +1,7 @@
-type TokenCountShape = {
-  input_tokens?: number;
-  cached_input_tokens?: number;
-  output_tokens?: number;
-  reasoning_output_tokens?: number;
-  total_tokens: number;
-};
+import type { TokenUsage } from "@/bindings/TokenUsage";
 
 interface TokenCountInfoProps {
-  usage: TokenCountShape | null | undefined;
+  usage: TokenUsage | null | undefined;
   className?: string;
 }
 
@@ -17,14 +11,12 @@ export function TokenCountInfo({ usage, className }: TokenCountInfoProps) {
   }
 
   return (
-    <div className={"flex items-center gap-3 " + (className ?? "")}>
-      <div className="text-sm">
+    <span className={"flex items-center gap-3 " + (className ?? "")}>
+      <span className="text-sm">
         <span className="text-muted-foreground">Total</span>{" "}
         <span className="font-medium">{usage.total_tokens.toLocaleString()}</span>
         <span className="text-muted-foreground"> tokens</span>
-      </div>
-    </div>
+      </span>
+    </span>
   );
 }
-
-export default TokenCountInfo;
