@@ -12,18 +12,13 @@ import { useSessionStore } from "@/stores/useSessionStore";
 import { useProviderStore } from "@/stores/useProviderStore";
 
 export function useSendMessage() {
-  const isBusy = useSessionStore((state) => state.isBusy);
-  const setIsBusy = useSessionStore((state) => state.setIsBusy);
+  const {isBusy, setIsBusy} = useSessionStore();
   const buildNewConversationParams = useBuildNewConversationParams();
   const { cwd } = useCodexStore();
   const { clearEvents } = useEventStore();
   const { createConversation, markConversationReady } = useConversation();
-  const setActiveConversationId = useActiveConversationStore(
-    (state) => state.setActiveConversationId,
-  );
-  const selectedProviderId = useProviderStore(
-    (state) => state.selectedProviderId,
-  );
+  const {setActiveConversationId, clearPendingConversation, addConversationId} = useActiveConversationStore();
+  const {selectedProviderId} = useProviderStore();
 
   const sendMessage = async (conversationId: string, items: InputItem[]) => {
     setIsBusy(true);
@@ -67,7 +62,7 @@ export function useSendMessage() {
       return;
     }
 
-    useActiveConversationStore.getState().clearPendingConversation();
+    clearPendingConversation();
 
     const params = buildMessageParams(
       currentConversationId,
@@ -86,27 +81,18 @@ export function useSendMessage() {
     const newConversation = await createConversation(
       buildNewConversationParams,
     );
-    useActiveConversationStore.getState().clearPendingConversation();
+    clearPendingConversation();
     await useConversationListStore.getState().addConversation(cwd, {
       conversationId: newConversation.conversationId,
       preview,
       timestamp: new Date().toISOString(),
       path: newConversation.rolloutPath,
-      modelProvider:
-        buildNewConversationParams.modelProvider ??
-        selectedProviderId ??
-        "openai",
+      modelProvider: selectedProviderId,
     });
     setActiveConversationId(newConversation.conversationId);
-    useActiveConversationStore
-      .getState()
-      .addConversationId(newConversation.conversationId);
+    addConversationId(newConversation.conversationId);
     clearEvents(newConversation.conversationId);
     return newConversation.conversationId;
-  };
-
-  const beginPendingConversation = () => {
-    useActiveConversationStore.getState().startPendingConversation();
   };
 
   return {
@@ -115,6 +101,5 @@ export function useSendMessage() {
     isBusy,
     handleCreateConversation,
     handleSendMessage,
-    beginPendingConversation,
   };
 }

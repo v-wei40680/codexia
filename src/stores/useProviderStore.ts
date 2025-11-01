@@ -16,7 +16,7 @@ type ReasoningEffort = "minimal" | "low" | "medium" | "high";
 
 type ProviderState = {
   providers: ProviderStateModelProvider[];
-  selectedProviderId: string | null;
+  selectedProviderId: string | "openai";
   selectedModel: string | null;
   reasoningEffort: ReasoningEffort;
 };
@@ -188,7 +188,7 @@ export const useProviderStore = create<ProviderState & ProviderActions>()(
           let newSelectedModel = state.selectedModel;
 
           if (state.selectedProviderId === providerId) {
-            newSelectedProviderId = updatedProviders[0]?.id || null;
+            newSelectedProviderId = updatedProviders[0]?.id;
             newSelectedModel = updatedProviders[0]?.models[0] || null;
           }
 

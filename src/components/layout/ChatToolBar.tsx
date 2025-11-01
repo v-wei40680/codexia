@@ -5,13 +5,13 @@ import { useLayoutStore } from "@/stores/layoutStore";
 import { useFolderStore } from "@/stores/FolderStore";
 import { detectWebFramework } from "@/utils/webFrameworkDetection";
 import { useChatInputStore } from "@/stores/chatInputStore";
-import { useSendMessage } from "@/hooks/useCodex";
+import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
 
 export const ChatToolbar: React.FC = () => {
   const { showWebPreview, setWebPreviewUrl } = useLayoutStore();
   const { currentFolder } = useFolderStore();
   const { clearAll, requestFocus } = useChatInputStore();
-  const { beginPendingConversation } = useSendMessage();
+  const { startPendingConversation } = useActiveConversationStore();
 
   const handleToggleWebPreview = async () => {
     if (showWebPreview) {
@@ -40,7 +40,7 @@ export const ChatToolbar: React.FC = () => {
       <Button
         size="icon"
         onClick={() => {
-          beginPendingConversation();
+          startPendingConversation();
           clearAll();
           requestFocus();
         }}
