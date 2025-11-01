@@ -26,10 +26,14 @@ export const extractInitialMessages = (
   return response.initialMessages ?? null;
 };
 
+// dont need exec_command_output_delta
 export const DELTA_EVENT_TYPES = new Set<EventMsg["type"]>([
   "agent_message_delta",
+  "agent_message_content_delta",
   "agent_reasoning_delta",
   "agent_reasoning_raw_content_delta",
+  "reasoning_content_delta",
+  "reasoning_raw_content_delta",
 ]);
 
 export interface MediaAttachment {

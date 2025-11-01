@@ -103,7 +103,9 @@ export function useConversationEvents(
             const {params} = event.payload
             const {msg} = params
             const uniqueId = `${msg.type}:${params.conversationId}:event_${event.id}:params_${params.id}`
-            if (!msg.type.endsWith("_delta") && !msg.type.startsWith("item_")) {
+            
+            // Log only non-delta events for debugging
+            if (!msg.type.endsWith("_delta")) {
               console.log(`event ${uniqueId}`, msg)
             }
 
