@@ -109,6 +109,37 @@ export function useConversationEvents(
               console.log(`event ${uniqueId}`, msg)
             }
 
+            const conversationIdForSleep = params.conversationId;
+
+            if (msg.type === "task_started") {
+              invoke("prevent_sleep", {
+                conversationId: conversationIdForSleep,
+              })
+                .catch((error) => {
+                  console.error("Failed to prevent system sleep:", error);
+                })
+                .finally(() => {
+                  console.log(
+                    `task_started prevent_sleep`,
+                    conversationIdForSleep,
+                  );
+                });
+            } else if (
+              msg.type === "task_complete" ||
+              msg.type === "error" ||
+              msg.type === "turn_aborted"
+            ) {
+              invoke("allow_sleep", {
+                conversationId: conversationIdForSleep,
+              })
+                .catch((error) => {
+                  console.error("Failed to restore system sleep:", error);
+                })
+                .finally(() => {
+                  console.log("allow_sleep", conversationIdForSleep);
+                });
+            }
+
             currentHandlers.onAnyEvent?.(event);
             const busyOff =
               msg.type === "error" ||
@@ -221,6 +252,15 @@ export function useConversationEvents(
         });
       }
       setIsBusy(false);
+      if (conversationId) {
+        invoke("allow_sleep", { conversationId }).catch((error) => {
+          console.error("Failed to restore system sleep during cleanup:", error);
+        });
+      } else {
+        invoke("allow_sleep").catch((error) => {
+          console.error("Failed to restore system sleep during cleanup:", error);
+        });
+      }
     };
   }, [conversationId, isConversationReady, setIsBusy]);
 }

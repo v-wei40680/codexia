@@ -8,6 +8,7 @@ mod mcp;
 mod services;
 mod session_files;
 mod state;
+mod sleep;
 mod terminal;
 mod utils;
 
@@ -16,6 +17,7 @@ use commands::{
     enable_remote_ui, get_remote_ui_status
 };
 use crate::config::provider::ensure_default_providers;
+use sleep::{allow_sleep, prevent_sleep, SleepState};
 use session_files::{
     delete::{delete_session_file, delete_sessions_files},
     cache::{load_project_sessions, write_project_cache},
@@ -65,6 +67,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .manage(AppState::new())
         .manage(RemoteAccessState::default())
+        .manage(SleepState::default())
         .invoke_handler(tauri::generate_handler![
             check_codex_version,
             create_new_window,
@@ -117,6 +120,8 @@ pub fn run() {
             open_terminal_with_command,
             delete_sessions_files,
             write_project_cache,
+            prevent_sleep,
+            allow_sleep,
         ])
         .setup(|_app| {
             #[cfg(debug_assertions)]
