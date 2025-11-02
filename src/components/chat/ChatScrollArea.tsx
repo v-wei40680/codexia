@@ -51,7 +51,7 @@ export function ChatScrollArea({
             return (
               <div key={key} className="space-y-1">
                 <EventItem event={event} conversationId={conversationId} />
-                {import.meta.env.DEV &&
+                {import.meta.env.VITE_SHOW_EVENT_FOOTER === "true" &&
                   <p className="text-xs text-muted-foreground">{msg.type}</p>
                 }
               </div>
