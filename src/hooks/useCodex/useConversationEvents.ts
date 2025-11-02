@@ -105,9 +105,9 @@ export function useConversationEvents(
             const uniqueId = `${msg.type}:event_${event.id}:params_${params.id}`
             
             // Log only non-delta events for debugging
-            // if (!msg.type.endsWith("_delta")) {
+            if (!msg.type.endsWith("_delta")) {
               console.log(`event ${uniqueId}`, msg)
-            // }
+            }
 
             currentHandlers.onAnyEvent?.(event);
             const busyOff =
