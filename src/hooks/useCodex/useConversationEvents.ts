@@ -4,6 +4,7 @@ import { ConversationId } from "@/bindings/ConversationId";
 import { CodexEvent } from "@/types/chat";
 import { useSessionStore } from "@/stores/useSessionStore";
 import { toast } from "sonner";
+import { useSystemSleepPrevention } from "../useSystemSleepPrevention";
 
 export interface BackendErrorPayload {
   code: number;
@@ -44,6 +45,9 @@ export function useConversationEvents(
 ) {
   const handlersRef = useRef<EventHandlers>(handlers);
   const setIsBusy = useSessionStore((state) => state.setIsBusy);
+  const latestEvent = useRef<CodexEvent | null>(null);
+
+  useSystemSleepPrevention(conversationId, latestEvent.current);
 
   useEffect(() => {
     handlersRef.current = handlers;
@@ -102,43 +106,12 @@ export function useConversationEvents(
             const currentHandlers = handlersRef.current;
             const {params} = event.payload
             const {msg} = params
-            const uniqueId = `${msg.type}:event_${event.id}:params_${params.id}`
-            
-            // Log only non-delta events for debugging
+
             if (!msg.type.endsWith("_delta")) {
-              console.log(`event ${uniqueId}`, msg)
+              console.log(msg.type, msg)
             }
 
-            const conversationIdForSleep = params.conversationId;
-
-            if (msg.type === "task_started") {
-              invoke("prevent_sleep", {
-                conversationId: conversationIdForSleep,
-              })
-                .catch((error) => {
-                  console.error("Failed to prevent system sleep:", error);
-                })
-                .finally(() => {
-                  console.log(
-                    `task_started prevent_sleep`,
-                    conversationIdForSleep,
-                  );
-                });
-            } else if (
-              msg.type === "task_complete" ||
-              msg.type === "error" ||
-              msg.type === "turn_aborted"
-            ) {
-              invoke("allow_sleep", {
-                conversationId: conversationIdForSleep,
-              })
-                .catch((error) => {
-                  console.error("Failed to restore system sleep:", error);
-                })
-                .finally(() => {
-                  console.log("allow_sleep", conversationIdForSleep);
-                });
-            }
+            latestEvent.current = event;
 
             currentHandlers.onAnyEvent?.(event);
             const busyOff =
@@ -252,15 +225,6 @@ export function useConversationEvents(
         });
       }
       setIsBusy(false);
-      if (conversationId) {
-        invoke("allow_sleep", { conversationId }).catch((error) => {
-          console.error("Failed to restore system sleep during cleanup:", error);
-        });
-      } else {
-        invoke("allow_sleep").catch((error) => {
-          console.error("Failed to restore system sleep during cleanup:", error);
-        });
-      }
     };
   }, [conversationId, isConversationReady, setIsBusy]);
 }
