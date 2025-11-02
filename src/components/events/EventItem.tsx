@@ -31,23 +31,27 @@ export const EventItem = memo(function EventItem({
           <EventBubble align="end" variant="user">
             <p className="whitespace-pre-wrap leading-relaxed">{messageText}</p>
           </EventBubble>
-          <MsgFooter content={messageText} align="end" />
+          <div className="opacity-0 group-hover:opacity-100 h-0 group-hover:h-auto overflow-hidden transition-all duration-200">
+            <MsgFooter content={messageText} align="end" />
+          </div>
         </div>
       );
     }
     case "agent_message": {
       const messageText = msg.message;
       return (
-        <div className="space-y-1">
+        <div className="group space-y-1">
           <div className="flex gap-2">
             <Bot />
             <MarkdownRenderer content={messageText} />
           </div>
-          <MsgFooter
-            content={messageText}
-            align="start"
-            metaInfo={durationLabel}
-          />
+          <div className="opacity-0 group-hover:opacity-100 h-0 group-hover:h-auto overflow-hidden transition-all duration-200">
+            <MsgFooter
+              content={messageText}
+              align="start"
+              metaInfo={durationLabel}
+            />
+          </div>
         </div>
       );
     }
@@ -56,7 +60,16 @@ export const EventItem = memo(function EventItem({
       return (
         <div className="space-y-1">
           <span className="flex">
-            <AccordionMsg title={`🧠 ${msg.text}`} content={msg.text} />
+            {msg.text.includes("\n") ? (
+              (() => {
+                const firstNewlineIndex = msg.text.indexOf("\n");
+                const title = msg.text.substring(0, firstNewlineIndex);
+                const content = msg.text.substring(firstNewlineIndex + 1);
+                return <AccordionMsg title={`🧠 ${title}`} content={content} />;
+              })()
+            ) : (
+              <MarkdownRenderer content={`🧠 ${msg.text}`} />
+            )}
           </span>
           {durationLabel && (
             <p className="text-xs text-muted-foreground">{durationLabel}</p>
@@ -89,10 +102,12 @@ export const EventItem = memo(function EventItem({
     case "plan_update":
       return <PlanDisplay steps={msg.plan} />;
     case "exec_command_begin":
-      return <div className="flex">
+      return (
+        <div className="flex">
           <Terminal />
-        <MarkdownRenderer content={msg.command.join(" ")} />
-      </div>
+          <MarkdownRenderer content={msg.command.join(" ")} />
+        </div>
+      );
     case "exec_command_end":
     case "patch_apply_begin":
     case "patch_apply_end":
