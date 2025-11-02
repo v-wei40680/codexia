@@ -10,7 +10,6 @@ export type ExecApprovalRequest = {
   cwd: string;
   parsedCmd: Array<ParsedCommand>;
   reason: string | null;
-  createdAt: number;
 };
 
 export type PatchApprovalRequest = {
@@ -20,7 +19,6 @@ export type PatchApprovalRequest = {
   reason: string | null;
   grantRoot: string | null;
   changes: Record<string, FileChange>;
-  createdAt: number;
 };
 
 interface ApprovalState {
