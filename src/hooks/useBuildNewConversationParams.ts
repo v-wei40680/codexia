@@ -21,7 +21,7 @@ export function useBuildNewConversationParams() {
       mode,
       {
         model_reasoning_effort: reasoningEffort,
-        "tools.web_search": webSearchEnabled,
+        "web_search_request": webSearchEnabled,
       },
     );
   }, [
