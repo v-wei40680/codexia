@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
 import { useConversation, useSendMessage } from "@/hooks/useCodex";
 import { ChatCompose } from "./chat/input/ChatCompose";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
@@ -10,15 +10,18 @@ import { type CodexEvent } from "@/types/chat";
 import { Introduce } from "./common/Introduce";
 import { useEventStore } from "@/stores/useEventStore";
 import { ChatScrollArea } from "./chat/ChatScrollArea";
-import type { TokenUsage } from "@/bindings/TokenUsage";
+import { useTokenCountStore } from "@/stores/useTokenCountStore";
+import { useTokenCount } from "@/hooks/useCodex/useTokenCount";
 
 export function ChatView() {
   useCodexApprovalRequests();
   const { status: conversationStatus } = useConversation();
   const { activeConversationId } = useActiveConversationStore();
   const { events, addEvent } = useEventStore();
-  const {inputValue, setInputValue} = useChatInputStore();
-  const [tokenUsage, setTokenUsage] = useState<TokenUsage | null>(null);
+  const { inputValue, setInputValue } = useChatInputStore();
+  const { tokenUsages, clearTokenUsage } = useTokenCountStore();
+  const tokenUsage = activeConversationId ? tokenUsages[activeConversationId] : null;
+  const { handleTokenCount } = useTokenCount();
   const currentEvents = activeConversationId
     ? events[activeConversationId] || []
     : [];
@@ -26,33 +29,17 @@ export function ChatView() {
     useSendMessage();
 
   useEffect(() => {
-    if (!activeConversationId) {
-      setTokenUsage(null);
+    if (activeConversationId) {
+      clearTokenUsage(activeConversationId);
     }
-  }, [activeConversationId]);
+  }, [activeConversationId, clearTokenUsage]);
 
   useConversationEvents(activeConversationId, {
     isConversationReady: conversationStatus === "ready",
+    onTokenCount: handleTokenCount,
     onAnyEvent: (event: CodexEvent) => {
-      if (!event.createdAt) {
-        event.createdAt = Date.now();
-      }
       if (activeConversationId) {
         addEvent(activeConversationId, event);
-      }
-    },
-    onTokenCount: (event) => {
-      const msg = event.payload.params.msg;
-      if (msg.type !== "token_count") {
-        return;
-      }
-
-      const usage = msg.info?.total_token_usage ?? null;
-
-      if (usage && typeof usage.total_tokens === "number") {
-        setTokenUsage({ ...usage });
-      } else {
-        setTokenUsage(null);
       }
     },
   });
