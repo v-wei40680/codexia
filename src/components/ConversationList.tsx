@@ -179,8 +179,6 @@ export function ConversationList({
                   msg,
                 },
               },
-              createdAt: timestamp,
-
             });
           },
         );

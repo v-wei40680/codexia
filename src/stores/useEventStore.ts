@@ -1,263 +1,408 @@
 import { create } from "zustand";
-import { CodexEvent } from "@/types/chat";
 import type { EventMsg } from "@/bindings/EventMsg";
+import type { TurnItem } from "@/bindings/TurnItem";
+import {
+  CodexEvent,
+  DELTA_EVENT_TYPES,
+  type EventMeta,
+} from "@/types/chat";
+
+type StreamKey = string;
+
+interface ConversationStreamState {
+  reasoningItemId?: string;
+  agentMessageItemId?: string;
+  eventIndexByStreamKey: Record<StreamKey, number>;
+  streamStartTimeByKey: Record<StreamKey, number>;
+}
 
 interface EventState {
   events: Record<string, CodexEvent[]>;
+  streamState: Record<string, ConversationStreamState>;
   addEvent: (conversationId: string, event: CodexEvent) => void;
   setEvents: (conversationId: string, newEvents: CodexEvent[]) => void;
   clearEvents: (conversationId: string) => void;
 }
 
-// Extended event type with stable ID for React keys
-export type ExtendedCodexEvent = CodexEvent & {
-  stableId?: string;
+const createStreamState = (): ConversationStreamState => ({
+  eventIndexByStreamKey: {},
+  streamStartTimeByKey: {},
+});
+
+const cloneStreamState = (
+  state: ConversationStreamState,
+): ConversationStreamState => ({
+  reasoningItemId: state.reasoningItemId,
+  agentMessageItemId: state.agentMessageItemId,
+  eventIndexByStreamKey: { ...state.eventIndexByStreamKey },
+  streamStartTimeByKey: { ...state.streamStartTimeByKey },
+});
+
+const DELTA_TO_BASE_MAP: Partial<Record<EventMsg["type"], EventMsg["type"]>> = {
+  agent_message_delta: "agent_message",
+  agent_reasoning_delta: "agent_reasoning",
+  agent_reasoning_raw_content_delta: "agent_reasoning_raw_content",
+  reasoning_content_delta: "agent_reasoning",
+  reasoning_raw_content_delta: "agent_reasoning_raw_content",
 };
 
-const isDeltaEvent = (type: string): boolean => {
-  return type.endsWith("_delta");
-};
+const BASE_STREAM_TYPES = new Set<EventMsg["type"]>([
+  "agent_message",
+  "agent_reasoning",
+  "agent_reasoning_raw_content",
+]);
 
-const getBaseEventType = (deltaType: string): string => {
-  return deltaType.replace("_delta", "");
-};
-
-const canMergeDelta = (existingEvent: CodexEvent, deltaEvent: CodexEvent): boolean => {
-  const existingMsg = existingEvent.payload.params.msg;
-  const deltaMsg = deltaEvent.payload.params.msg;
-  
-  // Only merge if deltaEvent is actually a delta type
-  if (!isDeltaEvent(deltaMsg.type)) return false;
-  
-  const baseType = getBaseEventType(deltaMsg.type);
-  
-  // Check if existing event matches the base type or is also a delta of same type
-  if (existingMsg.type !== baseType && existingMsg.type !== deltaMsg.type) {
-    return false;
+const getStreamKey = (
+  msg: EventMsg,
+  streamState: ConversationStreamState,
+  typeOverride?: EventMsg["type"],
+): string | null => {
+  const type = typeOverride ?? msg.type;
+  switch (type) {
+    case "agent_message":
+    case "agent_message_delta":
+      return streamState.agentMessageItemId
+        ? `agent_message:${streamState.agentMessageItemId}`
+        : null;
+    case "agent_reasoning":
+    case "agent_reasoning_delta":
+    case "agent_reasoning_raw_content":
+    case "agent_reasoning_raw_content_delta":
+      return streamState.reasoningItemId
+        ? `agent_reasoning:${streamState.reasoningItemId}`
+        : null;
+    case "agent_message_content_delta":
+      return "item_id" in msg
+        ? `agent_message_content:${msg.item_id}`
+        : null;
+    case "reasoning_content_delta":
+      return "item_id" in msg ? `reasoning_content:${msg.item_id}` : null;
+    case "reasoning_raw_content_delta":
+      return "item_id" in msg
+        ? `reasoning_raw_content:${msg.item_id}`
+        : null;
+    default:
+      return null;
   }
-  
-  // For events with item_id (reasoning_content_delta, agent_message_content_delta)
-  if ("item_id" in existingMsg && "item_id" in deltaMsg) {
-    return existingMsg.item_id === deltaMsg.item_id;
-  }
-  
-  // For events with call_id (if any)
-  if ("call_id" in existingMsg && "call_id" in deltaMsg) {
-    return existingMsg.call_id === deltaMsg.call_id;
-  }
-  
-  // For simple deltas without IDs (agent_message_delta, agent_reasoning_delta)
-  // Only merge if they're consecutive and of the same type
-  return true;
 };
 
-const mergeDeltaIntoEvent = (existingEvent: CodexEvent, deltaEvent: CodexEvent): CodexEvent => {
-  const existingMsg = existingEvent.payload.params.msg;
-  const deltaMsg = deltaEvent.payload.params.msg;
+const updateStreamStateForItemStarted = (
+  item: TurnItem,
+  streamState: ConversationStreamState,
+) => {
+  if ("Reasoning" in item) {
+    const reasoningId = item.Reasoning.id;
+    streamState.reasoningItemId = reasoningId;
+    delete streamState.eventIndexByStreamKey[`agent_reasoning:${reasoningId}`];
+    delete streamState.streamStartTimeByKey[`agent_reasoning:${reasoningId}`];
+    delete streamState.streamStartTimeByKey[
+      `agent_reasoning_raw_content:${reasoningId}`
+    ];
+    delete streamState.streamStartTimeByKey[
+      `reasoning_content:${reasoningId}`
+    ];
+    delete streamState.streamStartTimeByKey[
+      `reasoning_raw_content:${reasoningId}`
+    ];
+  } else if ("AgentMessage" in item) {
+    const agentMessageId = item.AgentMessage.id;
+    streamState.agentMessageItemId = agentMessageId;
+    delete streamState.eventIndexByStreamKey[
+      `agent_message:${agentMessageId}`
+    ];
+    delete streamState.streamStartTimeByKey[
+      `agent_message:${agentMessageId}`
+    ];
+    delete streamState.streamStartTimeByKey[
+      `agent_message_content:${agentMessageId}`
+    ];
+  }
+};
 
-  // Safety check: delta event must have delta field
+const updateStreamStateForItemCompleted = (
+  _item: TurnItem,
+  _streamState: ConversationStreamState,
+) => {
+  // Intentionally left blank. We keep stream associations alive until the next
+  // item starts so that late-arriving base events can still replace the
+  // streaming placeholder created from deltas.
+};
+
+const applyStreamingDelta = (
+  events: CodexEvent[],
+  streamState: ConversationStreamState,
+  event: CodexEvent,
+) => {
+  const deltaMsg = event.payload.params.msg;
+  const baseType = DELTA_TO_BASE_MAP[deltaMsg.type];
+  const targetType = baseType ?? deltaMsg.type;
+  const streamKey = getStreamKey(deltaMsg, streamState, targetType);
+
+  const nextEvents = [...events];
+  const nextStreamState = cloneStreamState(streamState);
+
+  const now = Date.now();
+  if (streamKey) {
+    nextStreamState.streamStartTimeByKey[streamKey] ??= now;
+  }
+  const startTime = streamKey
+    ? nextStreamState.streamStartTimeByKey[streamKey]
+    : undefined;
+
   if (!("delta" in deltaMsg) || typeof deltaMsg.delta !== "string") {
-    return existingEvent;
+    nextEvents.push(event);
+    return { events: nextEvents, streamState: nextStreamState };
   }
 
-  let mergedMsg: EventMsg | null = null;
+  const mergeInto = (existingEvent?: CodexEvent): CodexEvent => {
+    const existingMsg = existingEvent?.payload.params.msg;
+    const previousContent = (() => {
+      if (!existingMsg) return "";
+      if (existingMsg.type === "agent_message") return existingMsg.message;
+      if (existingMsg.type === "agent_reasoning") return existingMsg.text;
+      if (existingMsg.type === "agent_reasoning_raw_content")
+        return existingMsg.text;
+      if ("delta" in existingMsg && typeof existingMsg.delta === "string") {
+        return existingMsg.delta;
+      }
+      return "";
+    })();
 
-  switch (deltaMsg.type) {
-    case "agent_message_delta": {
-      // Get previous content from either base type or delta type
-      const previousContent =
-        existingMsg.type === "agent_message"
-          ? existingMsg.message
-          : existingMsg.type === "agent_message_delta"
-            ? existingMsg.delta
-            : "";
+    const mergedContent = `${previousContent}${deltaMsg.delta}`;
 
-      // Always convert to base type after merging
-      mergedMsg = {
-        type: "agent_message",
-        message: `${previousContent}${deltaMsg.delta}`,
-      } as Extract<EventMsg, { type: "agent_message" }>;
-      break;
+    let mergedMsg: EventMsg;
+    switch (targetType) {
+      case "agent_message":
+        mergedMsg = {
+          type: "agent_message",
+          message: mergedContent,
+        } as Extract<EventMsg, { type: "agent_message" }>;
+        break;
+      case "agent_reasoning":
+        mergedMsg = {
+          type: "agent_reasoning",
+          text: mergedContent,
+        } as Extract<EventMsg, { type: "agent_reasoning" }>;
+        break;
+      case "agent_reasoning_raw_content":
+        mergedMsg = {
+          type: "agent_reasoning_raw_content",
+          text: mergedContent,
+        } as Extract<EventMsg, { type: "agent_reasoning_raw_content" }>;
+        break;
+      case "agent_message_content_delta":
+      case "reasoning_content_delta":
+      case "reasoning_raw_content_delta":
+        mergedMsg = {
+          ...(deltaMsg as Record<string, unknown>),
+          type: targetType,
+          delta: mergedContent,
+        } as EventMsg;
+        break;
+      default:
+        mergedMsg = {
+          ...(deltaMsg as Record<string, unknown>),
+          type: targetType,
+          delta: mergedContent,
+        } as EventMsg;
+        break;
     }
-    
-    case "agent_reasoning_delta": {
-      const previousContent =
-        existingMsg.type === "agent_reasoning"
-          ? existingMsg.text
-          : existingMsg.type === "agent_reasoning_delta"
-            ? existingMsg.delta
-            : "";
 
-      mergedMsg = {
-        type: "agent_reasoning",
-        text: `${previousContent}${deltaMsg.delta}`,
-      } as Extract<EventMsg, { type: "agent_reasoning" }>;
-      break;
-    }
-    
-    case "agent_reasoning_raw_content_delta": {
-      const previousContent =
-        existingMsg.type === "agent_reasoning_raw_content"
-          ? existingMsg.text
-          : existingMsg.type === "agent_reasoning_raw_content_delta"
-            ? existingMsg.delta
-            : "";
+    const sourceEvent = existingEvent ?? event;
+    return {
+      ...sourceEvent,
+      payload: {
+        ...sourceEvent.payload,
+        method: `codex/event/${mergedMsg.type}`,
+        params: {
+          ...sourceEvent.payload.params,
+          msg: mergedMsg,
+        },
+      },
+    };
+  };
 
-      mergedMsg = {
-        type: "agent_reasoning_raw_content",
-        text: `${previousContent}${deltaMsg.delta}`,
-      } as Extract<EventMsg, { type: "agent_reasoning_raw_content" }>;
-      break;
+  const withStreamMeta = (
+    updatedEvent: CodexEvent,
+    existingEvent?: CodexEvent,
+  ): CodexEvent => {
+    if (!streamKey) {
+      return updatedEvent;
     }
-    
-    case "agent_message_content_delta": {
-      // This type has item_id, keep accumulating deltas
-      const previousContent =
-        existingMsg.type === "agent_message_content_delta"
-          ? existingMsg.delta
-          : "";
 
-      mergedMsg = {
-        type: "agent_message_content_delta",
-        thread_id: deltaMsg.thread_id,
-        turn_id: deltaMsg.turn_id,
-        item_id: deltaMsg.item_id,
-        delta: `${previousContent}${deltaMsg.delta}`,
-      } as Extract<EventMsg, { type: "agent_message_content_delta" }>;
-      break;
-    }
-    
-    case "reasoning_content_delta": {
-      const previousContent =
-        existingMsg.type === "reasoning_content_delta" 
-          ? existingMsg.delta 
-          : "";
+    const existingMeta = existingEvent?.meta ?? updatedEvent.meta ?? {};
+    const nextMeta: EventMeta = {
+      ...existingMeta,
+      streamKey,
+      streamStartedAt: startTime,
+    };
 
-      mergedMsg = {
-        type: "reasoning_content_delta",
-        thread_id: deltaMsg.thread_id,
-        turn_id: deltaMsg.turn_id,
-        item_id: deltaMsg.item_id,
-        delta: `${previousContent}${deltaMsg.delta}`,
-      } as Extract<EventMsg, { type: "reasoning_content_delta" }>;
-      break;
-    }
-    
-    case "reasoning_raw_content_delta": {
-      const previousContent =
-        existingMsg.type === "reasoning_raw_content_delta" 
-          ? existingMsg.delta 
-          : "";
+    return {
+      ...updatedEvent,
+      meta: nextMeta,
+    };
+  };
 
-      mergedMsg = {
-        type: "reasoning_raw_content_delta",
-        thread_id: deltaMsg.thread_id,
-        turn_id: deltaMsg.turn_id,
-        item_id: deltaMsg.item_id,
-        delta: `${previousContent}${deltaMsg.delta}`,
-      } as Extract<EventMsg, { type: "reasoning_raw_content_delta" }>;
-      break;
+  if (streamKey) {
+    const existingIndex = nextStreamState.eventIndexByStreamKey[streamKey];
+    if (existingIndex !== undefined) {
+      const merged = mergeInto(nextEvents[existingIndex]);
+      nextEvents[existingIndex] = withStreamMeta(merged, nextEvents[existingIndex]);
+    } else {
+      const newIndex = nextEvents.length;
+      const merged = withStreamMeta(mergeInto());
+      nextEvents.push(merged);
+      nextStreamState.eventIndexByStreamKey[streamKey] = newIndex;
     }
+  } else {
+    nextEvents.push(mergeInto());
   }
 
-  if (!mergedMsg) {
-    return existingEvent;
+  return { events: nextEvents, streamState: nextStreamState };
+};
+
+const applyBaseEvent = (
+  events: CodexEvent[],
+  streamState: ConversationStreamState,
+  event: CodexEvent,
+) => {
+  const msg = event.payload.params.msg;
+  const streamKey = getStreamKey(msg, streamState, msg.type);
+
+  const nextEvents = [...events];
+  const nextStreamState = cloneStreamState(streamState);
+
+  const enrichWithDuration = (
+    targetEvent: CodexEvent,
+    existingEvent?: CodexEvent,
+  ): CodexEvent => {
+    if (!streamKey) {
+      return targetEvent;
+    }
+
+    const startedAt =
+      nextStreamState.streamStartTimeByKey[streamKey] ??
+      existingEvent?.meta?.streamStartedAt;
+    const durationMs =
+      startedAt !== undefined ? Math.max(Date.now() - startedAt, 0) : undefined;
+
+    const baseMeta = existingEvent?.meta ?? targetEvent.meta ?? {};
+    const nextMeta: EventMeta = {
+      ...baseMeta,
+      streamKey,
+      streamStartedAt: startedAt,
+      streamDurationMs: durationMs,
+    };
+
+    delete nextStreamState.streamStartTimeByKey[streamKey];
+
+    return {
+      ...targetEvent,
+      meta: nextMeta,
+    };
+  };
+
+  if (streamKey) {
+    const existingIndex = nextStreamState.eventIndexByStreamKey[streamKey];
+    if (existingIndex !== undefined) {
+      nextEvents[existingIndex] = enrichWithDuration(
+        event,
+        nextEvents[existingIndex],
+      );
+    } else {
+      const newIndex = nextEvents.length;
+      nextEvents.push(enrichWithDuration(event));
+      nextStreamState.eventIndexByStreamKey[streamKey] = newIndex;
+    }
+  } else {
+    nextEvents.push(event);
+  }
+
+  return { events: nextEvents, streamState: nextStreamState };
+};
+
+const processEvent = (
+  currentEvents: CodexEvent[],
+  streamState: ConversationStreamState,
+  event: CodexEvent,
+) => {
+  const msg = event.payload.params.msg;
+  const nextStreamState = cloneStreamState(streamState);
+
+  if (msg.type === "item_started" && "item" in msg) {
+    updateStreamStateForItemStarted(msg.item as TurnItem, nextStreamState);
+    return {
+      events: [...currentEvents, event],
+      streamState: nextStreamState,
+    };
+  }
+
+  if (msg.type === "item_completed" && "item" in msg) {
+    updateStreamStateForItemCompleted(msg.item as TurnItem, nextStreamState);
+    return {
+      events: [...currentEvents, event],
+      streamState: nextStreamState,
+    };
+  }
+
+  if (DELTA_EVENT_TYPES.has(msg.type)) {
+    return applyStreamingDelta(currentEvents, nextStreamState, event);
+  }
+
+  if (BASE_STREAM_TYPES.has(msg.type)) {
+    return applyBaseEvent(currentEvents, nextStreamState, event);
   }
 
   return {
-    ...existingEvent,
-    payload: {
-      ...existingEvent.payload,
-      params: {
-        ...existingEvent.payload.params,
-        msg: mergedMsg,
-      },
-    },
+    events: [...currentEvents, event],
+    streamState: nextStreamState,
   };
 };
 
 export const useEventStore = create<EventState>((set) => ({
   events: {},
-  addEvent: (conversationId, event) =>
+  streamState: {},
+  addEvent: (conversationId, event) => {
     set((state) => {
       const currentEvents = state.events[conversationId] || [];
-      const eventMsg = event.payload.params.msg;
-      
-      if (import.meta.env.DEV) {
-        console.log(`[Store] Adding event: ${eventMsg.type}`, {
-          isDelta: isDeltaEvent(eventMsg.type),
-          currentCount: currentEvents.length,
-        });
-      }
-      
-      // Only try to merge if this is a delta event
-      if (isDeltaEvent(eventMsg.type)) {
-        // Look for existing event to merge with (search from end for most recent)
-        for (let i = currentEvents.length - 1; i >= 0; i--) {
-          const existingEvent = currentEvents[i] as ExtendedCodexEvent;
-          if (canMergeDelta(existingEvent, event)) {
-            if (import.meta.env.DEV) {
-              console.log(`[Store] Merging delta into event at index ${i}`, {
-                existingType: existingEvent.payload.params.msg.type,
-                deltaType: eventMsg.type,
-              });
-            }
-            const mergedEvent = mergeDeltaIntoEvent(existingEvent, event);
-            // Preserve the stable ID from the first event
-            (mergedEvent as ExtendedCodexEvent).stableId = existingEvent.stableId;
-            const updatedEvents = [
-              ...currentEvents.slice(0, i),
-              mergedEvent,
-              ...currentEvents.slice(i + 1),
-            ];
-            return {
-              events: {
-                ...state.events,
-                [conversationId]: updatedEvents,
-              },
-            };
-          }
-        }
-        
-        if (import.meta.env.DEV) {
-          console.log(`[Store] No merge target found, adding delta as new event`);
-        }
-        // If no existing event found to merge with, add as new event
-        // This handles the first delta which creates the base event
-      }
-      
-      // Add as new event (either non-delta or first delta)
-      const extendedEvent = event as ExtendedCodexEvent;
-      if (!extendedEvent.stableId) {
-        extendedEvent.stableId = `${conversationId}-${event.payload.params.id}-${Date.now()}`;
-      }
-      
-      const updatedEvents = [...currentEvents, extendedEvent].sort(
-        (a, b) => (a.createdAt ?? 0) - (b.createdAt ?? 0),
+      const currentStreamState =
+        state.streamState[conversationId] || createStreamState();
+
+      const { events, streamState } = processEvent(
+        currentEvents,
+        currentStreamState,
+        event,
       );
-      
-      if (import.meta.env.DEV) {
-        console.log(`[Store] Added new event, total: ${updatedEvents.length}`);
-      }
 
       return {
         events: {
           ...state.events,
-          [conversationId]: updatedEvents,
+          [conversationId]: events,
+        },
+        streamState: {
+          ...state.streamState,
+          [conversationId]: streamState,
         },
       };
-    }),
+    });
+  },
   setEvents: (conversationId, newEvents) =>
     set((state) => ({
       events: {
         ...state.events,
-        [conversationId]: newEvents,
+        [conversationId]: [...newEvents],
+      },
+      streamState: {
+        ...state.streamState,
+        [conversationId]: createStreamState(),
       },
     })),
   clearEvents: (conversationId) =>
     set((state) => {
-      const newEvents = { ...state.events };
-      delete newEvents[conversationId];
-      return { events: newEvents };
+      const events = { ...state.events };
+      const streamState = { ...state.streamState };
+      delete events[conversationId];
+      delete streamState[conversationId];
+      return { events, streamState };
     }),
 }));

@@ -1,5 +1,11 @@
 import type { EventMsg } from "@/bindings/EventMsg";
 
+export interface EventMeta {
+  streamKey?: string;
+  streamStartedAt?: number;
+  streamDurationMs?: number;
+}
+
 export interface CodexEvent {
   id: number;
   event: string; // "codex:event"
@@ -11,7 +17,7 @@ export interface CodexEvent {
       msg: EventMsg;
     };
   };
-  createdAt?: number;
+  meta?: EventMeta;
 }
 
 export type ResumeConversationResult = {

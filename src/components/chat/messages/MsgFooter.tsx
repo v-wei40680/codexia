@@ -6,9 +6,10 @@ import { cn } from "@/lib/utils";
 interface MsgFooterProps {
   content: string;
   align: "start" | "end";
+  metaInfo?: string | null;
 }
 
-export function MsgFooter({ content, align }: MsgFooterProps) {
+export function MsgFooter({ content, align, metaInfo }: MsgFooterProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -24,6 +25,9 @@ export function MsgFooter({ content, align }: MsgFooterProps) {
         "justify-start": align === "start",
       })}
     >
+      {metaInfo && (
+        <span className="text-xs text-muted-foreground">{metaInfo}</span>
+      )}
       <Button
         variant="ghost"
         size="icon"
