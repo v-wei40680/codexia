@@ -72,7 +72,6 @@ export const useConversationListStore = create<
           },
         };
       });
-      await syncCacheToBackend(cwd);
     },
 
     updateConversationPreview: (conversationId, preview) => {
