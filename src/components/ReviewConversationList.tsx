@@ -47,7 +47,12 @@ export function ReviewConversationList({
   }, [editingConversationId]);
 
   const conversations = useMemo(() => {
-    return conversationsByCwd[cwd] || [];
+    const base = conversationsByCwd[cwd || ""] || [];
+    return [...base].sort((a, b) => {
+      const aTime = a.timestamp ? new Date(a.timestamp).getTime() : 0;
+      const bTime = b.timestamp ? new Date(b.timestamp).getTime() : 0;
+      return bTime - aTime;
+    });
   }, [conversationsByCwd, cwd]);
 
   const handleRenameSubmit = async (conversationId: string) => {
