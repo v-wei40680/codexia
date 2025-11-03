@@ -41,7 +41,7 @@ export const SANDBOX_MODES: Record<
 
 const defaultConfig = {
   "web_search_request": false,
-  "tools.view_image": true,
+  "view_image_tool": true,
   "model_reasoning_effort": "medium",
   "show_raw_agent_reasoning": true,
   "model_reasoning_summary": "auto",
