@@ -12,8 +12,6 @@ import { CodexEvent } from "@/types/chat";
 import { Bot, Terminal } from "lucide-react";
 import { MsgFooter } from "../chat/messages/MsgFooter";
 import { getStreamDurationLabel } from "@/utils/getDurationLable";
-import { PatchApplyBeginItem } from "./PatchApplyBeginItem";
-import { PatchApplyEndItem } from "./PatchApplyEndItem";
 
 export const EventItem = memo(function EventItem({
   event,
@@ -111,9 +109,7 @@ export const EventItem = memo(function EventItem({
         </div>
       );
     case "patch_apply_begin":
-      return <PatchApplyBeginItem event={event} />;
     case "patch_apply_end":
-      return <PatchApplyEndItem event={event} />;
     case "exec_command_end":
     case "task_complete":
     case "task_started":
