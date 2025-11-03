@@ -30,11 +30,7 @@ import {
 import { useCodexStore } from "@/stores/useCodexStore";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
 import { Checkbox } from "@/components/ui/checkbox";
-import { extractInitialMessages, type CodexEvent } from "@/types/chat";
-import { v4 } from "uuid";
-import { useConversation } from "@/hooks/useCodex";
-import { useBuildNewConversationParams } from "@/hooks/useBuildNewConversationParams";
-import { useEventStore } from "@/stores/useEventStore";
+import { useResumeConversation } from "@/hooks/useResumeConversation";
 import { renameConversation } from "@/utils/renameConversation";
 
 interface ConversationListProps {
@@ -64,17 +60,12 @@ export function ConversationList({
     toggleFavorite,
     updateConversationPreview,
   } = useConversationListStore();
-  const {
-    activeConversationId,
-    setActiveConversationId,
-    conversationIds,
-    clearPendingConversation,
-  } = useActiveConversationStore();
+  const { activeConversationId } = useActiveConversationStore();
   const { cwd } = useCodexStore();
-  const { resumeConversation } = useConversation();
-  const buildNewConversationParams = useBuildNewConversationParams();
-  const { addEvent } = useEventStore();
-  const [editingConversationId, setEditingConversationId] = useState<string | null>(null);
+  const { handleSelectConversation } = useResumeConversation();
+  const [editingConversationId, setEditingConversationId] = useState<
+    string | null
+  >(null);
   const [editingValue, setEditingValue] = useState("");
   const inputRef = useRef<HTMLInputElement | null>(null);
 
@@ -144,50 +135,6 @@ export function ConversationList({
 
     return "No conversations yet.";
   }, [mode, searchQuery]);
-
-  const handleSelectConversation = async (
-    conversationId: string,
-    path: string,
-  ) => {
-    clearPendingConversation();
-    if (!conversationIds.includes(conversationId)) {
-      console.log(conversationId, path);
-      const resumedConversation = await resumeConversation(
-        path,
-        buildNewConversationParams,
-      );
-      console.log(resumedConversation);
-      setActiveConversationId(resumedConversation.conversationId);
-      useActiveConversationStore
-        .getState()
-        .addConversationId(resumedConversation.conversationId);
-      const initialMessages = extractInitialMessages(resumedConversation);
-      if (initialMessages) {
-        // Use timestamps far in the past to ensure history always appears before new messages
-        const baseTimestamp = Date.now() - 1000000000; // ~11.5 days ago
-        initialMessages.forEach(
-          (msg: CodexEvent["payload"]["params"]["msg"], index: number) => {
-            const timestamp = baseTimestamp + index * 1000;
-            addEvent(resumedConversation.conversationId, {
-              id: timestamp,
-              event: "codex:event",
-              payload: {
-                method: `codex/event/${msg.type}`,
-                params: {
-                  conversationId: resumedConversation.conversationId,
-                  id: v4(),
-                  msg,
-                },
-              },
-            });
-          },
-        );
-      }
-    } else {
-      setActiveConversationId(conversationId);
-    }
-    console.log("selected", conversationId);
-  };
 
   const handleRenameSubmit = async (conversationId: string) => {
     await renameConversation({

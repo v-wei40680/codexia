@@ -17,7 +17,7 @@ export function useSendMessage() {
   const { cwd } = useCodexStore();
   const { clearEvents } = useEventStore();
   const { createConversation, markConversationReady } = useConversation();
-  const {setActiveConversationId, clearPendingConversation, addConversationId} = useActiveConversationStore();
+  const {setActiveConversationId, clearPendingConversation, addActiveConversationId} = useActiveConversationStore();
   const {selectedProviderId} = useProviderStore();
 
   const sendMessage = async (conversationId: string, items: InputItem[]) => {
@@ -90,7 +90,7 @@ export function useSendMessage() {
       modelProvider: selectedProviderId,
     });
     setActiveConversationId(newConversation.conversationId);
-    addConversationId(newConversation.conversationId);
+    addActiveConversationId(newConversation.conversationId);
     clearEvents(newConversation.conversationId);
     return newConversation.conversationId;
   };
