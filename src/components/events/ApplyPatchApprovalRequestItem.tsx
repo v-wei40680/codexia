@@ -4,8 +4,8 @@ import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import { useApprovalStore } from '@/stores/useApprovalStore';
 import type { CodexEvent } from '@/types/chat';
-import { EventBubble } from './EventBubble';
 import { FileChange } from '@/bindings/FileChange';
+import { renderFileChanges } from './PatchItem';
 
 type PatchDecision = 'approved' | 'denied' | 'abort';
 
@@ -79,35 +79,8 @@ export const ApplyPatchApprovalRequestItem = memo(function ApplyPatchApprovalReq
 
   const awaitingDecision = Boolean(patchApprovalRequest);
 
-  const renderFileChanges = (changes: { [key: string]: FileChange }) => {
-    return Object.entries(changes).map(([filePath, fileChange]) => (
-      <div key={filePath} className="space-y-1">
-        <h4 className="font-semibold text-sm">{filePath}</h4>
-        {'add' in fileChange ? (
-          <code className="block whitespace-pre-wrap rounded bg-muted/50 px-2 py-1 font-mono text-xs">
-            {fileChange.add.content}
-          </code>
-        ) : 'delete' in fileChange ? (
-          <code className="block whitespace-pre-wrap rounded bg-muted/50 px-2 py-1 font-mono text-xs text-red-500">
-            {fileChange.delete.content}
-          </code>
-        ) : 'update' in fileChange ? (
-          <code className="block whitespace-pre-wrap rounded bg-muted/50 px-2 py-1 font-mono text-xs">
-            {fileChange.update.unified_diff}
-          </code>
-        ) : (
-          <p className="text-xs text-muted-foreground">No content or diff available.</p>
-        )}
-      </div>
-    ));
-  };
-
   return (
-    <EventBubble
-      align="start"
-      variant="system"
-    >
-      <div className="space-y-3">
+      <div className="space-y-3 border rounded p-2">
         {msg.reason && (
           <div className="space-y-1">
             <p className="text-sm text-muted-foreground">{msg.reason}</p>
@@ -121,7 +94,6 @@ export const ApplyPatchApprovalRequestItem = memo(function ApplyPatchApprovalReq
           </div>
         )}
         <div className="space-y-2">
-          <h3 className="font-medium text-sm">Proposed Changes:</h3>
           {renderFileChanges(
             Object.fromEntries(
               Object.entries(msg.changes).filter(
@@ -165,6 +137,5 @@ export const ApplyPatchApprovalRequestItem = memo(function ApplyPatchApprovalReq
           </div>
         )}
       </div>
-    </EventBubble>
   );
 });

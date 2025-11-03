@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useConversation, useSendMessage } from "@/hooks/useCodex";
 import { ChatCompose } from "./chat/input/ChatCompose";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
@@ -13,6 +13,10 @@ import { ChatScrollArea } from "./chat/ChatScrollArea";
 import { useTokenCountStore } from "@/stores/useTokenCountStore";
 import { useTokenCount } from "@/hooks/useCodex/useTokenCount";
 // import { useResumeActiveConversation } from "@/hooks/useResumeActiveConversation";
+import { Button } from "@/components/ui/button";
+import { Files } from "lucide-react";
+import { TurnDiffPanel } from "./events/TurnDiffPanel";
+import { useTurnDiffStore } from "@/stores/useTurnDiffStore";
 
 export function ChatView() {
   useCodexApprovalRequests();
@@ -20,6 +24,9 @@ export function ChatView() {
   const { activeConversationId } = useActiveConversationStore();
   const { events, addEvent } = useEventStore();
   const { inputValue, setInputValue } = useChatInputStore();
+  const [diffPanelOpen, setDiffPanelOpen] = useState(false);
+  const addTurnDiff = useTurnDiffStore((s) => s.addDiff);
+  const diffsByConversationId = useTurnDiffStore((s) => s.diffsByConversationId);
   const currentEvents = activeConversationId
     ? events[activeConversationId] || []
     : [];
@@ -34,10 +41,21 @@ export function ChatView() {
 
   // Memoize callbacks to prevent unnecessary re-subscriptions
   const handleAnyEvent = useCallback((event: CodexEvent) => {
-    if (activeConversationId) {
+    if (!activeConversationId) return;
+    const { msg } = event.payload.params;
+    if (msg.type === "turn_diff") {
+      const unified = msg.unified_diff as string | undefined;
+      const existing = diffsByConversationId[activeConversationId] || [];
+      if (!unified || existing.includes(unified)) {
+        return; // duplicate or invalid; skip entirely
+      }
+      // First add to store, then record event
+      addTurnDiff(activeConversationId, unified);
       addEvent(activeConversationId, event);
+      return;
     }
-  }, [activeConversationId, addEvent]);
+    addEvent(activeConversationId, event);
+  }, [activeConversationId, addEvent, addTurnDiff, diffsByConversationId]);
 
   useConversationEvents(activeConversationId, {
     isConversationReady: conversationStatus === "ready",
@@ -64,6 +82,18 @@ export function ChatView() {
         ) : (
           <Introduce />
         )}
+        {(activeConversationId && (diffsByConversationId[activeConversationId]?.length || 0) > 0) ? (
+          <div className="px-3 pb-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setDiffPanelOpen(true)}
+            >
+              <Files className="h-4 w-4" />
+              File change
+            </Button>
+          </div>
+        ) : null}
         <ChatCompose
           inputValue={inputValue}
           onInputChange={handleInputChange}
@@ -75,6 +105,11 @@ export function ChatView() {
           tokenUsage={tokenUsage}
         />
       </div>
+      <TurnDiffPanel
+        open={diffPanelOpen}
+        onOpenChange={setDiffPanelOpen}
+        conversationId={activeConversationId ?? undefined}
+      />
     </div>
   );
 }
