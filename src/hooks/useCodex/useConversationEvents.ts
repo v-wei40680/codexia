@@ -5,6 +5,7 @@ import { CodexEvent } from "@/types/chat";
 import { useSessionStore } from "@/stores/useSessionStore";
 import { toast } from "sonner";
 import { useSystemSleepPrevention } from "../useSystemSleepPrevention";
+import { AddConversationSubscriptionResponse } from "@/bindings/AddConversationSubscriptionResponse";
 
 export interface BackendErrorPayload {
   code: number;
@@ -89,12 +90,14 @@ export function useConversationEvents(
     if (!conversationId || !isConversationReady) return;
     let conversationUnlisten: (() => void) | null = null;
     let subscriptionId: string | null = null;
+    let listenerResponse: AddConversationSubscriptionResponse | null
 
     (async () => {
       try {
-        subscriptionId = await invoke("add_conversation_listener", {
+        listenerResponse = await invoke<AddConversationSubscriptionResponse>("add_conversation_listener", {
           params: { conversationId },
         });
+        const subscriptionId = listenerResponse.subscriptionId;
         console.debug(
           "add_conversation_listener subscriptionId:",
           subscriptionId,
@@ -132,23 +135,15 @@ export function useConversationEvents(
                 break;
               case "agent_message_content_delta":
               case "agent_message_delta":
-                currentHandlers.onAgentMessageDelta?.(event);
                 break;
               case "user_message":
                 currentHandlers.onUserMessage?.(event);
                 break;
               case "agent_reasoning":
-                currentHandlers.onAgentReasoning?.(event);
-                break;
               case "agent_reasoning_delta":
-                currentHandlers.onAgentReasoningDelta?.(event);
-                break;
               case "agent_reasoning_raw_content_delta":
-                currentHandlers.onAgentReasoningDelta?.(event);
-                break;
               case "reasoning_content_delta":
               case "reasoning_raw_content_delta":
-                currentHandlers.onAgentReasoningDelta?.(event);
                 break;
               case "agent_reasoning_section_break":
                 currentHandlers.onAgentReasoningSectionBreak?.(event);

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback } from "react";
 import { useConversation, useSendMessage } from "@/hooks/useCodex";
 import { ChatCompose } from "./chat/input/ChatCompose";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
@@ -12,9 +12,7 @@ import { useEventStore } from "@/stores/useEventStore";
 import { ChatScrollArea } from "./chat/ChatScrollArea";
 import { useTokenCountStore } from "@/stores/useTokenCountStore";
 import { useTokenCount } from "@/hooks/useCodex/useTokenCount";
-import { useResumeConversation } from "@/hooks/useResumeConversation";
-import { useConversationListStore } from "@/stores/useConversationListStore";
-import { useCodexStore } from "@/stores/useCodexStore";
+// import { useResumeActiveConversation } from "@/hooks/useResumeActiveConversation";
 
 export function ChatView() {
   useCodexApprovalRequests();
@@ -22,73 +20,29 @@ export function ChatView() {
   const { activeConversationId } = useActiveConversationStore();
   const { events, addEvent } = useEventStore();
   const { inputValue, setInputValue } = useChatInputStore();
-  const { tokenUsages, clearTokenUsage } = useTokenCountStore();
-  const tokenUsage = activeConversationId ? tokenUsages[activeConversationId] : null;
-  const { handleTokenCount } = useTokenCount();
-  const { handleSelectConversation } = useResumeConversation();
-  const { cwd } = useCodexStore();
-  const { conversationsByCwd } = useConversationListStore();
-  const activeConversationSummary = useMemo(() => {
-    if (!activeConversationId) return null;
-    const cwdKey = cwd || "";
-    const list = conversationsByCwd[cwdKey] ?? [];
-    return (
-      list.find(
-        (conversation) =>
-          conversation.conversationId === activeConversationId,
-      ) ?? null
-    );
-  }, [activeConversationId, conversationsByCwd, cwd]);
-  const activeConversationPath = activeConversationSummary?.path;
-  const lastResumedKeyRef = useRef<string | null>(null);
-
   const currentEvents = activeConversationId
     ? events[activeConversationId] || []
     : [];
   const { interrupt, isBusy, handleSendMessage } =
     useSendMessage();
 
-  useEffect(() => {
-    if (!activeConversationId) {
-      lastResumedKeyRef.current = null;
+  const { tokenUsages } = useTokenCountStore();
+  const tokenUsage = activeConversationId ? tokenUsages[activeConversationId] : null;
+  const { handleTokenCount } = useTokenCount();
+
+  // useResumeActiveConversation(activeConversationId);
+
+  // Memoize callbacks to prevent unnecessary re-subscriptions
+  const handleAnyEvent = useCallback((event: CodexEvent) => {
+    if (activeConversationId) {
+      addEvent(activeConversationId, event);
     }
-  }, [activeConversationId]);
-
-  useEffect(() => {
-    if (!activeConversationId || !activeConversationPath) return;
-    const resumeKey = `${activeConversationId}:${activeConversationPath}`;
-    if (lastResumedKeyRef.current === resumeKey) return;
-    lastResumedKeyRef.current = resumeKey;
-
-    const resumeConversation = async () => {
-      try {
-        clearTokenUsage(activeConversationId);
-        await handleSelectConversation(
-          activeConversationId,
-          activeConversationPath,
-        );
-      } catch (error) {
-        console.error("Failed to resume conversation", error);
-        lastResumedKeyRef.current = null;
-      }
-    };
-
-    void resumeConversation();
-  }, [
-    activeConversationId,
-    activeConversationPath,
-    clearTokenUsage,
-    handleSelectConversation,
-  ]);
+  }, [activeConversationId, addEvent]);
 
   useConversationEvents(activeConversationId, {
     isConversationReady: conversationStatus === "ready",
     onTokenCount: handleTokenCount,
-    onAnyEvent: (event: CodexEvent) => {
-      if (activeConversationId) {
-        addEvent(activeConversationId, event);
-      }
-    },
+    onAnyEvent: handleAnyEvent,
   });
 
   const handleInputChange = useCallback(

@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
-use codex_app_server_protocol::{ 
-    AddConversationListenerParams, InterruptConversationParams,
+use codex_app_server_protocol::{
+    AddConversationListenerParams, AddConversationSubscriptionResponse, InterruptConversationParams,
     InterruptConversationResponse, NewConversationParams, NewConversationResponse,
     ResumeConversationParams, ResumeConversationResponse, SendUserMessageParams,
     SendUserMessageResponse, RemoveConversationListenerParams
@@ -41,9 +41,9 @@ pub async fn add_conversation_listener(
     params: AddConversationListenerParams,
     state: State<'_, AppState>,
     app_handle: AppHandle,
-) -> Result<(), String> {
+) -> Result<AddConversationSubscriptionResponse, String> {
     let client = get_client(&state, &app_handle).await?;
-    client.add_conversation_listener(params).await.map(|_| ())
+    client.add_conversation_listener(params).await
 }
 
 #[tauri::command]
