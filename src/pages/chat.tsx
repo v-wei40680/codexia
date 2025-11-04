@@ -89,7 +89,7 @@ export default function ChatPage() {
             <TabsContent value="chat" className="flex-1 overflow-y-auto mt-0">
               <ChatTab />
             </TabsContent>
-            <TabsContent value="notes">
+            <TabsContent value="notes" className="flex-1 overflow-y-auto mt-0">
               <NoteList />
             </TabsContent>
           </Tabs>
