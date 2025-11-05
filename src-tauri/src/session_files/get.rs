@@ -1,8 +1,10 @@
 use base64::engine::general_purpose;
 use base64::engine::Engine as _;
 use std::path::PathBuf;
+use walkdir::WalkDir;
 
 use super::file::get_sessions_path;
+use crate::filesystem::file_io::read_file as fs_read_file;
 
 pub fn get_cache_dir() -> Result<PathBuf, String> {
     let sessions_dir = get_sessions_path()?;
@@ -18,4 +20,26 @@ pub fn get_cache_dir() -> Result<PathBuf, String> {
 pub fn get_cache_path_for_project(project_path: &str) -> Result<PathBuf, String> {
     let encoded = general_purpose::STANDARD.encode(project_path);
     Ok(get_cache_dir()?.join(format!("{}.json", encoded)))
+}
+
+#[tauri::command]
+pub async fn get_session_files() -> Result<Vec<String>, String> {
+    let sessions_dir = get_sessions_path()?;
+    let mut files = Vec::new();
+
+    for entry in WalkDir::new(&sessions_dir)
+        .into_iter()
+        .filter_map(|e| e.ok())
+    {
+        let path = entry.path();
+        if path.is_file() && path.extension().map_or(false, |ext| ext == "jsonl") {
+            files.push(path.to_string_lossy().into_owned());
+        }
+    }
+    Ok(files)
+}
+
+#[tauri::command]
+pub async fn read_session_file(file_path: String) -> Result<String, String> {
+    fs_read_file(file_path).await
 }

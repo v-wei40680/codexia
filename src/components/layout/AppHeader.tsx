@@ -162,7 +162,7 @@ export function AppHeader() {
 
         <Link
           to="/usage"
-          className="flex hover:text-primary items-center gap-1 -ml-1 hidden"
+          className="flex hover:text-primary items-center gap-1"
         >
           <BarChart3 className="w-4 h-4" /> {t("header.usage")}
         </Link>

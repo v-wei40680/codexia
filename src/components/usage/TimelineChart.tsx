@@ -22,7 +22,7 @@ export function TimelineChart({ usageData, formatCurrency, formatTokens }: Timel
   return (
     <Card className="bg-slate-950/50 border-slate-800/50">
       <CardHeader>
-        <CardTitle className="text-slate-100">Usage Timeline (Last 30 Days)</CardTitle>
+        <CardTitle className="text-slate-100">Usage Timeline</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={400}>
