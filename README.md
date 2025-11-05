@@ -43,6 +43,7 @@ fork chat, file-tree integration, notepad, git diff, build-in pdf csv/xlsx viewe
 
 ## News
 
+- [11/05] Usage Dashboard - Track your Codex usage and costs
 - [10/29] Review page, Rename chat title, manage `~/.codex/session` from GUI.
 - [10/24] Multilingual support - En, Zh and Ja.
 - [10/04] change codex proto to app-server for codex 0.44.0
@@ -136,7 +137,7 @@ open -a /Applications/codexia.app  # or click the Codexia app
 - Advanced debugging tools
 - Real-time collaboration
 - Performance optimizations
-- token count
+- [x] token count
 
 🚀 **Call to Action**
 
