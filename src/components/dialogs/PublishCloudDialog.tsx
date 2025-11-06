@@ -31,7 +31,7 @@ export function PublishCloudDialog() {
   };
 
   const connect = async (e: React.FormEvent) => {
-    console.log("start submit")
+    console.log("start submit");
     e.preventDefault();
     if (!supabase) {
       const message = "Cloud publishing is not configured.";
@@ -85,53 +85,50 @@ export function PublishCloudDialog() {
         }
       }}
     >
-        <DialogTrigger asChild>
-          <Button>
-            <Cloud />
-            Publish
-          </Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px]">
-          <form onSubmit={connect}>
-            <DialogHeader>
-              <DialogTitle className="flex gap-2">
-                <Cloud />
-                <span className="py-1">
-                  Share Your Feedback About Cloud Publishing
-                </span>
-              </DialogTitle>
-              <DialogDescription>
-                Let us know your experience or ideas before we roll out full
-                deployment features.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4">
-              <div className="grid gap-3">
-                <Label htmlFor="email">Email</Label>
-                <Input type="email" name="email" />
-              </div>
-              <div className="grid gap-3">
-                <Textarea name="message" placeholder="Tell me what you think" />
-              </div>
+      <DialogTrigger asChild>
+        <Cloud />
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-[425px]">
+        <form onSubmit={connect}>
+          <DialogHeader>
+            <DialogTitle className="flex gap-2">
+              <Cloud />
+              <span className="py-1">
+                Share Your Feedback About Cloud Publishing
+              </span>
+            </DialogTitle>
+            <DialogDescription>
+              Let us know your experience or ideas before we roll out full
+              deployment features.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4">
+            <div className="grid gap-3">
+              <Label htmlFor="email">Email</Label>
+              <Input type="email" name="email" />
             </div>
-            {statusMessage && statusType && (
-              <p
-                role="status"
-                className={`text-sm ${statusType === "success" ? "text-green-600 dark:text-green-400" : "text-destructive"}`}
-              >
-                {statusMessage}
-              </p>
-            )}
-            <DialogFooter>
-              <DialogClose asChild>
-                <Button variant="outline">Cancel</Button>
-              </DialogClose>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Submitting..." : "Submit"}
-              </Button>
-            </DialogFooter>
-          </form>
-        </DialogContent>
+            <div className="grid gap-3">
+              <Textarea name="message" placeholder="Tell me what you think" />
+            </div>
+          </div>
+          {statusMessage && statusType && (
+            <p
+              role="status"
+              className={`text-sm ${statusType === "success" ? "text-green-600 dark:text-green-400" : "text-destructive"}`}
+            >
+              {statusMessage}
+            </p>
+          )}
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline">Cancel</Button>
+            </DialogClose>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "Submitting..." : "Submit"}
+            </Button>
+          </DialogFooter>
+        </form>
+      </DialogContent>
     </Dialog>
   );
 }
