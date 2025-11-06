@@ -64,7 +64,9 @@ export function ConversationList({
   const { activeConversationId } = useActiveConversationStore();
   const { cwd } = useCodexStore();
   const { handleSelectConversation } = useResumeConversation();
-  const [editingConversationId, setEditingConversationId] = useState<string | null>(null);
+  const [editingConversationId, setEditingConversationId] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     if (cwd) {
@@ -153,34 +155,35 @@ export function ConversationList({
             {emptyStateMessage}
           </div>
         ) : (
-          <ul className="space-y-1 p-2">
+          <ul className="space-y-1">
             {conversations.map((conv) => {
               const isActive = activeConversationId === conv.conversationId;
               const isFavorite = favoriteIds.has(conv.conversationId);
               return (
-                <li key={conv.conversationId}>
-                  <DropdownMenu>
-                    <div className="flex items-center justify-between w-full">
-                      {showBulkDeleteButtons && (
-                        <Checkbox
-                          checked={selectedConversations.has(
-                            conv.conversationId,
-                          )}
-                          onCheckedChange={(checked) => {
-                            setSelectedConversations((prev) => {
-                              const next = new Set(prev);
-                              if (checked) {
-                                next.add(conv.conversationId);
-                              } else {
-                                next.delete(conv.conversationId);
-                              }
-                              return next;
-                            });
-                          }}
-                          className="mr-2"
-                        />
-                      )}
-                      <button
+                <div key={conv.conversationId}>
+                  <li className="group">
+                    <DropdownMenu>
+                      <div className="flex items-center justify-between w-full">
+                        {showBulkDeleteButtons && (
+                          <Checkbox
+                            checked={selectedConversations.has(
+                              conv.conversationId,
+                            )}
+                            onCheckedChange={(checked) => {
+                              setSelectedConversations((prev) => {
+                                const next = new Set(prev);
+                                if (checked) {
+                                  next.add(conv.conversationId);
+                                } else {
+                                  next.delete(conv.conversationId);
+                                }
+                                return next;
+                              });
+                            }}
+                            className="mr-2"
+                          />
+                        )}
+                        <button
                           onClick={() =>
                             handleSelectConversation(
                               conv.conversationId,
@@ -200,67 +203,72 @@ export function ConversationList({
                             ) : null}
                           </span>
                         </button>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="ml-1">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                    </div>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem
-                        onClick={async (event) => {
-                          event.stopPropagation();
-                          await toggleFavorite(conv.conversationId);
-                        }}
-                      >
-                        {isFavorite ? (
-                          <>
-                            <StarOff className="h-4 w-4 mr-2" />
-                            Remove favorite
-                          </>
-                        ) : (
-                          <>
-                            <Star className="h-4 w-4 mr-2" />
-                            Add favorite
-                          </>
-                        )}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setEditingConversationId(conv.conversationId);
-                        }}
-                      >
-                        <Pencil className="h-4 w-4 mr-2" />
-                        Rename
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          onRequestCategoryAssignment?.(conv.conversationId);
-                        }}
-                      >
-                        <FolderPlus className="h-4 w-4 mr-2" />
-                        Add to category
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={async (event) => {
-                          event.stopPropagation();
-                          if (conv.path) {
-                            useConversationListStore
-                              .getState()
-                              .removeConversation(conv.conversationId);
-                            await invoke("delete_file", { path: conv.path });
-                          }
-                        }}
-                        className="text-red-600 focus:text-red-600"
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" />
-                        Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </li>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="ml-1">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                      </div>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem
+                          onClick={async (event) => {
+                            event.stopPropagation();
+                            await toggleFavorite(conv.conversationId);
+                          }}
+                        >
+                          {isFavorite ? (
+                            <>
+                              <StarOff className="h-4 w-4 mr-2" />
+                              Remove favorite
+                            </>
+                          ) : (
+                            <>
+                              <Star className="h-4 w-4 mr-2" />
+                              Add favorite
+                            </>
+                          )}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            setEditingConversationId(conv.conversationId);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4 mr-2" />
+                          Rename
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onRequestCategoryAssignment?.(conv.conversationId);
+                          }}
+                        >
+                          <FolderPlus className="h-4 w-4 mr-2" />
+                          Add to category
+                        </DropdownMenuItem>
+                        <DropdownMenuItem
+                          onClick={async (event) => {
+                            event.stopPropagation();
+                            if (conv.path) {
+                              useConversationListStore
+                                .getState()
+                                .removeConversation(conv.conversationId);
+                              await invoke("delete_file", { path: conv.path });
+                            }
+                          }}
+                          className="text-red-600 focus:text-red-600"
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" />
+                          Delete
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    <span className="hidden group-hover:flex justify-between px-4 text-xs text-muted-foreground">
+                      <span>{conv.timestamp?.split("T")[0]}</span>
+                      <span>{conv.source}</span>
+                    </span>
+                  </li>
+                </div>
               );
             })}
           </ul>

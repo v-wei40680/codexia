@@ -2,8 +2,12 @@ import { create } from "zustand";
 import { invoke } from "@/lib/tauri-proxy";
 import type { ConversationSummary } from "@/bindings/ConversationSummary";
 
+interface ConversationSummaryWithSource extends ConversationSummary {
+  source?: string
+}
+
 interface ConversationListState {
-  conversationsByCwd: Record<string, ConversationSummary[]>;
+  conversationsByCwd: Record<string, ConversationSummaryWithSource[]>;
   conversationIndex: Record<string, string>;
   favoriteConversationIdsByCwd: Record<string, string[]>;
   loadedAllByCwd: Record<string, boolean>;
@@ -11,7 +15,7 @@ interface ConversationListState {
 }
 
 interface ConversationListActions {
-  addConversation: (cwd: string, summary: ConversationSummary) => Promise<void>;
+  addConversation: (cwd: string, summary: ConversationSummaryWithSource) => Promise<void>;
   updateConversationPreview: (conversationId: string, preview: string) => void;
   removeConversation: (conversationId: string) => Promise<void>;
   setFavorite: (conversationId: string, isFavorite: boolean) => Promise<void>;
@@ -47,7 +51,7 @@ export const useConversationListStore = create<
           (item) => item.conversationId === summary.conversationId,
         );
         const existingItem = index >= 0 ? existingList[index] : null;
-        const summaryWithTimestamp: ConversationSummary = {
+        const summaryWithTimestamp: ConversationSummaryWithSource = {
           ...summary,
           timestamp:
             summary.timestamp ??
@@ -217,6 +221,8 @@ export async function loadProjectSessions(cwd: string, loadAll: boolean = false)
       [cwd]: (sessions?.length ?? 0) > (last10sessions?.length ?? 0),
     },
   }));
+
+  console.log("last10sessions", last10sessions)
 
   // Then add each conversation/session (this will sync with the correct favorites)
   if (loadAll) {

@@ -55,11 +55,16 @@ pub fn scan_sessions_after(
                             let truncated_text: String = original_text.chars().take(50).collect();
                             let timestamp = extract_datetime(&file_path)
                                 .map(|dt| dt.format("%Y-%m-%dT%H:%M:%S").to_string());
+                            let source = serde_json::from_str::<Value>(&line)
+                                .ok()
+                                .and_then(|v| v["payload"]["source"].as_str().map(|s| s.to_string()))
+                                .unwrap_or_default();
                             sessions.push(json!({
                                 "path": file_path,
                                 "conversationId": info.session_id,
                                 "preview": truncated_text,
-                                "timestamp": timestamp
+                                "timestamp": timestamp,
+                                "source": source
                             }));
                         }
                     }
