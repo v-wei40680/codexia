@@ -66,10 +66,10 @@ export const EventItem = memo(function EventItem({
                 const firstNewlineIndex = msg.text.indexOf("\n");
                 const title = msg.text.substring(0, firstNewlineIndex);
                 const content = msg.text.substring(firstNewlineIndex + 1);
-                return <AccordionMsg title={`🧠 ${title}`} content={content} />;
+                return <AccordionMsg title={title} content={content} />;
               })()
             ) : (
-              <MarkdownRenderer content={`🧠 ${msg.text}`} />
+              <MarkdownRenderer content={msg.text} />
             )}
           </span>
           {durationLabel && (
