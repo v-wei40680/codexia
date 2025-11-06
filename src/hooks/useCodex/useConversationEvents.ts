@@ -6,6 +6,7 @@ import { useSessionStore } from "@/stores/useSessionStore";
 import { toast } from "sonner";
 import { useSystemSleepPrevention } from "../useSystemSleepPrevention";
 import { AddConversationSubscriptionResponse } from "@/bindings/AddConversationSubscriptionResponse";
+import { playBeep } from "@/utils/beep";
 
 export interface BackendErrorPayload {
   code: number;
@@ -121,6 +122,7 @@ export function useConversationEvents(
               msg.type === "error" ||
               msg.type === "task_complete" ||
               msg.type === "turn_aborted";
+            if (busyOff) playBeep()
             setIsBusy(!busyOff);
 
             switch (msg.type) {
