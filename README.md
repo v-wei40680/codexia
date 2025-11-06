@@ -35,12 +35,6 @@ fork chat, file-tree integration, notepad, git diff, build-in pdf csv/xlsx viewe
 
 ▶️ [Watch the automation video on Twitter](https://x.com/lisp_mi/status/1966147638266589376)
 
-## Related project
-- [codexia-zen](https://github.com/milisp/codexia) - a minimalist design GUI for OpenAI Codex CLI, baby Codexia
-- [Codexsm](https://github.com/milisp/codexsm) - Codex cli session manager, rename, view, delete session file, one click resume session.
-- [MCP Linker](https://github.com/milisp/mcp-linker) - Tauri GUI for managing MCP for Codex CLI
-- [awesome-codex-cli](https://github.com/milisp/awesome-codex-cli) - A curated list of awesome resources, tools for OpenAI Codex CLI
-
 ## News
 
 - [11/05] Usage Dashboard - Track your Codex usage and costs
@@ -161,6 +155,12 @@ Join the [Discussions](https://github.com/milisp/codexia/discussions)
 - [jeremiahodom/codex-ui](https://github.com/jeremiahodom/codex-ui) - Node.js backend with API/SSE communication
 - [Itexoft/codexia](https://github.com/Itexoft/codexia) - SSH integration
 - [nuno5645/codexia](https://github.com/nuno5645/codexia) - add support for new reasoning and token count events
+
+## Related project
+- [codexia-zen](https://github.com/milisp/codexia-zen) - a minimalist design GUI for OpenAI Codex CLI, baby Codexia
+- [Codexsm](https://github.com/milisp/codexsm) - Codex cli session manager, rename, view, delete session file, one click resume session.
+- [MCP Linker](https://github.com/milisp/mcp-linker) - Tauri GUI for managing MCP for Codex CLI
+- [awesome-codex-cli](https://github.com/milisp/awesome-codex-cli) - A curated list of awesome resources, tools for OpenAI Codex CLI
 
 ## 💖 Contributors
 
