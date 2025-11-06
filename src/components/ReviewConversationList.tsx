@@ -1,11 +1,10 @@
-import { useMemo, useEffect, useState, useRef } from "react";
+import { useMemo, useEffect, useState } from "react";
 import {
   useConversationListStore,
   loadProjectSessions,
 } from "@/stores/useConversationListStore";
 import { useCodexStore } from "@/stores/useCodexStore";
 import { Button } from "./ui/button";
-import { Input } from "./ui/input";
 import { invoke } from "@/lib/tauri-proxy";
 import { EllipsisVertical, Trash2, Pencil } from "lucide-react";
 import {
@@ -15,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { renameConversation } from "@/utils/renameConversation";
+import RenameDialog from "@/components/RenameDialog";
 
 interface ReviewConversationListProps {
   activeSessionConversationId: string | null;
@@ -29,8 +29,6 @@ export function ReviewConversationList({
     useConversationListStore();
   const { cwd } = useCodexStore();
   const [editingConversationId, setEditingConversationId] = useState<string | null>(null);
-  const [editingValue, setEditingValue] = useState("");
-  const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (cwd) {
@@ -39,12 +37,7 @@ export function ReviewConversationList({
     }
   }, [cwd]);
 
-  useEffect(() => {
-    if (editingConversationId) {
-      inputRef.current?.focus();
-      inputRef.current?.select();
-    }
-  }, [editingConversationId]);
+  // Focus handled by RenameDialog
 
   const conversations = useMemo(() => {
     const base = conversationsByCwd[cwd || ""] || [];
@@ -59,16 +52,18 @@ export function ReviewConversationList({
   const loadedAll = loadedAllByCwd[cwd || ""] ?? false;
   const hasMore = hasMoreByCwd[cwd || ""] ?? false;
 
-  const handleRenameSubmit = async (conversationId: string) => {
+  const handleRenameSubmit = async (
+    conversationId: string,
+    nextPreview: string,
+  ) => {
     await renameConversation({
       conversationId,
-      nextPreview: editingValue,
+      nextPreview,
       cwd,
       conversations,
       updateConversationPreview,
     });
     setEditingConversationId(null);
-    setEditingValue("");
   };
 
   return (
@@ -83,34 +78,7 @@ export function ReviewConversationList({
             {conversations.map((conv) => {
               return (
                 <li key={conv.conversationId} className="flex">
-                  {editingConversationId === conv.conversationId ? (
-                    <form
-                      className={`flex-1 min-w-0 rounded-md px-3 py-1.5 text-sm font-medium ${
-                        activeSessionConversationId === conv.conversationId
-                          ? "bg-accent text-accent-foreground"
-                          : "text-muted-foreground"
-                      }`}
-                      onSubmit={(event) => {
-                        event.preventDefault();
-                        void handleRenameSubmit(conv.conversationId);
-                      }}
-                    >
-                      <Input
-                        ref={inputRef}
-                        value={editingValue}
-                        onChange={(event) => setEditingValue(event.target.value)}
-                        onKeyDown={(event) => {
-                          event.stopPropagation();
-                          if (event.key === "Escape") {
-                            setEditingConversationId(null);
-                            setEditingValue("");
-                          }
-                        }}
-                        className="h-7"
-                      />
-                    </form>
-                  ) : (
-                    <button
+                  <button
                       onClick={() => {
                         onSelectSessionConversation(conv.conversationId);
                       }}
@@ -122,7 +90,6 @@ export function ReviewConversationList({
                     >
                       <span className="truncate">{conv.preview}</span>
                     </button>
-                  )}
 
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -136,7 +103,6 @@ export function ReviewConversationList({
                         onClick={(event) => {
                           event.stopPropagation();
                           setEditingConversationId(conv.conversationId);
-                          setEditingValue(conv.preview ?? "");
                         }}
                       >
                         <Pencil className="h-4 w-4 mr-2" />
@@ -162,6 +128,26 @@ export function ReviewConversationList({
           </ul>
         )}
       </div>
+      <RenameDialog
+        open={editingConversationId !== null}
+        initialValue={
+          conversations.find((c) => c.conversationId === editingConversationId)
+            ?.preview || ""
+        }
+        title="Rename Conversation"
+        label="New name"
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingConversationId(null);
+          }
+        }}
+        onCancel={() => setEditingConversationId(null)}
+        onSubmit={(value) => {
+          if (editingConversationId) {
+            void handleRenameSubmit(editingConversationId, value);
+          }
+        }}
+      />
       {!loadedAll && hasMore ? (
         <div className="p-2 border-t">
           <Button

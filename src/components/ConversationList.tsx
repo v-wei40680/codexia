@@ -2,12 +2,10 @@ import {
   useMemo,
   useEffect,
   useState,
-  useRef,
   type SetStateAction,
   type Dispatch,
 } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import {
   Trash2,
   MoreVertical,
@@ -32,6 +30,7 @@ import { useActiveConversationStore } from "@/stores/useActiveConversationStore"
 import { Checkbox } from "@/components/ui/checkbox";
 import { useResumeConversation } from "@/hooks/useResumeConversation";
 import { renameConversation } from "@/utils/renameConversation";
+import RenameDialog from "@/components/RenameDialog";
 
 interface ConversationListProps {
   mode: string;
@@ -65,11 +64,7 @@ export function ConversationList({
   const { activeConversationId } = useActiveConversationStore();
   const { cwd } = useCodexStore();
   const { handleSelectConversation } = useResumeConversation();
-  const [editingConversationId, setEditingConversationId] = useState<
-    string | null
-  >(null);
-  const [editingValue, setEditingValue] = useState("");
-  const inputRef = useRef<HTMLInputElement | null>(null);
+  const [editingConversationId, setEditingConversationId] = useState<string | null>(null);
 
   useEffect(() => {
     if (cwd) {
@@ -77,12 +72,7 @@ export function ConversationList({
     }
   }, [cwd]);
 
-  useEffect(() => {
-    if (editingConversationId) {
-      inputRef.current?.focus();
-      inputRef.current?.select();
-    }
-  }, [editingConversationId]);
+  // No inline focus; handled by RenameDialog
 
   const favoriteIds = useMemo(() => {
     const list = favoriteConversationIdsByCwd[cwd || ""] ?? [];
@@ -141,16 +131,18 @@ export function ConversationList({
   const loadedAll = loadedAllByCwd[cwd || ""] ?? false;
   const hasMore = hasMoreByCwd[cwd || ""] ?? false;
 
-  const handleRenameSubmit = async (conversationId: string) => {
+  const handleRenameSubmit = async (
+    conversationId: string,
+    nextPreview: string,
+  ) => {
     await renameConversation({
       conversationId,
-      nextPreview: editingValue,
+      nextPreview,
       cwd,
       conversations,
       updateConversationPreview,
     });
     setEditingConversationId(null);
-    setEditingValue("");
   };
 
   return (
@@ -165,7 +157,6 @@ export function ConversationList({
             {conversations.map((conv) => {
               const isActive = activeConversationId === conv.conversationId;
               const isFavorite = favoriteIds.has(conv.conversationId);
-              const isEditing = editingConversationId === conv.conversationId;
               return (
                 <li key={conv.conversationId}>
                   <DropdownMenu>
@@ -189,36 +180,7 @@ export function ConversationList({
                           className="mr-2"
                         />
                       )}
-                      {isEditing ? (
-                        <form
-                          className={`flex-1 min-w-0 rounded-md px-3 py-1.5 text-sm font-medium ${
-                            isActive
-                              ? "bg-accent text-accent-foreground"
-                              : "text-muted-foreground"
-                          }`}
-                          onSubmit={(event) => {
-                            event.preventDefault();
-                            void handleRenameSubmit(conv.conversationId);
-                          }}
-                        >
-                          <Input
-                            ref={inputRef}
-                            value={editingValue}
-                            onChange={(event) =>
-                              setEditingValue(event.target.value)
-                            }
-                            onKeyDown={(event) => {
-                              event.stopPropagation();
-                              if (event.key === "Escape") {
-                                setEditingConversationId(null);
-                                setEditingValue("");
-                              }
-                            }}
-                            className="h-7"
-                          />
-                        </form>
-                      ) : (
-                        <button
+                      <button
                           onClick={() =>
                             handleSelectConversation(
                               conv.conversationId,
@@ -238,7 +200,6 @@ export function ConversationList({
                             ) : null}
                           </span>
                         </button>
-                      )}
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="ml-1">
                           <MoreVertical className="h-4 w-4" />
@@ -268,7 +229,6 @@ export function ConversationList({
                         onClick={(event) => {
                           event.stopPropagation();
                           setEditingConversationId(conv.conversationId);
-                          setEditingValue(conv.preview ?? "");
                         }}
                       >
                         <Pencil className="h-4 w-4 mr-2" />
@@ -306,6 +266,26 @@ export function ConversationList({
           </ul>
         )}
       </div>
+      <RenameDialog
+        open={editingConversationId !== null}
+        initialValue={
+          conversations.find((c) => c.conversationId === editingConversationId)
+            ?.preview || ""
+        }
+        title="Rename Conversation"
+        label="New name"
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingConversationId(null);
+          }
+        }}
+        onCancel={() => setEditingConversationId(null)}
+        onSubmit={(value) => {
+          if (editingConversationId) {
+            void handleRenameSubmit(editingConversationId, value);
+          }
+        }}
+      />
       {!loadedAll && hasMore ? (
         <div className="p-2 border-t">
           <Button
