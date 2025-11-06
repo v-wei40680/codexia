@@ -135,7 +135,7 @@ pub async fn load_project_sessions(project_path: String) -> Result<Value, String
             let mut cached_sessions = cache_data.sessions;
             let favorites = cache_data.favorites;
             let last_scanned = cache_data.last_scanned;
-            let last10_sessions = cache_data.last10_sessions;
+            let _last10_sessions = cache_data.last10_sessions;
 
             let ScanResult {
                 sessions: mut new_sessions,
