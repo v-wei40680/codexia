@@ -55,6 +55,10 @@ export function ReviewConversationList({
     });
   }, [conversationsByCwd, cwd]);
 
+  const { loadedAllByCwd, hasMoreByCwd } = useConversationListStore();
+  const loadedAll = loadedAllByCwd[cwd || ""] ?? false;
+  const hasMore = hasMoreByCwd[cwd || ""] ?? false;
+
   const handleRenameSubmit = async (conversationId: string) => {
     await renameConversation({
       conversationId,
@@ -158,6 +162,22 @@ export function ReviewConversationList({
           </ul>
         )}
       </div>
+      {!loadedAll && hasMore ? (
+        <div className="p-2 border-t">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full"
+            onClick={() => {
+              if (cwd) {
+                void loadProjectSessions(cwd, true);
+              }
+            }}
+          >
+            Load all
+          </Button>
+        </div>
+      ) : null}
     </nav>
   );
 }

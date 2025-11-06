@@ -6,6 +6,8 @@ interface ConversationListState {
   conversationsByCwd: Record<string, ConversationSummary[]>;
   conversationIndex: Record<string, string>;
   favoriteConversationIdsByCwd: Record<string, string[]>;
+  loadedAllByCwd: Record<string, boolean>;
+  hasMoreByCwd: Record<string, boolean>;
 }
 
 interface ConversationListActions {
@@ -35,6 +37,8 @@ export const useConversationListStore = create<
     conversationsByCwd: {},
     conversationIndex: {},
     favoriteConversationIdsByCwd: {},
+    loadedAllByCwd: {},
+    hasMoreByCwd: {},
 
     addConversation: async (cwd, summary) => {
       set((state) => {
@@ -171,27 +175,57 @@ export const useConversationListStore = create<
         conversationsByCwd: {},
         conversationIndex: {},
         favoriteConversationIdsByCwd: {},
+        loadedAllByCwd: {},
+        hasMoreByCwd: {},
       }),
   }),
 );
 
 // Helper to load project sessions from backend and update the store
-export async function loadProjectSessions(cwd: string) {
-  const { sessions, favorites } = await invoke("load_project_sessions", { projectPath: cwd }) as { sessions: any[], favorites: string[] };
+export async function loadProjectSessions(cwd: string, loadAll: boolean = false) {
+  let result: { sessions?: any[]; favorites?: string[]; last10sessions?: any[] } | null = null;
+  try {
+    result = (await invoke("load_project_sessions", { projectPath: cwd })) as {
+      sessions?: any[];
+      favorites?: string[];
+      last10sessions?: any[];
+    };
+  } catch (_) {
+    // Swallow and fall back to empty lists
+    result = { sessions: [], favorites: [], last10sessions: [] };
+  }
+
+  const sessions = result?.sessions ?? [];
+  const favorites = result?.favorites ?? [];
+  const last10sessions = result?.last10sessions ?? sessions.slice(0, 10);
   
   // Reset the store
   useConversationListStore.getState().reset();
   
-  // First set the favorites to prevent them from being cleared during sync
+  // First set the favorites and flags before adding items
   useConversationListStore.setState(state => ({
     favoriteConversationIdsByCwd: {
       ...state.favoriteConversationIdsByCwd,
       [cwd]: favorites ?? [],
-    }
+    },
+    loadedAllByCwd: {
+      ...state.loadedAllByCwd,
+      [cwd]: !!loadAll,
+    },
+    hasMoreByCwd: {
+      ...state.hasMoreByCwd,
+      [cwd]: (sessions?.length ?? 0) > (last10sessions?.length ?? 0),
+    },
   }));
-  
+
   // Then add each conversation/session (this will sync with the correct favorites)
-  for (const summary of sessions) {
-    await useConversationListStore.getState().addConversation(cwd, summary);
+  if (loadAll) {
+    for (const summary of sessions) {
+      await useConversationListStore.getState().addConversation(cwd, summary);
+    }
+  } else {
+    for (const summary of last10sessions) {
+      await useConversationListStore.getState().addConversation(cwd, summary);
+    }
   }
 }

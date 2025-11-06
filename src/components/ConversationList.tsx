@@ -59,6 +59,8 @@ export function ConversationList({
     favoriteConversationIdsByCwd,
     toggleFavorite,
     updateConversationPreview,
+    loadedAllByCwd,
+    hasMoreByCwd,
   } = useConversationListStore();
   const { activeConversationId } = useActiveConversationStore();
   const { cwd } = useCodexStore();
@@ -135,6 +137,9 @@ export function ConversationList({
 
     return "No conversations yet.";
   }, [mode, searchQuery]);
+
+  const loadedAll = loadedAllByCwd[cwd || ""] ?? false;
+  const hasMore = hasMoreByCwd[cwd || ""] ?? false;
 
   const handleRenameSubmit = async (conversationId: string) => {
     await renameConversation({
@@ -301,6 +306,22 @@ export function ConversationList({
           </ul>
         )}
       </div>
+      {!loadedAll && hasMore ? (
+        <div className="p-2 border-t">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="w-full"
+            onClick={() => {
+              if (cwd) {
+                void loadProjectSessions(cwd, true);
+              }
+            }}
+          >
+            Load all
+          </Button>
+        </div>
+      ) : null}
     </nav>
   );
 }
