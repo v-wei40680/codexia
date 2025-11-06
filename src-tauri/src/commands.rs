@@ -1,4 +1,4 @@
-use crate::services::{codex, remote};
+use crate::services::{codex, coder, remote};
 use crate::state::{RemoteAccessState, RemoteUiStatus};
 use tauri::{AppHandle, State};
 
@@ -7,6 +7,11 @@ pub use remote::RemoteUiConfigPayload;
 #[tauri::command]
 pub async fn check_codex_version() -> Result<String, String> {
     codex::check_codex_version().await
+}
+
+#[tauri::command]
+pub async fn check_coder_version() -> Result<String, String> {
+    coder::check_coder_version().await
 }
 
 #[tauri::command]

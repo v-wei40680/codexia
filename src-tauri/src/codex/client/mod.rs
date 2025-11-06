@@ -19,6 +19,7 @@ use tokio::process::{Child, ChildStdin, Command};
 use tokio::sync::{oneshot, Mutex};
 
 use crate::utils::codex_discovery::discover_codex_command;
+use crate::utils::coder_discovery::discover_coder_command;
 
 mod handlers;
 mod readers;
@@ -61,12 +62,27 @@ pub struct BackendErrorPayload {
 }
 
 impl CodexAppServerClient {
-    pub async fn spawn(app_handle: AppHandle) -> Result<Arc<Self>, String> {
-        let codex_path = discover_codex_command().ok_or_else(|| {
-            "Unable to locate codex binary. Install Codex CLI or set CODEX_PATH.".to_string()
-        })?;
+    pub async fn spawn(app_handle: AppHandle, client_name: &str) -> Result<Arc<Self>, String> {
+        // Determine which binary to launch based on client_name
+        let normalized = client_name.trim().to_lowercase();
+        let (binary_path, label) = if normalized == "coder" {
+            (
+                discover_coder_command().ok_or_else(|| {
+                    "Unable to locate coder binary. Install Coder CLI or set CODER_PATH.".to_string()
+                })?,
+                "coder",
+            )
+        } else {
+            (
+                discover_codex_command().ok_or_else(|| {
+                    "Unable to locate codex binary. Install Codex CLI or set CODEX_PATH.".to_string()
+                })?,
+                "codex",
+            )
+        };
+        println!("binary_path {:?}", binary_path);
 
-        let mut command = Command::new(codex_path);
+        let mut command = Command::new(binary_path);
         command
             .arg("app-server")
             .stdin(Stdio::piped())
@@ -76,7 +92,7 @@ impl CodexAppServerClient {
 
         let mut child_process = command
             .spawn()
-            .map_err(|err| format!("Failed to start codex app-server: {err}"))?;
+            .map_err(|err| format!("Failed to start {label} app-server: {err}"))?;
 
         let stdin = child_process
             .stdin

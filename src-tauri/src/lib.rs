@@ -13,10 +13,7 @@ mod terminal;
 mod utils;
 
 use crate::config::provider::ensure_default_providers;
-use commands::{
-    check_codex_version, create_new_window, disable_remote_ui, enable_remote_ui,
-    get_remote_ui_status,
-};
+use commands::{ check_codex_version, check_coder_version, create_new_window, disable_remote_ui, enable_remote_ui, get_remote_ui_status, };
 use filesystem::{
     directory_ops::{canonicalize_path, get_default_directories, read_directory, search_files},
     file_analysis::calculate_file_tokens,
@@ -72,6 +69,9 @@ pub fn run() {
         .manage(SleepState::default())
         .invoke_handler(tauri::generate_handler![
             check_codex_version,
+            check_coder_version,
+            state::get_client_name,
+            state::set_client_name,
             create_new_window,
             read_directory,
             get_default_directories,

@@ -9,6 +9,8 @@ interface LayoutState {
   showFileTree: boolean;
   showNotesList: boolean;
   showWebPreview: boolean;
+  // Header actions visibility
+  showHeaderActions: boolean;
   
   // Selected file
   selectedFile: string | null;
@@ -42,11 +44,13 @@ interface LayoutState {
   setChatPane: (visible: boolean) => void;
   setFileTree: (visible: boolean) => void;
   setWebPreview: (visible: boolean) => void;
+  setHeaderActions: (visible: boolean) => void;
   toggleSessionList: () => void;
   toggleNotesList: () => void;
   toggleChatPane: () => void;
   toggleFileTree: () => void;
   toggleWebPreview: () => void;
+  toggleHeaderActions: () => void;
   setWebPreviewUrl: (url: string | null) => void;
   openFile: (filePath: string) => void;
   closeFile: () => void;
@@ -68,6 +72,7 @@ export const useLayoutStore = create<LayoutState>()(
       showFileTree: true,
       showNotesList: true,
       showWebPreview: false,
+      showHeaderActions: true,
       selectedFile: null,
       webPreviewUrl: null,
       diffFile: null,
@@ -83,6 +88,7 @@ export const useLayoutStore = create<LayoutState>()(
       setChatPane: (visible) => set({ showChatPane: visible }),
       setFileTree: (visible) => set({ showFileTree: visible }),
       setWebPreview: (visible) => set({ showWebPreview: visible }),
+      setHeaderActions: (visible) => set({ showHeaderActions: visible }),
       
       toggleSessionList: () => set((state) => ({ 
         showSessionList: !state.showSessionList 
@@ -95,6 +101,7 @@ export const useLayoutStore = create<LayoutState>()(
       toggleChatPane: () => set((state) => ({ showChatPane: !state.showChatPane })),
       toggleFileTree: () => set((state) => ({ showFileTree: !state.showFileTree })),
       toggleWebPreview: () => set((state) => ({ showWebPreview: !state.showWebPreview })),
+      toggleHeaderActions: () => set((state) => ({ showHeaderActions: !state.showHeaderActions })),
       
       setWebPreviewUrl: (url) => set({ 
         webPreviewUrl: url,
@@ -148,6 +155,7 @@ export const useLayoutStore = create<LayoutState>()(
         showChatPane: state.showChatPane,
         showFileTree: state.showFileTree,
         showNotesList: state.showNotesList,
+        showHeaderActions: state.showHeaderActions,
         activeTab: state.activeTab,
         conversationListTab: state.conversationListTab,
         selectedLeftPanelTab: state.selectedLeftPanelTab,
