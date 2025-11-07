@@ -1,18 +1,15 @@
 import { invoke, listen } from "@/lib/tauri-proxy";
+import { handleTaskComplete } from "@/utils/handleTaskComplete";
 import { useEffect, useRef } from "react";
 import { ConversationId } from "@/bindings/ConversationId";
 import { CodexEvent } from "@/types/chat";
 import { useSessionStore } from "@/stores/useSessionStore";
-import { toast } from "sonner";
 import { useSystemSleepPrevention } from "../useSystemSleepPrevention";
 import { AddConversationSubscriptionResponse } from "@/bindings/AddConversationSubscriptionResponse";
 import { playBeep } from "@/utils/beep";
-
-export interface BackendErrorPayload {
-  code: number;
-  message: string;
-  data?: unknown;
-}
+import { useCodexStore } from "@/stores/useCodexStore";
+import { appendEventLine } from "@/utils/appendEventLine";
+import { useBackendErrorListener } from "@/utils/backendErrorListener";
 
 interface EventHandlers {
   isConversationReady?: boolean;
@@ -48,57 +45,36 @@ export function useConversationEvents(
   const handlersRef = useRef<EventHandlers>(handlers);
   const setIsBusy = useSessionStore((state) => state.setIsBusy);
   const latestEvent = useRef<CodexEvent | null>(null);
+  // Track turns that produced a patch; we create worktree at task_complete
+  const patchRecordedTurnsRef = useRef<Set<string>>(new Set());
+  const { cwd } = useCodexStore();
+  
+  // Extracted handler for task_complete logic
+  // (kept separate to keep this hook lean)
+  
 
   useSystemSleepPrevention(conversationId, latestEvent.current);
+  useBackendErrorListener();
 
   useEffect(() => {
     handlersRef.current = handlers;
   }, [handlers]);
 
   useEffect(() => {
-    let backendErrorUnlisten: (() => void) | null = null;
-
-    (async () => {
-      try {
-        backendErrorUnlisten = await listen<BackendErrorPayload>(
-          "codex:backend-error",
-          (event) => {
-            const { code, message } = event.payload;
-            toast.error(
-              `Backend error (code: ${code}): ${message || "Unknown error"}`,
-            );
-            setIsBusy(false);
-          },
-        );
-      } catch (err) {
-        const message =
-          err && typeof err === "object" && "message" in err
-            ? (err as any).message
-            : String(err);
-        toast.error(
-          "Failed to listen for backend errors:" +
-            (message ? ` ${message}` : ""),
-        );
-      }
-    })();
-
-    return () => {
-      backendErrorUnlisten?.();
-    };
-  }, [setIsBusy]);
-
-  useEffect(() => {
     if (!conversationId || !isConversationReady) return;
     let conversationUnlisten: (() => void) | null = null;
     let subscriptionId: string | null = null;
-    let listenerResponse: AddConversationSubscriptionResponse | null
+    let listenerResponse: AddConversationSubscriptionResponse | null;
 
     (async () => {
       try {
-        listenerResponse = await invoke<AddConversationSubscriptionResponse>("add_conversation_listener", {
-          params: { conversationId },
-        });
-        const subscriptionId = listenerResponse.subscriptionId;
+        listenerResponse = await invoke<AddConversationSubscriptionResponse>(
+          "add_conversation_listener",
+          {
+            params: { conversationId },
+          },
+        );
+        subscriptionId = listenerResponse.subscriptionId;
         console.debug(
           "add_conversation_listener subscriptionId:",
           subscriptionId,
@@ -106,13 +82,17 @@ export function useConversationEvents(
 
         conversationUnlisten = await listen(
           "codex:event",
-          (event: CodexEvent) => {
+          async (event: CodexEvent) => {
             const currentHandlers = handlersRef.current;
-            const {params} = event.payload
-            const {msg} = params
+            const { params } = event.payload;
+            const { msg } = params;
+            // Use conversationId as the worktree identifier; keep a per-turn key for tracking
+            const worktreeId = params.conversationId;
+            const turnKey = `${params.conversationId}:${params.id}`;
 
             if (!msg.type.endsWith("_delta")) {
-              console.log(msg.type, msg)
+              console.log(msg.type, msg);
+              await appendEventLine(conversationId, cwd, event);
             }
 
             latestEvent.current = event;
@@ -122,14 +102,27 @@ export function useConversationEvents(
               msg.type === "error" ||
               msg.type === "task_complete" ||
               msg.type === "turn_aborted";
-            if (busyOff) playBeep()
-            setIsBusy(!busyOff);
+            const busyOn = msg.type === "task_started";
+            if (busyOff) {
+              playBeep();
+              setIsBusy(false);
+            } else if (busyOn) {
+              setIsBusy(true);
+            }
 
             switch (msg.type) {
               case "task_started":
                 currentHandlers.onTaskStarted?.(event);
                 break;
               case "task_complete":
+                // Defer worktree commit logic to extracted helper
+                void handleTaskComplete({
+                  event,
+                  worktreeId,
+                  turnKey,
+                  cwd,
+                  patchRecordedTurnsRef,
+                });
                 currentHandlers.onTaskComplete?.(event);
                 break;
               case "agent_message":
@@ -154,6 +147,8 @@ export function useConversationEvents(
                 currentHandlers.onExecApprovalRequest?.(event);
                 break;
               case "apply_patch_approval_request":
+                // Mark that this turn had patch-related activity
+                patchRecordedTurnsRef.current.add(turnKey);
                 currentHandlers.onApplyPatchApprovalRequest?.(event);
                 break;
               case "exec_command_begin":
@@ -163,6 +158,8 @@ export function useConversationEvents(
                 currentHandlers.onExecCommandEnd?.(event);
                 break;
               case "patch_apply_begin":
+                // Record that this turn had patch activity; defer worktree creation to task_complete
+                patchRecordedTurnsRef.current.add(turnKey);
                 currentHandlers.onPatchApplyBegin?.(event);
                 break;
               case "patch_apply_end":
@@ -181,6 +178,7 @@ export function useConversationEvents(
                 currentHandlers.onMcpToolCallEnd?.(event);
                 break;
               case "turn_diff":
+                // We don't create worktrees on diff; defer to task_complete
                 currentHandlers.onTurnDiff?.(event);
                 break;
               case "token_count":

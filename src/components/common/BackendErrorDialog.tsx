@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { AlertTriangle } from "lucide-react";
-import type { BackendErrorPayload } from "@/hooks/useCodex/useConversationEvents";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -10,6 +9,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { BackendErrorPayload } from "@/utils/backendErrorListener";
 
 interface BackendErrorDialogProps {
   error: BackendErrorPayload | null;
