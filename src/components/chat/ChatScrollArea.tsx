@@ -47,19 +47,25 @@ export function ChatScrollArea({
           {events.map((event, index) => {
             const { conversationId, msg } = event.payload.params;
             const key = getEventKey(event, index);
-
             return (
               <div key={key} className="space-y-1">
                 <EventItem event={event} conversationId={conversationId} />
                 {import.meta.env.VITE_SHOW_EVENT_FOOTER === "true" &&
-                  <p className="text-xs text-muted-foreground">{msg.type}</p>
-                }
+                  !["token_count", "exec_command_output_delta"].includes(
+                    msg.type,
+                  ) &&
+                  !msg.type.startsWith("item_") && (
+                    <p className="text-xs text-muted-foreground">{msg.type}</p>
+                  )}
               </div>
             );
           })}
         </div>
       </ScrollArea>
-      <ScrollButtons scrollToTop={scrollToTop} scrollToBottom={scrollToBottom} />
+      <ScrollButtons
+        scrollToTop={scrollToTop}
+        scrollToBottom={scrollToBottom}
+      />
     </div>
   );
 }
