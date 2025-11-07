@@ -8,8 +8,7 @@ import { useConversationMetadataStore } from "@/stores/useConversationMetadataSt
 export function useConversation() {
   const { activeConversationId, setActiveConversationId } =
     useActiveConversationStore();
-  const metadata = useConversationMetadataStore((state) => state.metadata);
-  const setMetadata = useConversationMetadataStore((state) => state.setMetadata);
+  const { metadata, setMetadata } = useConversationMetadataStore();
 
   const createConversation = async (
     params: NewConversationParams,
