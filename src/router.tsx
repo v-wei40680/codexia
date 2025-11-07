@@ -4,7 +4,6 @@ import LoginPage from "@/pages/login";
 import ChatPage from "@/pages/chat";
 import ProjectsPage from "@/pages/projects";
 import SettingsPage from "./pages/settings";
-import ReviewPage from "./pages/review";
 import UsagePage from "./pages/usage";
 import { useDeepLink } from "./hooks/useDeepLink";
 import PublicUserPage from "./pages/user";
@@ -60,10 +59,6 @@ export const router = createHashRouter([
           {
             path: "chat",
             element: <ChatPage />,
-          },
-          {
-            path: "review",
-            element: <ReviewPage />,
           },
           {
             path: "settings",

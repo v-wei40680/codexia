@@ -8,7 +8,6 @@ import {
   Moon,
   Brain,
   ExternalLink,
-  History,
   BotMessageSquare,
 } from "lucide-react";
 import { Eye, EyeOff } from "lucide-react";
@@ -131,13 +130,6 @@ export function AppHeader() {
               title={t("header.usage")}
             >
               <BarChart3 className="w-4 h-4" />{t("header.usage")}
-            </Link>
-            <Link
-              to="/review"
-              className="flex hover:text-primary items-center gap-1"
-              title={t("header.review")}
-            >
-              <History className="w-5 h-5" />
             </Link>
 
             <Button
