@@ -48,10 +48,6 @@ export function useConversationEvents(
   // Track turns that produced a patch; we create worktree at task_complete
   const patchRecordedTurnsRef = useRef<Set<string>>(new Set());
   const { cwd } = useCodexStore();
-  
-  // Extracted handler for task_complete logic
-  // (kept separate to keep this hook lean)
-  
 
   useSystemSleepPrevention(conversationId, latestEvent.current);
   useBackendErrorListener();
@@ -75,11 +71,6 @@ export function useConversationEvents(
           },
         );
         subscriptionId = listenerResponse.subscriptionId;
-        console.debug(
-          "add_conversation_listener subscriptionId:",
-          subscriptionId,
-        );
-
         conversationUnlisten = await listen(
           "codex:event",
           async (event: CodexEvent) => {
