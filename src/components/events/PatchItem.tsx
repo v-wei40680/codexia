@@ -1,5 +1,4 @@
 import { FileChange } from "@/bindings/FileChange";
-import { DiffViewer } from "../filetree/DiffViewer";
 import { Badge } from "@/components/ui/badge";
 
 export const renderFileChanges = (changes: { [key: string]: FileChange }) => {
@@ -11,9 +10,6 @@ export const renderFileChanges = (changes: { [key: string]: FileChange }) => {
             Add
           </span>
           <Badge variant="secondary">{filePath}</Badge>
-          <code className="block whitespace-pre-wrap rounded bg-muted/50 px-2 py-1 font-mono text-xs">
-            {fileChange.add.content}
-          </code>
         </>
       ) : "delete" in fileChange ? (
         <>
@@ -21,9 +17,6 @@ export const renderFileChanges = (changes: { [key: string]: FileChange }) => {
             Delete
           </span>
           <Badge variant="secondary">{filePath}</Badge>
-          <code className="block whitespace-pre-wrap rounded bg-muted/50 px-2 py-1 font-mono text-xs">
-            {fileChange.delete.content}
-          </code>
         </>
       ) : "update" in fileChange ? (
         <>
@@ -32,7 +25,6 @@ export const renderFileChanges = (changes: { [key: string]: FileChange }) => {
           </span>
           <span>{fileChange.update.move_path}</span>
           <Badge variant="secondary">{filePath}</Badge>
-          <DiffViewer unifiedDiff={fileChange.update.unified_diff} />
         </>
       ) : (
         <p className="text-xs text-muted-foreground">
