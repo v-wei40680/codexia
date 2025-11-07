@@ -12,7 +12,6 @@ import { useEventStore } from "@/stores/useEventStore";
 import { ChatScrollArea } from "./chat/ChatScrollArea";
 import { useTokenCountStore } from "@/stores/useTokenCountStore";
 import { useTokenCount } from "@/hooks/useCodex/useTokenCount";
-// import { useResumeActiveConversation } from "@/hooks/useResumeActiveConversation";
 import { Button } from "@/components/ui/button";
 import { Files } from "lucide-react";
 import { TurnDiffPanel } from "./events/TurnDiffPanel";
@@ -26,36 +25,38 @@ export function ChatView() {
   const { inputValue, setInputValue } = useChatInputStore();
   const [diffPanelOpen, setDiffPanelOpen] = useState(false);
   const addTurnDiff = useTurnDiffStore((s) => s.addDiff);
-  const diffsByConversationId = useTurnDiffStore((s) => s.diffsByConversationId);
+  const { diffsByConversationId } = useTurnDiffStore();
   const currentEvents = activeConversationId
     ? events[activeConversationId] || []
     : [];
-  const { interrupt, isBusy, handleSendMessage } =
-    useSendMessage();
+  const { interrupt, isBusy, handleSendMessage } = useSendMessage();
 
   const { tokenUsages } = useTokenCountStore();
-  const tokenUsage = activeConversationId ? tokenUsages[activeConversationId] : null;
+  const tokenUsage = activeConversationId
+    ? tokenUsages[activeConversationId]
+    : null;
   const { handleTokenCount } = useTokenCount();
 
-  // useResumeActiveConversation(activeConversationId);
-
   // Memoize callbacks to prevent unnecessary re-subscriptions
-  const handleAnyEvent = useCallback((event: CodexEvent) => {
-    if (!activeConversationId) return;
-    const { msg } = event.payload.params;
-    if (msg.type === "turn_diff") {
-      const unified = msg.unified_diff as string | undefined;
-      const existing = diffsByConversationId[activeConversationId] || [];
-      if (!unified || existing.includes(unified)) {
-        return; // duplicate or invalid; skip entirely
+  const handleAnyEvent = useCallback(
+    (event: CodexEvent) => {
+      if (!activeConversationId) return;
+      const { msg } = event.payload.params;
+      if (msg.type === "turn_diff") {
+        const unified = msg.unified_diff as string | undefined;
+        const existing = diffsByConversationId[activeConversationId] || [];
+        if (!unified || existing.includes(unified)) {
+          return; // duplicate or invalid; skip entirely
+        }
+        // First add to store, then record event
+        addTurnDiff(activeConversationId, unified);
+        addEvent(activeConversationId, event);
+        return;
       }
-      // First add to store, then record event
-      addTurnDiff(activeConversationId, unified);
       addEvent(activeConversationId, event);
-      return;
-    }
-    addEvent(activeConversationId, event);
-  }, [activeConversationId, addEvent, addTurnDiff, diffsByConversationId]);
+    },
+    [activeConversationId, addEvent, addTurnDiff, diffsByConversationId],
+  );
 
   useConversationEvents(activeConversationId, {
     isConversationReady: conversationStatus === "ready",
@@ -82,7 +83,8 @@ export function ChatView() {
         ) : (
           <Introduce />
         )}
-        {(activeConversationId && (diffsByConversationId[activeConversationId]?.length || 0) > 0) ? (
+        {activeConversationId &&
+        (diffsByConversationId[activeConversationId]?.length || 0) > 0 ? (
           <div className="px-3 pb-2">
             <Button
               variant="outline"

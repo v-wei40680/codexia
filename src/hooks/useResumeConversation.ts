@@ -1,11 +1,9 @@
 import { useCallback } from "react";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
-
 import { useConversation } from "@/hooks/useCodex";
 import { useBuildNewConversationParams } from "@/hooks/useBuildNewConversationParams";
 import { useEventStore } from "@/stores/useEventStore";
 import { extractInitialMessages, type CodexEvent } from "@/types/chat";
-import { v4 } from "uuid";
 
 const pendingResumes = new Set<string>();
 
@@ -14,7 +12,6 @@ export const useResumeConversation = () => {
     addActiveConversationId,
     setActiveConversationId,
     activeConversationIds: rawActiveConversationIds,
-    clearPendingConversation,
   } = useActiveConversationStore();
   const { resumeConversation } = useConversation();
   const buildNewConversationParams = useBuildNewConversationParams();
@@ -32,13 +29,11 @@ export const useResumeConversation = () => {
         activeConversationIds.size === 0;
 
       if (!shouldResume) {
-        clearPendingConversation();
         setActiveConversationId(conversationId);
         return;
       }
 
       if (!path) {
-        clearPendingConversation();
         setActiveConversationId(conversationId);
         return;
       }
@@ -48,7 +43,6 @@ export const useResumeConversation = () => {
       }
 
       pendingResumes.add(conversationId);
-      clearPendingConversation();
       try {
         console.log("Resuming conversation", conversationId, path);
         const resumedConversation = await resumeConversation(
@@ -60,16 +54,22 @@ export const useResumeConversation = () => {
         addActiveConversationId(resumedConversation.conversationId);
         const initialMessages = extractInitialMessages(resumedConversation);
         if (initialMessages) {
+          let currentTurn = -1;
+          const baseId = Date.now();
           initialMessages.forEach(
-            (msg: CodexEvent["payload"]["params"]["msg"]) => {
+            (msg: CodexEvent["payload"]["params"]["msg"], idx: number) => {
+              if (msg.type === "user_message") {
+                currentTurn += 1;
+              }
+              const turnId = String(currentTurn === -1 ? 0 : currentTurn);
               addEvent(resumedConversation.conversationId, {
-                id: Date.now(),
+                id: baseId + idx,
                 event: "codex:event",
                 payload: {
                   method: `codex/event/${msg.type}`,
                   params: {
                     conversationId: resumedConversation.conversationId,
-                    id: v4(),
+                    id: turnId,
                     msg,
                   },
                 },
@@ -85,7 +85,6 @@ export const useResumeConversation = () => {
       rawActiveConversationIds,
       addEvent,
       buildNewConversationParams,
-      clearPendingConversation,
       resumeConversation,
       setActiveConversationId,
     ],

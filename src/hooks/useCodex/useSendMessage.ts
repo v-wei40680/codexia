@@ -12,13 +12,14 @@ import { useSessionStore } from "@/stores/useSessionStore";
 import { useProviderStore } from "@/stores/useProviderStore";
 
 export function useSendMessage() {
-  const {isBusy, setIsBusy} = useSessionStore();
+  const { isBusy, setIsBusy } = useSessionStore();
   const buildNewConversationParams = useBuildNewConversationParams();
   const { cwd } = useCodexStore();
   const { clearEvents } = useEventStore();
   const { createConversation, markConversationReady } = useConversation();
-  const {setActiveConversationId, clearPendingConversation, addActiveConversationId} = useActiveConversationStore();
-  const {selectedProviderId} = useProviderStore();
+  const { setActiveConversationId, addActiveConversationId } =
+    useActiveConversationStore();
+  const { selectedProviderId } = useProviderStore();
 
   const sendMessage = async (conversationId: string, items: InputItem[]) => {
     setIsBusy(true);
@@ -53,7 +54,6 @@ export function useSendMessage() {
 
     let currentConversationId =
       useActiveConversationStore.getState().activeConversationId;
-
     if (!currentConversationId) {
       currentConversationId = await handleCreateConversation(trimmedText);
     }
@@ -61,8 +61,6 @@ export function useSendMessage() {
     if (!currentConversationId) {
       return;
     }
-
-    clearPendingConversation();
 
     const params = buildMessageParams(
       currentConversationId,
@@ -81,7 +79,6 @@ export function useSendMessage() {
     const newConversation = await createConversation(
       buildNewConversationParams,
     );
-    clearPendingConversation();
     await useConversationListStore.getState().addConversation(cwd, {
       conversationId: newConversation.conversationId,
       preview,

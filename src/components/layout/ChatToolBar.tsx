@@ -14,7 +14,7 @@ export const ChatToolbar: React.FC = () => {
   const { showWebPreview, setWebPreviewUrl } = useLayoutStore();
   const { currentFolder } = useFolderStore();
   const { clearAll, requestFocus } = useChatInputStore();
-  const { startPendingConversation, activeConversationId } = useActiveConversationStore();
+  const { setActiveConversationId, activeConversationId } = useActiveConversationStore();
 
   const handleToggleWebPreview = async () => {
     if (showWebPreview) {
@@ -42,7 +42,7 @@ export const ChatToolbar: React.FC = () => {
     const handleShortcut = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === "n") {
         event.preventDefault();
-        startPendingConversation();
+        setActiveConversationId(null);
         clearAll();
         requestFocus();
       }
@@ -50,7 +50,7 @@ export const ChatToolbar: React.FC = () => {
 
     window.addEventListener("keydown", handleShortcut);
     return () => window.removeEventListener("keydown", handleShortcut);
-  }, [startPendingConversation, clearAll, requestFocus]);
+  }, [setActiveConversationId, clearAll, requestFocus]);
 
   return (
     <div className="flex justify-between gap-2 px-2 w-full">
@@ -58,7 +58,7 @@ export const ChatToolbar: React.FC = () => {
         <Button
           size="icon"
           onClick={() => {
-            startPendingConversation();
+            setActiveConversationId(null);
             clearAll();
             requestFocus();
           }}
