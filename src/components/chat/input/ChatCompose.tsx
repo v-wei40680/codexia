@@ -3,8 +3,6 @@ import { Sandbox } from "../../config/Sandbox";
 import { ProviderModels } from "@/components/config/provider-models";
 import { ReasoningEffortSelector } from "../../config/ReasoningEffortSelector";
 import type { MediaAttachment } from "@/types/chat";
-import { Button } from "@/components/ui/button";
-import { useNavigate } from "react-router-dom";
 import type { TokenUsage } from "@/bindings/TokenUsage";
 import { TokenCountInfo } from "../../common/TokenCountInfo";
 
@@ -25,7 +23,6 @@ export function ChatCompose({
   isBusy,
   tokenUsage,
 }: ChatComposeProps) {
-  const navigate = useNavigate();
   return (
     <div className="border-t bg-background px-2">
       <ChatInput
@@ -43,9 +40,7 @@ export function ChatCompose({
           <ReasoningEffortSelector />
           <TokenCountInfo usage={tokenUsage} />
         </span>
-        <Button onClick={() => navigate("/review")}>Review</Button>
       </div>
     </div>
   );
 }
-
