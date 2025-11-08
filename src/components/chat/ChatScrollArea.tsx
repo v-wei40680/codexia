@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { EventItem } from "@/components/events/EventItem";
 import type { CodexEvent } from "@/types/chat";
@@ -36,7 +36,12 @@ export function ChatScrollArea({
   events,
   activeConversationId,
 }: ChatScrollAreaProps) {
-  const { scrollContentRef, scrollToBottom, scrollToTop } = useChatScroll({
+  const {
+    scrollContentRef,
+    scrollToBottom,
+    scrollToTop,
+    isAutoScrollEnabled,
+  } = useChatScroll({
     activeConversationId,
   });
 
@@ -82,6 +87,11 @@ export function ChatScrollArea({
       return true;
     });
   }, [sortedEvents]);
+
+  useEffect(() => {
+    if (!isAutoScrollEnabled) return;
+    scrollToBottom();
+  }, [events.length, isAutoScrollEnabled, scrollToBottom]);
 
   return (
     <div className="relative flex-1 min-h-0">
