@@ -188,6 +188,7 @@ export function ConversationList({
                             handleSelectConversation(
                               conv.conversationId,
                               conv.path,
+                              cwd,
                             )
                           }
                           className={`flex-1 min-w-0 truncate text-left rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${

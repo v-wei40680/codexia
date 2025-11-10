@@ -4,6 +4,8 @@ import { useConversation } from "@/hooks/useCodex";
 import { useBuildNewConversationParams } from "@/hooks/useBuildNewConversationParams";
 import { useEventStore } from "@/stores/useEventStore";
 import { extractInitialMessages, type CodexEvent } from "@/types/chat";
+import { readEventMessages } from "@/utils/appendEventLine";
+import { exists, BaseDirectory } from '@tauri-apps/plugin-fs';
 
 const pendingResumes = new Set<string>();
 
@@ -18,7 +20,7 @@ export const useResumeConversation = () => {
   const { addEvent } = useEventStore();
 
   const handleSelectConversation = useCallback(
-    async (conversationId: string, path: string) => {
+    async (conversationId: string, path: string, cwd: string) => {
       const activeConversationIds =
         rawActiveConversationIds instanceof Set
           ? rawActiveConversationIds
@@ -52,30 +54,39 @@ export const useResumeConversation = () => {
         console.log("Resumed conversation", resumedConversation);
         setActiveConversationId(resumedConversation.conversationId);
         addActiveConversationId(resumedConversation.conversationId);
-        const initialMessages = extractInitialMessages(resumedConversation);
-        if (initialMessages) {
-          let currentTurn = -1;
-          const baseId = Date.now();
-          initialMessages.forEach(
-            (msg: CodexEvent["payload"]["params"]["msg"], idx: number) => {
-              if (msg.type === "user_message") {
-                currentTurn += 1;
-              }
-              const turnId = String(currentTurn === -1 ? 0 : currentTurn);
-              addEvent(resumedConversation.conversationId, {
-                id: baseId + idx,
-                event: "codex:event",
-                payload: {
-                  method: `codex/event/${msg.type}`,
-                  params: {
-                    conversationId: resumedConversation.conversationId,
-                    id: turnId,
-                    msg,
+        const eventsPath = `.codexia/projects/${btoa(cwd)}/${conversationId}.jsonl`
+        const eventsPathExists = await exists(eventsPath, {
+          baseDir: BaseDirectory.Home,
+        });
+        console.log("eventsPathExists", eventsPathExists)
+        if (eventsPathExists) {
+          await readEventMessages(eventsPath, conversationId, addEvent)
+        } else {
+          const initialMessages = extractInitialMessages(resumedConversation);
+          if (initialMessages) {
+            let currentTurn = -1;
+            const baseId = Date.now();
+            initialMessages.forEach(
+              (msg: CodexEvent["payload"]["params"]["msg"], idx: number) => {
+                if (msg.type === "user_message") {
+                  currentTurn += 1;
+                }
+                const turnId = String(currentTurn === -1 ? 0 : currentTurn);
+                addEvent(resumedConversation.conversationId, {
+                  id: baseId + idx,
+                  event: "codex:event",
+                  payload: {
+                    method: `codex/event/${msg.type}`,
+                    params: {
+                      conversationId: resumedConversation.conversationId,
+                      id: turnId,
+                      msg,
+                    },
                   },
-                },
-              });
-            },
-          );
+                });
+              },
+            );
+          }
         }
       } finally {
         pendingResumes.delete(conversationId);
