@@ -99,7 +99,7 @@ export function TurnDiffView({ content }: TurnDiffViewProps) {
         </div>
       </div>
       {isExpanded && (
-        <div className="border-t dark:border-gray-600">
+        <div className="border-t dark:border-gray-600 overflow-scroll max-h-96">
           <DiffViewer unifiedDiff={cleanedContent} />
         </div>
       )}
