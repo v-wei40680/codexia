@@ -1,7 +1,6 @@
-import { memo, useCallback } from "react";
+import { memo } from "react";
 import { MarkdownRenderer } from "@/components/chat/MarkdownRenderer";
 import { Badge } from "@/components/ui/badge";
-import { EventBubble } from "./EventBubble";
 import { formatAbortReason } from "./helpers";
 import { PlanDisplay } from "../chat/messages/PlanDisplay";
 import { TurnDiffView } from "./TurnDiffView";
@@ -14,9 +13,8 @@ import { MsgFooter } from "../chat/messages/MsgFooter";
 import { getStreamDurationLabel } from "@/utils/getDurationLable";
 import { PatchApplyBeginItem } from "./PatchApplyBeginItem";
 import { useTurnDiffStore } from "@/stores/useTurnDiffStore";
-import { useCodexStore } from "@/stores/useCodexStore";
-import { invoke } from "@/lib/tauri-proxy";
 import { useExecCommandStore } from "@/stores/useExecCommandStore";
+import { UserMessage } from "./UserMessage";
 
 export const EventItem = memo(function EventItem({
   event,
@@ -34,47 +32,20 @@ export const EventItem = memo(function EventItem({
   });
   const durationLabel = getStreamDurationLabel(event);
   const { diffsByConversationId } = useTurnDiffStore();
-  const popLatest = useTurnDiffStore((s) => s.popLatestDiff);
-  const { cwd } = useCodexStore();
   const canUndo =
     !!conversationId &&
     (diffsByConversationId[conversationId]?.length || 0) > 0;
 
-  const handleUndo = useCallback(async () => {
-    if (!conversationId) return;
-    const list = diffsByConversationId[conversationId] || [];
-    const latest = list[0];
-    if (!latest) return;
-    try {
-      const ok = await invoke<boolean>("apply_reverse_patch", {
-        unifiedDiff: latest,
-        directory: cwd,
-      });
-      if (ok) {
-        popLatest(conversationId);
-      }
-    } catch (e) {
-      console.error("Undo failed:", e);
-    }
-  }, [conversationId, diffsByConversationId, cwd, popLatest]);
   if (msg.type.endsWith("_delta")) return null;
   switch (msg.type) {
     case "user_message": {
       const messageText = msg.message;
       return (
-        <div className="group space-y-1">
-          <EventBubble align="end" variant="user">
-            <p className="whitespace-pre-wrap leading-relaxed">{messageText}</p>
-          </EventBubble>
-          <div className="opacity-0 group-hover:opacity-100 h-0 group-hover:h-auto overflow-hidden transition-all duration-200">
-            <MsgFooter
-              content={messageText}
-              align="end"
-              onUndo={handleUndo}
-              canUndo={canUndo}
-            />
-          </div>
-        </div>
+        <UserMessage
+          message={messageText}
+          conversationId={conversationId}
+          canUndo={canUndo}
+        />
       );
     }
     case "agent_message": {
