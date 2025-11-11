@@ -18,17 +18,18 @@ export const appendEventLine = async (
   }
 };
 
-export const readEventMessages = async(
+export const readEventMessages = async (
   eventsPath: string,
   conversationId: string,
-  addEvent: (conversationId: string, event: CodexEvent) => void,
-) => {
+): Promise<CodexEvent[]> => {
   const lines = await readTextFileLines(eventsPath, {
     baseDir: BaseDirectory.Home,
   });
   let currentTurn = -1;
   let eventIdx = 0;
   const baseId = Date.now();
+  const events: CodexEvent[] = [];
+  const turnDiffMessages = new Set<string>();
   for await (const line of lines) {
     if (!line.trim()) {
       console.warn("Skipping empty line in event log.");
@@ -46,18 +47,38 @@ export const readEventMessages = async(
       currentTurn += 1;
     }
     const turnId = String(currentTurn === -1 ? 0 : currentTurn);
-    addEvent(conversationId, {
-      id: baseId + eventIdx,
-      event: "codex:event",
-      payload: {
-        method: `codex/event/${msg.type}`,
-        params: {
-          conversationId,
-          id: turnId,
-          msg,
+    if (msg.type === 'turn_diff') {
+      if (!turnDiffMessages.has(msg.unified_diff)) {
+        turnDiffMessages.add(msg.unified_diff);
+        events.push({
+          id: baseId + eventIdx,
+          event: "codex:event",
+          payload: {
+            method: `codex/event/${msg.type}`,
+            params: {
+              conversationId,
+              id: turnId,
+              msg,
+            },
+          },
+        });
+      }
+    } else {
+      events.push({
+        id: baseId + eventIdx,
+        event: "codex:event",
+        payload: {
+          method: `codex/event/${msg.type}`,
+          params: {
+            conversationId,
+            id: turnId,
+            msg,
+          },
         },
-      },
-    });
+      });
+    }
     eventIdx++;
   }
-}
+
+  return events;
+};

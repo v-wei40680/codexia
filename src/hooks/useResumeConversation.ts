@@ -17,7 +17,7 @@ export const useResumeConversation = () => {
   } = useActiveConversationStore();
   const { resumeConversation } = useConversation();
   const buildNewConversationParams = useBuildNewConversationParams();
-  const { addEvent } = useEventStore();
+  const { setEvents } = useEventStore();
 
   const handleSelectConversation = useCallback(
     async (conversationId: string, path: string, cwd: string) => {
@@ -60,9 +60,14 @@ export const useResumeConversation = () => {
         });
         console.log("eventsPathExists", eventsPathExists)
         if (eventsPathExists) {
-          await readEventMessages(eventsPath, conversationId, addEvent)
+          const persistedEvents = await readEventMessages(
+            eventsPath,
+            conversationId,
+          );
+          setEvents(conversationId, persistedEvents);
         } else {
           const initialMessages = extractInitialMessages(resumedConversation);
+          const initialEvents: CodexEvent[] = [];
           if (initialMessages) {
             let currentTurn = -1;
             const baseId = Date.now();
@@ -72,7 +77,7 @@ export const useResumeConversation = () => {
                   currentTurn += 1;
                 }
                 const turnId = String(currentTurn === -1 ? 0 : currentTurn);
-                addEvent(resumedConversation.conversationId, {
+                initialEvents.push({
                   id: baseId + idx,
                   event: "codex:event",
                   payload: {
@@ -87,6 +92,7 @@ export const useResumeConversation = () => {
               },
             );
           }
+          setEvents(resumedConversation.conversationId, initialEvents);
         }
       } finally {
         pendingResumes.delete(conversationId);
@@ -94,10 +100,10 @@ export const useResumeConversation = () => {
     },
     [
       rawActiveConversationIds,
-      addEvent,
       buildNewConversationParams,
       resumeConversation,
       setActiveConversationId,
+      setEvents,
     ],
   );
 
