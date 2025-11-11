@@ -37,6 +37,7 @@ fork chat, file-tree integration, notepad, git diff, build-in pdf csv/xlsx viewe
 
 ## News
 
+- [11/11] git worktree and sync file changes to worktree to prevent accident delete all the changes. undo function.
 - [11/05] Usage Dashboard - Track your Codex usage and costs
 - [10/29] Review page, Rename chat title, manage `~/.codex/session` from GUI.
 - [10/24] Multilingual support - En, Zh and Ja.
