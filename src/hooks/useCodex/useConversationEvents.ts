@@ -38,6 +38,10 @@ interface EventHandlers {
   onError?: (event: CodexEvent) => void;
 }
 
+// Busy state event types
+const BUSY_OFF_EVENTS = new Set(["error", "task_complete", "turn_aborted"]);
+const BUSY_ON_EVENTS = new Set(["task_started"]);
+
 export function useConversationEvents(
   conversationId: ConversationId | null,
   { isConversationReady = false, ...handlers }: EventHandlers,
@@ -45,7 +49,6 @@ export function useConversationEvents(
   const handlersRef = useRef<EventHandlers>(handlers);
   const setIsBusy = useSessionStore((state) => state.setIsBusy);
   const latestEvent = useRef<CodexEvent | null>(null);
-  // Track turns that produced a patch; we create worktree at task_complete
   const patchRecordedTurnsRef = useRef<Set<string>>(new Set());
   const { cwd } = useCodexStore();
 
@@ -58,55 +61,52 @@ export function useConversationEvents(
 
   useEffect(() => {
     if (!conversationId || !isConversationReady) return;
+    
     let conversationUnlisten: (() => void) | null = null;
     let subscriptionId: string | null = null;
-    let listenerResponse: AddConversationSubscriptionResponse | null;
 
     (async () => {
       try {
-        listenerResponse = await invoke<AddConversationSubscriptionResponse>(
+        const listenerResponse = await invoke<AddConversationSubscriptionResponse>(
           "add_conversation_listener",
-          {
-            params: { conversationId },
-          },
+          { params: { conversationId } },
         );
         subscriptionId = listenerResponse.subscriptionId;
+        
         conversationUnlisten = await listen(
           "codex:event",
           async (event: CodexEvent) => {
             const currentHandlers = handlersRef.current;
             const { params } = event.payload;
             const { msg } = params;
-            // Use conversationId as the worktree identifier; keep a per-turn key for tracking
+            
             const worktreeId = params.conversationId;
             const turnKey = `${params.conversationId}:${params.id}`;
 
+            // Log non-delta events
             if (!msg.type.endsWith("_delta")) {
               console.log(msg.type, msg);
               await appendEventLine(conversationId, cwd, event);
             }
 
             latestEvent.current = event;
-
             currentHandlers.onAnyEvent?.(event);
-            const busyOff =
-              msg.type === "error" ||
-              msg.type === "task_complete" ||
-              msg.type === "turn_aborted";
-            const busyOn = msg.type === "task_started";
-            if (busyOff) {
+
+            // Handle busy state
+            if (BUSY_OFF_EVENTS.has(msg.type)) {
               playBeep();
               setIsBusy(false);
-            } else if (busyOn) {
+            } else if (BUSY_ON_EVENTS.has(msg.type)) {
               setIsBusy(true);
             }
 
+            // Dispatch to specific handlers
             switch (msg.type) {
               case "task_started":
                 currentHandlers.onTaskStarted?.(event);
                 break;
+              
               case "task_complete":
-                // Defer worktree commit logic to extracted helper
                 void handleTaskComplete({
                   event,
                   worktreeId,
@@ -116,73 +116,87 @@ export function useConversationEvents(
                 });
                 currentHandlers.onTaskComplete?.(event);
                 break;
-              case "agent_message":
-                currentHandlers.onAgentMessage?.(event);
-                break;
-              case "agent_message_content_delta":
-              case "agent_message_delta":
-                break;
+              
               case "user_message":
                 currentHandlers.onUserMessage?.(event);
                 break;
+              
+              case "agent_message":
+                currentHandlers.onAgentMessage?.(event);
+                break;
+              
+              case "agent_reasoning_section_break":
+                currentHandlers.onAgentReasoningSectionBreak?.(event);
+                break;
+              
+              case "exec_approval_request":
+                currentHandlers.onExecApprovalRequest?.(event);
+                break;
+              
+              case "apply_patch_approval_request":
+                patchRecordedTurnsRef.current.add(turnKey);
+                currentHandlers.onApplyPatchApprovalRequest?.(event);
+                break;
+              
+              case "exec_command_begin":
+                currentHandlers.onExecCommandBegin?.(event);
+                break;
+              
+              case "exec_command_end":
+                currentHandlers.onExecCommandEnd?.(event);
+                break;
+              
+              case "patch_apply_begin":
+                patchRecordedTurnsRef.current.add(turnKey);
+                currentHandlers.onPatchApplyBegin?.(event);
+                break;
+              
+              case "patch_apply_end":
+                currentHandlers.onPatchApplyEnd?.(event);
+                break;
+              
+              case "web_search_begin":
+                currentHandlers.onWebSearchBegin?.(event);
+                break;
+              
+              case "web_search_end":
+                currentHandlers.onWebSearchEnd?.(event);
+                break;
+              
+              case "mcp_tool_call_begin":
+                currentHandlers.onMcpToolCallBegin?.(event);
+                break;
+              
+              case "mcp_tool_call_end":
+                currentHandlers.onMcpToolCallEnd?.(event);
+                break;
+              
+              case "turn_diff":
+                currentHandlers.onTurnDiff?.(event);
+                break;
+              
+              case "token_count":
+                currentHandlers.onTokenCount?.(event);
+                break;
+              
+              case "stream_error":
+                console.log("stream_error:", event);
+                currentHandlers.onStreamError?.(event);
+                break;
+              
+              case "error":
+                console.log("error:", event);
+                currentHandlers.onError?.(event);
+                break;
+              
+              // Ignored events
+              case "agent_message_content_delta":
+              case "agent_message_delta":
               case "agent_reasoning":
               case "agent_reasoning_delta":
               case "agent_reasoning_raw_content_delta":
               case "reasoning_content_delta":
               case "reasoning_raw_content_delta":
-                break;
-              case "agent_reasoning_section_break":
-                currentHandlers.onAgentReasoningSectionBreak?.(event);
-                break;
-              case "exec_approval_request":
-                currentHandlers.onExecApprovalRequest?.(event);
-                break;
-              case "apply_patch_approval_request":
-                // Mark that this turn had patch-related activity
-                patchRecordedTurnsRef.current.add(turnKey);
-                currentHandlers.onApplyPatchApprovalRequest?.(event);
-                break;
-              case "exec_command_begin":
-                currentHandlers.onExecCommandBegin?.(event);
-                break;
-              case "exec_command_end":
-                currentHandlers.onExecCommandEnd?.(event);
-                break;
-              case "patch_apply_begin":
-                // Record that this turn had patch activity; defer worktree creation to task_complete
-                patchRecordedTurnsRef.current.add(turnKey);
-                currentHandlers.onPatchApplyBegin?.(event);
-                break;
-              case "patch_apply_end":
-                currentHandlers.onPatchApplyEnd?.(event);
-                break;
-              case "web_search_begin":
-                currentHandlers.onWebSearchBegin?.(event);
-                break;
-              case "web_search_end":
-                currentHandlers.onWebSearchEnd?.(event);
-                break;
-              case "mcp_tool_call_begin":
-                currentHandlers.onMcpToolCallBegin?.(event);
-                break;
-              case "mcp_tool_call_end":
-                currentHandlers.onMcpToolCallEnd?.(event);
-                break;
-              case "turn_diff":
-                // We don't create worktrees on diff; defer to task_complete
-                currentHandlers.onTurnDiff?.(event);
-                break;
-              case "token_count":
-                currentHandlers.onTokenCount?.(event);
-                break;
-              case "stream_error":
-                console.log("stream_error:", event);
-                currentHandlers.onStreamError?.(event);
-                break;
-              case "error":
-                console.log("error:", event);
-                currentHandlers.onError?.(event);
-                break;
               case "plan_update":
               case "item_started":
               case "item_completed":
@@ -190,11 +204,9 @@ export function useConversationEvents(
               case "exec_command_output_delta":
               case "turn_aborted":
                 break;
+              
               default:
-                console.warn(
-                  `Unknown event.id ${event.id} msg.type:`,
-                  msg.type,
-                );
+                console.warn(`Unknown event type: ${msg.type}`, event);
             }
           },
         );
@@ -212,5 +224,5 @@ export function useConversationEvents(
       }
       setIsBusy(false);
     };
-  }, [conversationId, isConversationReady, setIsBusy]);
+  }, [conversationId, isConversationReady, setIsBusy, cwd]);
 }
