@@ -5,6 +5,7 @@ import type { CodexEvent } from "@/types/chat";
 import { DELTA_EVENT_TYPES } from "@/types/chat";
 import { useChatScroll } from "@/hooks/useChatScroll";
 import { ScrollButtons } from "./actions/ScrollButtons";
+import { EventMsgType } from "./EventMsgType";
 
 // Build a stable key for React list rendering. Avoid index-based keys.
 const getEventKey = (event: CodexEvent): string => {
@@ -103,13 +104,7 @@ export function ChatScrollArea({
             return (
               <div key={key} className="space-y-1">
                 <EventItem event={event} conversationId={conversationId} />
-                {import.meta.env.VITE_SHOW_EVENT_FOOTER === "true" &&
-                  !["token_count", "exec_command_output_delta"].includes(
-                    msg.type,
-                  ) &&
-                  !msg.type.startsWith("item_") && (
-                    <p className="text-xs text-muted-foreground">{msg.type}</p>
-                  )}
+                <EventMsgType msgType={msg.type} />
               </div>
             );
           })}
