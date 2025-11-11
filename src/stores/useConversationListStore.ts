@@ -187,21 +187,21 @@ export const useConversationListStore = create<
 
 // Helper to load project sessions from backend and update the store
 export async function loadProjectSessions(cwd: string, loadAll: boolean = false) {
-  let result: { sessions?: any[]; favorites?: string[]; last10sessions?: any[] } | null = null;
+  let result: { sessions?: any[]; favorites?: string[]; last10Sessions?: any[] } | null = null;
   try {
     result = (await invoke("load_project_sessions", { projectPath: cwd })) as {
       sessions?: any[];
       favorites?: string[];
-      last10sessions?: any[];
+      last10Sessions?: any[];
     };
   } catch (_) {
     // Swallow and fall back to empty lists
-    result = { sessions: [], favorites: [], last10sessions: [] };
+    result = { sessions: [], favorites: [], last10Sessions: [] };
   }
 
   const sessions = result?.sessions ?? [];
   const favorites = result?.favorites ?? [];
-  const last10sessions = result?.last10sessions ?? sessions.slice(0, 10);
+  const last10Sessions = result?.last10Sessions ?? sessions.slice(0, 10);
   
   // Reset the store
   useConversationListStore.getState().reset();
@@ -218,11 +218,11 @@ export async function loadProjectSessions(cwd: string, loadAll: boolean = false)
     },
     hasMoreByCwd: {
       ...state.hasMoreByCwd,
-      [cwd]: (sessions?.length ?? 0) > (last10sessions?.length ?? 0),
+      [cwd]: (sessions?.length ?? 0) > (last10Sessions?.length ?? 0),
     },
   }));
 
-  console.log("last10sessions", last10sessions)
+  console.log("last10Sessions", last10Sessions)
 
   // Then add each conversation/session (this will sync with the correct favorites)
   if (loadAll) {
@@ -230,7 +230,7 @@ export async function loadProjectSessions(cwd: string, loadAll: boolean = false)
       await useConversationListStore.getState().addConversation(cwd, summary);
     }
   } else {
-    for (const summary of last10sessions) {
+    for (const summary of last10Sessions) {
       await useConversationListStore.getState().addConversation(cwd, summary);
     }
   }
