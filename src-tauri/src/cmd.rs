@@ -185,6 +185,93 @@ pub async fn delete_file(path: String) -> Result<(), String> {
         })
 }
 
+#[tauri::command]
+pub async fn update_conversation_preview(
+    session_path: String,
+    new_text: String,
+) -> Result<(), String> {
+    use tokio::io::{AsyncWriteExt};
+    use tokio::fs::File;
+    use serde_json::Value;
+
+    info!(
+        "Updating conversation message text in {}. New: \"{}\"",
+        &session_path, &new_text
+    );
+
+    let path_buf = PathBuf::from(&session_path);
+    let content = tokio::fs::read_to_string(&path_buf)
+        .await
+        .map_err(|e| format!("Failed to read file {}: {}", session_path, e))?;
+
+    let mut modified_lines: Vec<String> = Vec::new();
+    let mut updated_third_line = false;
+    let mut updated_fourth_line = false;
+
+    for (index, line) in content.lines().enumerate() {
+        let mut json: Value = serde_json::from_str(line)
+            .map_err(|e| format!("Failed to parse JSON from line: {}. Error: {}", line, e))?;
+
+        if index == 2 && !updated_third_line { // Target the third line (0-indexed)
+            if let Some(item_type) = json.get("type").and_then(|v| v.as_str()) {
+                if item_type == "response_item" {
+                    if let Some(payload) = json.get_mut("payload") {
+                        if let Some(payload_type) = payload.get("type").and_then(|v| v.as_str()) {
+                            if payload_type == "message" {
+                                if let Some(role) = payload.get("role").and_then(|v| v.as_str()) {
+                                    if role == "user" {
+                                        if let Some(content_array) = payload.get_mut("content").and_then(|v| v.as_array_mut()) {
+                                            if let Some(first_content_item) = content_array.get_mut(0) {
+                                                if let Some(text_type) = first_content_item.get("type").and_then(|v| v.as_str()) {
+                                                    if text_type == "input_text" {
+                                                        first_content_item["text"] = Value::String(new_text.clone());
+                                                        updated_third_line = true;
+                                                        info!("Updated message text in session file on line 3.");
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        } else if index == 3 && !updated_fourth_line { // Target the fourth line (0-indexed)
+            if let Some(item_type) = json.get("type").and_then(|v| v.as_str()) {
+                if item_type == "event_msg" {
+                    if let Some(payload) = json.get_mut("payload") {
+                        if let Some(message_field) = payload.get_mut("message") {
+                            if message_field.is_string() {
+                                *message_field = Value::String(new_text.clone());
+                                updated_fourth_line = true;
+                                info!("Updated message text in session file on line 4.");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        modified_lines.push(serde_json::to_string(&json).map_err(|e| format!("Failed to serialize JSON to string: {}", e))?);
+    }
+
+    let mut file = File::create(&path_buf)
+        .await
+        .map_err(|e| format!("Failed to create file {}: {}", session_path, e))?;
+
+    for line in modified_lines {
+        file.write_all(line.as_bytes())
+            .await
+            .map_err(|e| format!("Failed to write to file {}: {}", session_path, e))?;
+        file.write_all(b"\n")
+            .await
+            .map_err(|e| format!("Failed to write newline to file {}: {}", session_path, e))?;
+    }
+
+    Ok(())
+}
+
 fn parse_review_decision(decision: &str) -> Result<ReviewDecision, String> {
     let normalized = decision.trim().to_lowercase().replace('-', "_");
     match normalized.as_str() {
