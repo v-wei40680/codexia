@@ -123,7 +123,8 @@ fn write_project_cache_with_metadata(
 /// Write updated cache to disk
 #[tauri::command]
 pub fn write_project_cache(project_path: String, sessions: Vec<Value>, favorites: Vec<String>) -> Result<(), String> {
-    write_project_cache_with_metadata(&project_path, sessions, favorites, Vec::new(), None)
+    let last10_sessions = sessions.iter().take(10).cloned().collect();
+    write_project_cache_with_metadata(&project_path, sessions, favorites, last10_sessions, None)
 }
 
 /// Main tauri command: load or refresh sessions for given project

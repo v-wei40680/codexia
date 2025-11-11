@@ -1,5 +1,8 @@
 use std::fs;
 use std::path::Path;
+use std::sync::{Mutex, OnceLock};
+
+static APPEND_JSONL_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
 
 #[tauri::command]
 pub async fn read_file(file_path: String) -> Result<String, String> {
@@ -79,6 +82,12 @@ pub async fn append_jsonl_file(file_path: String, event_json: String) -> Result<
                 .map_err(|e| format!("Failed to create directory: {}", e))?;
         }
     }
+
+    let lock = APPEND_JSONL_LOCK
+        .get_or_init(|| Mutex::new(()));
+    let _guard = lock
+        .lock()
+        .map_err(|e| format!("Failed to acquire append lock: {}", e))?;
 
     let mut file = fs::OpenOptions::new()
         .create(true)
