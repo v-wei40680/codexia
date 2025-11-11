@@ -12,10 +12,10 @@ import { useEventStore } from "@/stores/useEventStore";
 import { ChatScrollArea } from "./chat/ChatScrollArea";
 import { useTokenCountStore } from "@/stores/useTokenCountStore";
 import { useTokenCount } from "@/hooks/useCodex/useTokenCount";
-import { Button } from "@/components/ui/button";
-import { Files } from "lucide-react";
 import { TurnDiffPanel } from "./events/TurnDiffPanel";
+import { TurnDiffActions } from "./events/TurnDiffActions";
 import { useTurnDiffStore } from "@/stores/useTurnDiffStore";
+import { useExecCommandStore } from "@/stores/useExecCommandStore";
 
 export function ChatView() {
   useCodexApprovalRequests();
@@ -23,6 +23,7 @@ export function ChatView() {
   const { activeConversationId } = useActiveConversationStore();
   const { events, addEvent } = useEventStore();
   const { inputValue, setInputValue } = useChatInputStore();
+  const setExecCommandStatus = useExecCommandStore((state) => state.setStatus);
   const [diffPanelOpen, setDiffPanelOpen] = useState(false);
   const addTurnDiff = useTurnDiffStore((s) => s.addDiff);
   const { diffsByConversationId } = useTurnDiffStore();
@@ -58,10 +59,22 @@ export function ChatView() {
     [activeConversationId, addEvent, addTurnDiff, diffsByConversationId],
   );
 
+  const handleExecCommandEnd = useCallback(
+    (event: CodexEvent) => {
+      const { msg } = event.payload.params;
+      if (msg.type !== "exec_command_end" || !("call_id" in msg)) {
+        return;
+      }
+      setExecCommandStatus(msg.call_id, msg.exit_code);
+    },
+    [setExecCommandStatus],
+  );
+
   useConversationEvents(activeConversationId, {
     isConversationReady: conversationStatus === "ready",
     onTokenCount: handleTokenCount,
     onAnyEvent: handleAnyEvent,
+    onExecCommandEnd: handleExecCommandEnd,
   });
 
   const handleInputChange = useCallback(
@@ -83,19 +96,10 @@ export function ChatView() {
         ) : (
           <Introduce />
         )}
-        {activeConversationId &&
-        (diffsByConversationId[activeConversationId]?.length || 0) > 0 ? (
-          <div className="px-3 pb-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => setDiffPanelOpen(true)}
-            >
-              <Files className="h-4 w-4" />
-              File change
-            </Button>
-          </div>
-        ) : null}
+        <TurnDiffActions
+          onOpenDiffPanel={() => setDiffPanelOpen(true)}
+          onCloseDiffPanel={() => setDiffPanelOpen(false)}
+        />
         <ChatCompose
           inputValue={inputValue}
           onInputChange={handleInputChange}

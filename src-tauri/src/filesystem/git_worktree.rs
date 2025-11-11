@@ -36,6 +36,45 @@ fn expand_tilde(path: &str) -> PathBuf {
     PathBuf::from(path)
 }
 
+fn find_repo_root_from_gitdir(gitdir: &Path) -> Option<PathBuf> {
+    let mut current = Some(gitdir);
+    while let Some(dir) = current {
+        if dir.file_name().and_then(|name| name.to_str()) == Some(".git") {
+            return dir.parent().map(|parent| parent.to_path_buf());
+        }
+        current = dir.parent();
+    }
+    None
+}
+
+fn resolve_main_repo_root_for_worktree(worktree_path: &Path) -> Option<PathBuf> {
+    let dot_git = worktree_path.join(".git");
+
+    if dot_git.is_file() {
+        let contents = fs::read_to_string(&dot_git).ok()?;
+        let gitdir_value = contents
+            .lines()
+            .filter_map(|line| line.trim().strip_prefix("gitdir:"))
+            .map(str::trim)
+            .next()?;
+
+        let gitdir_path = Path::new(gitdir_value);
+        let resolved_gitdir = if gitdir_path.is_absolute() {
+            gitdir_path.to_path_buf()
+        } else {
+            worktree_path.join(gitdir_path)
+        };
+
+        return find_repo_root_from_gitdir(&resolved_gitdir);
+    }
+
+    if dot_git.is_dir() {
+        return Some(worktree_path.to_path_buf());
+    }
+
+    None
+}
+
 #[derive(Serialize)]
 pub struct PrepareWorktreeResult {
     pub prepared: bool,
@@ -346,6 +385,69 @@ pub async fn commit_changes_to_worktree(turn_id: String, message: String, direct
 
     Ok(PrepareWorktreeResult {
         prepared: true,
+        path: Some(worktree_path.to_string_lossy().to_string()),
+        reason: None,
+    })
+}
+
+#[derive(Serialize)]
+pub struct DeleteWorktreeResult {
+    pub removed: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+}
+
+#[tauri::command]
+pub async fn delete_git_worktree(turn_id: String, directory: Option<String>) -> Result<DeleteWorktreeResult, String> {
+    let start_dir = directory
+        .as_deref()
+        .map(expand_tilde);
+    let start_dir_ref = start_dir.as_deref();
+
+    let git_root = match find_git_root(start_dir_ref) {
+        Some(p) => p,
+        None => {
+            return Ok(DeleteWorktreeResult {
+                removed: false,
+                path: None,
+                reason: Some("Not a git repository".into()),
+            })
+        }
+    };
+
+    let base = expand_tilde("~/.codexia/worktrees");
+    let worktree_path = base.join(format!("codex-turn-{}", turn_id));
+
+    if !worktree_path.exists() {
+        return Ok(DeleteWorktreeResult {
+            removed: false,
+            path: Some(worktree_path.to_string_lossy().to_string()),
+            reason: Some("Worktree does not exist".into()),
+        });
+    }
+
+    let remove_root = resolve_main_repo_root_for_worktree(&worktree_path).unwrap_or_else(|| git_root.clone());
+
+    let status = Command::new("git")
+        .args(["worktree", "remove", "--force", worktree_path.to_string_lossy().as_ref()])
+        .current_dir(&remove_root)
+        .status()
+        .map_err(|e| format!("Failed to execute git worktree remove: {}", e))?;
+
+    if !status.success() {
+        return Err("git worktree remove failed".into());
+    }
+
+    if let Err(err) = fs::remove_dir_all(&worktree_path) {
+        if err.kind() != std::io::ErrorKind::NotFound {
+            return Err(format!("Failed to remove worktree directory: {}", err));
+        }
+    }
+
+    Ok(DeleteWorktreeResult {
+        removed: true,
         path: Some(worktree_path.to_string_lossy().to_string()),
         reason: None,
     })

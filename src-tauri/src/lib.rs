@@ -21,7 +21,13 @@ use filesystem::{
     file_parsers::{csv::read_csv_content, pdf::read_pdf_content, xlsx::read_xlsx_content},
     git_diff::get_git_file_diff,
     git_status::get_git_status,
-    git_worktree::{prepare_git_worktree, git_commit_changes, apply_reverse_patch, commit_changes_to_worktree},
+    git_worktree::{
+        prepare_git_worktree,
+        git_commit_changes,
+        apply_reverse_patch,
+        commit_changes_to_worktree,
+        delete_git_worktree,
+    },
     watch::{start_watch_directory, stop_watch_directory},
 };
 use mcp::{add_mcp_server, delete_mcp_server, read_mcp_servers};
@@ -90,6 +96,7 @@ pub fn run() {
             prepare_git_worktree,
             git_commit_changes,
             apply_reverse_patch,
+            delete_git_worktree,
             commit_changes_to_worktree,
             start_watch_directory,
             stop_watch_directory,
