@@ -43,12 +43,6 @@ export async function renameConversation({
       preview: nextPreview,
     });
 
-    // Update the message text in the session file
-    await invoke("update_conversation_preview", {
-      sessionPath: conversation.path,
-      newText: nextPreview,
-    });
-
     return true;
   } catch (error) {
     console.error("Failed to update conversation title", error);

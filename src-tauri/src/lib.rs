@@ -132,7 +132,6 @@ pub fn run() {
             load_project_sessions,
             delete_session_file,
             update_cache_title,
-            cmd::update_conversation_preview,
             open_terminal_with_command,
             delete_sessions_files,
             write_project_cache,
