@@ -59,6 +59,12 @@ export function ChatScrollArea({
     return events
       .map((e, i) => ({ e, i }))
       .sort((a, b) => {
+        const aPersisted = a.e.meta?.persisted ?? false;
+        const bPersisted = b.e.meta?.persisted ?? false;
+        if (aPersisted !== bPersisted) {
+          return aPersisted ? -1 : 1;
+        }
+
         const aid = Number(a.e.payload.params.id);
         const bid = Number(b.e.payload.params.id);
         const aNum = Number.isFinite(aid);
@@ -85,6 +91,7 @@ export function ChatScrollArea({
       const t = e.payload.params.msg.type;
       if (DELTA_EVENT_TYPES.has(t)) return false;
       if (t === "exec_command_output_delta") return false;
+      if (t === "item_started" || t === "item_completed") return false;
       return true;
     });
   }, [sortedEvents]);
@@ -98,9 +105,9 @@ export function ChatScrollArea({
     <div className="relative flex-1 min-h-0">
       <ScrollArea className="h-full">
         <div ref={scrollContentRef} className="space-y-4 p-4">
-          {renderEvents.map((event) => {
+          {renderEvents.map((event, index) => {
             const { conversationId, msg } = event.payload.params;
-            const key = getEventKey(event);
+            const key = `${getEventKey(event)}-${index}`;
             return (
               <div key={key} className="space-y-1">
                 <EventItem event={event} conversationId={conversationId} />

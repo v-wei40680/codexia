@@ -4,6 +4,7 @@ export interface EventMeta {
   streamKey?: string;
   streamStartedAt?: number;
   streamDurationMs?: number;
+  persisted?: boolean;
 }
 
 export interface CodexEvent {
