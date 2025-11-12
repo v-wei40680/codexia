@@ -47,7 +47,7 @@ export function AppHeader() {
   return (
     <div
       data-tauri-drag-region
-      className="flex justify-between items-center px-3 py-1 border-b bg-background/80 backdrop-blur-sm shadow-sm"
+      className="flex justify-between items-center pr-4 border-b bg-background/80 backdrop-blur-sm shadow-sm"
     >
       {/* Left Section */}
       <div className="flex items-center gap-2">
@@ -74,7 +74,6 @@ export function AppHeader() {
           onClick={handleNewWindow}
           className="h-6 w-6"
           title={t("header.openNewWindow")}
-          aria-label={t("header.openNewWindow")}
         >
           <ExternalLink />
         </Button>
@@ -86,7 +85,6 @@ export function AppHeader() {
             onClick={toggleFileTree}
             className={`h-6 w-6 ${showFileTree ? "bg-primary/20" : ""}`}
             title={t("header.toggleChatPane")}
-            aria-label={t("header.toggleChatPane")}
           >
             <PanelLeft />
           </Button>
@@ -100,11 +98,6 @@ export function AppHeader() {
           className="h-6 w-6"
           onClick={toggleHeaderActions}
           title={
-            showHeaderActions
-              ? t("header.hideHeaderActions")
-              : t("header.showHeaderActions")
-          }
-          aria-label={
             showHeaderActions
               ? t("header.hideHeaderActions")
               : t("header.showHeaderActions")
@@ -137,7 +130,6 @@ export function AppHeader() {
               onClick={toggleChatPane}
               className="h-6 w-6"
               title={t("header.toggleChatPane")}
-              aria-label={t("header.toggleChatPane")}
             >
               <Brain />
             </Button>
@@ -147,7 +139,6 @@ export function AppHeader() {
               className="h-6 w-6"
               onClick={toggleTheme}
               title={t("header.toggleTheme")}
-              aria-label={t("header.toggleTheme")}
             >
               {theme === "dark" ? <Sun /> : <Moon />}
             </Button>
