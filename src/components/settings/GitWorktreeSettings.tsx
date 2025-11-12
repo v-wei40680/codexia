@@ -35,3 +35,24 @@ export function GitWorktreeSettings() {
     </Card>
   );
 }
+
+export function SimpleGitWorktreeSettings() {
+  const { autoCommitGitWorktree, setAutoCommitGitWorktree } = useSettingsStore();
+
+  return (
+    <div className="flex items-start justify-between gap-4 rounded-md border p-4">
+      <div>
+        <p className="text-sm font-medium">Auto-commit to worktrees</p>
+        <p className="text-xs text-muted-foreground">
+          When enabled, task completion events will prepare a conversation-specific git worktree,
+          copy changes, and create a commit under <code>~/.codexia/worktrees</code>.
+        </p>
+      </div>
+      <Switch
+        checked={autoCommitGitWorktree}
+        onCheckedChange={setAutoCommitGitWorktree}
+      />
+    </div>
+  );
+}
+
