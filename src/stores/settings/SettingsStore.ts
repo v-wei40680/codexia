@@ -19,6 +19,8 @@ interface SettingsStore {
   setWindowTitle: (title: string) => void;
   autoCommitGitWorktree: boolean;
   setAutoCommitGitWorktree: (enabled: boolean) => void;
+  enableTaskCompleteBeep: boolean;
+  setEnableTaskCompleteBeep: (enabled: boolean) => void;
 }
 
 const DEFAULT_EXCLUDE_FOLDERS = [
@@ -47,6 +49,7 @@ export const useSettingsStore = create<SettingsStore>()(
       },
       windowTitle: "Codexia",
       autoCommitGitWorktree: true,
+      enableTaskCompleteBeep: true,
       addExcludeFolder: (folder: string) =>
         set((state) => ({
           excludeFolders: [...state.excludeFolders, folder],
@@ -83,6 +86,7 @@ export const useSettingsStore = create<SettingsStore>()(
         })();
       },
       setAutoCommitGitWorktree: (enabled: boolean) => set({ autoCommitGitWorktree: enabled }),
+      setEnableTaskCompleteBeep: (enabled: boolean) => set({ enableTaskCompleteBeep: enabled }),
     }),
     {
       name: "settings-storage",

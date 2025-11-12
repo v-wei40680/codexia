@@ -9,8 +9,12 @@ import { open } from "@tauri-apps/plugin-shell";
 import { Github, Twitter } from "lucide-react";
 import { SimpleGitWorktreeSettings } from "../settings/GitWorktreeSettings";
 import { Link } from "react-router-dom";
+import { Switch } from "../ui/switch";
+import { useSettingsStore } from "@/stores/settings/SettingsStore";
 
 export function Introduce() {
+  const { enableTaskCompleteBeep, setEnableTaskCompleteBeep } = useSettingsStore();
+
   return (
     <Accordion
       type="single"
@@ -28,6 +32,18 @@ export function Introduce() {
             More Settings
           </Link>
           <SimpleGitWorktreeSettings />
+          <div className="flex items-start justify-between gap-4 rounded-md border p-4">
+            <div>
+              <p className="text-sm font-medium">Task completion beep</p>
+              <p className="text-xs text-muted-foreground">
+                Play a short tone when tasks finish so you can focus away from the screen.
+              </p>
+            </div>
+            <Switch
+              checked={enableTaskCompleteBeep}
+              onCheckedChange={setEnableTaskCompleteBeep}
+            />
+          </div>
         </AccordionContent>
       </AccordionItem>
       <AccordionItem value="item-2">

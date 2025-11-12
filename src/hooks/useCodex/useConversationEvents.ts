@@ -52,8 +52,9 @@ export function useConversationEvents(
   const latestEvent = useRef<CodexEvent | null>(null);
   const patchRecordedTurnsRef = useRef<Set<string>>(new Set());
   const { cwd } = useCodexStore();
-  const { autoCommitGitWorktree } = useSettingsStore();
+  const { autoCommitGitWorktree, enableTaskCompleteBeep } = useSettingsStore();
   const autoCommitGitWorktreeRef = useRef(autoCommitGitWorktree);
+  const enableTaskCompleteBeepRef = useRef(enableTaskCompleteBeep);
 
   useSystemSleepPrevention(conversationId, latestEvent.current);
   useBackendErrorListener();
@@ -65,6 +66,10 @@ export function useConversationEvents(
   useEffect(() => {
     autoCommitGitWorktreeRef.current = autoCommitGitWorktree;
   }, [autoCommitGitWorktree]);
+
+  useEffect(() => {
+    enableTaskCompleteBeepRef.current = enableTaskCompleteBeep;
+  }, [enableTaskCompleteBeep]);
 
   useEffect(() => {
     if (!conversationId || !isConversationReady) return;
@@ -101,7 +106,9 @@ export function useConversationEvents(
 
             // Handle busy state
             if (BUSY_OFF_EVENTS.has(msg.type)) {
-              playBeep();
+              if (enableTaskCompleteBeepRef.current) {
+                playBeep();
+              }
               setIsBusy(false);
             } else if (BUSY_ON_EVENTS.has(msg.type)) {
               setIsBusy(true);
