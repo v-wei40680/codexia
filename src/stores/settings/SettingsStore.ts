@@ -17,6 +17,8 @@ interface SettingsStore {
   setCustomLogoPath: (path: string) => void;
   windowTitle: string;
   setWindowTitle: (title: string) => void;
+  autoCommitGitWorktree: boolean;
+  setAutoCommitGitWorktree: (enabled: boolean) => void;
 }
 
 const DEFAULT_EXCLUDE_FOLDERS = [
@@ -38,12 +40,13 @@ export const useSettingsStore = create<SettingsStore>()(
   persist(
     (set, _get) => ({
       excludeFolders: DEFAULT_EXCLUDE_FOLDERS,
-      activeSection: "provider",
+      activeSection: "promptOptimizer",
       logoSettings: {
         useCustomLogo: false,
         customLogoPath: "",
       },
       windowTitle: "Codexia",
+      autoCommitGitWorktree: true,
       addExcludeFolder: (folder: string) =>
         set((state) => ({
           excludeFolders: [...state.excludeFolders, folder],
@@ -79,6 +82,7 @@ export const useSettingsStore = create<SettingsStore>()(
           }
         })();
       },
+      setAutoCommitGitWorktree: (enabled: boolean) => set({ autoCommitGitWorktree: enabled }),
     }),
     {
       name: "settings-storage",

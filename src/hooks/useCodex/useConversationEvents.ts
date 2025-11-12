@@ -10,6 +10,7 @@ import { playBeep } from "@/utils/beep";
 import { useCodexStore } from "@/stores/useCodexStore";
 import { appendEventLine } from "@/utils/appendEventLine";
 import { useBackendErrorListener } from "@/utils/backendErrorListener";
+import { useSettingsStore } from "@/stores/settings/SettingsStore";
 
 interface EventHandlers {
   isConversationReady?: boolean;
@@ -47,10 +48,12 @@ export function useConversationEvents(
   { isConversationReady = false, ...handlers }: EventHandlers,
 ) {
   const handlersRef = useRef<EventHandlers>(handlers);
-  const setIsBusy = useSessionStore((state) => state.setIsBusy);
+  const { setIsBusy } = useSessionStore();
   const latestEvent = useRef<CodexEvent | null>(null);
   const patchRecordedTurnsRef = useRef<Set<string>>(new Set());
   const { cwd } = useCodexStore();
+  const { autoCommitGitWorktree } = useSettingsStore();
+  const autoCommitGitWorktreeRef = useRef(autoCommitGitWorktree);
 
   useSystemSleepPrevention(conversationId, latestEvent.current);
   useBackendErrorListener();
@@ -58,6 +61,10 @@ export function useConversationEvents(
   useEffect(() => {
     handlersRef.current = handlers;
   }, [handlers]);
+
+  useEffect(() => {
+    autoCommitGitWorktreeRef.current = autoCommitGitWorktree;
+  }, [autoCommitGitWorktree]);
 
   useEffect(() => {
     if (!conversationId || !isConversationReady) return;
@@ -107,13 +114,15 @@ export function useConversationEvents(
                 break;
               
               case "task_complete":
-                void handleTaskComplete({
-                  event,
-                  worktreeId,
-                  turnKey,
-                  cwd,
-                  patchRecordedTurnsRef,
-                });
+                if (autoCommitGitWorktreeRef.current) {
+                  void handleTaskComplete({
+                    event,
+                    worktreeId,
+                    turnKey,
+                    cwd,
+                    patchRecordedTurnsRef,
+                  });
+                }
                 currentHandlers.onTaskComplete?.(event);
                 break;
               

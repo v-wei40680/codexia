@@ -30,7 +30,14 @@ export default function SettingsSidebar({
         className="w-full justify-start"
         onClick={() => onSectionChange("remoteAccess")}
       >
-        remoteAccess
+        Remote Access
+      </Button>
+      <Button
+        variant={activeSection === "gitWorktree" ? "default" : "ghost"}
+        className="w-full justify-start"
+        onClick={() => onSectionChange("gitWorktree")}
+      >
+        Git Worktree
       </Button>
     </div>
   );

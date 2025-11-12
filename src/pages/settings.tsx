@@ -3,6 +3,7 @@ import ExcludeFolders from "@/components/settings/ExcludeFolders";
 import { useSettingsStore } from "@/stores/settings/SettingsStore";
 import { PromptOptimizerSettings } from "@/components/settings/PromptOptimizerSettings";
 import { RemoteAccessSettings } from "@/components/settings/RemoteAccessSettings";
+import { GitWorktreeSettings } from "@/components/settings/GitWorktreeSettings";
 
 export default function SettingsPage() {
   const { activeSection, setActiveSection } = useSettingsStore();
@@ -18,6 +19,7 @@ export default function SettingsPage() {
         {activeSection === "promptOptimizer" && <PromptOptimizerSettings />}
         {activeSection === "remoteAccess" && <RemoteAccessSettings />}
         {activeSection === "exclude" && <ExcludeFolders />}
+        {activeSection === "gitWorktree" && <GitWorktreeSettings />}
       </div>
     </div>
   );
