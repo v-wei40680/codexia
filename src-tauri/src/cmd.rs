@@ -4,7 +4,7 @@ use codex_app_server_protocol::{
     AddConversationListenerParams, AddConversationSubscriptionResponse, InterruptConversationParams,
     InterruptConversationResponse, NewConversationParams, NewConversationResponse,
     ResumeConversationParams, ResumeConversationResponse, SendUserMessageParams,
-    SendUserMessageResponse, RemoveConversationListenerParams
+    SendUserMessageResponse, TurnStartParams, TurnStartResponse, RemoveConversationListenerParams
 };
 use codex_protocol::protocol::ReviewDecision;
 use log::{error, info, warn};
@@ -87,6 +87,33 @@ pub async fn send_user_message(
         }
         Err(err) => {
             error!("Failed to send message to {conversation_id}: {err}");
+            Err(err)
+        }
+    }
+}
+
+#[tauri::command]
+pub async fn turn_start(
+    params: TurnStartParams,
+    state: State<'_, AppState>,
+    app_handle: AppHandle,
+) -> Result<TurnStartResponse, String> {
+    let client = get_client(&state, &app_handle).await?;
+    let thread_id = params.thread_id.clone();
+    let input_count = params.input.len();
+
+    info!(
+        "Forwarding turn_start to thread {} (items={})",
+        thread_id, input_count
+    );
+
+    match client.turn_start(params).await {
+        Ok(response) => {
+            info!("Turn started for {}", thread_id);
+            Ok(response)
+        }
+        Err(err) => {
+            error!("Failed to start turn for {thread_id}: {err}");
             Err(err)
         }
     }

@@ -9,7 +9,8 @@ use codex_app_server_protocol::{
     JSONRPCErrorError, JSONRPCNotification, JSONRPCRequest, NewConversationParams,
     NewConversationResponse, RemoveConversationListenerParams,
     RemoveConversationSubscriptionResponse, RequestId, ResumeConversationParams,
-    ResumeConversationResponse, SendUserMessageParams, SendUserMessageResponse,
+    ResumeConversationResponse, SendUserMessageParams, SendUserMessageResponse, TurnStartParams,
+    TurnStartResponse,
 };
 use codex_protocol::protocol::ReviewDecision;
 use serde::de::DeserializeOwned;
@@ -205,6 +206,14 @@ impl CodexAppServerClient {
     ) -> Result<SendUserMessageResponse, String> {
         let params_value = serde_json::to_value(params).map_err(|err| err.to_string())?;
         self.request("sendUserMessage", Some(params_value)).await
+    }
+
+    pub async fn turn_start(
+        &self,
+        params: TurnStartParams,
+    ) -> Result<TurnStartResponse, String> {
+        let params_value = serde_json::to_value(params).map_err(|err| err.to_string())?;
+        self.request("turn/start", Some(params_value)).await
     }
 
     pub async fn interrupt_conversation(

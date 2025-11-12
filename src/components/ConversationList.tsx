@@ -31,6 +31,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useResumeConversation } from "@/hooks/useResumeConversation";
 import { renameConversation } from "@/utils/renameConversation";
 import RenameDialog from "@/components/RenameDialog";
+import type { SessionSource } from "@/bindings/SessionSource";
 
 interface ConversationListProps {
   mode: string;
@@ -41,6 +42,19 @@ interface ConversationListProps {
   showBulkDeleteButtons: boolean;
   selectedConversations: Set<string>;
   setSelectedConversations: Dispatch<SetStateAction<Set<string>>>;
+}
+
+function formatSessionSource(source: SessionSource) {
+  if (typeof source === "string") {
+    return source;
+  }
+
+  const { subagent } = source;
+  if (typeof subagent === "string") {
+    return `subagent:${subagent}`;
+  }
+
+  return `subagent:${subagent.other}`;
 }
 
 export function ConversationList({
@@ -266,7 +280,7 @@ export function ConversationList({
                     </DropdownMenu>
                     <span className="hidden group-hover:flex justify-between px-4 text-xs text-muted-foreground">
                       <span>{conv.timestamp?.split("T")[0]}</span>
-                      <span>{conv.source}</span>
+                      <span>{formatSessionSource(conv.source)}</span>
                     </span>
                   </li>
                 </div>

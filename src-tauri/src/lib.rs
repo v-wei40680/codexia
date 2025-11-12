@@ -120,6 +120,7 @@ pub fn run() {
             disable_remote_ui,
             get_remote_ui_status,
             cmd::send_user_message,
+            cmd::turn_start,
             cmd::new_conversation,
             cmd::resume_conversation,
             cmd::interrupt_conversation,

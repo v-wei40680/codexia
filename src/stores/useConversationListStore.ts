@@ -1,13 +1,55 @@
 import { create } from "zustand";
 import { invoke } from "@/lib/tauri-proxy";
 import type { ConversationSummary } from "@/bindings/ConversationSummary";
+import type { SessionSource } from "@/bindings/SessionSource";
 
-interface ConversationSummaryWithSource extends ConversationSummary {
-  source?: string
+type RawConversationSummary = Partial<ConversationSummary> & {
+  conversationId: string;
+};
+
+const KNOWN_SESSION_SOURCES: readonly SessionSource[] = [
+  "cli",
+  "vscode",
+  "exec",
+  "mcp",
+  "unknown",
+];
+
+function normalizeSessionSource(value: unknown): SessionSource {
+  if (typeof value === "string") {
+    if (KNOWN_SESSION_SOURCES.includes(value as SessionSource)) {
+      return value as SessionSource;
+    }
+    return "unknown";
+  }
+
+  if (typeof value === "object" && value !== null && "subagent" in value) {
+    return value as SessionSource;
+  }
+
+  return "unknown";
+}
+
+function buildConversationSummary(
+  summary: RawConversationSummary,
+  cwdFallback: string,
+): ConversationSummary {
+  return {
+    conversationId: summary.conversationId,
+    path: summary.path ?? "",
+    preview: summary.preview ?? "",
+    timestamp:
+      typeof summary.timestamp === "string" ? summary.timestamp : null,
+    modelProvider: summary.modelProvider ?? "",
+    cwd: summary.cwd ?? cwdFallback ?? "",
+    cliVersion: summary.cliVersion ?? "",
+    source: normalizeSessionSource(summary.source),
+    gitInfo: summary.gitInfo ?? null,
+  };
 }
 
 interface ConversationListState {
-  conversationsByCwd: Record<string, ConversationSummaryWithSource[]>;
+  conversationsByCwd: Record<string, ConversationSummary[]>;
   conversationIndex: Record<string, string>;
   favoriteConversationIdsByCwd: Record<string, string[]>;
   loadedAllByCwd: Record<string, boolean>;
@@ -15,7 +57,7 @@ interface ConversationListState {
 }
 
 interface ConversationListActions {
-  addConversation: (cwd: string, summary: ConversationSummaryWithSource) => Promise<void>;
+  addConversation: (cwd: string, summary: RawConversationSummary) => Promise<void>;
   updateConversationPreview: (conversationId: string, preview: string) => void;
   removeConversation: (conversationId: string) => Promise<void>;
   setFavorite: (conversationId: string, isFavorite: boolean) => Promise<void>;
@@ -44,17 +86,19 @@ export const useConversationListStore = create<
     loadedAllByCwd: {},
     hasMoreByCwd: {},
 
-    addConversation: async (cwd, summary) => {
+    addConversation: async (cwd, summary: RawConversationSummary) => {
       set((state) => {
         const existingList = state.conversationsByCwd[cwd] ?? [];
+        const normalizedSummary = buildConversationSummary(summary, cwd);
         const index = existingList.findIndex(
-          (item) => item.conversationId === summary.conversationId,
+          (item) =>
+            item.conversationId === normalizedSummary.conversationId,
         );
         const existingItem = index >= 0 ? existingList[index] : null;
-        const summaryWithTimestamp: ConversationSummaryWithSource = {
-          ...summary,
+        const summaryWithTimestamp: ConversationSummary = {
+          ...normalizedSummary,
           timestamp:
-            summary.timestamp ??
+            normalizedSummary.timestamp ??
             existingItem?.timestamp ??
             new Date().toISOString(),
         };
