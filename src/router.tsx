@@ -1,13 +1,15 @@
+import { useEffect } from "react";
 import { createHashRouter, Outlet } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
-import LoginPage from "@/pages/login";
+import { RouteErrorFallback } from "@/components/common/RouteErrorFallback";
 import ChatPage from "@/pages/chat";
+import LoginPage from "@/pages/login";
+import NotFoundPage from "@/pages/not-found";
 import ProjectsPage from "@/pages/projects";
+import PublicUserPage from "@/pages/user";
 import SettingsPage from "./pages/settings";
 import UsagePage from "./pages/usage";
 import { useDeepLink } from "./hooks/useDeepLink";
-import PublicUserPage from "./pages/user";
-import { useEffect } from "react";
 import { useLayoutStore } from "./stores/settings/layoutStore";
 import { useAuth } from "./hooks/useAuth";
 
@@ -40,6 +42,7 @@ export const router = createHashRouter([
   {
     path: "/",
     element: <Root />,
+    errorElement: <RouteErrorFallback />,
     children: [
       {
         index: true,
@@ -69,6 +72,10 @@ export const router = createHashRouter([
             element: <UsagePage />,
           },
         ],
+      },
+      {
+        path: "*",
+        element: <NotFoundPage />,
       },
     ],
   },
