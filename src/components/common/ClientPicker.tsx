@@ -1,6 +1,5 @@
-import { useCallback, useMemo, useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { invoke } from "@/lib/tauri-proxy";
 import { useTranslation } from "react-i18next";
 import { useCodexStore } from "@/stores/useCodexStore";
@@ -48,11 +47,6 @@ export function ClientPicker() {
     fetchClientVersion(clientName);
   }, [clientName, fetchClientVersion]);
 
-  const codexStatusText = useMemo(
-    () => (clientVersion ? clientVersion : t("header.codexUnavailable")),
-    [clientVersion, t],
-  );
-
   const onChangeClient = useCallback(
     async (value: string) => {
       const next: ClientName = value === "coder" ? "coder" : "codex";
@@ -68,33 +62,39 @@ export function ClientPicker() {
   );
 
   return (
-    <>
-      <span
-        className={`w-2 h-2 rounded-full ${clientVersion ? "bg-green-500" : "bg-destructive"}`}
-        aria-hidden="true"
-      ></span>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <span className="flex items-center gap-1">
-            <Badge
-              aria-label={`${t("header.statusBadgeLabel")}: ${codexStatusText}`}
-              title={t("header.codexVersion")}
-            >
-              {codexStatusText}
-            </Badge>
-            <ChevronDown />
-          </span>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuRadioGroup
-            value={clientName}
-            onValueChange={onChangeClient}
-          >
-            <DropdownMenuRadioItem value="codex">Codex</DropdownMenuRadioItem>
-            <DropdownMenuRadioItem value="coder">Coder</DropdownMenuRadioItem>
-          </DropdownMenuRadioGroup>
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </>
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button className="flex items-center gap-2 px-3 py-1.5 rounded-md border bg-background hover:bg-accent transition-colors">
+          {/* Status indicator with animation */}
+          <div className="relative">
+            <span
+              className={`block w-3 h-3 rounded-full ${clientVersion ? "bg-green-500" : "bg-destructive"}`}
+              aria-hidden="true"
+            />
+            {clientVersion && (
+              <span className="absolute inset-0 rounded-full bg-green-500 animate-ping opacity-75" />
+            )}
+          </div>
+
+          {/* Client info with better hierarchy */}
+          <div className="flex flex-col items-start min-w-[60px]">
+            <span className="text-xs text-muted-foreground">
+              {clientVersion || t("header.codexUnavailable")}
+            </span>
+          </div>
+
+          <ChevronDown className="w-4 h-4" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        <DropdownMenuRadioGroup
+          value={clientName}
+          onValueChange={onChangeClient}
+        >
+          <DropdownMenuRadioItem value="codex">Codex</DropdownMenuRadioItem>
+          <DropdownMenuRadioItem value="coder">Coder</DropdownMenuRadioItem>
+        </DropdownMenuRadioGroup>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }
