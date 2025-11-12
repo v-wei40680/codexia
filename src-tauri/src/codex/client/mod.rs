@@ -134,8 +134,8 @@ impl CodexAppServerClient {
     async fn initialize(&self) -> Result<(), String> {
         let params = InitializeParams {
             client_info: ClientInfo {
-                name: "codexia-zen".to_string(),
-                title: Some("Codexia Zen".to_string()),
+                name: "codexia".to_string(),
+                title: Some("Codexia".to_string()),
                 version: env!("CARGO_PKG_VERSION").to_string(),
             },
         };
