@@ -13,6 +13,7 @@ import {
   StarOff,
   FolderPlus,
   Pencil,
+  Loader2,
 } from "lucide-react";
 import { invoke } from "@/lib/tauri-proxy";
 import {
@@ -81,11 +82,30 @@ export function ConversationList({
   const [editingConversationId, setEditingConversationId] = useState<
     string | null
   >(null);
+  const [isLoadingSessions, setIsLoadingSessions] = useState(false);
+  const [isLoadingAllSessions, setIsLoadingAllSessions] = useState(false);
 
   useEffect(() => {
-    if (cwd) {
-      loadProjectSessions(cwd);
+    if (!cwd) {
+      setIsLoadingSessions(false);
+      return;
     }
+
+    let isMounted = true;
+    setIsLoadingSessions(true);
+    loadProjectSessions(cwd)
+      .catch(() => {
+        /* swallow */
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsLoadingSessions(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [cwd]);
 
   // No inline focus; handled by RenameDialog
@@ -147,6 +167,21 @@ export function ConversationList({
   const loadedAll = loadedAllByCwd[cwd || ""] ?? false;
   const hasMore = hasMoreByCwd[cwd || ""] ?? false;
 
+  const handleLoadAll = () => {
+    if (!cwd || isLoadingAllSessions) {
+      return;
+    }
+
+    setIsLoadingAllSessions(true);
+    loadProjectSessions(cwd, true)
+      .catch(() => {
+        /* swallow */
+      })
+      .finally(() => {
+        setIsLoadingAllSessions(false);
+      });
+  };
+
   const handleRenameSubmit = async (
     conversationId: string,
     nextPreview: string,
@@ -164,7 +199,12 @@ export function ConversationList({
   return (
     <nav className="flex flex-col h-full bg-muted/30">
       <div className="flex-1 overflow-y-auto">
-        {conversations.length === 0 ? (
+        {isLoadingSessions ? (
+          <div className="flex flex-col items-center justify-center h-full gap-2 p-4 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span>Loading conversations…</span>
+          </div>
+        ) : conversations.length === 0 ? (
           <div className="p-4 text-sm text-muted-foreground">
             {emptyStateMessage}
           </div>
@@ -315,13 +355,17 @@ export function ConversationList({
             variant="ghost"
             size="sm"
             className="w-full"
-            onClick={() => {
-              if (cwd) {
-                void loadProjectSessions(cwd, true);
-              }
-            }}
+            onClick={handleLoadAll}
+            disabled={isLoadingAllSessions}
           >
-            Load all
+            {isLoadingAllSessions ? (
+              <span className="flex w-full justify-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Loading all
+              </span>
+            ) : (
+              "Load all"
+            )}
           </Button>
         </div>
       ) : null}
