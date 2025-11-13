@@ -4,7 +4,8 @@ use codex_app_server_protocol::{
     InputItem, InterruptConversationParams, InterruptConversationResponse, ListConversationsResponse,
     NewConversationParams, NewConversationResponse, ResumeConversationParams, ResumeConversationResponse,
     RemoveConversationListenerParams, SendUserMessageParams, SendUserMessageResponse, TurnStartParams,
-    TurnStartResponse,
+    TurnStartResponse, GetAccountParams, GetAccountResponse,
+    GetAccountRateLimitsResponse,
 };
 use codex_protocol::protocol::EventMsg;
 use std::path::Path;
@@ -39,4 +40,7 @@ pub fn export_ts_types() {
     InterruptConversationResponse::export_all_to(&out_dir).unwrap();
     TurnStartParams::export_all_to(&out_dir).unwrap();
     TurnStartResponse::export_all_to(&out_dir).unwrap();
+    GetAccountParams::export_all_to(&out_dir).unwrap();
+    GetAccountResponse::export_all_to(&out_dir).unwrap();
+    GetAccountRateLimitsResponse::export_all_to(&out_dir).unwrap();
 }

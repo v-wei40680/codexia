@@ -21,6 +21,13 @@ tauri-build = { version = "2", features = [] }
 tauri = { version = "2", features = ["protocol-asset"] }
 tauri-plugin-shell = "2"
 tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-log = "2"
+tauri-plugin-screenshots = "2.2.0"
+tauri-plugin-deep-link = "2"
+tauri-plugin-process = "2"
+tauri-remote-ui = { git = "https://github.com/DraviaVemal/tauri-remote-ui" }
+
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tokio = { version = "1", features = ["full"] }
@@ -34,18 +41,11 @@ calamine = "0.25"
 dirs = "6.0.0"
 toml = "0.9.5"
 toml_edit = "0.20"
-tauri-plugin-fs = "2"
 walkdir = "2.3"
 chrono = { version = "0.4", features = ["serde"] }
-tauri-plugin-log = "2"
-tauri-plugin-screenshots = "2.2.0"
-tauri-plugin-deep-link = "2"
-tauri-plugin-process = "2"
 notify = "6"
-tauri-remote-ui = { git = "https://github.com/DraviaVemal/tauri-remote-ui" }
 codex-protocol = { git = "https://github.com/openai/codex.git", package = "codex-protocol" }
 codex-app-server-protocol = { git = "https://github.com/openai/codex.git", package = "codex-app-server-protocol"}
-export_bindings = { path = "../export_bindings" }
 base64 = "0.22.1"
 nosleep = "0.2.1"
 regex = "1.12.2"
@@ -53,3 +53,5 @@ regex = "1.12.2"
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
 tauri-plugin-updater = "2"
+
+export_bindings = { path = "../export_bindings" }

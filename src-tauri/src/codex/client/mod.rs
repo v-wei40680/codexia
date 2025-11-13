@@ -4,12 +4,33 @@ use std::sync::atomic::{AtomicI64, Ordering};
 use std::sync::Arc;
 
 use codex_app_server_protocol::{
-    AddConversationListenerParams, AddConversationSubscriptionResponse, ClientInfo,
-    InitializeParams, InterruptConversationParams, InterruptConversationResponse,
-    JSONRPCErrorError, JSONRPCNotification, JSONRPCRequest, NewConversationParams,
-    NewConversationResponse, RemoveConversationListenerParams,
-    RemoveConversationSubscriptionResponse, RequestId, ResumeConversationParams,
-    ResumeConversationResponse, SendUserMessageParams, SendUserMessageResponse, TurnStartParams,
+    AddConversationListenerParams,
+    AddConversationSubscriptionResponse,
+    CancelLoginAccountParams,
+    CancelLoginAccountResponse,
+    ClientInfo,
+    GetAccountParams,
+    GetAccountRateLimitsResponse,
+    GetAccountResponse,
+    InitializeParams,
+    InterruptConversationParams,
+    InterruptConversationResponse,
+    JSONRPCErrorError,
+    JSONRPCNotification,
+    JSONRPCRequest,
+    LoginAccountParams,
+    LoginAccountResponse,
+    LogoutAccountResponse,
+    NewConversationParams,
+    NewConversationResponse,
+    RemoveConversationListenerParams,
+    RemoveConversationSubscriptionResponse,
+    RequestId,
+    ResumeConversationParams,
+    ResumeConversationResponse,
+    SendUserMessageParams,
+    SendUserMessageResponse,
+    TurnStartParams,
     TurnStartResponse,
 };
 use codex_protocol::protocol::ReviewDecision;
@@ -144,6 +165,37 @@ impl CodexAppServerClient {
         self.request::<Value>("initialize", Some(params_value))
             .await?;
         self.send_notification("initialized", None).await
+    }
+
+    pub async fn get_account(&self, refresh_token: bool) -> Result<GetAccountResponse, String> {
+        let params = GetAccountParams { refresh_token };
+        let params_value = serde_json::to_value(params).map_err(|err| err.to_string())?;
+        self.request("account/read", Some(params_value)).await
+    }
+
+    pub async fn get_account_rate_limits(&self) -> Result<GetAccountRateLimitsResponse, String> {
+        self.request("account/rateLimits/read", None).await
+    }
+
+    pub async fn login_account(
+        &self,
+        params: LoginAccountParams,
+    ) -> Result<LoginAccountResponse, String> {
+        let params_value = serde_json::to_value(params).map_err(|err| err.to_string())?;
+        self.request("account/login/start", Some(params_value)).await
+    }
+
+    pub async fn cancel_login_account(
+        &self,
+        login_id: String,
+    ) -> Result<CancelLoginAccountResponse, String> {
+        let params = CancelLoginAccountParams { login_id };
+        let params_value = serde_json::to_value(params).map_err(|err| err.to_string())?;
+        self.request("account/login/cancel", Some(params_value)).await
+    }
+
+    pub async fn logout_account(&self) -> Result<LogoutAccountResponse, String> {
+        self.request("account/logout", None).await
     }
 
     pub async fn new_conversation(

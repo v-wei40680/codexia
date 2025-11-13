@@ -1,5 +1,6 @@
 import SettingsSidebar from "@/components/settings/SettingsSidebar";
 import ExcludeFolders from "@/components/settings/ExcludeFolders";
+import { RateLimitSettings, CodexAuth } from "@/components/settings";
 import { useSettingsStore } from "@/stores/settings/SettingsStore";
 import { PromptOptimizerSettings } from "@/components/settings/PromptOptimizerSettings";
 import { RemoteAccessSettings } from "@/components/settings/RemoteAccessSettings";
@@ -15,7 +16,9 @@ export default function SettingsPage() {
         onSectionChange={setActiveSection}
       />
 
-      <div className="flex-1 px-6 overflow-y-auto">
+      <div className="flex-1 px-6 overflow-y-auto space-y-6">
+        {activeSection === "login" && <CodexAuth />}
+        {activeSection === "rateLimit" && <RateLimitSettings />}
         {activeSection === "promptOptimizer" && <PromptOptimizerSettings />}
         {activeSection === "remoteAccess" && <RemoteAccessSettings />}
         {activeSection === "exclude" && <ExcludeFolders />}

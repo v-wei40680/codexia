@@ -43,10 +43,6 @@ use state::{AppState, RemoteAccessState};
 use tauri::{AppHandle, Emitter, Manager};
 use terminal::open_terminal_with_command;
 
-pub fn export_ts_bindings() {
-    export_bindings::export_ts_types();
-}
-
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     let mut builder = tauri::Builder::default().plugin(tauri_plugin_log::Builder::new().build());
@@ -126,9 +122,15 @@ pub fn run() {
             cmd::interrupt_conversation,
             cmd::respond_exec_command_request,
             cmd::respond_apply_patch_request,
+            cmd::get_account,
+            cmd::login_account_chatgpt,
+            cmd::login_account_api_key,
+            cmd::cancel_login_account,
+            cmd::logout_account,
             cmd::delete_file,
             cmd::add_conversation_listener,
             cmd::remove_conversation_listener,
+            cmd::get_account_rate_limits,
             scan_projects,
             load_project_sessions,
             delete_session_file,
