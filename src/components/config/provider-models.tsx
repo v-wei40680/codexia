@@ -149,7 +149,7 @@ export function ProviderModels() {
                 {/* Top: API Key */}
                 <div className="p-4 space-y-3">
                   <div className="flex justify-between">
-                    <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    <Label className="text-xs font-semibold tracking-wide text-muted-foreground">
                       API Key {selectedProviderId !== "ollama" && "option"}
                     </Label>
                     <Button onClick={() => navigate("/settings")}>

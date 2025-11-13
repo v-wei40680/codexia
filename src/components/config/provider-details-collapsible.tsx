@@ -51,8 +51,8 @@ export function ProviderDetailsCollapsible({
       </CollapsibleTrigger>
       <CollapsibleContent className="mt-3 space-y-3">
         <div className="space-y-2">
-          <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            API Key Variable
+          <Label className="text-xs font-semibold tracking-wide text-muted-foreground">
+            env_key
           </Label>
           <Input
             placeholder="e.g., OPENAI_API_KEY"
@@ -63,8 +63,8 @@ export function ProviderDetailsCollapsible({
           />
         </div>
         <div className="space-y-2">
-          <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Base URL
+          <Label className="text-xs font-semibold tracking-wide text-muted-foreground">
+            base_url
           </Label>
           <Input
             placeholder="https://api.example.com/v1"
