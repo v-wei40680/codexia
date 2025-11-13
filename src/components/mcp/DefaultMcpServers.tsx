@@ -1,7 +1,7 @@
 import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { McpServerConfig } from '@/types/codex';
+import { McpServerConfig } from '@/types';
 import { invoke } from '@/lib/tauri-proxy';
 import { toast } from 'sonner';
 

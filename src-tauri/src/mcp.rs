@@ -1,11 +1,11 @@
-use serde::{Deserialize, Serialize};
+use serde::{de::Deserializer, Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use tauri::command;
 
 use crate::config::{get_config_path, CodexConfig};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize)]
 #[serde(tag = "type")]
 pub enum McpServerConfig {
     #[serde(rename = "stdio")]
@@ -19,6 +19,62 @@ pub enum McpServerConfig {
     Http { url: String },
     #[serde(rename = "sse")]
     Sse { url: String },
+}
+
+impl<'de> Deserialize<'de> for McpServerConfig {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        #[serde(tag = "type")]
+        enum TaggedMcpServerConfig {
+            #[serde(rename = "stdio")]
+            Stdio {
+                command: String,
+                args: Vec<String>,
+                #[serde(default)]
+                env: Option<HashMap<String, String>>,
+            },
+            #[serde(rename = "http")]
+            Http { url: String },
+            #[serde(rename = "sse")]
+            Sse { url: String },
+        }
+
+        #[derive(Deserialize)]
+        struct LegacyStdioConfig {
+            command: String,
+            #[serde(default)]
+            args: Vec<String>,
+            #[serde(default)]
+            env: Option<HashMap<String, String>>,
+        }
+
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum McpServerConfigHelper {
+            Tagged(TaggedMcpServerConfig),
+            Legacy(LegacyStdioConfig),
+        }
+
+        match McpServerConfigHelper::deserialize(deserializer)? {
+            McpServerConfigHelper::Tagged(TaggedMcpServerConfig::Stdio {
+                command,
+                args,
+                env,
+            }) => Ok(McpServerConfig::Stdio { command, args, env }),
+            McpServerConfigHelper::Tagged(TaggedMcpServerConfig::Http { url }) => {
+                Ok(McpServerConfig::Http { url })
+            }
+            McpServerConfigHelper::Tagged(TaggedMcpServerConfig::Sse { url }) => {
+                Ok(McpServerConfig::Sse { url })
+            }
+            McpServerConfigHelper::Legacy(LegacyStdioConfig { command, args, env }) => {
+                Ok(McpServerConfig::Stdio { command, args, env })
+            }
+        }
+    }
 }
 
 #[command]

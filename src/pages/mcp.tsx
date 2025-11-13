@@ -3,9 +3,12 @@ import { invoke } from '@/lib/tauri-proxy';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Trash2, Plus, Edit, Save, X } from 'lucide-react';
-import { McpServerConfig } from '@/types/codex';
+import { McpServerConfig } from '@/types';
 import { toast } from 'sonner';
 import { McpServerForm, McpLinkerButton, DefaultMcpServers } from '@/components/mcp';
+
+const getServerProtocol = (config: McpServerConfig): 'stdio' | 'http' | 'sse' =>
+  config.type ?? 'stdio';
 
 export default function McpPage() {
   const [servers, setServers] = useState<Record<string, McpServerConfig>>({});
@@ -91,16 +94,17 @@ export default function McpPage() {
   };
 
   const handleEditServer = (name: string, config: McpServerConfig) => {
-    const httpUrl = config.type === 'stdio' ? '' : config.url;
+    const protocol = getServerProtocol(config);
+    const httpUrl = protocol === 'stdio' ? '' : ('url' in config ? config.url : '');
     setEditingServer(name);
     setEditConfig({
       name,
-      protocol: config.type,
+      protocol,
       command: {
-        command: config.type === 'stdio' ? ('command' in config ? config.command : '') : '',
-        args: config.type === 'stdio' ? ('args' in config ? config.args.join(' ') : '') : '',
+        command: protocol === 'stdio' && 'command' in config ? config.command : '',
+        args: protocol === 'stdio' && 'args' in config ? config.args.join(' ') : '',
         env:
-          config.type === 'stdio' && 'env' in config && config.env
+          protocol === 'stdio' && 'env' in config && config.env
             ? JSON.stringify(config.env, null, 2)
             : '',
       },
@@ -170,87 +174,90 @@ export default function McpPage() {
           <div>
             <h3 className="text-lg font-semibold mb-4">Configured Servers</h3>
             <div className="space-y-2 max-h-96 overflow-y-auto">
-              {Object.entries(servers).map(([name, config]) => (
-                <Card key={name}>
-                  {editingServer === name ? (
-                    <div className="p-4">
-                      <div className="space-y-4">
-                        <McpServerForm
-                          serverName={editConfig?.name ?? ''}
-                          onServerNameChange={(name) => setEditConfig(prev => prev ? { ...prev, name } : null)}
-                          protocol={editConfig?.protocol ?? 'stdio'}
-                          onProtocolChange={(protocol) => setEditConfig(prev => prev ? { ...prev, protocol } : null)}
-                          commandConfig={editConfig?.command ?? { command: '', args: '', env: '' }}
-                          onCommandConfigChange={(command) => setEditConfig(prev => prev ? { ...prev, command } : null)}
-                          httpConfig={editConfig?.http ?? { url: '' }}
-                          onHttpConfigChange={(http) => setEditConfig(prev => prev ? { ...prev, http } : null)}
-                          isEditMode={true}
-                        />
+              {Object.entries(servers).map(([name, config]) => {
+                const serverType = getServerProtocol(config);
+                return (
+                  <Card key={name}>
+                    {editingServer === name ? (
+                      <div className="px-4">
+                        <div className="space-y-4">
+                          <McpServerForm
+                            serverName={editConfig?.name ?? ''}
+                            onServerNameChange={(name) => setEditConfig(prev => prev ? { ...prev, name } : null)}
+                            protocol={editConfig?.protocol ?? 'stdio'}
+                            onProtocolChange={(protocol) => setEditConfig(prev => prev ? { ...prev, protocol } : null)}
+                            commandConfig={editConfig?.command ?? { command: '', args: '', env: '' }}
+                            onCommandConfigChange={(command) => setEditConfig(prev => prev ? { ...prev, command } : null)}
+                            httpConfig={editConfig?.http ?? { url: '' }}
+                            onHttpConfigChange={(http) => setEditConfig(prev => prev ? { ...prev, http } : null)}
+                            isEditMode={true}
+                          />
 
-                        <div className="flex gap-2">
-                          <Button size="sm" onClick={handleSaveEdit}>
-                            <Save className="h-4 w-4 mr-1" />
-                            Save
-                          </Button>
-                          <Button size="sm" variant="outline" onClick={handleCancelEdit}>
-                            <X className="h-4 w-4 mr-1" />
-                            Cancel
-                          </Button>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      <CardHeader>
-                        <CardTitle className="text-sm flex items-center justify-between">
-                          {name}
-                          <div className="flex gap-1">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleEditServer(name, config)}
-                            >
-                              <Edit className="h-4 w-4" />
+                          <div className="flex gap-2">
+                            <Button size="sm" onClick={handleSaveEdit}>
+                              <Save className="h-4 w-4 mr-1" />
+                              Save
                             </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => handleDeleteServer(name)}
-                            >
-                              <Trash2 className="h-4 w-4" />
+                            <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                              <X className="h-4 w-4 mr-1" />
+                              Cancel
                             </Button>
                           </div>
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="text-xs text-gray-600">
-                          {config.type === 'stdio' && (
-                            <div>
-                              <strong>Command:</strong> {'command' in config ? config.command : ''}
-                              {'args' in config && config.args && config.args.length > 0 && (
-                                <div><strong>Args:</strong> {config.args.join(' ')}</div>
-                              )}
-                              {'env' in config && config.env && (
-                                <div><strong>Env:</strong> {Object.keys(config.env).join(', ')}</div>
-                              )}
-                            </div>
-                          )}
-                          {config.type === 'http' && (
-                            <div>
-                              <strong>HTTP:</strong> {'url' in config ? config.url : ''}
-                            </div>
-                          )}
-                          {config.type === 'sse' && (
-                            <div>
-                              <strong>SSE:</strong> {'url' in config ? config.url : ''}
-                            </div>
-                          )}
                         </div>
-                      </CardContent>
-                    </>
-                  )}
-                </Card>
-              ))}
+                      </div>
+                    ) : (
+                      <>
+                        <CardHeader>
+                          <CardTitle className="text-sm flex items-center justify-between">
+                            {name}
+                            <div className="flex gap-1">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleEditServer(name, config)}
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleDeleteServer(name)}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-xs text-gray-600">
+                            {serverType === 'stdio' && (
+                              <div>
+                                <strong>Command:</strong> {'command' in config ? config.command : ''}
+                                {'args' in config && config.args && config.args.length > 0 && (
+                                  <div><strong>Args:</strong> {config.args.join(' ')}</div>
+                                )}
+                                {'env' in config && config.env && (
+                                  <div><strong>Env:</strong> {Object.keys(config.env).join(', ')}</div>
+                                )}
+                              </div>
+                            )}
+                            {serverType === 'http' && 'url' in config && (
+                              <div>
+                                <strong>url:</strong> {config.url}
+                              </div>
+                            )}
+                            {serverType === 'sse' && 'url' in config && (
+                              <div>
+                                <strong>url:</strong> {config.url}
+                              </div>
+                            )}
+                          </div>
+                        </CardContent>
+                      </>
+                    )}
+                  </Card>
+                );
+              })}
               {Object.keys(servers).length === 0 && (
                 <div className="text-gray-500 text-center py-8">
                   No MCP servers configured

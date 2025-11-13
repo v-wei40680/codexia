@@ -92,19 +92,3 @@ export const DEFAULT_CONFIG: CodexConfig = {
   sandboxMode: "workspace-write",
   webSearchEnabled: false,
 };
-
-export type McpServerConfig =
-  | {
-      type: "stdio";
-      command: string;
-      args: string[];
-      env?: Record<string, string>;
-    }
-  | {
-      type: "http";
-      url: string;
-    }
-  | {
-      type: "sse";
-      url: string;
-    };
