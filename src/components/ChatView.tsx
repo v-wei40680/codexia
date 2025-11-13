@@ -16,6 +16,7 @@ import { TurnDiffPanel } from "./events/TurnDiffPanel";
 import { TurnDiffActions } from "./events/TurnDiffActions";
 import { useTurnDiffStore } from "@/stores/useTurnDiffStore";
 import { useExecCommandStore } from "@/stores";
+import { useResumeConversationStore } from "@/stores/useResumeConversationStore";
 
 export function ChatView() {
   useCodexApprovalRequests();
@@ -37,6 +38,8 @@ export function ChatView() {
     ? tokenUsages[activeConversationId]
     : null;
   const { handleTokenCount } = useTokenCount();
+  const { resumingConversationId } = useResumeConversationStore();
+  const isResumingConversation = Boolean(resumingConversationId);
 
   // Memoize callbacks to prevent unnecessary re-subscriptions
   const handleAnyEvent = useCallback(
@@ -88,10 +91,11 @@ export function ChatView() {
     <div className="flex flex-col h-full">
       <ChatToolbar />
       <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
-        {currentEvents.length > 0 ? (
+        {currentEvents.length > 0 || isResumingConversation ? (
           <ChatScrollArea
             events={currentEvents}
             activeConversationId={activeConversationId ?? undefined}
+            isResumingConversation={isResumingConversation}
           />
         ) : (
           <Introduce />

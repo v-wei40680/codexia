@@ -6,6 +6,7 @@ import { useEventStore } from "@/stores/useEventStore";
 import { extractInitialMessages, type CodexEvent } from "@/types/chat";
 import { readEventMessages } from "@/utils/appendEventLine";
 import { exists, BaseDirectory } from '@tauri-apps/plugin-fs';
+import { useResumeConversationStore } from "@/stores/useResumeConversationStore";
 
 const pendingResumes = new Set<string>();
 
@@ -18,6 +19,7 @@ export const useResumeConversation = () => {
   const { resumeConversation } = useConversation();
   const buildNewConversationParams = useBuildNewConversationParams();
   const { setEvents } = useEventStore();
+  const { setResumingConversationId, clearResumingConversationId } = useResumeConversationStore();
 
   const handleSelectConversation = useCallback(
     async (conversationId: string, path: string, cwd: string) => {
@@ -43,7 +45,7 @@ export const useResumeConversation = () => {
       if (pendingResumes.has(conversationId)) {
         return;
       }
-
+      setResumingConversationId(conversationId);
       pendingResumes.add(conversationId);
       try {
         console.log("Resuming conversation", conversationId, path);
@@ -96,6 +98,7 @@ export const useResumeConversation = () => {
         }
       } finally {
         pendingResumes.delete(conversationId);
+        clearResumingConversationId();
       }
     },
     [
@@ -104,6 +107,9 @@ export const useResumeConversation = () => {
       resumeConversation,
       setActiveConversationId,
       setEvents,
+      addActiveConversationId,
+      setResumingConversationId,
+      clearResumingConversationId,
     ],
   );
 
