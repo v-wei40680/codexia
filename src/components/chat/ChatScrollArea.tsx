@@ -1,198 +1,126 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { ArrowDown, ArrowUp } from "lucide-react";
-import { Button } from "../ui/button";
+import { useEffect, useMemo } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { EventItem } from "@/components/events/EventItem";
-import DeltaEventLog from "../DeltaEventLog";
 import type { CodexEvent } from "@/types/chat";
+import { DELTA_EVENT_TYPES } from "@/types/chat";
+import { useChatScroll } from "@/hooks/useChatScroll";
+import { ScrollButtons } from "./actions/ScrollButtons";
+import { EventMsgType } from "./EventMsgType";
 
-const STREAM_TYPE_NORMALIZATION: Record<string, string> = {
-  agent_message_delta: "agent_message",
-  agent_reasoning_delta: "agent_reasoning",
-  agent_reasoning_raw_content_delta: "agent_reasoning_raw_content",
+// Build a stable key for React list rendering. Avoid index-based keys.
+const getEventKey = (event: CodexEvent): string => {
+  const { id, msg } = event.payload.params;
+
+  if (event.meta?.streamKey) {
+    const startedAt = event.meta.streamStartedAt ?? "pending";
+    return `${event.meta.streamKey}-${startedAt}`;
+  }
+
+  if ("item_id" in msg) {
+    return `${msg.item_id}-${msg.type}`;
+  }
+
+  if ("call_id" in msg) {
+    return `${msg.call_id}-${msg.type}`;
+  }
+
+  // Fallback: include event id and turn id to ensure stability
+  return `${event.id}-${id}-${msg.type}`;
 };
-
-const getEventKey = (event: CodexEvent) => {
-  const {
-    params: { id, msg },
-  } = event.payload;
-  const normalizedType = STREAM_TYPE_NORMALIZATION[msg.type] ?? msg.type;
-  return `${id}:${normalizedType}`;
-};
-
-type StreamingMessages = Record<
-  string,
-  { partialContent: string; state: "streaming" | "done"; type?: string }
->;
 
 interface ChatScrollAreaProps {
   events: CodexEvent[];
-  activeConversationId?: string | null;
-  streamingMessages?: StreamingMessages;
+  activeConversationId?: string;
 }
 
 export function ChatScrollArea({
   events,
   activeConversationId,
-  streamingMessages,
 }: ChatScrollAreaProps) {
-  const scrollContentRef = useRef<HTMLDivElement | null>(null);
-  const viewportRef = useRef<HTMLElement | null>(null);
-  const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(true);
-  const [isManualOverride, setIsManualOverride] = useState(false);
-  const autoScrollRef = useRef(isAutoScrollEnabled);
-  const manualOverrideRef = useRef(isManualOverride);
+  const {
+    scrollContentRef,
+    scrollToBottom,
+    scrollToTop,
+    isAutoScrollEnabled,
+  } = useChatScroll({
+    activeConversationId,
+  });
 
-  const handleScrollToBottom = useCallback(() => {
-    const viewport = viewportRef.current;
-    if (!viewport) {
-      return;
-    }
-    manualOverrideRef.current = false;
-    autoScrollRef.current = true;
-    viewport.scrollTo({ top: viewport.scrollHeight, behavior: "smooth" });
-    setIsManualOverride(false);
-    setIsAutoScrollEnabled(true);
-  }, []);
-
-  const handleScrollToTop = useCallback(() => {
-    const viewport = viewportRef.current;
-    if (!viewport) {
-      return;
-    }
-    manualOverrideRef.current = true;
-    autoScrollRef.current = false;
-    viewport.scrollTo({ top: 0, behavior: "smooth" });
-    setIsManualOverride(true);
-    setIsAutoScrollEnabled(false);
-  }, []);
-
-  useEffect(() => {
-    autoScrollRef.current = isAutoScrollEnabled;
-  }, [isAutoScrollEnabled]);
-
-  useEffect(() => {
-    manualOverrideRef.current = isManualOverride;
-  }, [isManualOverride]);
-
-  useEffect(() => {
-    const content = scrollContentRef.current;
-    if (!content) {
-      return;
-    }
-    const viewport = content.closest(
-      "[data-slot='scroll-area-viewport']",
-    ) as HTMLElement | null;
-    if (!viewport) {
-      return;
-    }
-
-    viewportRef.current = viewport;
-
-    const handleScroll = () => {
-      const distanceToBottom =
-        viewport.scrollHeight - viewport.scrollTop - viewport.clientHeight;
-      const shouldStick = distanceToBottom <= 64;
-      if (shouldStick) {
-        if (manualOverrideRef.current && viewport.scrollTop === 0) {
-          return;
-        }
-        if (manualOverrideRef.current && viewport.scrollTop > 0) {
-          manualOverrideRef.current = false;
-          setIsManualOverride(false);
-        }
-        if (!autoScrollRef.current) {
-          autoScrollRef.current = true;
-          setIsAutoScrollEnabled(true);
-        }
-      } else {
-        if (autoScrollRef.current) {
-          autoScrollRef.current = false;
-          setIsAutoScrollEnabled(false);
-        }
-        if (!manualOverrideRef.current) {
-          manualOverrideRef.current = true;
-          setIsManualOverride(true);
-        }
-      }
+  // Sort by numeric turn id (params.id is an increasing string).
+  // Within the same turn id, keep original insertion order to avoid jitter.
+  const sortedEvents = useMemo(() => {
+    const priority = (t: string): number => {
+      if (t === "task_started") return 0;
+      if (t === "user_message") return 1;
+      if (t === "task_complete") return 100;
+      return 10;
     };
 
-    viewport.addEventListener("scroll", handleScroll, { passive: true });
-    handleScroll();
+    return events
+      .map((e, i) => ({ e, i }))
+      .sort((a, b) => {
+        const aPersisted = a.e.meta?.persisted ?? false;
+        const bPersisted = b.e.meta?.persisted ?? false;
+        if (aPersisted !== bPersisted) {
+          return aPersisted ? -1 : 1;
+        }
 
-    return () => {
-      viewport.removeEventListener("scroll", handleScroll);
-      if (viewportRef.current === viewport) {
-        viewportRef.current = null;
-      }
-    };
-  }, [activeConversationId]);
+        const aid = Number(a.e.payload.params.id);
+        const bid = Number(b.e.payload.params.id);
+        const aNum = Number.isFinite(aid);
+        const bNum = Number.isFinite(bid);
+        if (aNum && bNum && aid !== bid) return aid - bid;
+        if (!aNum || !bNum) {
+          const as = a.e.payload.params.id ?? "";
+          const bs = b.e.payload.params.id ?? "";
+          if (as !== bs) return as.localeCompare(bs);
+        }
+        const at = a.e.payload.params.msg.type;
+        const bt = b.e.payload.params.msg.type;
+        const ap = priority(at);
+        const bp = priority(bt);
+        if (ap !== bp) return ap - bp;
+        // Stable within the same turn
+        return a.i - b.i;
+      })
+      .map(({ e }) => e);
+  }, [events]);
 
-  useEffect(() => {
-    autoScrollRef.current = true;
-    manualOverrideRef.current = false;
-    setIsAutoScrollEnabled(true);
-    setIsManualOverride(false);
-  }, [activeConversationId]);
-
-  useEffect(() => {
-    const viewport = viewportRef.current;
-    if (!viewport) {
-      return;
-    }
-
-    if (!isAutoScrollEnabled) {
-      return;
-    }
-
-    const hasActiveStream =
-      streamingMessages &&
-      Object.values(streamingMessages).some(
-        (message) => message.state === "streaming",
-      );
-
-    if (!hasActiveStream) {
-      return;
-    }
-
-    viewport.scrollTo({
-      top: viewport.scrollHeight,
-      behavior: hasActiveStream ? "auto" : "smooth",
+  const renderEvents = useMemo(() => {
+    return sortedEvents.filter((e) => {
+      const t = e.payload.params.msg.type;
+      if (DELTA_EVENT_TYPES.has(t)) return false;
+      if (t === "exec_command_output_delta") return false;
+      if (t === "item_started" || t === "item_completed") return false;
+      return true;
     });
-  }, [activeConversationId, events, isAutoScrollEnabled, streamingMessages]);
+  }, [sortedEvents]);
+
+  useEffect(() => {
+    if (!isAutoScrollEnabled) return;
+    scrollToBottom();
+  }, [events.length, isAutoScrollEnabled, scrollToBottom]);
 
   return (
     <div className="relative flex-1 min-h-0">
       <ScrollArea className="h-full">
         <div ref={scrollContentRef} className="space-y-4 p-4">
-          {events.map((event) => (
-            <EventItem
-              key={getEventKey(event)}
-              event={event}
-              conversationId={event.payload.params.conversationId}
-            />
-          ))}
-          <DeltaEventLog />
+          {renderEvents.map((event, index) => {
+            const { conversationId, msg } = event.payload.params;
+            const key = `${getEventKey(event)}-${index}`;
+            return (
+              <div key={key} className="space-y-1">
+                <EventItem event={event} conversationId={conversationId} />
+                <EventMsgType msgType={msg.type} />
+              </div>
+            );
+          })}
         </div>
       </ScrollArea>
-      <div className="pointer-events-none absolute right-2 top-2 flex flex-col gap-2">
-        <Button
-          size="icon"
-          variant="secondary"
-          onClick={handleScrollToTop}
-          className="pointer-events-auto shadow-md"
-        >
-          <ArrowUp />
-        </Button>
-        <Button
-          size="icon"
-          variant="secondary"
-          onClick={handleScrollToBottom}
-          className="pointer-events-auto shadow-md"
-        >
-          <ArrowDown />
-        </Button>
-      </div>
+      <ScrollButtons
+        scrollToTop={scrollToTop}
+        scrollToBottom={scrollToBottom}
+      />
     </div>
   );
 }

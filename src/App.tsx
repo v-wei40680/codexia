@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { useLayoutStore } from "./stores/layoutStore";
+import { useLayoutStore } from "./stores/settings/layoutStore";
 import "./App.css";
 
 export default function App() {

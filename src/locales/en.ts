@@ -3,6 +3,7 @@ export const en = {
     chat: "Chat",
     projects: "Projects",
     task: "Task",
+    review: "Review",
     openNewWindow: "Open New Window",
     codexUnavailable: "Not available",
     usage: "Usage",

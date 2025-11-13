@@ -1,10 +1,15 @@
 use super::file::{get_session_info, get_sessions_path, read_first_line};
-use super::utils::{count_lines, extract_datetime};
+use super::utils::{count_lines, extract_datetime, parse_session_project_path};
 use chrono::{DateTime, Utc};
 use serde_json::{json, Value};
 use std::collections::HashSet;
 use std::path::Path;
 use walkdir::WalkDir;
+
+/// Result of a scan operation
+pub struct ScanResult {
+    pub sessions: Vec<Value>,
+}
 
 /// Walk through all `.jsonl` files in sessions directory
 pub fn scan_jsonl_files<P: AsRef<Path>>(dir_path: P) -> impl Iterator<Item = walkdir::DirEntry> {
@@ -19,9 +24,9 @@ pub fn scan_jsonl_files<P: AsRef<Path>>(dir_path: P) -> impl Iterator<Item = wal
 pub fn scan_sessions_after(
     project_path: &str,
     after: Option<DateTime<Utc>>,
-) -> Result<Vec<Value>, String> {
+) -> Result<ScanResult, String> {
     let sessions_dir = get_sessions_path()?;
-    let mut results = Vec::new();
+    let mut sessions = Vec::new();
 
     for entry in scan_jsonl_files(&sessions_dir) {
         let path = entry.path();
@@ -43,18 +48,28 @@ pub fn scan_sessions_after(
         // Read first line and parse JSON
         match read_first_line(path) {
             Ok(line) => {
-                if let Ok(value) = serde_json::from_str::<Value>(&line) {
-                    if value["payload"]["cwd"].as_str() == Some(project_path) {
+                if let Some(cwd) = parse_session_project_path(&line) {
+                    if cwd == project_path {
                         if let Ok(info) = get_session_info(path) {
                             let original_text = info.user_message.unwrap_or_default();
                             let truncated_text: String = original_text.chars().take(50).collect();
-                            results.push(json!({
+                            let timestamp = extract_datetime(&file_path)
+                                .map(|dt| dt.format("%Y-%m-%dT%H:%M:%S").to_string());
+                            let source = serde_json::from_str::<Value>(&line)
+                                .ok()
+                                .and_then(|v| v["payload"]["source"].as_str().map(|s| s.to_string()))
+                                .unwrap_or_default();
+                            sessions.push(json!({
                                 "path": file_path,
                                 "conversationId": info.session_id,
-                                "preview": truncated_text
+                                "preview": truncated_text,
+                                "timestamp": timestamp,
+                                "source": source
                             }));
                         }
                     }
+                } else {
+                    eprintln!("Could not extract project path from first line of {:?}", path);
                 }
             }
             Err(e) => eprintln!("Failed to read first line: {}", e),
@@ -62,7 +77,7 @@ pub fn scan_sessions_after(
     }
 
     // Sort newest first
-    results.sort_by(|a, b| {
+    sessions.sort_by(|a, b| {
         let a_dt = extract_datetime(a["path"].as_str().unwrap_or_default());
         let b_dt = extract_datetime(b["path"].as_str().unwrap_or_default());
         match (a_dt, b_dt) {
@@ -73,7 +88,9 @@ pub fn scan_sessions_after(
         }
     });
 
-    Ok(results)
+    Ok(ScanResult {
+        sessions,
+    })
 }
 
 /// Scan all projects that appear in sessions folder
@@ -101,20 +118,12 @@ pub async fn scan_projects() -> Result<Vec<Value>, String> {
             }
         }
 
-        let mut project_path: Option<String> = None;
         match read_first_line(&file_path) {
-            Ok(line) => {
-                if let Ok(value) = serde_json::from_str::<Value>(&line) {
-                    if let Some(cwd) = value["payload"]["cwd"].as_str() {
-                        project_path = Some(cwd.to_string());
-                    }
-                }
-            }
+            Ok(line) => match parse_session_project_path(&line) {
+                Some(cwd) => { unique_projects.insert(cwd); }
+                None => eprintln!("Could not extract project path from first line of {:?}", file_path),
+            },
             Err(e) => eprintln!("Failed to read first line for {:?}: {}", file_path, e),
-        }
-
-        if let Some(cwd) = project_path {
-            unique_projects.insert(cwd);
         }
     }
 

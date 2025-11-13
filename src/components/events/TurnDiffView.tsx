@@ -71,7 +71,7 @@ export function TurnDiffView({ content }: TurnDiffViewProps) {
   };
 
   return (
-    <div className="w-full border rounded-md overflow-hidden">
+    <div className="w-full border rounded-md overflow-hidden max-h-96">
       <div
         className="flex justify-between items-center bg-gray-200 dark:bg-gray-700 cursor-pointer"
         onClick={toggleExpand}
@@ -99,7 +99,7 @@ export function TurnDiffView({ content }: TurnDiffViewProps) {
         </div>
       </div>
       {isExpanded && (
-        <div className="border-t dark:border-gray-600">
+        <div className="border-t dark:border-gray-600 overflow-scroll max-h-96">
           <DiffViewer unifiedDiff={cleanedContent} />
         </div>
       )}

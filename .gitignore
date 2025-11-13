@@ -39,3 +39,4 @@ CLAUDE.md
 .env.production
 
 docs/design.md
+docs/DELTA_MERGE_FIX.md

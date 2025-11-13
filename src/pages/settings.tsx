@@ -1,46 +1,25 @@
-import { useState } from "react";
-import SettingsSidebar from "@/components/SettingsSidebar";
-import ProviderList from "@/components/ProviderList";
-import ProviderModels from "@/components/ProviderModels";
-import ExcludeFolders from "@/components/ExcludeFolders";
-import { useSettingsStore } from "@/stores/SettingsStore";
-import { PromptOptimizerSettings } from "@/components/PromptOptimizerSettings";
-import { RemoteAccessSettings } from "@/components/RemoteAccessSettings";
+import SettingsSidebar from "@/components/settings/SettingsSidebar";
+import ExcludeFolders from "@/components/settings/ExcludeFolders";
+import { useSettingsStore } from "@/stores/settings/SettingsStore";
+import { PromptOptimizerSettings } from "@/components/settings/PromptOptimizerSettings";
+import { RemoteAccessSettings } from "@/components/settings/RemoteAccessSettings";
+import { GitWorktreeSettings } from "@/components/settings/GitWorktreeSettings";
 
 export default function SettingsPage() {
   const { activeSection, setActiveSection } = useSettingsStore();
-  const [selectedProvider, setSelectedProvider] = useState<string>("openai");
-  const providerNames = [
-    "openai",
-    "google",
-    "ollama",
-    "openrouter",
-    "xai"
-  ];
 
   return (
     <div className="flex h-screen">
-      <SettingsSidebar 
-        activeSection={activeSection} 
-        onSectionChange={setActiveSection} 
+      <SettingsSidebar
+        activeSection={activeSection}
+        onSectionChange={setActiveSection}
       />
-      
+
       <div className="flex-1 px-6 overflow-y-auto">
-        {activeSection === "provider" && (
-          <div className="grid grid-cols-3 gap-6">
-            <ProviderList 
-              providers={providerNames}
-              selectedProvider={selectedProvider}
-              onProviderSelect={setSelectedProvider}
-            />
-            <ProviderModels 
-              selectedProvider={selectedProvider}
-            />
-          </div>
-        )}
         {activeSection === "promptOptimizer" && <PromptOptimizerSettings />}
         {activeSection === "remoteAccess" && <RemoteAccessSettings />}
         {activeSection === "exclude" && <ExcludeFolders />}
+        {activeSection === "gitWorktree" && <GitWorktreeSettings />}
       </div>
     </div>
   );

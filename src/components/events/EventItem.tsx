@@ -1,19 +1,20 @@
 import { memo } from "react";
-
 import { MarkdownRenderer } from "@/components/chat/MarkdownRenderer";
 import { Badge } from "@/components/ui/badge";
-import { useChatInputStore } from "@/stores/chatInputStore";
-import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
-import { EventBubble } from "./EventBubble";
 import { formatAbortReason } from "./helpers";
 import { PlanDisplay } from "../chat/messages/PlanDisplay";
 import { TurnDiffView } from "./TurnDiffView";
 import { AccordionMsg } from "./AccordionMsg";
-import { MessageFooter } from "@/components/chat/MessageFooter";
 import { ExecApprovalRequestItem } from "./ExecApprovalRequestItem";
 import { ApplyPatchApprovalRequestItem } from "./ApplyPatchApprovalRequestItem";
 import { CodexEvent } from "@/types/chat";
-import { Bot } from "lucide-react";
+import { Bot, CheckCircle2, X } from "lucide-react";
+import { MsgFooter } from "../chat/messages/MsgFooter";
+import { getStreamDurationLabel } from "@/utils/getDurationLable";
+import { PatchApplyBeginItem } from "./PatchApplyBeginItem";
+import { useTurnDiffStore } from "@/stores/useTurnDiffStore";
+import { useExecCommandStore } from "@/stores/useExecCommandStore";
+import { UserMessage } from "./UserMessage";
 
 export const EventItem = memo(function EventItem({
   event,
@@ -22,79 +23,70 @@ export const EventItem = memo(function EventItem({
   event: CodexEvent;
   conversationId: string | null;
 }) {
-  const { msg, id } = event.payload.params;
-  const { setInputValue, requestFocus, setEditingTarget, clearEditingTarget } =
-    useChatInputStore();
-  const startPendingConversation = useActiveConversationStore(
-    (state) => state.startPendingConversation,
-  );
+  const { msg } = event.payload.params;
+  const execCommandStatus = useExecCommandStore((state) => {
+    if (msg.type === "exec_command_begin" && "call_id" in msg) {
+      return state.statuses[msg.call_id];
+    }
+    return undefined;
+  });
+  const durationLabel = getStreamDurationLabel(event);
+  const { diffsByConversationId } = useTurnDiffStore();
+  const canUndo =
+    !!conversationId &&
+    (diffsByConversationId[conversationId]?.length || 0) > 0;
 
+  if (msg.type.endsWith("_delta")) return null;
   switch (msg.type) {
     case "user_message": {
-      const messageText = msg.message ?? "";
-      const createdAt = event.createdAt ?? Date.now();
-      const handleEdit = () => {
-        setInputValue(messageText);
-        if (conversationId) {
-          setEditingTarget(conversationId, id);
-        }
-        requestFocus();
-      };
-
+      const messageText = msg.message;
       return (
-        <div className="group space-y-1">
-          <EventBubble align="end" variant="user">
-            <p className="whitespace-pre-wrap leading-relaxed">{messageText}</p>
-          </EventBubble>
-          <MessageFooter
-            align="end"
-            messageId={id}
-            messageContent={messageText}
-            messageRole="user"
-            timestamp={createdAt}
-            selectedText=""
-            messageType="normal"
-            eventType={msg.type}
-            onEdit={messageText.trim().length > 0 ? handleEdit : undefined}
-          />
-        </div>
+        <UserMessage
+          message={messageText}
+          conversationId={conversationId}
+          canUndo={canUndo}
+        />
       );
     }
     case "agent_message": {
-      const messageText = msg.message ?? "";
-      const createdAt = event.createdAt ?? Date.now();
-      const handleFork = () => {
-        clearEditingTarget();
-        startPendingConversation();
-        setInputValue(messageText);
-        requestFocus();
-      };
+      const messageText = msg.message;
       return (
         <div className="group space-y-1">
           <div className="flex gap-2">
-            <Bot /><MarkdownRenderer content={messageText} />
+            <Bot />
+            <MarkdownRenderer content={messageText} />
           </div>
-          <MessageFooter
-            messageId={id}
-            messageContent={messageText}
-            messageRole="assistant"
-            timestamp={createdAt}
-            selectedText=""
-            messageType="normal"
-            eventType={msg.type}
-            onFork={messageText.trim().length > 0 ? handleFork : undefined}
-          />
+          <div className="opacity-0 group-hover:opacity-100 h-0 group-hover:h-auto overflow-hidden transition-all duration-200">
+            <MsgFooter
+              content={messageText}
+              align="start"
+              metaInfo={durationLabel}
+            />
+          </div>
         </div>
       );
     }
     case "agent_reasoning":
     case "agent_reasoning_raw_content":
       return (
-        <span className="flex">
-          <AccordionMsg title="🧠 Reasoning" content={msg.text} />
-        </span>
+        <div className="space-y-1">
+          <span className="flex">
+            {msg.text.includes("\n") ? (
+              (() => {
+                const firstNewlineIndex = msg.text.indexOf("\n");
+                const title = msg.text.substring(0, firstNewlineIndex);
+                const content = msg.text.substring(firstNewlineIndex + 1);
+                return <AccordionMsg title={title} content={content} />;
+              })()
+            ) : (
+              <MarkdownRenderer content={msg.text} />
+            )}
+          </span>
+          {durationLabel && (
+            <p className="text-xs text-muted-foreground">{durationLabel}</p>
+          )}
+        </div>
       );
-      return null;
     case "exec_approval_request":
       return (
         <ExecApprovalRequestItem
@@ -111,35 +103,64 @@ export const EventItem = memo(function EventItem({
       );
     case "turn_aborted":
       return (
-        <EventBubble align="start" variant="system" title="Turn Aborted">
-          <div className="space-y-2">
-            <Badge variant="destructive">{msg.reason}</Badge>
-            <p className="text-sm text-muted-foreground">
-              {formatAbortReason(msg.reason)}
-            </p>
-          </div>
-        </EventBubble>
+        <div className="flex gap-2">
+          <Badge variant="destructive">{msg.reason}</Badge>
+          {formatAbortReason(msg.reason)}
+        </div>
       );
     case "turn_diff":
       return <TurnDiffView content={msg.unified_diff} />;
     case "plan_update":
       return <PlanDisplay steps={msg.plan} />;
-    case "agent_message_delta":
-    case "agent_reasoning_delta":
-    case "agent_reasoning_raw_content_delta":
-    case "exec_command_begin":
-    case "exec_command_end":
+    case "exec_command_begin": {
+      const statusIcon = execCommandStatus
+        ? execCommandStatus.success
+          ? (
+            <CheckCircle2
+              className="h-4 w-4 text-emerald-500"
+              aria-label="Command succeeded"
+            />
+          )
+          : (
+            <X
+              className="h-4 w-4 text-destructive"
+              aria-label="Command failed"
+            />
+          )
+        : null;
+      return (
+        <div className="flex w-full font-semibold rounded-md">
+          <div
+            className="
+            flex w-full items-center gap-2 rounded-md font-semibold
+            bg-gray-100 text-gray-900
+            dark:bg-gray-800 dark:text-gray-100
+            transition-colors duration-300
+          "
+          >
+            <span className="mr-2">$</span>
+            <span className="flex-1">{msg.command.join(" ")}</span>
+            {statusIcon}
+          </div>
+        </div>
+      );
+    }
     case "patch_apply_begin":
+      return <PatchApplyBeginItem event={event} />;
     case "patch_apply_end":
+    case "exec_command_end":
     case "task_complete":
     case "task_started":
-    case "exec_command_output_delta":
     case "token_count":
     case "item_started":
     case "item_completed":
     case "agent_reasoning_section_break":
     case "session_configured":
       return null;
+    case "error":
+      return <span className="bg-red-500">{msg.message}</span>;
+    case "stream_error":
+      return <span className="bg-red-500">{msg.message}</span>;
     default:
       return (
         <AccordionMsg title={msg.type} content={JSON.stringify(msg, null, 2)} />

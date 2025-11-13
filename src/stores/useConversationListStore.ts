@@ -1,15 +1,63 @@
 import { create } from "zustand";
 import { invoke } from "@/lib/tauri-proxy";
 import type { ConversationSummary } from "@/bindings/ConversationSummary";
+import type { SessionSource } from "@/bindings/SessionSource";
+
+type RawConversationSummary = Partial<ConversationSummary> & {
+  conversationId: string;
+};
+
+const KNOWN_SESSION_SOURCES: readonly SessionSource[] = [
+  "cli",
+  "vscode",
+  "exec",
+  "mcp",
+  "unknown",
+];
+
+function normalizeSessionSource(value: unknown): SessionSource {
+  if (typeof value === "string") {
+    if (KNOWN_SESSION_SOURCES.includes(value as SessionSource)) {
+      return value as SessionSource;
+    }
+    return "unknown";
+  }
+
+  if (typeof value === "object" && value !== null && "subagent" in value) {
+    return value as SessionSource;
+  }
+
+  return "unknown";
+}
+
+function buildConversationSummary(
+  summary: RawConversationSummary,
+  cwdFallback: string,
+): ConversationSummary {
+  return {
+    conversationId: summary.conversationId,
+    path: summary.path ?? "",
+    preview: summary.preview ?? "",
+    timestamp:
+      typeof summary.timestamp === "string" ? summary.timestamp : null,
+    modelProvider: summary.modelProvider ?? "",
+    cwd: summary.cwd ?? cwdFallback ?? "",
+    cliVersion: summary.cliVersion ?? "",
+    source: normalizeSessionSource(summary.source),
+    gitInfo: summary.gitInfo ?? null,
+  };
+}
 
 interface ConversationListState {
   conversationsByCwd: Record<string, ConversationSummary[]>;
   conversationIndex: Record<string, string>;
   favoriteConversationIdsByCwd: Record<string, string[]>;
+  loadedAllByCwd: Record<string, boolean>;
+  hasMoreByCwd: Record<string, boolean>;
 }
 
 interface ConversationListActions {
-  addConversation: (cwd: string, summary: ConversationSummary) => Promise<void>;
+  addConversation: (cwd: string, summary: RawConversationSummary) => Promise<void>;
   updateConversationPreview: (conversationId: string, preview: string) => void;
   removeConversation: (conversationId: string) => Promise<void>;
   setFavorite: (conversationId: string, isFavorite: boolean) => Promise<void>;
@@ -35,27 +83,35 @@ export const useConversationListStore = create<
     conversationsByCwd: {},
     conversationIndex: {},
     favoriteConversationIdsByCwd: {},
+    loadedAllByCwd: {},
+    hasMoreByCwd: {},
 
-    addConversation: async (cwd, summary) => {
+    addConversation: async (cwd, summary: RawConversationSummary) => {
       set((state) => {
         const existingList = state.conversationsByCwd[cwd] ?? [];
+        const normalizedSummary = buildConversationSummary(summary, cwd);
         const index = existingList.findIndex(
-          (item) => item.conversationId === summary.conversationId,
+          (item) =>
+            item.conversationId === normalizedSummary.conversationId,
         );
         const existingItem = index >= 0 ? existingList[index] : null;
         const summaryWithTimestamp: ConversationSummary = {
-          ...summary,
+          ...normalizedSummary,
           timestamp:
-            summary.timestamp ??
+            normalizedSummary.timestamp ??
             existingItem?.timestamp ??
             new Date().toISOString(),
         };
-        const nextList =
-          index >= 0
-            ? existingList.map((item, idx) =>
-                idx === index ? { ...item, ...summaryWithTimestamp } : item,
-              )
-            : [...existingList, summaryWithTimestamp];
+        const mergedConversation =
+          existingItem === null
+            ? summaryWithTimestamp
+            : { ...existingItem, ...summaryWithTimestamp };
+        const nextList = [
+          mergedConversation,
+          ...existingList.filter(
+            (item) => item.conversationId !== summaryWithTimestamp.conversationId,
+          ),
+        ];
 
         return {
           conversationsByCwd: {
@@ -68,7 +124,6 @@ export const useConversationListStore = create<
           },
         };
       });
-      await syncCacheToBackend(cwd);
     },
 
     updateConversationPreview: (conversationId, preview) => {
@@ -168,27 +223,59 @@ export const useConversationListStore = create<
         conversationsByCwd: {},
         conversationIndex: {},
         favoriteConversationIdsByCwd: {},
+        loadedAllByCwd: {},
+        hasMoreByCwd: {},
       }),
   }),
 );
 
 // Helper to load project sessions from backend and update the store
-export async function loadProjectSessions(cwd: string) {
-  const { sessions, favorites } = await invoke("load_project_sessions", { projectPath: cwd }) as { sessions: any[], favorites: string[] };
+export async function loadProjectSessions(cwd: string, loadAll: boolean = false) {
+  let result: { sessions?: any[]; favorites?: string[]; last10Sessions?: any[] } | null = null;
+  try {
+    result = (await invoke("load_project_sessions", { projectPath: cwd })) as {
+      sessions?: any[];
+      favorites?: string[];
+      last10Sessions?: any[];
+    };
+  } catch (_) {
+    // Swallow and fall back to empty lists
+    result = { sessions: [], favorites: [], last10Sessions: [] };
+  }
+
+  const sessions = result?.sessions ?? [];
+  const favorites = result?.favorites ?? [];
+  const last10Sessions = result?.last10Sessions ?? sessions.slice(0, 10);
   
   // Reset the store
   useConversationListStore.getState().reset();
   
-  // First set the favorites to prevent them from being cleared during sync
+  // First set the favorites and flags before adding items
   useConversationListStore.setState(state => ({
     favoriteConversationIdsByCwd: {
       ...state.favoriteConversationIdsByCwd,
       [cwd]: favorites ?? [],
-    }
+    },
+    loadedAllByCwd: {
+      ...state.loadedAllByCwd,
+      [cwd]: !!loadAll,
+    },
+    hasMoreByCwd: {
+      ...state.hasMoreByCwd,
+      [cwd]: (sessions?.length ?? 0) > (last10Sessions?.length ?? 0),
+    },
   }));
-  
+
+  console.log("last10Sessions", last10Sessions)
+
   // Then add each conversation/session (this will sync with the correct favorites)
-  for (const summary of sessions) {
-    await useConversationListStore.getState().addConversation(cwd, summary);
+  if (loadAll) {
+    for (const summary of sessions) {
+      await useConversationListStore.getState().addConversation(cwd, summary);
+    }
+  } else {
+    for (const summary of last10Sessions) {
+      await useConversationListStore.getState().addConversation(cwd, summary);
+    }
   }
 }

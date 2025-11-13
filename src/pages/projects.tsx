@@ -13,7 +13,7 @@ import { FolderOpen, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { useFolderStore } from "@/stores/FolderStore";
 import { Button } from "@/components/ui/button";
-import { useLayoutStore } from "@/stores/layoutStore";
+import { useLayoutStore } from "@/stores/settings/layoutStore";
 import { isRemoteRuntime } from "@/lib/tauri-proxy";
 import {
   Dialog,

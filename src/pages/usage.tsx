@@ -2,39 +2,17 @@ import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UsageSummary, calculateUsageSummary } from "@/utils/usageAnalysis";
-import { SummaryCard } from "@/components/usage/SummaryCard";
-import { TokenBreakdownCard } from "@/components/usage/TokenBreakdownCard";
-import { MostUsedModelsCard } from "@/components/usage/MostUsedModelsCard";
-import { TopProjectsCard } from "@/components/usage/TopProjectsCard";
-import { ModelUsageChart } from "@/components/usage/ModelUsageChart";
-import { ProjectUsageChart } from "@/components/usage/ProjectUsageChart";
-import { TimelineChart } from "@/components/usage/TimelineChart";
-import { TokenDistributionChart } from "@/components/usage/TokenDistributionChart";
-
-
-function formatCurrency(amount: number): string {
-  return `$${amount.toFixed(3)}`;
-}
-
-function formatNumber(num: number): string {
-  if (num >= 1_000_000) {
-    return `${(num / 1_000_000).toFixed(2)}M`;
-  } else if (num >= 1_000) {
-    return `${(num / 1_000).toFixed(1)}K`;
-  }
-  return num.toString();
-}
-
-function formatTokens(tokens: number): string {
-  if (tokens >= 1_000_000) {
-    return `${(tokens / 1_000_000).toFixed(2)}M`;
-  } else if (tokens >= 1_000) {
-    return `${(tokens / 1_000).toFixed(1)}K`;
-  }
-  return tokens.toString();
-}
-
-
+import {
+  TokenDistributionChart,
+  TimelineChart,
+  ProjectUsageChart,
+  ModelUsageChart,
+  TopProjectsCard,
+  SummaryCard,
+  TokenBreakdownCard,
+  MostUsedModelsCard,
+} from "@/components/usage";
+import { formatCurrency, formatNumber, formatTokens } from "@/utils/formater";
 export default function UsagePage() {
   const [usageData, setUsageData] = useState<UsageSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,8 +26,8 @@ export default function UsagePage() {
       const data = await calculateUsageSummary();
       setUsageData(data);
     } catch (err) {
-      console.error('Failed to load usage data:', err);
-      setError('Failed to load usage data. Please try again.');
+      console.error("Failed to load usage data:", err);
+      setError("Failed to load usage data. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -98,47 +76,44 @@ export default function UsagePage() {
     );
   }
 
-
   return (
     <div className="p-6 space-y-6 bg-slate-900 min-h-screen">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-100">Usage Dashboard</h1>
-          <p className="text-slate-400 mt-1">Track your Codex usage and costs</p>
+          <p className="text-slate-400 mt-1">
+            Track your Codex usage and costs
+          </p>
         </div>
-        <Button 
-          onClick={handleRefresh} 
-          disabled={refreshing}
-          variant="outline"
-        >
-          {refreshing ? 'Refreshing...' : 'Refresh'}
+        <Button onClick={handleRefresh} disabled={refreshing} variant="outline">
+          {refreshing ? "Refreshing..." : "Refresh"}
         </Button>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-        <SummaryCard 
-          title="Total Cost" 
-          value={formatCurrency(usageData.totalCost)} 
+        <SummaryCard
+          title="Total Cost"
+          value={formatCurrency(usageData.totalCost)}
           description="Estimated spending"
           accent="text-emerald-400"
         />
-        <SummaryCard 
-          title="Total Sessions" 
-          value={formatNumber(usageData.totalSessions)} 
+        <SummaryCard
+          title="Total Sessions"
+          value={formatNumber(usageData.totalSessions)}
           description="Conversations completed"
           accent="text-cyan-400"
         />
-        <SummaryCard 
-          title="Total Tokens" 
-          value={formatTokens(usageData.totalTokens)} 
+        <SummaryCard
+          title="Total Tokens"
+          value={formatTokens(usageData.totalTokens)}
           description="Input + Output tokens"
           accent="text-purple-400"
         />
-        <SummaryCard 
-          title="Avg Cost/Session" 
-          value={formatCurrency(usageData.avgCostPerSession)} 
+        <SummaryCard
+          title="Avg Cost/Session"
+          value={formatCurrency(usageData.avgCostPerSession)}
           description="Per conversation"
           accent="text-orange-400"
         />
@@ -147,36 +122,87 @@ export default function UsagePage() {
       {/* Detailed Views */}
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList className="bg-slate-950/50 border-slate-800">
-          <TabsTrigger value="overview" className="data-[state=active]:bg-slate-800 data-[state=active]:text-slate-100 text-slate-400">Overview</TabsTrigger>
-          <TabsTrigger value="models" className="data-[state=active]:bg-slate-800 data-[state=active]:text-slate-100 text-slate-400">By Model</TabsTrigger>
-          <TabsTrigger value="projects" className="data-[state=active]:bg-slate-800 data-[state=active]:text-slate-100 text-slate-400">By Project</TabsTrigger>
-          <TabsTrigger value="timeline" className="data-[state=active]:bg-slate-800 data-[state=active]:text-slate-100 text-slate-400">Timeline</TabsTrigger>
-          <TabsTrigger value="tokens" className="data-[state=active]:bg-slate-800 data-[state=active]:text-slate-100 text-slate-400">Token Breakdown</TabsTrigger>
+          <TabsTrigger
+            value="overview"
+            className="data-[state=active]:bg-slate-800 data-[state=active]:text-slate-100 text-slate-400"
+          >
+            Overview
+          </TabsTrigger>
+          <TabsTrigger
+            value="models"
+            className="data-[state=active]:bg-slate-800 data-[state=active]:text-slate-100 text-slate-400"
+          >
+            By Model
+          </TabsTrigger>
+          <TabsTrigger
+            value="projects"
+            className="data-[state=active]:bg-slate-800 data-[state=active]:text-slate-100 text-slate-400"
+          >
+            By Project
+          </TabsTrigger>
+          <TabsTrigger
+            value="timeline"
+            className="data-[state=active]:bg-slate-800 data-[state=active]:text-slate-100 text-slate-400"
+          >
+            Timeline
+          </TabsTrigger>
+          <TabsTrigger
+            value="tokens"
+            className="data-[state=active]:bg-slate-800 data-[state=active]:text-slate-100 text-slate-400"
+          >
+            Token Breakdown
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <TokenBreakdownCard usageData={usageData} formatTokens={formatTokens} />
-            <MostUsedModelsCard usageData={usageData} formatCurrency={formatCurrency} formatTokens={formatTokens} />
+            <TokenBreakdownCard
+              usageData={usageData}
+              formatTokens={formatTokens}
+            />
+            <MostUsedModelsCard
+              usageData={usageData}
+              formatCurrency={formatCurrency}
+              formatTokens={formatTokens}
+            />
           </div>
 
-          <TopProjectsCard usageData={usageData} formatCurrency={formatCurrency} formatTokens={formatTokens} />
+          <TopProjectsCard
+            usageData={usageData}
+            formatCurrency={formatCurrency}
+            formatTokens={formatTokens}
+          />
         </TabsContent>
 
         <TabsContent value="models">
-          <ModelUsageChart usageData={usageData} formatCurrency={formatCurrency} formatTokens={formatTokens} />
+          <ModelUsageChart
+            usageData={usageData}
+            formatCurrency={formatCurrency}
+            formatTokens={formatTokens}
+          />
         </TabsContent>
 
         <TabsContent value="projects">
-          <ProjectUsageChart usageData={usageData} formatCurrency={formatCurrency} formatTokens={formatTokens} />
+          <ProjectUsageChart
+            usageData={usageData}
+            formatCurrency={formatCurrency}
+            formatTokens={formatTokens}
+          />
         </TabsContent>
 
         <TabsContent value="timeline">
-          <TimelineChart usageData={usageData} formatCurrency={formatCurrency} formatTokens={formatTokens} />
+          <TimelineChart
+            usageData={usageData}
+            formatCurrency={formatCurrency}
+            formatTokens={formatTokens}
+          />
         </TabsContent>
 
         <TabsContent value="tokens">
-          <TokenDistributionChart usageData={usageData} formatTokens={formatTokens} />
+          <TokenDistributionChart
+            usageData={usageData}
+            formatTokens={formatTokens}
+          />
         </TabsContent>
       </Tabs>
     </div>

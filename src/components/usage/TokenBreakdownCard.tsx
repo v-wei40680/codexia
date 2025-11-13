@@ -18,25 +18,25 @@ export function TokenBreakdownCard({ usageData, formatTokens }: TokenBreakdownCa
           <div className="flex justify-between items-center">
             <span className="text-sm text-slate-300">Input Tokens</span>
             <Badge variant="outline" className="border-emerald-500/50 text-emerald-400">
-              {formatTokens(usageData.inputTokens)}
+              {formatTokens(usageData.input_tokens)}
             </Badge>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm text-slate-300">Output Tokens</span>
             <Badge variant="outline" className="border-cyan-500/50 text-cyan-400">
-              {formatTokens(usageData.outputTokens)}
+              {formatTokens(usageData.output_tokens)}
             </Badge>
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-sm text-slate-300">Cache Write</span>
+            <span className="text-sm text-slate-300">Cache Write (Reasoning output tokens)</span>
             <Badge variant="outline" className="border-purple-500/50 text-purple-400">
-              {formatTokens(usageData.cacheWriteTokens)}
+              {formatTokens(usageData.reasoning_output_tokens)}
             </Badge>
           </div>
           <div className="flex justify-between items-center">
             <span className="text-sm text-slate-300">Cache Read</span>
             <Badge variant="outline" className="border-orange-500/50 text-orange-400">
-              {formatTokens(usageData.cacheReadTokens)}
+              {formatTokens(usageData.cached_input_tokens)}
             </Badge>
           </div>
         </div>

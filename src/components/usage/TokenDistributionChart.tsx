@@ -17,10 +17,10 @@ interface TokenDistributionChartProps {
 
 export function TokenDistributionChart({ usageData, formatTokens }: TokenDistributionChartProps) {
   const tokenBreakdownData = [
-    { name: 'Input', value: usageData.inputTokens, color: '#0088FE' },
-    { name: 'Output', value: usageData.outputTokens, color: '#00C49F' },
-    { name: 'Cache Write', value: usageData.cacheWriteTokens, color: '#FFBB28' },
-    { name: 'Cache Read', value: usageData.cacheReadTokens, color: '#FF8042' },
+    { name: 'Input', value: usageData.input_tokens, color: '#0088FE' },
+    { name: 'Output', value: usageData.output_tokens, color: '#00C49F' },
+    { name: 'Cache Write', value: usageData.reasoning_output_tokens, color: '#FFBB28' },
+    { name: 'Cache Read', value: usageData.cached_input_tokens, color: '#FF8042' },
   ].filter(item => item.value > 0);
 
   return (

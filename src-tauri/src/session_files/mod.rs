@@ -4,4 +4,5 @@ pub mod file;
 pub mod get;
 pub mod scanner;
 pub mod update;
+pub mod usage;
 pub mod utils;

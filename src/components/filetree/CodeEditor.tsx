@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Save, Search, ChevronUp, ChevronDown, X, Send, FileText } from "lucide-react";
 import AceEditor from "react-ace";
 import { useEditorStore } from "@/stores/EditorStore";
-import { useThemeStore } from "@/stores/ThemeStore";
+import { useThemeStore } from "@/stores/settings/ThemeStore";
 // Import Ace Editor modes
 import "ace-builds/src-noconflict/mode-javascript";
 import "ace-builds/src-noconflict/mode-typescript";

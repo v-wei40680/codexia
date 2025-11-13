@@ -1,8 +1,16 @@
 import { invoke, listen } from "@/lib/tauri-proxy";
+import { handleTaskComplete } from "@/utils/handleTaskComplete";
 import { useEffect, useRef } from "react";
 import { ConversationId } from "@/bindings/ConversationId";
 import { CodexEvent } from "@/types/chat";
 import { useSessionStore } from "@/stores/useSessionStore";
+import { useSystemSleepPrevention } from "../useSystemSleepPrevention";
+import { AddConversationSubscriptionResponse } from "@/bindings/AddConversationSubscriptionResponse";
+import { playBeep } from "@/utils/beep";
+import { useCodexStore } from "@/stores/useCodexStore";
+import { appendEventLine } from "@/utils/appendEventLine";
+import { useBackendErrorListener } from "@/utils/backendErrorListener";
+import { useSettingsStore } from "@/stores/settings/SettingsStore";
 
 interface EventHandlers {
   isConversationReady?: boolean;
@@ -31,137 +39,200 @@ interface EventHandlers {
   onError?: (event: CodexEvent) => void;
 }
 
+// Busy state event types
+const BUSY_OFF_EVENTS = new Set(["error", "task_complete", "turn_aborted"]);
+const BUSY_ON_EVENTS = new Set(["task_started"]);
+
 export function useConversationEvents(
   conversationId: ConversationId | null,
   { isConversationReady = false, ...handlers }: EventHandlers,
 ) {
   const handlersRef = useRef<EventHandlers>(handlers);
-  const setIsBusy = useSessionStore((state) => state.setIsBusy);
+  const { setIsBusy } = useSessionStore();
+  const latestEvent = useRef<CodexEvent | null>(null);
+  const patchRecordedTurnsRef = useRef<Set<string>>(new Set());
+  const { cwd } = useCodexStore();
+  const { autoCommitGitWorktree, enableTaskCompleteBeep } = useSettingsStore();
+  const autoCommitGitWorktreeRef = useRef(autoCommitGitWorktree);
+  const enableTaskCompleteBeepRef = useRef(enableTaskCompleteBeep);
+
+  useSystemSleepPrevention(conversationId, latestEvent.current);
+  useBackendErrorListener();
 
   useEffect(() => {
     handlersRef.current = handlers;
   }, [handlers]);
 
   useEffect(() => {
+    autoCommitGitWorktreeRef.current = autoCommitGitWorktree;
+  }, [autoCommitGitWorktree]);
+
+  useEffect(() => {
+    enableTaskCompleteBeepRef.current = enableTaskCompleteBeep;
+  }, [enableTaskCompleteBeep]);
+
+  useEffect(() => {
     if (!conversationId || !isConversationReady) return;
-    let unlisten: (() => void) | null = null;
+    
+    let conversationUnlisten: (() => void) | null = null;
     let subscriptionId: string | null = null;
 
     (async () => {
       try {
-        subscriptionId = await invoke("add_conversation_listener", {
-          params: { conversationId },
-        });
-        console.debug(
-          "add_conversation_listener subscriptionId:",
-          subscriptionId,
+        const listenerResponse = await invoke<AddConversationSubscriptionResponse>(
+          "add_conversation_listener",
+          { params: { conversationId } },
         );
+        subscriptionId = listenerResponse.subscriptionId;
+        
+        conversationUnlisten = await listen(
+          "codex:event",
+          async (event: CodexEvent) => {
+            const currentHandlers = handlersRef.current;
+            const { params } = event.payload;
+            const { msg } = params;
+            
+            const worktreeId = params.conversationId;
+            const turnKey = `${params.conversationId}:${params.id}`;
 
-        unlisten = await listen("codex:event", (event: CodexEvent) => {
-          const currentHandlers = handlersRef.current;
-          const msg = (event.payload as CodexEvent["payload"]).params.msg;
-          if (!msg.type.endsWith("_delta") && !msg.type.startsWith("item")) {
-            console.info(`codex:event ${event.id} ${msg.type}`, event);
-          }
+            // Log non-delta events
+            if (!msg.type.endsWith("_delta")) {
+              console.log(msg.type, msg);
+              await appendEventLine(conversationId, cwd, event);
+            }
 
-          currentHandlers.onAnyEvent?.(event);
-          const busyOff =
-            msg.type === "error" ||
-            msg.type === "task_complete" ||
-            msg.type === "turn_aborted";
-          setIsBusy(!busyOff);
+            latestEvent.current = event;
+            currentHandlers.onAnyEvent?.(event);
 
-          switch (msg.type) {
-            case "task_started":
-              currentHandlers.onTaskStarted?.(event);
-              break;
-            case "task_complete":
-              currentHandlers.onTaskComplete?.(event);
-              break;
-            case "agent_message":
-              currentHandlers.onAgentMessage?.(event);
-              break;
-            case "agent_message_delta":
-              currentHandlers.onAgentMessageDelta?.(event);
-              break;
-            case "user_message":
-              currentHandlers.onUserMessage?.(event);
-              break;
-            case "agent_reasoning":
-              currentHandlers.onAgentReasoning?.(event);
-              break;
-            case "agent_reasoning_delta":
-              currentHandlers.onAgentReasoningDelta?.(event);
-              break;
-            case "agent_reasoning_raw_content_delta":
-              currentHandlers.onAgentReasoningDelta?.(event);
-              break;
-            case "agent_reasoning_section_break":
-              currentHandlers.onAgentReasoningSectionBreak?.(event);
-              break;
-            case "exec_approval_request":
-              currentHandlers.onExecApprovalRequest?.(event);
-              break;
-            case "apply_patch_approval_request":
-              currentHandlers.onApplyPatchApprovalRequest?.(event);
-              break;
-            case "exec_command_begin":
-              currentHandlers.onExecCommandBegin?.(event);
-              break;
-            case "exec_command_end":
-              currentHandlers.onExecCommandEnd?.(event);
-              break;
-            case "patch_apply_begin":
-              currentHandlers.onPatchApplyBegin?.(event);
-              break;
-            case "patch_apply_end":
-              currentHandlers.onPatchApplyEnd?.(event);
-              break;
-            case "web_search_begin":
-              currentHandlers.onWebSearchBegin?.(event);
-              break;
-            case "web_search_end":
-              currentHandlers.onWebSearchEnd?.(event);
-              break;
-            case "mcp_tool_call_begin":
-              currentHandlers.onMcpToolCallBegin?.(event);
-              break;
-            case "mcp_tool_call_end":
-              currentHandlers.onMcpToolCallEnd?.(event);
-              break;
-            case "turn_diff":
-              currentHandlers.onTurnDiff?.(event);
-              break;
-            case "token_count":
-              currentHandlers.onTokenCount?.(event);
-              break;
-            case "stream_error":
-              console.log("stream_error:", event);
-              currentHandlers.onStreamError?.(event);
-              break;
-            case "error":
-              console.log("error:", event);
-              currentHandlers.onError?.(event);
-              break;
-            case "item_started":
-            case "item_completed":
-            case "agent_reasoning_raw_content":
-            case "exec_command_output_delta":
-            case "turn_aborted":
-              break;
-            default:
-              console.warn(`Unknown event.id ${event.id} msg.type:`, msg.type);
-          }
-        });
+            // Handle busy state
+            if (BUSY_OFF_EVENTS.has(msg.type)) {
+              if (enableTaskCompleteBeepRef.current) {
+                playBeep();
+              }
+              setIsBusy(false);
+            } else if (BUSY_ON_EVENTS.has(msg.type)) {
+              setIsBusy(true);
+            }
+
+            // Dispatch to specific handlers
+            switch (msg.type) {
+              case "task_started":
+                currentHandlers.onTaskStarted?.(event);
+                break;
+              
+              case "task_complete":
+                if (autoCommitGitWorktreeRef.current) {
+                  void handleTaskComplete({
+                    event,
+                    worktreeId,
+                    turnKey,
+                    cwd,
+                    patchRecordedTurnsRef,
+                  });
+                }
+                currentHandlers.onTaskComplete?.(event);
+                break;
+              
+              case "user_message":
+                currentHandlers.onUserMessage?.(event);
+                break;
+              
+              case "agent_message":
+                currentHandlers.onAgentMessage?.(event);
+                break;
+              
+              case "agent_reasoning_section_break":
+                currentHandlers.onAgentReasoningSectionBreak?.(event);
+                break;
+              
+              case "exec_approval_request":
+                currentHandlers.onExecApprovalRequest?.(event);
+                break;
+              
+              case "apply_patch_approval_request":
+                patchRecordedTurnsRef.current.add(turnKey);
+                currentHandlers.onApplyPatchApprovalRequest?.(event);
+                break;
+              
+              case "exec_command_begin":
+                currentHandlers.onExecCommandBegin?.(event);
+                break;
+              
+              case "exec_command_end":
+                currentHandlers.onExecCommandEnd?.(event);
+                break;
+              
+              case "patch_apply_begin":
+                patchRecordedTurnsRef.current.add(turnKey);
+                currentHandlers.onPatchApplyBegin?.(event);
+                break;
+              
+              case "patch_apply_end":
+                currentHandlers.onPatchApplyEnd?.(event);
+                break;
+              
+              case "web_search_begin":
+                currentHandlers.onWebSearchBegin?.(event);
+                break;
+              
+              case "web_search_end":
+                currentHandlers.onWebSearchEnd?.(event);
+                break;
+              
+              case "mcp_tool_call_begin":
+                currentHandlers.onMcpToolCallBegin?.(event);
+                break;
+              
+              case "mcp_tool_call_end":
+                currentHandlers.onMcpToolCallEnd?.(event);
+                break;
+              
+              case "turn_diff":
+                currentHandlers.onTurnDiff?.(event);
+                break;
+              
+              case "token_count":
+                currentHandlers.onTokenCount?.(event);
+                break;
+              
+              case "stream_error":
+                console.log("stream_error:", event);
+                currentHandlers.onStreamError?.(event);
+                break;
+              
+              case "error":
+                console.log("error:", event);
+                currentHandlers.onError?.(event);
+                break;
+              
+              // Ignored events
+              case "agent_message_content_delta":
+              case "agent_message_delta":
+              case "agent_reasoning":
+              case "agent_reasoning_delta":
+              case "agent_reasoning_raw_content_delta":
+              case "reasoning_content_delta":
+              case "reasoning_raw_content_delta":
+              case "plan_update":
+              case "item_started":
+              case "item_completed":
+              case "agent_reasoning_raw_content":
+              case "exec_command_output_delta":
+              case "turn_aborted":
+                break;
+              
+              default:
+                console.warn(`Unknown event type: ${msg.type}`, event);
+            }
+          },
+        );
       } catch (err) {
         console.error("Failed to add conversation listener:", err);
       }
     })();
 
     return () => {
-      unlisten?.();
-      // Only attempt to remove the listener if we have a valid subscription ID.
-      // The backend expects a UUID string; passing null triggers a type error.
+      conversationUnlisten?.();
       if (subscriptionId) {
         invoke("remove_conversation_listener", {
           params: { subscriptionId },
@@ -169,5 +240,5 @@ export function useConversationEvents(
       }
       setIsBusy(false);
     };
-  }, [conversationId, isConversationReady, setIsBusy]);
+  }, [conversationId, isConversationReady, setIsBusy, cwd]);
 }

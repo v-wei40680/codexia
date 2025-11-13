@@ -6,7 +6,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useThemeStore, type Accent } from "@/stores/ThemeStore";
+import { useThemeStore, type Accent } from "@/stores/settings/ThemeStore";
 import { Palette } from "lucide-react";
 import { Button } from "../ui/button";
 

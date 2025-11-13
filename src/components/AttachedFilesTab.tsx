@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Files } from "lucide-react";
 import { FileTreeItem } from "@/components/filetree/FileTreeItem";
 import { useChatInputStore } from "@/stores/chatInputStore";
-import { useLayoutStore } from "@/stores/layoutStore";
+import { useLayoutStore } from "@/stores/settings/layoutStore";
 
 export function AttachedFilesTab() {
   const { fileReferences, removeFileReference } = useChatInputStore();

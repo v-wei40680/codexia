@@ -1,5 +1,12 @@
 import type { EventMsg } from "@/bindings/EventMsg";
 
+export interface EventMeta {
+  streamKey?: string;
+  streamStartedAt?: number;
+  streamDurationMs?: number;
+  persisted?: boolean;
+}
+
 export interface CodexEvent {
   id: number;
   event: string; // "codex:event"
@@ -11,8 +18,7 @@ export interface CodexEvent {
       msg: EventMsg;
     };
   };
-  createdAt?: number;
-  source?: "live" | "history";
+  meta?: EventMeta;
 }
 
 export type ResumeConversationResult = {
@@ -24,36 +30,23 @@ export type ResumeConversationResult = {
 export const extractInitialMessages = (
   response: ResumeConversationResult,
 ): CodexEvent["payload"]["params"]["msg"][] | null => {
-  return (
-    response.initialMessages ??
-    null
-  );
+  return response.initialMessages ?? null;
 };
 
+// dont need exec_command_output_delta
 export const DELTA_EVENT_TYPES = new Set<EventMsg["type"]>([
   "agent_message_delta",
+  "agent_message_content_delta",
   "agent_reasoning_delta",
   "agent_reasoning_raw_content_delta",
+  "reasoning_content_delta",
+  "reasoning_raw_content_delta",
 ]);
 
 export interface MediaAttachment {
   id: string;
-  type: 'image' | 'audio';
+  type: "image" | "audio";
   path: string;
   name: string;
   mimeType?: string;
-}
-
-export type Provider =
-  | "anthropic"
-  | "openai"
-  | "openrouter"
-  | "google"
-  | "ollama";
-
-export interface ProviderConfig {
-  value: Provider;
-  label: string;
-  models: string[];
-  defaultBaseUrl?: string;
 }

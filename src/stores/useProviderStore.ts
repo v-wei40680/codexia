@@ -1,7 +1,9 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { ConfigService } from "@/services/configService";
+import { ModelProvider } from "@/types/config";
 
-export interface ModelProvider {
+export interface ProviderStateModelProvider {
   id: string;
   name: string;
   models: string[];
@@ -10,17 +12,17 @@ export interface ModelProvider {
   baseUrl?: string;
 }
 
-type ReasoningEffort = 'minimal' | 'low' | 'medium' | 'high';
+type ReasoningEffort = "minimal" | "low" | "medium" | "high";
 
 type ProviderState = {
-  providers: ModelProvider[];
-  selectedProviderId: string | null;
+  providers: ProviderStateModelProvider[];
+  selectedProviderId: string | "openai";
   selectedModel: string | null;
   reasoningEffort: ReasoningEffort;
 };
 
 type ProviderActions = {
-  addProvider: (provider: { name: string; models: string[] }) => void;
+  addProvider: (provider: { name: string; models: string[]; baseUrl?: string; envKey?: string }) => void;
   setApiKey: (id: string, key: string) => void;
   setApiKeyVar: (id: string, keyVar: string) => void;
   setBaseUrl: (id: string, baseUrl: string) => void;
@@ -28,13 +30,12 @@ type ProviderActions = {
   setSelectedModel: (model: string) => void;
   addModel: (providerId: string, model: string) => void;
   deleteModel: (providerId: string, model: string) => void;
+  deleteProvider: (providerId: string) => void;
   setReasoningEffort: (effort: ReasoningEffort) => void;
   setOllamaModels: (models: string[]) => void;
 };
 
-
-
-const initialProviders: ModelProvider[] = [
+const initialProviders: ProviderStateModelProvider[] = [
   {
     id: "openai",
     name: "OpenAI",
@@ -49,7 +50,7 @@ const initialProviders: ModelProvider[] = [
     models: [],
     apiKey: "",
     apiKeyVar: "",
-    baseUrl: "",
+    baseUrl: "http://localhost:11434/v1",
   },
   {
     id: "google",
@@ -57,7 +58,7 @@ const initialProviders: ModelProvider[] = [
     models: ["gemini-2.5-pro", "gemini-2.5-flash"],
     apiKey: "",
     apiKeyVar: "GEMINI_API_KEY",
-    baseUrl: "",
+    baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
   },
   {
     id: "openrouter",
@@ -75,6 +76,14 @@ const initialProviders: ModelProvider[] = [
     apiKeyVar: "HF_API_TOKEN",
     baseUrl: "https://router.huggingface.co/v1",
   },
+  {
+    id: "xai",
+    name: "grok",
+    models: ["grok-4"],
+    apiKey: "",
+    apiKeyVar: "XAI_API_KEY",
+    baseUrl: "https://api.x.ai/v1",
+  },
 ];
 
 export const useProviderStore = create<ProviderState & ProviderActions>()(
@@ -83,7 +92,7 @@ export const useProviderStore = create<ProviderState & ProviderActions>()(
       providers: initialProviders,
       selectedProviderId: initialProviders[0].id,
       selectedModel: initialProviders[0].models[0],
-      reasoningEffort: 'medium',
+      reasoningEffort: "medium",
 
       setSelectedProviderId: (id: string) => {
         const provider = get().providers.find((p) => p.id === id);
@@ -116,17 +125,34 @@ export const useProviderStore = create<ProviderState & ProviderActions>()(
           ),
         }));
       },
-      addProvider: (providerData) => {
-        const newProvider: ModelProvider = {
+      addProvider: (providerData: { name: string; models: string[]; baseUrl?: string; envKey?: string }) => {
+        const newProvider: ProviderStateModelProvider = {
           ...providerData,
           id: providerData.name.toLowerCase().replace(/\s+/g, "-"),
           apiKey: "",
-          apiKeyVar: "",
-          baseUrl: "",
+          apiKeyVar: providerData.envKey || "",
+          baseUrl: providerData.baseUrl || "",
         };
         set((state) => ({
           providers: [...state.providers, newProvider],
         }));
+
+        // Persist provider config
+        const configServiceNewProvider: ModelProvider = {
+          name: newProvider.name,
+          base_url: newProvider.baseUrl || "",
+          env_key: newProvider.apiKeyVar || "",
+        };
+        ConfigService.addOrUpdateModelProvider(newProvider.id, configServiceNewProvider);
+
+        // Persist profile config
+        ConfigService.addOrUpdateProfile(newProvider.id, {
+          provider_id: newProvider.id,
+          model_id: newProvider.models[0] || "",
+          api_key: newProvider.apiKey,
+          api_key_env: newProvider.apiKeyVar,
+          base_url: newProvider.baseUrl,
+        });
       },
       addModel: (providerId, model) => {
         set((state) => ({
@@ -151,9 +177,36 @@ export const useProviderStore = create<ProviderState & ProviderActions>()(
               : p,
           ),
         }));
-      },    }),
+      },
+      deleteProvider: (providerId: string) => {
+        set((state) => {
+          const updatedProviders = state.providers.filter(
+            (p) => p.id !== providerId,
+          );
+
+          let newSelectedProviderId = state.selectedProviderId;
+          let newSelectedModel = state.selectedModel;
+
+          if (state.selectedProviderId === providerId) {
+            newSelectedProviderId = updatedProviders[0]?.id;
+            newSelectedModel = updatedProviders[0]?.models[0] || null;
+          }
+
+          // Delete provider config
+          ConfigService.deleteModelProvider(providerId);
+          // Delete profile config
+          ConfigService.deleteProfile(providerId);
+
+          return {
+            providers: updatedProviders,
+            selectedProviderId: newSelectedProviderId,
+            selectedModel: newSelectedModel,
+          };
+        });
+      },
+    }),
     {
-      name: "provider"
+      name: "provider",
     },
   ),
 );

@@ -7,34 +7,42 @@ mod filesystem;
 mod mcp;
 mod services;
 mod session_files;
+mod sleep;
 mod state;
 mod terminal;
 mod utils;
 
-use commands::{
-    check_codex_version, create_new_window, disable_remote_ui,
-    enable_remote_ui, get_remote_ui_status
-};
 use crate::config::provider::ensure_default_providers;
-use session_files::{
-    delete::{delete_session_file, delete_sessions_files},
-    cache::{load_project_sessions, write_project_cache},
-    scanner::scan_projects,
-    update::update_cache_title,
-};
-use terminal::open_terminal_with_command;
+use commands::{ check_codex_version, check_coder_version, create_new_window, disable_remote_ui, enable_remote_ui, get_remote_ui_status, };
 use filesystem::{
     directory_ops::{canonicalize_path, get_default_directories, read_directory, search_files},
     file_analysis::calculate_file_tokens,
-    file_io::{read_file, write_file},
+    file_io::{read_file, write_file, append_jsonl_file},
     file_parsers::{csv::read_csv_content, pdf::read_pdf_content, xlsx::read_xlsx_content},
     git_diff::get_git_file_diff,
     git_status::get_git_status,
+    git_worktree::{
+        prepare_git_worktree,
+        git_commit_changes,
+        apply_reverse_patch,
+        commit_changes_to_worktree,
+        delete_git_worktree,
+    },
     watch::{start_watch_directory, stop_watch_directory},
 };
 use mcp::{add_mcp_server, delete_mcp_server, read_mcp_servers};
+use session_files::{
+    cache::{load_project_sessions, write_project_cache},
+    delete::{delete_session_file, delete_sessions_files},
+    get::{get_session_files, read_session_file},
+    scanner::scan_projects,
+    update::update_cache_title,
+    usage::read_token_usage,
+};
+use sleep::{allow_sleep, prevent_sleep, SleepState};
 use state::{AppState, RemoteAccessState};
 use tauri::{AppHandle, Emitter, Manager};
+use terminal::open_terminal_with_command;
 
 pub fn export_ts_bindings() {
     export_bindings::export_ts_types();
@@ -65,8 +73,12 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .manage(AppState::new())
         .manage(RemoteAccessState::default())
+        .manage(SleepState::default())
         .invoke_handler(tauri::generate_handler![
             check_codex_version,
+            check_coder_version,
+            state::get_client_name,
+            state::set_client_name,
             create_new_window,
             read_directory,
             get_default_directories,
@@ -75,11 +87,17 @@ pub fn run() {
             calculate_file_tokens,
             read_file,
             write_file,
+            append_jsonl_file,
             read_pdf_content,
             read_csv_content,
             read_xlsx_content,
             get_git_file_diff,
             get_git_status,
+            prepare_git_worktree,
+            git_commit_changes,
+            apply_reverse_patch,
+            delete_git_worktree,
+            commit_changes_to_worktree,
             start_watch_directory,
             stop_watch_directory,
             config::project::read_codex_config,
@@ -96,11 +114,13 @@ pub fn run() {
             config::profile::add_or_update_profile,
             config::profile::delete_profile,
             config::provider::add_or_update_model_provider,
+            config::provider::delete_model_provider,
             config::provider::ensure_default_providers,
             enable_remote_ui,
             disable_remote_ui,
             get_remote_ui_status,
             cmd::send_user_message,
+            cmd::turn_start,
             cmd::new_conversation,
             cmd::resume_conversation,
             cmd::interrupt_conversation,
@@ -116,6 +136,11 @@ pub fn run() {
             open_terminal_with_command,
             delete_sessions_files,
             write_project_cache,
+            get_session_files,
+            read_session_file,
+            prevent_sleep,
+            allow_sleep,
+            read_token_usage,
         ])
         .setup(|_app| {
             #[cfg(debug_assertions)]

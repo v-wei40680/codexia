@@ -1,7 +1,7 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import { AppLocale, localeLabels, localeResources } from "@/locales";
-import { useLocaleStore } from "@/stores/LocaleStore";
+import { useLocaleStore } from "@/stores/settings/LocaleStore";
 
 const fallbackLocale: AppLocale = "en";
 const initialLocale = useLocaleStore.getState().locale ?? fallbackLocale;

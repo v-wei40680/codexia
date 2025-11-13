@@ -3,6 +3,7 @@ export const ja = {
     chat: "チャット",
     projects: "プロジェクト",
     task: "タスク",
+    review: "レビュー",
     openNewWindow: "新しいウィンドウを開く",
     codexUnavailable: "利用不可",
     usage: "使用状況",

@@ -84,9 +84,6 @@ export function NoteList() {
             <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate flex-1">
               {note.title}
             </h4>
-            {note.isFavorited && (
-              <Star className="h-3 w-3 text-yellow-500 fill-current" />
-            )}
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 line-clamp-2">
             {note.content || "Empty note"}
@@ -95,29 +92,17 @@ export function NoteList() {
             <span className="text-xs text-gray-400 dark:text-gray-500">
               {formatDate(note.updatedAt)}
             </span>
+            <div onClick={(e) => e.stopPropagation()}>
+              <NoteToChat 
+                content={note.content} 
+              />
+            </div>
           </div>
         </div>
         
         {/* Actions */}
         <div className="opacity-0 group-hover:opacity-100 transition-opacity">
           <div className="flex gap-1">
-            <div onClick={(e) => e.stopPropagation()}>
-              <NoteToChat 
-                content={note.content} 
-              />
-            </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              className="h-6 w-6 p-0"
-              onClick={(e) => handleToggleFavorite(note.id, e)}
-            >
-              {note.isFavorited ? (
-                <Star className="h-3 w-3 text-yellow-500 fill-current" />
-              ) : (
-                <StarOff className="h-3 w-3" />
-              )}
-            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -131,10 +116,19 @@ export function NoteList() {
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
                 <DropdownMenuItem
+                  onClick={(e) => handleToggleFavorite(note.id, e)}
+                >
+                  {note.isFavorited ? (
+                    <><StarOff className="h-3 w-3" />UnFav</>
+                  ) : (
+                    <><Star className="h-3 w-3 text-yellow-500 fill-current" />Add Fav</>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuItem
                   onClick={(e) => handleDeleteNote(note.id, e)}
                   className="text-red-600 hover:text-red-700"
                 >
-                  <Trash2 className="h-3 w-3 mr-2" />
+                  <Trash2 className="h-3 w-3" />
                   Delete
                 </DropdownMenuItem>
               </DropdownMenuContent>
@@ -147,8 +141,10 @@ export function NoteList() {
 
   return (
     <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900">
+      {/* Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1">
       {/* Search */}
-      <div className="p-3 bg-white dark:bg-gray-800 border-b dark:border-gray-700">
+      <div className="px-1 bg-white dark:bg-gray-800 border-b dark:border-gray-700">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400 dark:text-gray-500" />
           <Input
@@ -159,15 +155,12 @@ export function NoteList() {
           />
         </div>
       </div>
-
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col flex-1">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="favorites">Favorites</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="all" className="flex-1 overflow-y-auto mt-0">
+        <TabsContent value="all" className="flex-1 overflow-y-auto mt-0 min-h-0">
           {filteredNotes.length === 0 ? (
             <div className="p-4 text-center text-gray-500 dark:text-gray-400 text-sm">
               {searchQuery ? (
@@ -182,7 +175,7 @@ export function NoteList() {
               )}
             </div>
           ) : (
-            <div className="space-y-1 p-2">
+            <div className="space-y-1">
               {filteredNotes.map(renderNoteItem)}
             </div>
           )}

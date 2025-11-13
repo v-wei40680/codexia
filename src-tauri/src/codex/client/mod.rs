@@ -1,24 +1,26 @@
 use std::collections::HashMap;
 use std::process::Stdio;
-use std::sync::Arc;
 use std::sync::atomic::{AtomicI64, Ordering};
+use std::sync::Arc;
 
 use codex_app_server_protocol::{
     AddConversationListenerParams, AddConversationSubscriptionResponse, ClientInfo,
     InitializeParams, InterruptConversationParams, InterruptConversationResponse,
     JSONRPCErrorError, JSONRPCNotification, JSONRPCRequest, NewConversationParams,
-    NewConversationResponse, RequestId, ResumeConversationParams, ResumeConversationResponse,
-    SendUserMessageParams, SendUserMessageResponse,
-    RemoveConversationListenerParams, RemoveConversationSubscriptionResponse
+    NewConversationResponse, RemoveConversationListenerParams,
+    RemoveConversationSubscriptionResponse, RequestId, ResumeConversationParams,
+    ResumeConversationResponse, SendUserMessageParams, SendUserMessageResponse, TurnStartParams,
+    TurnStartResponse,
 };
 use codex_protocol::protocol::ReviewDecision;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 use tauri::AppHandle;
 use tokio::process::{Child, ChildStdin, Command};
-use tokio::sync::{Mutex, oneshot};
+use tokio::sync::{oneshot, Mutex};
 
 use crate::utils::codex_discovery::discover_codex_command;
+use crate::utils::coder_discovery::discover_coder_command;
 
 mod handlers;
 mod readers;
@@ -28,8 +30,7 @@ use readers::{spawn_stderr_reader, spawn_stdout_reader};
 use transport::{respond_with_review_decision, write_message};
 
 type JsonRpcResult = Result<Value, JSONRPCErrorError>;
-pub(super) type PendingRequestMap =
-    Arc<Mutex<HashMap<RequestId, oneshot::Sender<JsonRpcResult>>>>;
+pub(super) type PendingRequestMap = Arc<Mutex<HashMap<RequestId, oneshot::Sender<JsonRpcResult>>>>;
 pub(super) type PendingServerRequestMap = Arc<Mutex<HashMap<String, PendingServerRequest>>>;
 
 #[derive(Clone)]
@@ -53,13 +54,36 @@ pub(super) struct PendingServerRequest {
     pub kind: PendingRequestKind,
 }
 
-impl CodexAppServerClient {
-    pub async fn spawn(app_handle: AppHandle) -> Result<Arc<Self>, String> {
-        let codex_path = discover_codex_command().ok_or_else(|| {
-            "Unable to locate codex binary. Install Codex CLI or set CODEX_PATH.".to_string()
-        })?;
+#[derive(Clone, serde::Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct BackendErrorPayload {
+    pub code: i64,
+    pub message: String,
+    pub data: Option<serde_json::Value>,
+}
 
-        let mut command = Command::new(codex_path);
+impl CodexAppServerClient {
+    pub async fn spawn(app_handle: AppHandle, client_name: &str) -> Result<Arc<Self>, String> {
+        // Determine which binary to launch based on client_name
+        let normalized = client_name.trim().to_lowercase();
+        let (binary_path, label) = if normalized == "coder" {
+            (
+                discover_coder_command().ok_or_else(|| {
+                    "Unable to locate coder binary. Install Coder CLI or set CODER_PATH.".to_string()
+                })?,
+                "coder",
+            )
+        } else {
+            (
+                discover_codex_command().ok_or_else(|| {
+                    "Unable to locate codex binary. Install Codex CLI or set CODEX_PATH.".to_string()
+                })?,
+                "codex",
+            )
+        };
+        println!("binary_path {:?}", binary_path);
+
+        let mut command = Command::new(binary_path);
         command
             .arg("app-server")
             .stdin(Stdio::piped())
@@ -69,7 +93,7 @@ impl CodexAppServerClient {
 
         let mut child_process = command
             .spawn()
-            .map_err(|err| format!("Failed to start codex app-server: {err}"))?;
+            .map_err(|err| format!("Failed to start {label} app-server: {err}"))?;
 
         let stdin = child_process
             .stdin
@@ -84,8 +108,7 @@ impl CodexAppServerClient {
         let child = Arc::new(Mutex::new(child_process));
         let stdin = Arc::new(Mutex::new(stdin));
         let pending_requests: PendingRequestMap = Arc::new(Mutex::new(HashMap::new()));
-        let pending_server_requests: PendingServerRequestMap =
-            Arc::new(Mutex::new(HashMap::new()));
+        let pending_server_requests: PendingServerRequestMap = Arc::new(Mutex::new(HashMap::new()));
         let client = Arc::new(Self {
             _child: child.clone(),
             stdin: stdin.clone(),
@@ -112,13 +135,14 @@ impl CodexAppServerClient {
     async fn initialize(&self) -> Result<(), String> {
         let params = InitializeParams {
             client_info: ClientInfo {
-                name: "codexia-zen".to_string(),
-                title: Some("Codexia Zen".to_string()),
+                name: "codexia".to_string(),
+                title: Some("Codexia".to_string()),
                 version: env!("CARGO_PKG_VERSION").to_string(),
             },
         };
         let params_value = serde_json::to_value(params).map_err(|err| err.to_string())?;
-        self.request::<Value>("initialize", Some(params_value)).await?;
+        self.request::<Value>("initialize", Some(params_value))
+            .await?;
         self.send_notification("initialized", None).await
     }
 
@@ -129,8 +153,11 @@ impl CodexAppServerClient {
     ) -> Result<NewConversationResponse, String> {
         let mut params_value = serde_json::to_value(params).map_err(|err| err.to_string())?;
         if let Some(overrides_params) = overrides {
-            let overrides_value = serde_json::to_value(overrides_params).map_err(|err| err.to_string())?;
-            if let (Some(map), Some(overrides_map)) = (params_value.as_object_mut(), overrides_value.as_object()) {
+            let overrides_value =
+                serde_json::to_value(overrides_params).map_err(|err| err.to_string())?;
+            if let (Some(map), Some(overrides_map)) =
+                (params_value.as_object_mut(), overrides_value.as_object())
+            {
                 map.extend(overrides_map.clone());
             }
         }
@@ -144,8 +171,11 @@ impl CodexAppServerClient {
     ) -> Result<ResumeConversationResponse, String> {
         let mut params_value = serde_json::to_value(params).map_err(|err| err.to_string())?;
         if let Some(overrides_params) = overrides {
-            let overrides_value = serde_json::to_value(overrides_params).map_err(|err| err.to_string())?;
-            if let (Some(map), Some(overrides_map)) = (params_value.as_object_mut(), overrides_value.as_object()) {
+            let overrides_value =
+                serde_json::to_value(overrides_params).map_err(|err| err.to_string())?;
+            if let (Some(map), Some(overrides_map)) =
+                (params_value.as_object_mut(), overrides_value.as_object())
+            {
                 map.extend(overrides_map.clone());
             }
         }
@@ -178,12 +208,21 @@ impl CodexAppServerClient {
         self.request("sendUserMessage", Some(params_value)).await
     }
 
+    pub async fn turn_start(
+        &self,
+        params: TurnStartParams,
+    ) -> Result<TurnStartResponse, String> {
+        let params_value = serde_json::to_value(params).map_err(|err| err.to_string())?;
+        self.request("turn/start", Some(params_value)).await
+    }
+
     pub async fn interrupt_conversation(
         &self,
         params: InterruptConversationParams,
     ) -> Result<InterruptConversationResponse, String> {
         let params_value = serde_json::to_value(params).map_err(|err| err.to_string())?;
-        self.request("interruptConversation", Some(params_value)).await
+        self.request("interruptConversation", Some(params_value))
+            .await
     }
 
     pub async fn respond_exec_command_request(
@@ -204,11 +243,7 @@ impl CodexAppServerClient {
             .await
     }
 
-    async fn send_notification(
-        &self,
-        method: &str,
-        params: Option<Value>,
-    ) -> Result<(), String> {
+    async fn send_notification(&self, method: &str, params: Option<Value>) -> Result<(), String> {
         let notification = JSONRPCNotification {
             method: method.to_string(),
             params,
@@ -224,11 +259,7 @@ impl CodexAppServerClient {
         serde_json::from_value(result).map_err(|err| err.to_string())
     }
 
-    async fn send_request(
-        &self,
-        method: &str,
-        params: Option<Value>,
-    ) -> Result<Value, String> {
+    async fn send_request(&self, method: &str, params: Option<Value>) -> Result<Value, String> {
         let request_id = RequestId::Integer(self.next_request_id.fetch_add(1, Ordering::Relaxed));
         let request = JSONRPCRequest {
             id: request_id.clone(),

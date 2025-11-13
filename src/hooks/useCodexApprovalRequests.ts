@@ -51,7 +51,6 @@ export function useCodexApprovalRequests() {
                 parsedCmd: params.parsedCmd,
                 cwd: params.cwd,
                 reason: params.reason ?? null,
-                createdAt: Date.now(),
               };
               upsertExecRequest(req);
             },
@@ -93,7 +92,6 @@ export function useCodexApprovalRequests() {
                 reason,
                 grantRoot,
                 changes: fileChanges,
-                createdAt: Date.now(),
               });
             },
           );
