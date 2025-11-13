@@ -115,25 +115,25 @@ export function ProviderModels() {
                         >
                           {p.name}
                         </Button>
-                        {p.id !== "ollama" && p.id !== "openai" && (
+                        {p.id !== "openai" && (
                           <Button
                             variant="ghost"
                             size="icon"
                             className="h-6 w-6 hover:bg-red-200"
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                deleteProvider(p.id);
-                                try {
-                                  await invoke("delete_model_provider", {
-                                    providerName: p.id,
-                                  });
-                                } catch (error) {
-                                  console.error(
-                                    "Failed to delete model provider from backend:",
-                                    error,
-                                  );
-                                }
-                              }}
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              deleteProvider(p.id);
+                              try {
+                                await invoke("delete_model_provider", {
+                                  providerName: p.id,
+                                });
+                              } catch (error) {
+                                console.error(
+                                  "Failed to delete model provider from backend:",
+                                  error,
+                                );
+                              }
+                            }}
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>

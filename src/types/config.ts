@@ -1,15 +1,12 @@
 export interface ModelProvider {
   name: string;
   base_url: string;
-  env_key: string;
+  env_key?: string;
 }
 
 export interface Profile {
-  provider_id: string;
-  model_id: string;
-  api_key?: string;
-  api_key_env?: string;
-  base_url?: string;
+  model_provider: string;
+  model?: string;
 }
 
 export interface ProviderConfig {

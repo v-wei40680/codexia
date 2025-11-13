@@ -5,37 +5,67 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { useProviderStore } from "@/stores";
 import { ConfigTip } from "./config-tip";
+import { ConfigService } from "@/services/configService";
 
 export function AddProviderForm() {
   const [name, setName] = useState("");
   const [models, setModels] = useState("");
   const [baseUrl, setBaseUrl] = useState("");
   const [envKey, setEnvKey] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { addProvider, providers } = useProviderStore();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !models) return;
+    const trimmedName = name.trim();
+    const parsedModels = models
+      .split(",")
+      .map((m) => m.trim())
+      .filter(Boolean);
 
-    if (providers.some((p) => p.name === name)) {
+    if (!trimmedName || parsedModels.length === 0) {
+      toast.error("Provider name and at least one model are required.");
+      return;
+    }
+
+    if (providers.some((p) => p.name === trimmedName)) {
       toast.error("Provider with this name already exists.");
       return;
     }
 
-    addProvider({
-      name,
-      models: models
-        .split(",")
-        .map((m) => m.trim())
-        .filter(Boolean),
-      baseUrl: baseUrl || undefined,
-      envKey: envKey || undefined,
-    });
-    toast.success("Provider added successfully!");
-    setName("");
-    setModels("");
-    setBaseUrl("");
-    setEnvKey("");
+    const providerId = trimmedName.toLowerCase().replace(/\s+/g, "-");
+
+    setIsSubmitting(true);
+    try {
+      await ConfigService.addProviderWithProfile({
+        providerId,
+        providerName: trimmedName,
+        baseUrl: baseUrl || undefined,
+        envKey: envKey || undefined,
+        model: parsedModels[0],
+      });
+
+      addProvider(
+        {
+          name: trimmedName,
+          models: parsedModels,
+          baseUrl: baseUrl || undefined,
+          envKey: envKey || undefined,
+        },
+        { persist: false },
+      );
+
+      toast.success("Provider added successfully!");
+      setName("");
+      setModels("");
+      setBaseUrl("");
+      setEnvKey("");
+    } catch (error) {
+      console.error("Failed to add provider:", error);
+      toast.error("Failed to add provider. Please try again.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -73,8 +103,8 @@ export function AddProviderForm() {
             placeholder="e.g., MY_API_KEY"
           />
         </div>
-        <Button type="submit" size="sm" className="w-full">
-          Add Provider
+        <Button type="submit" size="sm" className="w-full" disabled={isSubmitting}>
+          {isSubmitting ? "Adding..." : "Add Provider"}
         </Button>
       </form>
       <div className="text-center">

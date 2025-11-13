@@ -73,17 +73,48 @@ export class ConfigService {
     try {
       await invoke("add_or_update_profile", {
         profileName,
-        profile: {
-          model_provider: profile.provider_id,
-          model: profile.model_id,
-          api_key: profile.api_key,
-          api_key_env: profile.api_key_env,
-          base_url: profile.base_url,
-        },
+        profile,
       });
     } catch (error) {
       console.error(`Failed to add/update profile ${profileName}:`, error);
       throw new Error(`Failed to add/update profile: ${error}`);
+    }
+  }
+
+  static async addProviderWithProfile(options: {
+    providerId: string;
+    providerName: string;
+    baseUrl?: string;
+    envKey?: string;
+    model?: string;
+  }): Promise<void> {
+    const { providerId, providerName, baseUrl, envKey, model } = options;
+
+    const providerPayload: ModelProvider = {
+      name: providerName,
+      base_url: baseUrl || "",
+      env_key: envKey || undefined,
+    };
+
+    await this.addOrUpdateModelProvider(providerId, providerPayload);
+
+    if (model) {
+      try {
+        await this.addOrUpdateProfile(providerId, {
+          model_provider: providerId,
+          model,
+        });
+      } catch (error) {
+        try {
+          await this.deleteModelProvider(providerId);
+        } catch (rollbackError) {
+          console.error(
+            `Failed to rollback provider ${providerId} after profile error:`,
+            rollbackError,
+          );
+        }
+        throw error;
+      }
     }
   }
 
