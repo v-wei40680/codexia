@@ -15,7 +15,7 @@ import { useTokenCount } from "@/hooks/useCodex/useTokenCount";
 import { TurnDiffPanel } from "./events/TurnDiffPanel";
 import { TurnDiffActions } from "./events/TurnDiffActions";
 import { useTurnDiffStore } from "@/stores/useTurnDiffStore";
-import { useExecCommandStore } from "@/stores/useExecCommandStore";
+import { useExecCommandStore } from "@/stores";
 
 export function ChatView() {
   useCodexApprovalRequests();

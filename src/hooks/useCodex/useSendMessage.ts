@@ -15,8 +15,7 @@ import { useEventStore } from "@/stores/useEventStore";
 import { useConversation } from "./useConversation";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
 import { useSessionStore } from "@/stores/useSessionStore";
-import { useProviderStore } from "@/stores/useProviderStore";
-import { useSandboxStore } from "@/stores/useSandboxStore";
+import { useProviderStore, useSandboxStore } from "@/stores";
 
 const buildUserInputs = (
   text: string,

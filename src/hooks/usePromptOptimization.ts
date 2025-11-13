@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { toast } from "sonner";
 import { optimizePromptRequest } from "@/services/promptOptimizer";
-import { useProviderStore } from "@/stores/useProviderStore";
-import { usePromptOptimizerStore } from "@/stores/PromptOptimizerStore";
+import { useProviderStore, usePromptOptimizerStore } from "@/stores";
 
 interface UsePromptOptimizationOptions {
   inputValue: string;

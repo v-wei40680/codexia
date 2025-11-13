@@ -6,7 +6,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '../ui/popover';
-import { useProviderStore } from '@/stores/useProviderStore';
+import { useProviderStore } from '@/stores';
 
 const EFFORT_OPTIONS = [
   { value: 'minimal', label: 'Minimal' },

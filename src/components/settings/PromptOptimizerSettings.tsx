@@ -7,11 +7,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { usePromptOptimizerStore } from "@/stores/PromptOptimizerStore";
 import {
   type ProviderStateModelProvider,
   useProviderStore,
-} from "@/stores/useProviderStore";
+  usePromptOptimizerStore,
+} from "@/stores";
 
 export function PromptOptimizerSettings() {
   const { provider, model, setProvider, setModel } = usePromptOptimizerStore();

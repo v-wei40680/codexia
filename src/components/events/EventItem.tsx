@@ -13,7 +13,7 @@ import { MsgFooter } from "../chat/messages/MsgFooter";
 import { getStreamDurationLabel } from "@/utils/getDurationLable";
 import { PatchApplyBeginItem } from "./PatchApplyBeginItem";
 import { useTurnDiffStore } from "@/stores/useTurnDiffStore";
-import { useExecCommandStore } from "@/stores/useExecCommandStore";
+import { useExecCommandStore } from "@/stores";
 import { UserMessage } from "./UserMessage";
 
 export const EventItem = memo(function EventItem({

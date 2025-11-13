@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { listen, type UnlistenFn } from "@/lib/tauri-proxy";
 import type { ExecCommandApprovalParams } from "@/bindings/ExecCommandApprovalParams";
-import { useApprovalStore } from "@/stores/useApprovalStore";
+import { useApprovalStore } from "@/stores";
 import type { FileChange } from "@/bindings/FileChange";
 
 interface ExecCommandApprovalNotification {

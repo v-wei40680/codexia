@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/popover";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useProviderStore } from "@/stores/useProviderStore";
+import { useProviderStore } from "@/stores";
 import { ChevronDown, PlusCircle, Trash2 } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";

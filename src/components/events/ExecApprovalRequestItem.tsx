@@ -2,7 +2,7 @@ import { memo, useState } from "react";
 import { invoke } from "@/lib/tauri-proxy";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/components/ui/use-toast";
-import { useApprovalStore } from "@/stores/useApprovalStore";
+import { useApprovalStore } from "@/stores";
 import type { CodexEvent } from "@/types/chat";
 import { EventBubble } from "./EventBubble";
 
