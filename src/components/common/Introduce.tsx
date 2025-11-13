@@ -6,14 +6,25 @@ import {
 } from "@/components/ui/accordion";
 import { Button } from "../ui/button";
 import { open } from "@tauri-apps/plugin-shell";
-import { Github, Twitter } from "lucide-react";
+import { ExternalLink, Github, Twitter } from "lucide-react";
 import { SimpleGitWorktreeSettings } from "../settings/GitWorktreeSettings";
 import { Link } from "react-router-dom";
 import { Switch } from "../ui/switch";
 import { useSettingsStore } from "@/stores/settings/SettingsStore";
+import { useTranslation } from "react-i18next";
+import { invoke } from "@/lib/tauri-proxy";
 
 export function Introduce() {
   const { enableTaskCompleteBeep, setEnableTaskCompleteBeep } = useSettingsStore();
+  const { t } = useTranslation();
+
+  const handleNewWindow = async () => {
+    try {
+      await invoke("create_new_window");
+    } catch (error) {
+      console.error("Failed to create new window:", error);
+    }
+  };
 
   return (
     <Accordion
@@ -25,12 +36,20 @@ export function Introduce() {
       <AccordionItem value="item-1">
         <AccordionTrigger>Settings</AccordionTrigger>
         <AccordionContent className="flex flex-col gap-4 text-balance">
-          <Link
-            to="/settings"
-            className="flex hover:text-primary items-center justify-end"
-          >
-            More Settings
-          </Link>
+          <div className="flex justify-between">
+            <Button
+              onClick={handleNewWindow}
+              title={t("header.openNewWindow")}
+            >
+              <ExternalLink /> {t("header.openNewWindow")}
+            </Button>
+            <Link
+              to="/settings"
+              className="flex hover:text-primary items-center justify-end"
+            >
+              More Settings
+            </Link>
+          </div>
           <SimpleGitWorktreeSettings />
           <div className="flex items-start justify-between gap-4 rounded-md border p-4">
             <div>
