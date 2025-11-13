@@ -28,6 +28,8 @@ struct ScanMetadata {
     cache_path_name: String,
     scanned_count: usize,
     added_count: usize,
+    #[serde(default)]
+    total: usize,
 }
 
 struct CachedProjectData {
@@ -120,6 +122,50 @@ pub fn write_project_cache(project_path: String, sessions: Vec<Value>, favorites
     write_project_cache_with_metadata(&project_path, sessions, favorites, None)
 }
 
+#[tauri::command]
+pub fn update_project_favorites(project_path: String, favorites: Vec<String>) -> Result<(), String> {
+    match read_project_cache(&project_path)? {
+        Some(CachedProjectData {
+            sessions,
+            scan_metadata,
+            ..
+        }) => write_project_cache_with_metadata(
+            &project_path,
+            sessions,
+            favorites,
+            scan_metadata,
+        ),
+        None => write_project_cache_with_metadata(&project_path, Vec::new(), favorites, None),
+    }
+}
+
+#[tauri::command]
+pub fn remove_project_session(project_path: String, conversation_id: String) -> Result<(), String> {
+    match read_project_cache(&project_path)? {
+        Some(CachedProjectData {
+            mut sessions,
+            mut favorites,
+            scan_metadata,
+            ..
+        }) => {
+            sessions.retain(|session| {
+                session
+                    .get("conversationId")
+                    .and_then(|value| value.as_str())
+                    != Some(conversation_id.as_str())
+            });
+            favorites.retain(|id| id != &conversation_id);
+            write_project_cache_with_metadata(
+                &project_path,
+                sessions,
+                favorites,
+                scan_metadata,
+            )
+        }
+        None => Ok(()),
+    }
+}
+
 /// Main tauri command: load or refresh sessions for given project
 #[tauri::command]
 pub async fn load_project_sessions(project_path: String) -> Result<Value, String> {
@@ -149,6 +195,7 @@ pub async fn load_project_sessions(project_path: String) -> Result<Value, String
 
             let added_count = new_sessions.len();
             cached_sessions.append(&mut new_sessions);
+            let total = cached_sessions.len();
 
             // Sort newest first
             cached_sessions.sort_by(|a, b| {
@@ -166,8 +213,9 @@ pub async fn load_project_sessions(project_path: String) -> Result<Value, String
             let cache_path = get_cache_path_for_project(&project_path)?;
             let cache_path_name = decode_cache_file_name(&cache_path)?;
             let scan_metadata = ScanMetadata {
-                scanned_count: cached_sessions.len(),
+                scanned_count: added_count,
                 added_count,
+                total,
                 cache_path_name,
             };
 
@@ -193,6 +241,7 @@ pub async fn load_project_sessions(project_path: String) -> Result<Value, String
             let scan_metadata = ScanMetadata {
                 scanned_count: sessions.len(),
                 added_count: sessions.len(),
+                total: sessions.len(),
                 cache_path_name,
             };
 

@@ -32,7 +32,7 @@ use filesystem::{
 };
 use mcp::{add_mcp_server, delete_mcp_server, read_mcp_servers};
 use session_files::{
-    cache::{load_project_sessions, write_project_cache},
+    cache::{load_project_sessions, write_project_cache, update_project_favorites, remove_project_session},
     delete::{delete_session_file, delete_sessions_files},
     get::{get_session_files, read_session_file},
     scanner::scan_projects,
@@ -136,6 +136,8 @@ pub fn run() {
             open_terminal_with_command,
             delete_sessions_files,
             write_project_cache,
+            update_project_favorites,
+            remove_project_session,
             get_session_files,
             read_session_file,
             prevent_sleep,

@@ -65,15 +65,17 @@ interface ConversationListActions {
   reset: () => void;
 }
 
-async function syncCacheToBackend(cwd: string) {
+async function syncFavoritesToBackend(cwd: string) {
   const state = useConversationListStore.getState();
-  const conversations = state.conversationsByCwd[cwd] ?? [];
   const favorites = state.favoriteConversationIdsByCwd[cwd] ?? [];
-  await invoke("write_project_cache", { 
-    projectPath: cwd, 
-    sessions: conversations, 
-    favorites 
+  await invoke("update_project_favorites", {
+    projectPath: cwd,
+    favorites,
   });
+}
+
+async function removeConversationFromBackend(cwd: string, conversationId: string) {
+  await invoke("remove_project_session", { projectPath: cwd, conversationId });
 }
 
 export const useConversationListStore = create<
@@ -174,7 +176,7 @@ export const useConversationListStore = create<
           favoriteConversationIdsByCwd,
         };
       });
-      await syncCacheToBackend(cwd);
+      await removeConversationFromBackend(cwd, conversationId);
     },
 
     setFavorite: async (conversationId, isFavorite) => {
@@ -207,7 +209,7 @@ export const useConversationListStore = create<
 
         return { favoriteConversationIdsByCwd };
       });
-      await syncCacheToBackend(cwd);
+      await syncFavoritesToBackend(cwd);
     },
 
     toggleFavorite: async (conversationId) => {

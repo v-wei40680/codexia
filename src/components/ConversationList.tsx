@@ -6,33 +6,19 @@ import {
   type Dispatch,
 } from "react";
 import { Button } from "@/components/ui/button";
-import {
-  Trash2,
-  MoreVertical,
-  Star,
-  StarOff,
-  FolderPlus,
-  Pencil,
-  Loader2,
-} from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { invoke } from "@/lib/tauri-proxy";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   useConversationListStore,
   loadProjectSessions,
 } from "@/stores/useConversationListStore";
 import { useCodexStore } from "@/stores/useCodexStore";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
-import { Checkbox } from "@/components/ui/checkbox";
 import { useResumeConversation } from "@/hooks/useResumeConversation";
 import { renameConversation } from "@/utils/renameConversation";
 import RenameDialog from "@/components/RenameDialog";
-import type { SessionSource } from "@/bindings/SessionSource";
+import type { ConversationSummary } from "@/bindings/ConversationSummary";
+import { ConversationListItem } from "@/components/ConversationListItem";
 
 interface ConversationListProps {
   mode: string;
@@ -43,19 +29,6 @@ interface ConversationListProps {
   showBulkDeleteButtons: boolean;
   selectedConversations: Set<string>;
   setSelectedConversations: Dispatch<SetStateAction<Set<string>>>;
-}
-
-function formatSessionSource(source: SessionSource) {
-  if (typeof source === "string") {
-    return source;
-  }
-
-  const { subagent } = source;
-  if (typeof subagent === "string") {
-    return `subagent:${subagent}`;
-  }
-
-  return `subagent:${subagent.other}`;
 }
 
 export function ConversationList({
@@ -73,6 +46,7 @@ export function ConversationList({
     favoriteConversationIdsByCwd,
     toggleFavorite,
     updateConversationPreview,
+    removeConversation,
     loadedAllByCwd,
     hasMoreByCwd,
   } = useConversationListStore();
@@ -196,6 +170,25 @@ export function ConversationList({
     setEditingConversationId(null);
   };
 
+  const handleConversationSelect = (conversation: ConversationSummary) => {
+    handleSelectConversation(
+      conversation.conversationId,
+      conversation.path,
+      cwd,
+    );
+  };
+
+  const handleDeleteConversation = async (
+    conversation: ConversationSummary,
+  ) => {
+    if (!conversation.path) {
+      return;
+    }
+
+    await removeConversation(conversation.conversationId);
+    await invoke("delete_file", { path: conversation.path });
+  };
+
   return (
     <nav className="flex flex-col h-full bg-muted/30">
       <div className="flex-1 overflow-y-auto">
@@ -214,116 +207,24 @@ export function ConversationList({
               const isActive = activeConversationId === conv.conversationId;
               const isFavorite = favoriteIds.has(conv.conversationId);
               return (
-                <div key={conv.conversationId}>
-                  <li className="group">
-                    <DropdownMenu>
-                      <div className="flex items-center justify-between w-full">
-                        {showBulkDeleteButtons && (
-                          <Checkbox
-                            checked={selectedConversations.has(
-                              conv.conversationId,
-                            )}
-                            onCheckedChange={(checked) => {
-                              setSelectedConversations((prev) => {
-                                const next = new Set(prev);
-                                if (checked) {
-                                  next.add(conv.conversationId);
-                                } else {
-                                  next.delete(conv.conversationId);
-                                }
-                                return next;
-                              });
-                            }}
-                            className="mr-2"
-                          />
-                        )}
-                        <button
-                          onClick={() =>
-                            handleSelectConversation(
-                              conv.conversationId,
-                              conv.path,
-                              cwd,
-                            )
-                          }
-                          className={`flex-1 min-w-0 truncate text-left rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
-                            isActive
-                              ? "bg-accent text-accent-foreground"
-                              : "text-muted-foreground"
-                          }`}
-                        >
-                          <span className="flex items-center gap-2 truncate">
-                            <span className="truncate">{conv.preview}</span>
-                            {isFavorite ? (
-                              <Star className="h-3 w-3 text-yellow-500 fill-current flex-shrink-0" />
-                            ) : null}
-                          </span>
-                        </button>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="ml-1">
-                            <MoreVertical className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                      </div>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={async (event) => {
-                            event.stopPropagation();
-                            await toggleFavorite(conv.conversationId);
-                          }}
-                        >
-                          {isFavorite ? (
-                            <>
-                              <StarOff className="h-4 w-4 mr-2" />
-                              Remove favorite
-                            </>
-                          ) : (
-                            <>
-                              <Star className="h-4 w-4 mr-2" />
-                              Add favorite
-                            </>
-                          )}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            setEditingConversationId(conv.conversationId);
-                          }}
-                        >
-                          <Pencil className="h-4 w-4 mr-2" />
-                          Rename
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            onRequestCategoryAssignment?.(conv.conversationId);
-                          }}
-                        >
-                          <FolderPlus className="h-4 w-4 mr-2" />
-                          Add to category
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={async (event) => {
-                            event.stopPropagation();
-                            if (conv.path) {
-                              useConversationListStore
-                                .getState()
-                                .removeConversation(conv.conversationId);
-                              await invoke("delete_file", { path: conv.path });
-                            }
-                          }}
-                          className="text-red-600 focus:text-red-600"
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" />
-                          Delete
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                    <span className="hidden group-hover:flex justify-between px-4 text-xs text-muted-foreground">
-                      <span>{conv.timestamp?.split("T")[0]}</span>
-                      <span>{formatSessionSource(conv.source)}</span>
-                    </span>
-                  </li>
-                </div>
+                <ConversationListItem
+                  key={conv.conversationId}
+                  conversation={conv}
+                  isActive={isActive}
+                  isFavorite={isFavorite}
+                  showBulkDeleteButtons={showBulkDeleteButtons}
+                  selectedConversations={selectedConversations}
+                  setSelectedConversations={setSelectedConversations}
+                  onSelect={handleConversationSelect}
+                  onToggleFavorite={toggleFavorite}
+                  onStartRename={() =>
+                    setEditingConversationId(conv.conversationId)
+                  }
+                  onRequestCategoryAssignment={() =>
+                    onRequestCategoryAssignment?.(conv.conversationId)
+                  }
+                  onDelete={() => handleDeleteConversation(conv)}
+                />
               );
             })}
           </ul>
