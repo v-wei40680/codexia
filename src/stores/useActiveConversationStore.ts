@@ -18,6 +18,7 @@ interface ActiveConversationActions {
   setActiveConversation: (conv: ConversationSummary | null) => void;
   addActiveConversationId: (conversationId: string) => void;
   removeConversationId: (conversationId: string) => void;
+  clearActiveConversation: () => void;
   syncWithCwd: (cwd: string) => void;
 }
 
@@ -138,6 +139,27 @@ export const useActiveConversationStore = create<
         stateByCwd: {
           ...state.stateByCwd,
           [cwdKey]: cwdState,
+        },
+      };
+    }),
+  clearActiveConversation: () =>
+    set((state) => {
+      const cwdKey = state.currentCwd || "";
+      const cwdState =
+        state.stateByCwd[cwdKey] ?? createEmptyConversationState();
+      const updatedCwdState: ConversationStateByCwd = {
+        ...cwdState,
+        activeConversationId: null,
+        selectConversation: null,
+      };
+
+      return {
+        ...state,
+        activeConversationId: null,
+        selectConversation: null,
+        stateByCwd: {
+          ...state.stateByCwd,
+          [cwdKey]: updatedCwdState,
         },
       };
     }),

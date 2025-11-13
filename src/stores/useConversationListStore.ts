@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { invoke } from "@/lib/tauri-proxy";
 import type { ConversationSummary } from "@/bindings/ConversationSummary";
 import type { SessionSource } from "@/bindings/SessionSource";
+import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
 
 type RawConversationSummary = Partial<ConversationSummary> & {
   conversationId: string;
@@ -150,6 +151,9 @@ export const useConversationListStore = create<
     removeConversation: async (conversationId) => {
       const cwd = get().conversationIndex[conversationId];
       if (!cwd) return;
+      const activeStore = useActiveConversationStore.getState();
+      const shouldClearActive =
+        activeStore.activeConversationId === conversationId;
       set((state) => {
         const list = state.conversationsByCwd[cwd] ?? [];
         const nextList = list.filter(
@@ -176,6 +180,10 @@ export const useConversationListStore = create<
           favoriteConversationIdsByCwd,
         };
       });
+      activeStore.removeConversationId(conversationId);
+      if (shouldClearActive) {
+        activeStore.clearActiveConversation();
+      }
       await removeConversationFromBackend(cwd, conversationId);
     },
 
