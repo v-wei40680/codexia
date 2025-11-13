@@ -17,6 +17,8 @@ pub enum McpServerConfig {
     },
     #[serde(rename = "http")]
     Http { url: String },
+    #[serde(rename = "sse")]
+    Sse { url: String },
 }
 
 #[command]

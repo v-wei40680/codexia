@@ -103,4 +103,8 @@ export type McpServerConfig =
   | {
       type: "http";
       url: string;
+    }
+  | {
+      type: "sse";
+      url: string;
     };

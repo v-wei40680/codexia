@@ -9,6 +9,7 @@ import ProjectsPage from "@/pages/projects";
 import PublicUserPage from "@/pages/user";
 import SettingsPage from "./pages/settings";
 import UsagePage from "./pages/usage";
+import McpPage from "./pages/mcp";
 import { useDeepLink } from "./hooks/useDeepLink";
 import { useLayoutStore } from "./stores/settings/layoutStore";
 import { useAuth } from "./hooks/useAuth";
@@ -70,6 +71,10 @@ export const router = createHashRouter([
           {
             path: "usage",
             element: <UsagePage />,
+          },
+          {
+            path: "mcp",
+            element: <McpPage />,
           },
         ],
       },

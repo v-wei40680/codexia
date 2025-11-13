@@ -15,7 +15,6 @@ import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import { useLayoutStore } from "@/stores/settings/layoutStore";
 import { invoke } from "@/lib/tauri-proxy";
-import { McpDialog } from "../dialogs/McpDialog";
 import { useThemeStore } from "@/stores/settings/ThemeStore";
 import { useTranslation } from "react-i18next";
 import { AccentColorSelector } from "../common/AccentColorSelector";
@@ -108,15 +107,13 @@ export function AppHeader() {
 
         {showHeaderActions && (
           <>
-            <McpDialog>
-              <Button
-                variant="ghost"
-                className="flex gap-1 h-6 px-1.5"
-                title={t("header.mcp")}
-              >
-                <Usb />
-              </Button>
-            </McpDialog>
+            <Link
+              to="/mcp"
+              className="flex hover:text-primary items-center gap-1"
+              title={t("header.mcp")}
+            >
+              <Usb className="w-4 h-4" />{t("header.mcp")}
+            </Link>
             <Link
               to="/usage"
               className="flex hover:text-primary items-center gap-1"
