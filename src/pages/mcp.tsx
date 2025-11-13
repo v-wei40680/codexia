@@ -1,15 +1,16 @@
 import { useState, useEffect } from 'react';
 import { invoke } from '@/lib/tauri-proxy';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
-import { Trash2, Plus, Edit, Save, X } from 'lucide-react';
+import { Plus, Save, X } from 'lucide-react';
 import { McpServerConfig } from '@/types';
 import { toast } from 'sonner';
-import { McpServerForm, McpLinkerButton, DefaultMcpServers } from '@/components/mcp';
-
-const getServerProtocol = (config: McpServerConfig): 'stdio' | 'http' | 'sse' =>
-  config.type ?? 'stdio';
+import {
+  McpServerForm,
+  McpLinkerButton,
+  DefaultMcpServers,
+  McpServerCard,
+  getServerProtocol,
+} from '@/components/mcp';
 
 export default function McpPage() {
   const [servers, setServers] = useState<Record<string, McpServerConfig>>({});
@@ -81,38 +82,6 @@ export default function McpPage() {
     } catch (error) {
       console.error('Failed to add MCP server:', error);
       toast.error('Failed to add MCP server: ' + error);
-    }
-  };
-
-  const handleDeleteServer = async (name: string) => {
-    try {
-      await invoke('delete_mcp_server', { name });
-      loadServers();
-    } catch (error) {
-      console.error('Failed to delete MCP server:', error);
-      toast.error('Failed to delete MCP server: ' + error);
-    }
-  };
-
-  const handleToggleServerEnabled = async (name: string, enabled: boolean) => {
-    try {
-      await invoke('set_mcp_server_enabled', { name, enabled });
-      setServers((prev) => {
-        const server = prev[name];
-        if (!server) {
-          return prev;
-        }
-        return {
-          ...prev,
-          [name]: {
-            ...server,
-            enabled,
-          },
-        };
-      });
-    } catch (error) {
-      console.error('Failed to update MCP server enabled flag:', error);
-      toast.error('Failed to update MCP server enabled flag: ' + error);
     }
   };
 
@@ -197,96 +166,52 @@ export default function McpPage() {
           <div>
             <h3 className="text-lg font-semibold mb-4">Configured Servers</h3>
             <div className="space-y-2 max-h-96 overflow-y-auto">
-              {Object.entries(servers).map(([name, config]) => {
-                const serverType = getServerProtocol(config);
-                const isEnabled = config.enabled ?? true;
-                return (
-                  <Card key={name}>
-                    {editingServer === name ? (
-                      <div className="px-4">
-                        <div className="space-y-4">
-                          <McpServerForm
-                            serverName={editConfig?.name ?? ''}
-                            onServerNameChange={(name) => setEditConfig(prev => prev ? { ...prev, name } : null)}
-                            protocol={editConfig?.protocol ?? 'stdio'}
-                            onProtocolChange={(protocol) => setEditConfig(prev => prev ? { ...prev, protocol } : null)}
-                            commandConfig={editConfig?.command ?? { command: '', args: '', env: '' }}
-                            onCommandConfigChange={(command) => setEditConfig(prev => prev ? { ...prev, command } : null)}
-                            httpConfig={editConfig?.http ?? { url: '' }}
-                            onHttpConfigChange={(http) => setEditConfig(prev => prev ? { ...prev, http } : null)}
-                            isEditMode={true}
-                          />
+              {Object.entries(servers).map(([name, config]) => (
+                <div key={name}>
+                  {editingServer === name ? (
+                    <div className="px-4">
+                      <div className="space-y-4">
+                        <McpServerForm
+                          serverName={editConfig?.name ?? ''}
+                          onServerNameChange={(name) => setEditConfig((prev) => (prev ? { ...prev, name } : null))}
+                          protocol={editConfig?.protocol ?? 'stdio'}
+                          onProtocolChange={(protocol) =>
+                            setEditConfig((prev) => (prev ? { ...prev, protocol } : null))
+                          }
+                          commandConfig={editConfig?.command ?? { command: '', args: '', env: '' }}
+                          onCommandConfigChange={(command) =>
+                            setEditConfig((prev) => (prev ? { ...prev, command } : null))
+                          }
+                          httpConfig={editConfig?.http ?? { url: '' }}
+                          onHttpConfigChange={(http) =>
+                            setEditConfig((prev) => (prev ? { ...prev, http } : null))
+                          }
+                          isEditMode={true}
+                        />
 
-                          <div className="flex gap-2">
-                            <Button size="sm" onClick={handleSaveEdit}>
-                              <Save className="h-4 w-4 mr-1" />
-                              Save
-                            </Button>
-                            <Button size="sm" variant="outline" onClick={handleCancelEdit}>
-                              <X className="h-4 w-4 mr-1" />
-                              Cancel
-                            </Button>
-                          </div>
+                        <div className="flex gap-2">
+                          <Button size="sm" onClick={handleSaveEdit}>
+                            <Save className="h-4 w-4 mr-1" />
+                            Save
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={handleCancelEdit}>
+                            <X className="h-4 w-4 mr-1" />
+                            Cancel
+                          </Button>
                         </div>
                       </div>
-                    ) : (
-                      <>
-                        <CardHeader>
-                          <CardTitle className="text-sm flex items-center justify-between">
-                            {name}
-                            <div className="flex gap-1 items-center">
-                              <Switch
-                                checked={isEnabled}
-                                onCheckedChange={(checked) => handleToggleServerEnabled(name, checked)}
-                                aria-label={`Toggle ${name} server`}
-                              />
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => handleEditServer(name, config)}
-                              >
-                                <Edit className="h-4 w-4" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => handleDeleteServer(name)}
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-xs text-gray-600">
-                            {serverType === 'stdio' && (
-                              <div>
-                                <strong>Command:</strong> {'command' in config ? config.command : ''}
-                                {'args' in config && config.args && config.args.length > 0 && (
-                                  <div><strong>Args:</strong> {config.args.join(' ')}</div>
-                                )}
-                                {'env' in config && config.env && (
-                                  <div><strong>Env:</strong> {Object.keys(config.env).join(', ')}</div>
-                                )}
-                              </div>
-                            )}
-                            {serverType === 'http' && 'url' in config && (
-                              <div>
-                                <strong>url:</strong> {config.url}
-                              </div>
-                            )}
-                            {serverType === 'sse' && 'url' in config && (
-                              <div>
-                                <strong>url:</strong> {config.url}
-                              </div>
-                            )}
-                          </div>
-                        </CardContent>
-                      </>
-                    )}
-                  </Card>
-                );
-              })}
+                    </div>
+                  ) : (
+                    <McpServerCard
+                      name={name}
+                      config={config}
+                      loadServers={loadServers}
+                      setServers={setServers}
+                      onEdit={handleEditServer}
+                    />
+                  )}
+                </div>
+              ))}
               {Object.keys(servers).length === 0 && (
                 <div className="text-gray-500 text-center py-8">
                   No MCP servers configured
