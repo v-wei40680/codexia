@@ -1,4 +1,4 @@
 fn main() {
-    codexia_lib::export_ts_bindings();
+    export_bindings::export_ts_types();
     println!("Exported TypeScript bindings to src/bindings");
 }

@@ -2,11 +2,11 @@ use codex_app_server_protocol::{
     AddConversationListenerParams, AddConversationSubscriptionResponse, AuthMode, ClientInfo,
     ConversationSummary, ExecCommandApprovalParams, InitializeParams, InitializeResponse,
     InputItem, InterruptConversationParams, InterruptConversationResponse, ListConversationsResponse,
-    NewConversationParams, NewConversationResponse, SendUserMessageParams, SendUserMessageResponse,
-    ResumeConversationParams, ResumeConversationResponse, RemoveConversationListenerParams,
-    TurnStartParams, TurnStartResponse,
+    NewConversationParams, NewConversationResponse, ResumeConversationParams, ResumeConversationResponse,
+    RemoveConversationListenerParams, SendUserMessageParams, SendUserMessageResponse, TurnStartParams,
+    TurnStartResponse,
 };
-use codex_protocol::protocol::{EventMsg};
+use codex_protocol::protocol::EventMsg;
 use std::path::Path;
 use ts_rs::TS;
 

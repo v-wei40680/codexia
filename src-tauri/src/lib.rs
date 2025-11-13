@@ -2,7 +2,6 @@ mod cmd;
 mod codex;
 mod commands;
 pub mod config;
-mod export_bindings;
 mod filesystem;
 mod mcp;
 mod services;

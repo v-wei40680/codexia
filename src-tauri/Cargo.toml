@@ -4,7 +4,6 @@ version = "0.11.0"
 description = "A powerful IDE/GUI and Toolkit for Codex CLI"
 authors = ["milisp"]
 edition = "2021"
-default-run = "codexia"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -24,7 +23,6 @@ tauri-plugin-shell = "2"
 tauri-plugin-dialog = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-ts-rs = "11.0"
 tokio = { version = "1", features = ["full"] }
 uuid = { version = "1.0", features = ["v4"] }
 anyhow = "1.0"
@@ -47,6 +45,7 @@ notify = "6"
 tauri-remote-ui = { git = "https://github.com/DraviaVemal/tauri-remote-ui" }
 codex-protocol = { git = "https://github.com/openai/codex.git", package = "codex-protocol" }
 codex-app-server-protocol = { git = "https://github.com/openai/codex.git", package = "codex-app-server-protocol"}
+export_bindings = { path = "../export_bindings" }
 base64 = "0.22.1"
 nosleep = "0.2.1"
 regex = "1.12.2"
