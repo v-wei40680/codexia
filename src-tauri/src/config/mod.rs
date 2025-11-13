@@ -1,6 +1,7 @@
 pub mod project;
 pub mod provider;
 pub mod profile;
+pub mod toml_helpers;
 
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
