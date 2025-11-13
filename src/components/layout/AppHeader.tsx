@@ -21,7 +21,7 @@ import { AccentColorSelector } from "../common/AccentColorSelector";
 import { LanguageSelector } from "../common/LanguageSelector";
 import { PublishCloudDialog } from "../dialogs/PublishCloudDialog";
 import { ClientPicker } from "../common/ClientPicker";
-import { UserDropdown } from "../common/UserDropdown";
+// import { UserDropdown } from "../common/UserDropdown";
 
 export function AppHeader() {
   const {
@@ -150,7 +150,7 @@ export function AppHeader() {
               <Settings className="w-4 h-4" />
             </Link>
 
-            <UserDropdown />
+            {/* <UserDropdown /> */}
             <PublishCloudDialog />
           </>
         )}
