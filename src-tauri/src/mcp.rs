@@ -3,10 +3,18 @@ use std::collections::HashMap;
 use std::fs;
 use std::str::FromStr;
 use tauri::command;
-use toml_edit::{Document, Item, Table};
+use toml_edit::{value, Document, Item, Table};
 
 use crate::config::{get_config_path, CodexConfig};
 use crate::config::toml_helpers::serialize_to_table;
+
+fn default_enabled() -> bool {
+    true
+}
+
+fn is_enabled_true(enabled: &bool) -> bool {
+    *enabled
+}
 
 #[derive(Debug, Clone, Serialize)]
 #[serde(tag = "type")]
@@ -17,11 +25,21 @@ pub enum McpServerConfig {
         args: Vec<String>,
         #[serde(skip_serializing_if = "Option::is_none")]
         env: Option<HashMap<String, String>>,
+        #[serde(default = "default_enabled", skip_serializing_if = "is_enabled_true")]
+        enabled: bool,
     },
     #[serde(rename = "http")]
-    Http { url: String },
+    Http {
+        url: String,
+        #[serde(default = "default_enabled", skip_serializing_if = "is_enabled_true")]
+        enabled: bool,
+    },
     #[serde(rename = "sse")]
-    Sse { url: String },
+    Sse {
+        url: String,
+        #[serde(default = "default_enabled", skip_serializing_if = "is_enabled_true")]
+        enabled: bool,
+    },
 }
 
 impl<'de> Deserialize<'de> for McpServerConfig {
@@ -38,11 +56,21 @@ impl<'de> Deserialize<'de> for McpServerConfig {
                 args: Vec<String>,
                 #[serde(default)]
                 env: Option<HashMap<String, String>>,
+                #[serde(default = "default_enabled")]
+                enabled: bool,
             },
             #[serde(rename = "http")]
-            Http { url: String },
+            Http {
+                url: String,
+                #[serde(default = "default_enabled")]
+                enabled: bool,
+            },
             #[serde(rename = "sse")]
-            Sse { url: String },
+            Sse {
+                url: String,
+                #[serde(default = "default_enabled")]
+                enabled: bool,
+            },
         }
 
         #[derive(Deserialize)]
@@ -52,6 +80,8 @@ impl<'de> Deserialize<'de> for McpServerConfig {
             args: Vec<String>,
             #[serde(default)]
             env: Option<HashMap<String, String>>,
+            #[serde(default = "default_enabled")]
+            enabled: bool,
         }
 
         #[derive(Deserialize)]
@@ -66,16 +96,30 @@ impl<'de> Deserialize<'de> for McpServerConfig {
                 command,
                 args,
                 env,
-            }) => Ok(McpServerConfig::Stdio { command, args, env }),
-            McpServerConfigHelper::Tagged(TaggedMcpServerConfig::Http { url }) => {
-                Ok(McpServerConfig::Http { url })
+                enabled,
+            }) => Ok(McpServerConfig::Stdio {
+                command,
+                args,
+                env,
+                enabled,
+            }),
+            McpServerConfigHelper::Tagged(TaggedMcpServerConfig::Http { url, enabled }) => {
+                Ok(McpServerConfig::Http { url, enabled })
             }
-            McpServerConfigHelper::Tagged(TaggedMcpServerConfig::Sse { url }) => {
-                Ok(McpServerConfig::Sse { url })
+            McpServerConfigHelper::Tagged(TaggedMcpServerConfig::Sse { url, enabled }) => {
+                Ok(McpServerConfig::Sse { url, enabled })
             }
-            McpServerConfigHelper::Legacy(LegacyStdioConfig { command, args, env }) => {
-                Ok(McpServerConfig::Stdio { command, args, env })
-            }
+            McpServerConfigHelper::Legacy(LegacyStdioConfig {
+                command,
+                args,
+                env,
+                enabled,
+            }) => Ok(McpServerConfig::Stdio {
+                command,
+                args,
+                env,
+                enabled,
+            }),
         }
     }
 }
@@ -167,6 +211,50 @@ pub async fn delete_mcp_server(name: String) -> Result<(), String> {
 
     if mcp_servers_table.remove(&name).is_none() {
         return Err(format!("MCP server '{}' not found", name));
+    }
+
+    let toml_content = doc.to_string();
+
+    fs::write(&config_path, toml_content)
+        .map_err(|e| format!("Failed to write config file: {}", e))?;
+
+    Ok(())
+}
+
+#[command]
+pub async fn set_mcp_server_enabled(name: String, enabled: bool) -> Result<(), String> {
+    let config_path = get_config_path()?;
+
+    if !config_path.exists() {
+        return Err("Config file does not exist".to_string());
+    }
+
+    let content = fs::read_to_string(&config_path)
+        .map_err(|e| format!("Failed to read config file: {}", e))?;
+
+    let mut doc = Document::from_str(&content)
+        .map_err(|e| format!("Failed to parse config file: {}", e))?;
+
+    let mcp_servers_entry = doc
+        .entry("mcp_servers")
+        .or_insert(Item::Table(Table::new()));
+
+    let mcp_servers_table = mcp_servers_entry
+        .as_table_mut()
+        .ok_or("Failed to access mcp_servers table")?;
+
+    let server_entry = mcp_servers_table
+        .get_mut(&name)
+        .ok_or(format!("MCP server '{}' not found", name))?;
+
+    let server_table = server_entry
+        .as_table_mut()
+        .ok_or(format!("MCP server '{}' is not a table", name))?;
+
+    if enabled {
+        server_table.remove("enabled");
+    } else {
+        server_table.insert("enabled", value(enabled));
     }
 
     let toml_content = doc.to_string();

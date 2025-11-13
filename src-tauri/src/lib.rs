@@ -30,7 +30,7 @@ use filesystem::{
     },
     watch::{start_watch_directory, stop_watch_directory},
 };
-use mcp::{add_mcp_server, delete_mcp_server, read_mcp_servers};
+use mcp::{add_mcp_server, delete_mcp_server, read_mcp_servers, set_mcp_server_enabled};
 use session_files::{
     cache::{load_project_sessions, write_project_cache, update_project_favorites, remove_project_session},
     delete::{delete_session_file, delete_sessions_files},
@@ -107,6 +107,7 @@ pub fn run() {
             read_mcp_servers,
             add_mcp_server,
             delete_mcp_server,
+            set_mcp_server_enabled,
             config::provider::read_model_providers,
             config::profile::read_profiles,
             config::profile::get_provider_config,

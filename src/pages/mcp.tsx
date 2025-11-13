@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { invoke } from '@/lib/tauri-proxy';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
 import { Trash2, Plus, Edit, Save, X } from 'lucide-react';
 import { McpServerConfig } from '@/types';
 import { toast } from 'sonner';
@@ -93,6 +94,28 @@ export default function McpPage() {
     }
   };
 
+  const handleToggleServerEnabled = async (name: string, enabled: boolean) => {
+    try {
+      await invoke('set_mcp_server_enabled', { name, enabled });
+      setServers((prev) => {
+        const server = prev[name];
+        if (!server) {
+          return prev;
+        }
+        return {
+          ...prev,
+          [name]: {
+            ...server,
+            enabled,
+          },
+        };
+      });
+    } catch (error) {
+      console.error('Failed to update MCP server enabled flag:', error);
+      toast.error('Failed to update MCP server enabled flag: ' + error);
+    }
+  };
+
   const handleEditServer = (name: string, config: McpServerConfig) => {
     const protocol = getServerProtocol(config);
     const httpUrl = protocol === 'stdio' ? '' : ('url' in config ? config.url : '');
@@ -176,6 +199,7 @@ export default function McpPage() {
             <div className="space-y-2 max-h-96 overflow-y-auto">
               {Object.entries(servers).map(([name, config]) => {
                 const serverType = getServerProtocol(config);
+                const isEnabled = config.enabled ?? true;
                 return (
                   <Card key={name}>
                     {editingServer === name ? (
@@ -210,7 +234,12 @@ export default function McpPage() {
                         <CardHeader>
                           <CardTitle className="text-sm flex items-center justify-between">
                             {name}
-                            <div className="flex gap-1">
+                            <div className="flex gap-1 items-center">
+                              <Switch
+                                checked={isEnabled}
+                                onCheckedChange={(checked) => handleToggleServerEnabled(name, checked)}
+                                aria-label={`Toggle ${name} server`}
+                              />
                               <Button
                                 size="sm"
                                 variant="ghost"
