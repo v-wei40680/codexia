@@ -51,11 +51,19 @@ export function useConversationEvents(
   const latestEvent = useRef<CodexEvent | null>(null);
   const patchRecordedTurnsRef = useRef<Set<string>>(new Set());
   const { cwd } = useCodexStore();
-  const { autoCommitGitWorktree, enableTaskCompleteBeep } = useSettingsStore();
+  const {
+    autoCommitGitWorktree,
+    enableTaskCompleteBeep,
+    preventSleepDuringTasks,
+  } = useSettingsStore();
   const autoCommitGitWorktreeRef = useRef(autoCommitGitWorktree);
   const enableTaskCompleteBeepRef = useRef(enableTaskCompleteBeep);
 
-  useSystemSleepPrevention(conversationId, latestEvent.current);
+  useSystemSleepPrevention(
+    conversationId,
+    latestEvent.current,
+    preventSleepDuringTasks,
+  );
   useBackendErrorListener();
 
   useEffect(() => {

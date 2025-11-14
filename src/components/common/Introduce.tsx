@@ -15,7 +15,12 @@ import { useTranslation } from "react-i18next";
 import { invoke } from "@/lib/tauri-proxy";
 
 export function Introduce() {
-  const { enableTaskCompleteBeep, setEnableTaskCompleteBeep } = useSettingsStore();
+  const {
+    enableTaskCompleteBeep,
+    setEnableTaskCompleteBeep,
+    preventSleepDuringTasks,
+    setPreventSleepDuringTasks,
+  } = useSettingsStore();
   const { t } = useTranslation();
 
   const handleNewWindow = async () => {
@@ -61,6 +66,18 @@ export function Introduce() {
             <Switch
               checked={enableTaskCompleteBeep}
               onCheckedChange={setEnableTaskCompleteBeep}
+            />
+          </div>
+          <div className="flex items-start justify-between gap-4 rounded-md border p-4">
+            <div>
+              <p className="text-sm font-medium">Keep system awake</p>
+              <p className="text-xs text-muted-foreground">
+                Prevent the computer from sleeping while active tasks run to avoid interruptions.
+              </p>
+            </div>
+            <Switch
+              checked={preventSleepDuringTasks}
+              onCheckedChange={setPreventSleepDuringTasks}
             />
           </div>
         </AccordionContent>
