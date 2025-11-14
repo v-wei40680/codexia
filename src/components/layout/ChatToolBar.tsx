@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "../ui/button";
-import { Globe, PenSquare, Terminal } from "lucide-react";
+import { BookOpen, Globe, PenSquare, Terminal } from "lucide-react";
 import { useLayoutStore } from "@/stores/settings/layoutStore";
 import { useFolderStore } from "@/stores/FolderStore";
 import { detectWebFramework } from "@/utils/webFrameworkDetection";
@@ -13,7 +13,8 @@ const DEFAULT_DEV_URL = "http://localhost:3000";
 
 export const ChatToolbar: React.FC = () => {
   const { cwd } = useCodexStore();
-  const { showWebPreview, setWebPreviewUrl } = useLayoutStore();
+  const { showWebPreview, setWebPreviewUrl, showReview, setReview } =
+    useLayoutStore();
   const { currentFolder } = useFolderStore();
   const { clearAll, requestFocus } = useChatInputStore();
   const { setActiveConversationId, activeConversationId } = useActiveConversationStore();
@@ -52,6 +53,10 @@ export const ChatToolbar: React.FC = () => {
     }
   }, [activeConversationId, cwd]);
 
+  const handleToggleReviewMode = React.useCallback(() => {
+    setReview(!showReview);
+  }, [setReview, showReview]);
+
   // Cmd/Ctrl+N shortcut for new conversation
   React.useEffect(() => {
     const handleShortcut = (event: KeyboardEvent) => {
@@ -82,16 +87,28 @@ export const ChatToolbar: React.FC = () => {
           <Terminal />
         </Button>
       </span>
-      
-      <Button
-        variant="ghost"
-        size="icon"
-        onClick={handleToggleWebPreview}
-        className={showWebPreview ? "bg-accent" : ""}
-        title="Toggle Web Preview"
-      >
-        <Globe />
-      </Button>
+      <span className="flex gap-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleToggleReviewMode}
+          className={showReview ? "bg-accent" : ""}
+          title="Toggle Review Mode"
+          aria-pressed={showReview}
+        >
+          <BookOpen />
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleToggleWebPreview}
+          className={showWebPreview ? "bg-accent" : ""}
+          title="Toggle Web Preview"
+        >
+          <Globe />
+        </Button>
+      </span>
     </div>
   );
 };

@@ -171,11 +171,7 @@ export function ConversationList({
   };
 
   const handleConversationSelect = (conversation: ConversationSummary) => {
-    handleSelectConversation(
-      conversation.conversationId,
-      conversation.path,
-      cwd,
-    );
+    handleSelectConversation(conversation, cwd);
   };
 
   const handleDeleteConversation = async (
@@ -215,8 +211,8 @@ export function ConversationList({
                   showBulkDeleteButtons={showBulkDeleteButtons}
                   selectedConversations={selectedConversations}
                   setSelectedConversations={setSelectedConversations}
-                  onSelect={handleConversationSelect}
-                  onToggleFavorite={toggleFavorite}
+            onSelect={handleConversationSelect}
+            onToggleFavorite={toggleFavorite}
                   onStartRename={() =>
                     setEditingConversationId(conv.conversationId)
                   }

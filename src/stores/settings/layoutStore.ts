@@ -9,6 +9,7 @@ interface LayoutState {
   showFileTree: boolean;
   showNotesList: boolean;
   showWebPreview: boolean;
+  showReview: boolean;
   // Header actions visibility
   showHeaderActions: boolean;
   
@@ -44,6 +45,7 @@ interface LayoutState {
   setChatPane: (visible: boolean) => void;
   setFileTree: (visible: boolean) => void;
   setWebPreview: (visible: boolean) => void;
+  setReview: (visible: boolean) => void;
   setHeaderActions: (visible: boolean) => void;
   toggleSessionList: () => void;
   toggleNotesList: () => void;
@@ -72,6 +74,7 @@ export const useLayoutStore = create<LayoutState>()(
       showFileTree: true,
       showNotesList: true,
       showWebPreview: false,
+      showReview: false,
       showHeaderActions: true,
       selectedFile: null,
       webPreviewUrl: null,
@@ -88,6 +91,7 @@ export const useLayoutStore = create<LayoutState>()(
       setChatPane: (visible) => set({ showChatPane: visible }),
       setFileTree: (visible) => set({ showFileTree: visible }),
       setWebPreview: (visible) => set({ showWebPreview: visible }),
+      setReview: (visible) => set({ showReview: visible }),
       setHeaderActions: (visible) => set({ showHeaderActions: visible }),
       
       toggleSessionList: () => set((state) => ({ 

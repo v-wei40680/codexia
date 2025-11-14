@@ -7,6 +7,7 @@ import { extractInitialMessages, type CodexEvent } from "@/types/chat";
 import { readEventMessages } from "@/utils/appendEventLine";
 import { exists, BaseDirectory } from '@tauri-apps/plugin-fs';
 import { useResumeConversationStore } from "@/stores/useResumeConversationStore";
+import type { ConversationSummary } from "@/bindings/ConversationSummary";
 
 const pendingResumes = new Set<string>();
 
@@ -15,6 +16,7 @@ export const useResumeConversation = () => {
     addActiveConversationId,
     setActiveConversationId,
     activeConversationIds: rawActiveConversationIds,
+    setActiveConversation,
   } = useActiveConversationStore();
   const { resumeConversation } = useConversation();
   const buildNewConversationParams = useBuildNewConversationParams();
@@ -22,7 +24,8 @@ export const useResumeConversation = () => {
   const { setResumingConversationId, clearResumingConversationId } = useResumeConversationStore();
 
   const handleSelectConversation = useCallback(
-    async (conversationId: string, path: string, cwd: string) => {
+    async (conversation: ConversationSummary, cwd: string) => {
+      const { conversationId, path } = conversation;
       const activeConversationIds =
         rawActiveConversationIds instanceof Set
           ? rawActiveConversationIds
@@ -34,11 +37,13 @@ export const useResumeConversation = () => {
 
       if (!shouldResume) {
         setActiveConversationId(conversationId);
+        setActiveConversation(conversation);
         return;
       }
 
       if (!path) {
         setActiveConversationId(conversationId);
+        setActiveConversation(conversation);
         return;
       }
 
@@ -55,6 +60,7 @@ export const useResumeConversation = () => {
         );
         console.log("Resumed conversation", resumedConversation);
         setActiveConversationId(resumedConversation.conversationId);
+        setActiveConversation(conversation);
         addActiveConversationId(resumedConversation.conversationId);
         const eventsPath = `.codexia/projects/${btoa(cwd)}/${conversationId}.jsonl`
         const eventsPathExists = await exists(eventsPath, {
@@ -106,6 +112,7 @@ export const useResumeConversation = () => {
       buildNewConversationParams,
       resumeConversation,
       setActiveConversationId,
+      setActiveConversation,
       setEvents,
       addActiveConversationId,
       setResumingConversationId,
