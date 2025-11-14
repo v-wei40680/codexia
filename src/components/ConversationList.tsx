@@ -171,7 +171,7 @@ export function ConversationList({
   };
 
   const handleConversationSelect = (conversation: ConversationSummary) => {
-    handleSelectConversation(conversation, cwd);
+    handleSelectConversation(conversation);
   };
 
   const handleDeleteConversation = async (

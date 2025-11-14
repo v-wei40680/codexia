@@ -8,7 +8,6 @@ import { useSystemSleepPrevention } from "../useSystemSleepPrevention";
 import { AddConversationSubscriptionResponse } from "@/bindings/AddConversationSubscriptionResponse";
 import { playBeep } from "@/utils/beep";
 import { useCodexStore } from "@/stores/useCodexStore";
-import { appendEventLine } from "@/utils/appendEventLine";
 import { useBackendErrorListener } from "@/utils/backendErrorListener";
 import { useSettingsStore } from "@/stores/settings/SettingsStore";
 
@@ -95,10 +94,8 @@ export function useConversationEvents(
             const worktreeId = params.conversationId;
             const turnKey = `${params.conversationId}:${params.id}`;
 
-            // Log non-delta events
             if (!msg.type.endsWith("_delta")) {
               console.log(msg.type, msg);
-              await appendEventLine(conversationId, cwd, event);
             }
 
             latestEvent.current = event;

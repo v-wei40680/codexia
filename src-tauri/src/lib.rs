@@ -16,7 +16,7 @@ use commands::{ check_codex_version, check_coder_version, create_new_window, dis
 use filesystem::{
     directory_ops::{canonicalize_path, get_default_directories, read_directory, search_files},
     file_analysis::calculate_file_tokens,
-    file_io::{read_file, write_file, append_jsonl_file},
+    file_io::{read_file, write_file},
     file_parsers::{csv::read_csv_content, pdf::read_pdf_content, xlsx::read_xlsx_content},
     git_diff::get_git_file_diff,
     git_status::get_git_status,
@@ -82,7 +82,6 @@ pub fn run() {
             calculate_file_tokens,
             read_file,
             write_file,
-            append_jsonl_file,
             read_pdf_content,
             read_csv_content,
             read_xlsx_content,

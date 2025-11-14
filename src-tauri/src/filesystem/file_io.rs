@@ -1,8 +1,5 @@
 use std::fs;
 use std::path::Path;
-use std::sync::{Mutex, OnceLock};
-
-static APPEND_JSONL_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
 
 #[tauri::command]
 pub async fn read_file(file_path: String) -> Result<String, String> {
@@ -62,41 +59,4 @@ pub async fn write_file(file_path: String, content: String) -> Result<(), String
         Ok(()) => Ok(()),
         Err(e) => Err(format!("Failed to write file: {}", e)),
     }
-}
-
-#[tauri::command]
-pub async fn append_jsonl_file(file_path: String, event_json: String) -> Result<(), String> {
-    use std::io::Write;
-
-    let expanded_path = if file_path.starts_with("~/") {
-        let home = dirs::home_dir().ok_or_else(|| "Cannot find home directory".to_string())?;
-        home.join(&file_path[2..])
-    } else {
-        Path::new(&file_path).to_path_buf()
-    };
-
-    // Ensure the directory exists
-    if let Some(parent) = expanded_path.parent() {
-        if !parent.exists() {
-            fs::create_dir_all(parent)
-                .map_err(|e| format!("Failed to create directory: {}", e))?;
-        }
-    }
-
-    let lock = APPEND_JSONL_LOCK
-        .get_or_init(|| Mutex::new(()));
-    let _guard = lock
-        .lock()
-        .map_err(|e| format!("Failed to acquire append lock: {}", e))?;
-
-    let mut file = fs::OpenOptions::new()
-        .create(true)
-        .append(true)
-        .open(&expanded_path)
-        .map_err(|e| format!("Failed to open file for appending: {}", e))?;
-
-    writeln!(file, "{}", event_json)
-        .map_err(|e| format!("Failed to write to file: {}", e))?;
-
-    Ok(())
 }
