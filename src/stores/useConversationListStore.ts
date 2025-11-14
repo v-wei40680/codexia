@@ -4,10 +4,6 @@ import type { ConversationSummary } from "@/bindings/ConversationSummary";
 import type { SessionSource } from "@/bindings/SessionSource";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
 
-type RawConversationSummary = Partial<ConversationSummary> & {
-  conversationId: string;
-};
-
 const KNOWN_SESSION_SOURCES: readonly SessionSource[] = [
   "cli",
   "vscode",
@@ -32,7 +28,7 @@ function normalizeSessionSource(value: unknown): SessionSource {
 }
 
 function buildConversationSummary(
-  summary: RawConversationSummary,
+  summary: ConversationSummary,
   cwdFallback: string,
 ): ConversationSummary {
   return {
@@ -58,7 +54,7 @@ interface ConversationListState {
 }
 
 interface ConversationListActions {
-  addConversation: (cwd: string, summary: RawConversationSummary) => Promise<void>;
+  addConversation: (cwd: string, summary: ConversationSummary) => Promise<void>;
   updateConversationPreview: (conversationId: string, preview: string) => void;
   removeConversation: (conversationId: string) => Promise<void>;
   setFavorite: (conversationId: string, isFavorite: boolean) => Promise<void>;
@@ -89,7 +85,7 @@ export const useConversationListStore = create<
     loadedAllByCwd: {},
     hasMoreByCwd: {},
 
-    addConversation: async (cwd, summary: RawConversationSummary) => {
+    addConversation: async (cwd, summary: ConversationSummary) => {
       set((state) => {
         const existingList = state.conversationsByCwd[cwd] ?? [];
         const normalizedSummary = buildConversationSummary(summary, cwd);
