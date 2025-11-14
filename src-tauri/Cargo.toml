@@ -1,6 +1,6 @@
 [package]
 name = "codexia"
-version = "0.11.0"
+version = "0.12.0"
 description = "A powerful IDE/GUI and Toolkit for Codex CLI"
 authors = ["milisp"]
 edition = "2021"
@@ -44,8 +44,6 @@ toml_edit = "0.20"
 walkdir = "2.3"
 chrono = { version = "0.4", features = ["serde"] }
 notify = "6"
-codex-protocol = { git = "https://github.com/openai/codex.git", package = "codex-protocol" }
-codex-app-server-protocol = { git = "https://github.com/openai/codex.git", package = "codex-app-server-protocol"}
 base64 = "0.22.1"
 nosleep = "0.2.1"
 regex = "1.12.2"
@@ -55,3 +53,6 @@ tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
 tauri-plugin-updater = "2"
 
 export_bindings = { path = "../export_bindings" }
+fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs" }
+codex-protocol = { git = "https://github.com/openai/codex.git", package = "codex-protocol" }
+codex-app-server-protocol = { git = "https://github.com/openai/codex.git", package = "codex-app-server-protocol"}
