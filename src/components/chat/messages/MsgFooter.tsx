@@ -11,7 +11,13 @@ interface MsgFooterProps {
   canUndo?: boolean;
 }
 
-export function MsgFooter({ content, align, metaInfo, onUndo, canUndo }: MsgFooterProps) {
+export function MsgFooter({
+  content,
+  align,
+  metaInfo,
+  onUndo,
+  canUndo,
+}: MsgFooterProps) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -34,20 +40,20 @@ export function MsgFooter({ content, align, metaInfo, onUndo, canUndo }: MsgFoot
         <Button
           variant="ghost"
           size="icon"
-          className="h-8 w-8"
+          className="h-5 w-5"
           onClick={onUndo}
           disabled={canUndo === false}
         >
-          <Undo2 className="h-4 w-4" />
+          <Undo2 size={6} />
         </Button>
       )}
       <Button
         variant="ghost"
         size="icon"
-        className="h-8 w-8"
+        className="h-5 w-5"
         onClick={handleCopy}
       >
-        {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+        {copied ? <Check size={6} /> : <Copy size={6} />}
       </Button>
     </div>
   );

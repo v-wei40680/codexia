@@ -10,16 +10,9 @@ const VARIANT_CLASSES: Record<EventVariant, string> = {
   system: "bg-background text-foreground border border-border",
 };
 
-const TITLE_CLASSES: Record<EventVariant, string> = {
-  user: "text-primary-foreground/80",
-  assistant: "text-muted-foreground",
-  system: "text-muted-foreground",
-};
-
 export function EventBubble({
   align,
   variant,
-  title,
   children,
 }: {
   align: "start" | "end";
@@ -36,20 +29,10 @@ export function EventBubble({
     >
       <div
         className={cn(
-          "max-w-xl rounded-lg px-4 py-3 text-sm shadow-sm",
+          "max-w-xl rounded-lg px-2 py-2 text-sm shadow-sm",
           VARIANT_CLASSES[variant],
         )}
       >
-        {title ? (
-          <div
-            className={cn(
-              "mb-2 text-xs font-semibold tracking-wide",
-              TITLE_CLASSES[variant],
-            )}
-          >
-            {title}
-          </div>
-        ) : null}
         {children}
       </div>
     </div>
