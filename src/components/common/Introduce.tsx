@@ -10,8 +10,9 @@ import { ExternalLink, Github, Twitter } from "lucide-react";
 import { SimpleGitWorktreeSettings } from "../settings/GitWorktreeSettings";
 import { Link } from "react-router-dom";
 import { Switch } from "../ui/switch";
-import { useSettingsStore } from "@/stores/settings/SettingsStore";
+import { useSettingsStore } from "@/stores/settings";
 import { useTranslation } from "react-i18next";
+import { CodexAuth } from "@/components/settings";
 import { invoke } from "@/lib/tauri-proxy";
 
 export function Introduce() {
@@ -39,13 +40,16 @@ export function Introduce() {
       defaultValue="item-1"
     >
       <AccordionItem value="item-1">
+        <AccordionTrigger>ChatGPT Auth</AccordionTrigger>
+        <AccordionContent>
+          <CodexAuth />
+        </AccordionContent>
+      </AccordionItem>
+      <AccordionItem value="item-2">
         <AccordionTrigger>Settings</AccordionTrigger>
         <AccordionContent className="flex flex-col gap-4 text-balance">
           <div className="flex justify-between">
-            <Button
-              onClick={handleNewWindow}
-              title={t("header.openNewWindow")}
-            >
+            <Button onClick={handleNewWindow} title={t("header.openNewWindow")}>
               <ExternalLink /> {t("header.openNewWindow")}
             </Button>
             <Link
@@ -60,7 +64,8 @@ export function Introduce() {
             <div>
               <p className="text-sm font-medium">Task completion beep</p>
               <p className="text-xs text-muted-foreground">
-                Play a short tone when tasks finish so you can focus away from the screen.
+                Play a short tone when tasks finish so you can focus away from
+                the screen.
               </p>
             </div>
             <Switch
@@ -72,7 +77,8 @@ export function Introduce() {
             <div>
               <p className="text-sm font-medium">Keep system awake</p>
               <p className="text-xs text-muted-foreground">
-                Prevent the computer from sleeping while active tasks run to avoid interruptions.
+                Prevent the computer from sleeping while active tasks run to
+                avoid interruptions.
               </p>
             </div>
             <Switch
@@ -82,13 +88,29 @@ export function Introduce() {
           </div>
         </AccordionContent>
       </AccordionItem>
-      <AccordionItem value="item-2">
+      <AccordionItem value="item-3">
         <AccordionTrigger>Keep in touch</AccordionTrigger>
         <AccordionContent className="flex gap-4 text-balance">
-          <Button onClick={() => open("https://github.com/milisp/codexia/discussions")}><Github />Github</Button>
-          <Button onClick={() => open("https://discord.gg/zAjtD4kf5K")}><img src="/discord.svg" height={24} width={24}/>Discord</Button>
-          <Button onClick={() => open("https://x.com/lisp_mi")}><Twitter />milisp</Button>
-          <Button onClick={() => open("https://www.reddit.com/r/codexia/")}><img src="/reddit.svg" height={24} width={24}/>r/codexia</Button>
+          <Button
+            onClick={() =>
+              open("https://github.com/milisp/codexia/discussions")
+            }
+          >
+            <Github />
+            Github
+          </Button>
+          <Button onClick={() => open("https://discord.gg/zAjtD4kf5K")}>
+            <img src="/discord.svg" height={24} width={24} />
+            Discord
+          </Button>
+          <Button onClick={() => open("https://x.com/lisp_mi")}>
+            <Twitter />
+            milisp
+          </Button>
+          <Button onClick={() => open("https://www.reddit.com/r/codexia/")}>
+            <img src="/reddit.svg" height={24} width={24} />
+            r/codexia
+          </Button>
         </AccordionContent>
       </AccordionItem>
     </Accordion>
