@@ -16,6 +16,7 @@ import { useConversation } from "./useConversation";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
 import { useSessionStore } from "@/stores/useSessionStore";
 import { useProviderStore, useSandboxStore } from "@/stores";
+import { waitForConversationListenerReady } from "@/stores/useConversationListenerStore";
 
 const buildUserInputs = (
   text: string,
@@ -206,6 +207,7 @@ export function useSendMessage() {
     setActiveConversationId(newConversation.conversationId);
     addActiveConversationId(newConversation.conversationId);
     clearEvents(newConversation.conversationId);
+    await waitForConversationListenerReady(newConversation.conversationId);
     return newConversation.conversationId;
   };
 

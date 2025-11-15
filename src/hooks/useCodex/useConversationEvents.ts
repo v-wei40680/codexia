@@ -10,6 +10,7 @@ import { playBeep } from "@/utils/beep";
 import { useCodexStore } from "@/stores/useCodexStore";
 import { useBackendErrorListener } from "@/utils/backendErrorListener";
 import { useSettingsStore } from "@/stores/settings/SettingsStore";
+import { useConversationListenerStore } from "@/stores/useConversationListenerStore";
 
 interface EventHandlers {
   isConversationReady?: boolean;
@@ -91,7 +92,7 @@ export function useConversationEvents(
           { params: { conversationId } },
         );
         subscriptionId = listenerResponse.subscriptionId;
-        
+
         conversationUnlisten = await listen(
           "codex:event",
           async (event: CodexEvent) => {
@@ -236,6 +237,9 @@ export function useConversationEvents(
             }
           },
         );
+        useConversationListenerStore
+          .getState()
+          .setListenerReadyConversationId(conversationId);
       } catch (err) {
         console.error("Failed to add conversation listener:", err);
       }
@@ -247,6 +251,14 @@ export function useConversationEvents(
         invoke("remove_conversation_listener", {
           params: { subscriptionId },
         });
+      }
+      if (
+        useConversationListenerStore.getState().listenerReadyConversationId ===
+        conversationId
+      ) {
+        useConversationListenerStore
+          .getState()
+          .setListenerReadyConversationId(null);
       }
       setIsBusy(false);
     };
