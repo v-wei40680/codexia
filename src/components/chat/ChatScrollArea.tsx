@@ -7,6 +7,7 @@ import { useChatScroll } from "@/hooks/useChatScroll";
 import { ScrollButtons } from "./actions/ScrollButtons";
 import { EventMsgType } from "./EventMsgType";
 import { Loader2 } from "lucide-react";
+import BouncingDotsLoader from "./BouncingDotsLoader";
 
 // Build a stable key for React list rendering. Avoid index-based keys.
 const getEventKey = (event: CodexEvent): string => {
@@ -33,12 +34,14 @@ interface ChatScrollAreaProps {
   events: CodexEvent[];
   activeConversationId?: string;
   isResumingConversation?: boolean;
+  isBusy?: boolean;
 }
 
 export function ChatScrollArea({
   events,
   activeConversationId,
   isResumingConversation = false,
+  isBusy = false,
 }: ChatScrollAreaProps) {
   const {
     scrollContentRef,
@@ -118,6 +121,10 @@ export function ChatScrollArea({
               </div>
             );
           })}
+
+          {isBusy && !isResumingConversation && (
+            <BouncingDotsLoader />
+          )}
         </div>
       </ScrollArea>
       <ScrollButtons
@@ -126,7 +133,7 @@ export function ChatScrollArea({
       />
       {isResumingConversation && (
         <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center bg-background/70">
-          <div className="flex items-center gap-2 rounded-lg border border-border bg-background/90 px-4 py-3 text-sm font-medium text-foreground shadow-lg backdrop-blur">
+          <div className="flex flex-col items-center gap-2 rounded-lg border border-border bg-background/90 px-4 py-3 text-sm font-medium text-foreground shadow-lg backdrop-blur">
             <Loader2 className="h-4 w-4 animate-spin" />
             <span>Resuming conversation…</span>
           </div>

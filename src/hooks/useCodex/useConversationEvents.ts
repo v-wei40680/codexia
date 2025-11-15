@@ -110,7 +110,12 @@ export function useConversationEvents(
             currentHandlers.onAnyEvent?.(event);
 
             // Handle busy state
-            if (BUSY_OFF_EVENTS.has(msg.type)) {
+            if (
+              msg.type === "exec_approval_request" ||
+              msg.type === "apply_patch_approval_request"
+            ) {
+              setIsBusy(false);
+            } else if (BUSY_OFF_EVENTS.has(msg.type)) {
               if (enableTaskCompleteBeepRef.current) {
                 playBeep();
               }

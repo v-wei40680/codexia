@@ -104,6 +104,7 @@ export function ChatView() {
                 events={currentEvents}
                 activeConversationId={activeConversationId ?? undefined}
                 isResumingConversation={isResumingConversation}
+                isBusy={isBusy}
               />
             ) : (
               <Introduce />
