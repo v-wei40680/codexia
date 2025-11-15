@@ -2,6 +2,7 @@ import { create } from "zustand";
 
 interface SessionState {
   isBusy: boolean;
+  busyStartTime: number | null;
 }
 
 interface SessionActions {
@@ -12,7 +13,13 @@ interface SessionActions {
 export const useSessionStore = create<SessionState & SessionActions>()(
   (set) => ({
     isBusy: false,
-    setIsBusy: (value) => set({ isBusy: value }),
-    reset: () => set({ isBusy: false }),
+    busyStartTime: null,
+    setIsBusy: (value) =>
+      set((state) => ({
+        isBusy: value,
+        busyStartTime:
+          value && !state.isBusy ? Date.now() : value ? state.busyStartTime : null,
+      })),
+    reset: () => set({ isBusy: false, busyStartTime: null }),
   }),
 );
