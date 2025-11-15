@@ -7,12 +7,12 @@ import { AccordionMsg } from "./AccordionMsg";
 import { ExecApprovalRequestItem } from "./ExecApprovalRequestItem";
 import { ApplyPatchApprovalRequestItem } from "./ApplyPatchApprovalRequestItem";
 import { CodexEvent } from "@/types/chat";
-import { CheckCircle2, Dot, X } from "lucide-react";
+import { Dot } from "lucide-react";
 import { MsgFooter } from "../chat/messages/MsgFooter";
 import { getStreamDurationLabel } from "@/utils/getDurationLable";
+import { ExecCommandBeginItem } from "./ExecCommandBeginItem";
 import { PatchApplyBeginItem } from "./PatchApplyBeginItem";
 import { useTurnDiffStore } from "@/stores/useTurnDiffStore";
-import { useExecCommandStore } from "@/stores";
 import { UserMessage } from "./UserMessage";
 
 export const EventItem = memo(function EventItem({
@@ -23,12 +23,6 @@ export const EventItem = memo(function EventItem({
   conversationId: string | null;
 }) {
   const { msg } = event.payload.params;
-  const execCommandStatus = useExecCommandStore((state) => {
-    if (msg.type === "exec_command_begin" && "call_id" in msg) {
-      return state.statuses[msg.call_id];
-    }
-    return undefined;
-  });
   const durationLabel = getStreamDurationLabel(event);
   const { diffsByConversationId } = useTurnDiffStore();
   const canUndo =
@@ -106,34 +100,8 @@ export const EventItem = memo(function EventItem({
       return <TurnDiffView content={msg.unified_diff} />;
     case "plan_update":
       return <PlanDisplay steps={msg.plan} />;
-    case "exec_command_begin": {
-      const statusIcon = execCommandStatus ? (
-        execCommandStatus.success ? (
-          <CheckCircle2
-            className="h-4 w-4 text-emerald-500"
-            aria-label="Command succeeded"
-          />
-        ) : (
-          <X className="h-4 w-4 text-destructive" aria-label="Command failed" />
-        )
-      ) : null;
-      return (
-        <div className="flex w-full font-semibold rounded-md">
-          <div
-            className="
-            flex w-full items-center gap-2 rounded-md font-semibold
-            bg-gray-100 text-gray-900
-            dark:bg-gray-800 dark:text-gray-100
-            transition-colors duration-300
-          "
-          >
-            <span className="mr-2">$</span>
-            <span className="flex-1">{msg.command.join(" ")}</span>
-            {statusIcon}
-          </div>
-        </div>
-      );
-    }
+    case "exec_command_begin":
+      return <ExecCommandBeginItem event={event} />;
     case "patch_apply_begin":
       return <PatchApplyBeginItem event={event} />;
     case "patch_apply_end":
@@ -147,9 +115,8 @@ export const EventItem = memo(function EventItem({
     case "session_configured":
       return null;
     case "error":
-      return <span className="bg-red-500">{msg.message}</span>;
     case "stream_error":
-      return <span className="bg-red-500">{msg.message}</span>;
+      return <Badge variant="destructive">{msg.message}</Badge>;
     default:
       return (
         <AccordionMsg title={msg.type} content={JSON.stringify(msg, null, 2)} />
