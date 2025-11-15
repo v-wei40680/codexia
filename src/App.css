@@ -226,6 +226,29 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
 }
 
+.accent-black {
+  --primary: oklch(0.15 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --accent: oklch(0.08 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --ring: oklch(0.2 0 0);
+  --sidebar-primary: oklch(0.15 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.08 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+}
+.dark.accent-black {
+  --primary: oklch(0.35 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --accent: oklch(0.2 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --ring: oklch(0.45 0 0);
+  --sidebar-primary: oklch(0.35 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.2 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

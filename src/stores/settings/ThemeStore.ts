@@ -5,7 +5,7 @@ import { persist } from 'zustand/middleware';
 export type Theme = 'light' | 'dark';
 
 // Accent color theme
-export type Accent = 'pink' | 'blue' | 'green' | 'purple' | 'orange';
+export type Accent =  'black' | 'pink' | 'blue' | 'green' | 'purple' | 'orange';
 
 interface ThemeState {
   theme: Theme;
