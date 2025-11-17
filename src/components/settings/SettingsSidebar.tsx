@@ -53,6 +53,13 @@ export default function SettingsSidebar({
       >
         Git Worktree
       </Button>
+      <Button
+        variant={activeSection === "environmentVariables" ? "default" : "ghost"}
+        className="w-full justify-start"
+        onClick={() => onSectionChange("environmentVariables")}
+      >
+        Environment Variables
+      </Button>
     </div>
   );
 }

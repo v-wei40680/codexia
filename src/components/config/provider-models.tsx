@@ -25,7 +25,7 @@ export function ProviderModels() {
     setSelectedProviderId,
     setSelectedModel,
     setApiKey,
-    setApiKeyVar,
+    setEnvKey,
     setBaseUrl,
     setOllamaModels,
     deleteModel,
@@ -52,16 +52,16 @@ export function ProviderModels() {
   const selectedProvider = providers.find((p) => p.id === selectedProviderId);
 
   const currentApiKey = selectedProvider?.apiKey ?? "";
-  const currentApiKeyVar = selectedProvider?.apiKeyVar ?? "";
+  const currentEnvKey = selectedProvider?.envKey ?? "";
   const currentBaseUrl = selectedProvider?.baseUrl ?? "";
   const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (selectedProviderId) {
       setApiKey(selectedProviderId, e.target.value);
     }
   };
-  const handleApiKeyVarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleEnvKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (selectedProviderId) {
-      setApiKeyVar(selectedProviderId, e.target.value);
+      setEnvKey(selectedProviderId, e.target.value);
     }
   };
   const handleBaseUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -168,9 +168,9 @@ export function ProviderModels() {
                   </div>
                   <ProviderDetailsCollapsible
                     selectedProviderId={selectedProviderId}
-                    currentApiKeyVar={currentApiKeyVar}
+                    currentEnvKey={currentEnvKey}
                     currentBaseUrl={currentBaseUrl}
-                    handleApiKeyVarChange={handleApiKeyVarChange}
+                    handleEnvKeyChange={handleEnvKeyChange}
                     handleBaseUrlChange={handleBaseUrlChange}
                   />
                 </div>

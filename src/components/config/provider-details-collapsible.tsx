@@ -11,17 +11,17 @@ import {
 
 interface ProviderDetailsCollapsibleProps {
   selectedProviderId: string | null;
-  currentApiKeyVar: string;
+  currentEnvKey: string;
   currentBaseUrl: string;
-  handleApiKeyVarChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleEnvKeyChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleBaseUrlChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export function ProviderDetailsCollapsible({
   selectedProviderId,
-  currentApiKeyVar,
+  currentEnvKey,
   currentBaseUrl,
-  handleApiKeyVarChange,
+  handleEnvKeyChange,
   handleBaseUrlChange,
 }: ProviderDetailsCollapsibleProps) {
   const [showProviderDetails, setShowProviderDetails] = useState(false);
@@ -56,8 +56,8 @@ export function ProviderDetailsCollapsible({
           </Label>
           <Input
             placeholder="e.g., OPENAI_API_KEY"
-            value={currentApiKeyVar}
-            onChange={handleApiKeyVarChange}
+            value={currentEnvKey}
+            onChange={handleEnvKeyChange}
             className="font-mono text-xs"
             disabled={!selectedProviderId}
           />

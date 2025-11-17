@@ -9,7 +9,7 @@ export interface ProviderStateModelProvider {
   name: string;
   models: string[];
   apiKey: string;
-  apiKeyVar?: string;
+  envKey?: string;
   baseUrl?: string;
 }
 
@@ -35,7 +35,7 @@ type ProviderActions = {
     },
   ) => void;
   setApiKey: (id: string, key: string) => void;
-  setApiKeyVar: (id: string, keyVar: string) => void;
+  setEnvKey: (id: string, keyVar: string) => void;
   setBaseUrl: (id: string, baseUrl: string) => void;
   setSelectedProviderId: (id: string) => void;
   setSelectedModel: (model: string) => void;
@@ -71,10 +71,10 @@ export const useProviderStore = create<ProviderState & ProviderActions>()(
           ),
         }));
       },
-      setApiKeyVar: (id, keyVar) => {
+      setEnvKey: (id, keyVar) => {
         set((state) => ({
           providers: state.providers.map((p) =>
-            p.id === id ? { ...p, apiKeyVar: keyVar } : p,
+            p.id === id ? { ...p, envKey: keyVar } : p,
           ),
         }));
       },
@@ -98,7 +98,7 @@ export const useProviderStore = create<ProviderState & ProviderActions>()(
           ...providerData,
           id: providerData.name.toLowerCase().replace(/\s+/g, "-"),
           apiKey: "",
-          apiKeyVar: providerData.envKey || "",
+          envKey: providerData.envKey || "",
           baseUrl: providerData.baseUrl || "",
         };
         set((state) => ({
@@ -110,7 +110,7 @@ export const useProviderStore = create<ProviderState & ProviderActions>()(
           const configServiceNewProvider: ModelProvider = {
             name: newProvider.name,
             base_url: newProvider.baseUrl || "",
-            env_key: newProvider.apiKeyVar || undefined,
+            env_key: newProvider.envKey || undefined,
           };
           ConfigService.addOrUpdateModelProvider(
             newProvider.id,

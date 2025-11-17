@@ -6,7 +6,7 @@ export const initialProviders: ProviderStateModelProvider[] = [
     name: "OpenAI",
     models: ["gpt-5", "gpt-5-codex"],
     apiKey: "",
-    apiKeyVar: "",
+    envKey: "",
     baseUrl: "",
   },
   {
@@ -14,7 +14,7 @@ export const initialProviders: ProviderStateModelProvider[] = [
     name: "Ollama",
     models: [],
     apiKey: "",
-    apiKeyVar: "",
+    envKey: "",
     baseUrl: "http://localhost:11434/v1",
   },
   {
@@ -22,7 +22,7 @@ export const initialProviders: ProviderStateModelProvider[] = [
     name: "Google",
     models: ["gemini-2.5-pro", "gemini-2.5-flash"],
     apiKey: "",
-    apiKeyVar: "GEMINI_API_KEY",
+    envKey: "GEMINI_API_KEY",
     baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
   },
   {
@@ -30,7 +30,7 @@ export const initialProviders: ProviderStateModelProvider[] = [
     name: "OpenRouter",
     models: ["openai/gpt-oss-20b:free", "qwen/qwen3-coder:free"],
     apiKey: "",
-    apiKeyVar: "OPENROUTER_API_KEY",
+    envKey: "OPENROUTER_API_KEY",
     baseUrl: "https://openrouter.ai/api/v1",
   },
   {
@@ -38,7 +38,7 @@ export const initialProviders: ProviderStateModelProvider[] = [
     name: "Huggingface",
     models: ["openai/gpt-oss-20b"],
     apiKey: "",
-    apiKeyVar: "HF_API_TOKEN",
+    envKey: "HF_API_TOKEN",
     baseUrl: "https://router.huggingface.co/v1",
   },
   {
@@ -46,7 +46,7 @@ export const initialProviders: ProviderStateModelProvider[] = [
     name: "grok",
     models: ["grok-4"],
     apiKey: "",
-    apiKeyVar: "XAI_API_KEY",
+    envKey: "XAI_API_KEY",
     baseUrl: "https://api.x.ai/v1",
   },
 ];
