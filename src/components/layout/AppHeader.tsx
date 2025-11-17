@@ -9,6 +9,7 @@ import {
   Brain,
   ExternalLink,
   BotMessageSquare,
+  FileText,
 } from "lucide-react";
 import { Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -65,7 +66,7 @@ export function AppHeader() {
           className="flex hover:text-primary items-center gap-1"
           title={t("header.projects")}
         >
-          <PartyPopper className="w-5 h-5" /> {t("header.projects")}
+          <PartyPopper className="w-4 h-4" /> {t("header.projects")}
         </Link>
 
         <Button
@@ -121,6 +122,15 @@ export function AppHeader() {
             >
               <BarChart3 className="w-4 h-4" />{t("header.usage")}
             </Link>
+
+            <Link
+              to="/agents.md"
+              className="flex hover:text-primary items-center gap-1"
+              title="AGENTS"
+            >
+              <FileText className="w-4 h-4" /> AGENTS
+            </Link>
+
 
             <Button
               variant="ghost"

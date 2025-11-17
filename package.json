@@ -40,6 +40,7 @@
     "@tauri-apps/plugin-updater": "~2",
     "@types/diff": "^8.0.0",
     "@types/uuid": "^11.0.0",
+    "@uiw/react-md-editor": "^4.0.8",
     "ace-builds": "^1.43.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

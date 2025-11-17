@@ -11,6 +11,7 @@ import SettingsPage from "./pages/settings";
 import UsagePage from "./pages/usage";
 import ReviewPage from "./pages/review";
 import McpPage from "./pages/mcp";
+import AgentPage from "@/pages/agents";
 import { useDeepLink } from "./hooks/useDeepLink";
 import { useLayoutStore } from "./stores/settings/layoutStore";
 import { useAuth } from "./hooks/useAuth";
@@ -80,6 +81,10 @@ export const router = createHashRouter([
           {
             path: "review",
             element: <ReviewPage />,
+          },
+          {
+            path: "agents.md",
+            element: <AgentPage />,
           },
         ],
       },
