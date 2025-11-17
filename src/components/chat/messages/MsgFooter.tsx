@@ -1,6 +1,15 @@
 import { Button } from "@/components/ui/button";
-import { Check, Copy, Undo2 } from "lucide-react";
-import { useState } from "react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useNoteStore } from "@/stores/NoteStore";
+import { BookOpen, Check, Copy, Plus, Undo2 } from "lucide-react";
+import { useCallback, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 
 interface MsgFooterProps {
@@ -19,6 +28,22 @@ export function MsgFooter({
   canUndo,
 }: MsgFooterProps) {
   const [copied, setCopied] = useState(false);
+  const { addContentToNote, createNoteFromContent, notes } = useNoteStore();
+
+  const truncatedNoteTitle = useMemo(() => content.trim().split("\n")[0], [
+    content,
+  ]);
+
+  const handleAddToNote = useCallback(
+    (noteId: string) => {
+      addContentToNote(noteId, content, "Chat Message");
+    },
+    [addContentToNote, content]
+  );
+
+  const handleCreateNote = useCallback(() => {
+    createNoteFromContent(content, "Chat Message");
+  }, [content, createNoteFromContent]);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(content);
@@ -47,6 +72,51 @@ export function MsgFooter({
           <Undo2 size={6} />
         </Button>
       )}
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-7 w-7 hover:bg-secondary dark:hover:bg-white/10 transition-colors"
+          >
+            <BookOpen size={14} />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuLabel>Save message to note</DropdownMenuLabel>
+          <DropdownMenuItem
+            onSelect={(event) => {
+              event.preventDefault();
+              handleCreateNote();
+            }}
+            className="gap-2"
+          >
+            <Plus size={14} />
+            Create new note
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          {notes.length > 0 ? (
+            notes.map((note) => (
+              <DropdownMenuItem
+                key={note.id}
+                className="gap-2"
+                onSelect={(event) => {
+                  event.preventDefault();
+                  handleAddToNote(note.id);
+                }}
+              >
+                <span className="truncate max-w-[180px] text-sm font-medium">
+                  {note.title || truncatedNoteTitle || "Untitled note"}
+                </span>
+              </DropdownMenuItem>
+            ))
+          ) : (
+            <DropdownMenuItem disabled className="opacity-70 cursor-not-allowed">
+              No notes available
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
       <Button
         variant="ghost"
         size="icon"
