@@ -8,9 +8,16 @@ const formatDuration = (durationMs: number) => {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 };
 
-const BouncingDotsLoader = () => {
-  const busyStartTime = useSessionStore((state) => state.busyStartTime);
-  const isBusy = useSessionStore((state) => state.isBusy);
+interface BouncingDotsLoaderProps {
+  conversationId?: string;
+}
+
+const BouncingDotsLoader = ({ conversationId }: BouncingDotsLoaderProps) => {
+  const busyState = useSessionStore((state) =>
+    conversationId ? state.busyByConversationId[conversationId] : undefined,
+  );
+  const isBusy = busyState?.isBusy ?? false;
+  const busyStartTime = busyState?.busyStartTime ?? null;
   const [elapsedMs, setElapsedMs] = useState(0);
 
   useEffect(() => {

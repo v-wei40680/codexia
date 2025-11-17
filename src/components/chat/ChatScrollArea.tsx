@@ -123,7 +123,7 @@ export function ChatScrollArea({
           })}
 
           {isBusy && !isResumingConversation && (
-            <BouncingDotsLoader />
+            <BouncingDotsLoader conversationId={activeConversationId} />
           )}
         </div>
       </ScrollArea>

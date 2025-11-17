@@ -46,22 +46,26 @@ export function ChatView() {
   // Memoize callbacks to prevent unnecessary re-subscriptions
   const handleAnyEvent = useCallback(
     (event: CodexEvent) => {
-      if (!activeConversationId) return;
-      const { msg } = event.payload.params;
+      const { params } = event.payload;
+      const { conversationId, msg } = params;
+      if (!conversationId) {
+        return;
+      }
+
       if (msg.type === "turn_diff") {
         const unified = msg.unified_diff as string | undefined;
-        const existing = diffsByConversationId[activeConversationId] || [];
+        const existing = diffsByConversationId[conversationId] || [];
         if (!unified || existing.includes(unified)) {
           return; // duplicate or invalid; skip entirely
         }
         // First add to store, then record event
-        addTurnDiff(activeConversationId, unified);
-        addEvent(activeConversationId, event);
+        addTurnDiff(conversationId, unified);
+        addEvent(conversationId, event);
         return;
       }
-      addEvent(activeConversationId, event);
+      addEvent(conversationId, event);
     },
-    [activeConversationId, addEvent, addTurnDiff, diffsByConversationId],
+    [addEvent, addTurnDiff, diffsByConversationId],
   );
 
   const handleExecCommandEnd = useCallback(

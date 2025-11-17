@@ -83,7 +83,18 @@ const normalizeApprovalPolicy = (policy: string): V2AskForApproval => {
 };
 
 export function useSendMessage() {
-  const { isBusy, setIsBusy } = useSessionStore();
+  const activeConversationId = useActiveConversationStore(
+    (state) => state.activeConversationId,
+  );
+  const setConversationBusy = useSessionStore(
+    (state) => state.setConversationBusy,
+  );
+  const isBusy = useSessionStore((state) => {
+    if (!activeConversationId) {
+      return false;
+    }
+    return state.busyByConversationId[activeConversationId]?.isBusy ?? false;
+  });
   const buildNewConversationParams = useBuildNewConversationParams();
   const { cwd } = useCodexStore();
   const { clearEvents } = useEventStore();
@@ -105,7 +116,7 @@ export function useSendMessage() {
     text: string,
     attachments: MediaAttachment[],
   ) => {
-    setIsBusy(true);
+    setConversationBusy(conversationId, true);
     try {
       const shouldStartTurn =
         lastTurnStartConfig.current?.conversationId !== conversationId ||
@@ -146,7 +157,7 @@ export function useSendMessage() {
       });
       markConversationReady();
     } catch (error) {
-      setIsBusy(false);
+      setConversationBusy(conversationId, false);
       throw error;
     }
   };

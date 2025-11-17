@@ -10,7 +10,7 @@ export interface BackendErrorPayload {
 }
 
 export function useBackendErrorListener() {
-  const setIsBusy = useSessionStore((state) => state.setIsBusy);
+  const resetBusyState = useSessionStore((state) => state.reset);
 
   useEffect(() => {
     let backendErrorUnlisten: (() => void) | null = null;
@@ -24,7 +24,7 @@ export function useBackendErrorListener() {
             toast.error(
               `Backend error (code: ${code}): ${message || "Unknown error"}`,
             );
-            setIsBusy(false);
+            resetBusyState();
           },
         );
       } catch (err) {
@@ -42,5 +42,5 @@ export function useBackendErrorListener() {
     return () => {
       backendErrorUnlisten?.();
     };
-  }, [setIsBusy]);
+  }, [resetBusyState]);
 }

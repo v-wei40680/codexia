@@ -1,25 +1,50 @@
 import { create } from "zustand";
 
-interface SessionState {
+interface ConversationBusyState {
   isBusy: boolean;
   busyStartTime: number | null;
 }
 
+interface SessionState {
+  busyByConversationId: Record<string, ConversationBusyState>;
+}
+
 interface SessionActions {
-  setIsBusy: (value: boolean) => void;
+  setConversationBusy: (conversationId: string, value: boolean) => void;
   reset: () => void;
 }
 
 export const useSessionStore = create<SessionState & SessionActions>()(
   (set) => ({
-    isBusy: false,
-    busyStartTime: null,
-    setIsBusy: (value) =>
-      set((state) => ({
-        isBusy: value,
-        busyStartTime:
-          value && !state.isBusy ? Date.now() : value ? state.busyStartTime : null,
-      })),
-    reset: () => set({ isBusy: false, busyStartTime: null }),
+    busyByConversationId: {},
+    setConversationBusy: (conversationId, value) =>
+      set((state) => {
+        const prev = state.busyByConversationId[conversationId];
+        if (!value) {
+          return {
+            busyByConversationId: {
+              ...state.busyByConversationId,
+              [conversationId]: {
+                isBusy: false,
+                busyStartTime: null,
+              },
+            },
+          };
+        }
+
+        const wasBusy = prev?.isBusy ?? false;
+        const busyStartTime = wasBusy ? prev?.busyStartTime ?? null : Date.now();
+
+        return {
+          busyByConversationId: {
+            ...state.busyByConversationId,
+            [conversationId]: {
+              isBusy: true,
+              busyStartTime,
+            },
+          },
+        };
+      }),
+    reset: () => set({ busyByConversationId: {} }),
   }),
 );
