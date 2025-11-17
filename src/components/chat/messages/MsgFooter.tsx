@@ -40,7 +40,7 @@ export function MsgFooter({
         <Button
           variant="ghost"
           size="icon"
-          className="h-5 w-5"
+          className="h-6 w-6 hover:bg-secondary dark:hover:bg-white/10 transition-colors"
           onClick={onUndo}
           disabled={canUndo === false}
         >
@@ -50,7 +50,7 @@ export function MsgFooter({
       <Button
         variant="ghost"
         size="icon"
-        className="h-5 w-5"
+        className="h-7 w-7 hover:bg-secondary dark:hover:bg-white/10 transition-colors"
         onClick={handleCopy}
       >
         {copied ? <Check size={6} /> : <Copy size={6} />}
