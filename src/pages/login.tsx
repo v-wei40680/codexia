@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import supabase, { isSupabaseConfigured } from "@/lib/supabase";
 import { ensureProfileRecord, mapProfileRow, type ProfileRecord } from "@/lib/profile";
-import { Github } from "lucide-react";
+import { Badge, Github } from "lucide-react";
 import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSettingsStore } from "@/stores/settings/SettingsStore";
@@ -12,9 +12,11 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { isRemoteRuntime } from "@/lib/tauri-proxy";
 import { open } from "@tauri-apps/plugin-shell"
+import { useAuthStore } from "@/stores/useAuthStore";
 
 export default function AuthPage() {
   const { user, loading } = useAuth();
+  const {lastOAuthProvider, setLastOAuthProvider} = useAuthStore();
   const { windowTitle } = useSettingsStore();
   const [redirect, setRedirect] = useState<string | null>(null);
   const [email, setEmail] = useState(() => localStorage.getItem("email") || "");
@@ -22,6 +24,7 @@ export default function AuthPage() {
   const [loadingForm, setLoadingForm] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const remoteMode = isRemoteRuntime();
+
 
   useEffect(() => {
     const decideRedirect = async () => {
@@ -55,10 +58,11 @@ export default function AuthPage() {
     return <Navigate to={redirect} replace />;
   }
 
-  const handleOAuthLogin = async (provider: "github") => {
+  const handleOAuthLogin = async (provider: "github" | "google") => {
     console.log("provider", provider)
     if (!isSupabaseConfigured || !supabase) return;
     try {
+      setLastOAuthProvider(provider);
       const client = supabase!;
       const { data } = await client.auth.signInWithOAuth({
         provider,
@@ -122,7 +126,7 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen px-4 text-center">
+    <div className="flex flex-col items-center justify-center h-full text-center">
       <h1 className="text-3xl font-bold mb-4">Welcome to {windowTitle}</h1>
       <p className="mb-6 text-gray-500 dark:text-gray-400">Sign in to get more</p>
 
@@ -212,14 +216,37 @@ export default function AuthPage() {
           </>
         }
 
-        <Button
-          onClick={() => handleOAuthLogin("github")}
-          className="w-full flex items-center justify-center gap-2 mb-4"
-          disabled={!isSupabaseConfigured}
-        >
-          <Github />
-          Continue with GitHub
-        </Button>
+        <div className="relative mb-4">
+          <Button
+            onClick={() => handleOAuthLogin("github")}
+            className="w-full flex items-center justify-center gap-2"
+          >
+            <Github />
+            Continue with GitHub
+          </Button>
+          {lastOAuthProvider === "github" && (
+            <Badge className="absolute -top-2 -right-2 text-xs bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-300">
+              Last used
+            </Badge>
+          )}
+        </div>
+
+        <div className="relative">
+          <Button
+            onClick={() => handleOAuthLogin("google")}
+            className="w-full flex items-center justify-center gap-2"
+            variant="outline"
+          >
+            <span className="text-sm">🔍</span>
+            Continue with Google
+          </Button>
+          {lastOAuthProvider === "google" && (
+            <Badge className="absolute -top-2 -right-2 text-xs bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-300">
+              Last used
+            </Badge>
+          )}
+        </div>
+
       </div>
     </div>
   );

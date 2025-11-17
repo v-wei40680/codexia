@@ -37,7 +37,7 @@ export function Introduce() {
       type="single"
       collapsible
       className="w-full px-4"
-      defaultValue="item-1"
+      defaultValue="item-2"
     >
       <AccordionItem value="item-1">
         <AccordionTrigger>ChatGPT Auth</AccordionTrigger>
@@ -49,9 +49,19 @@ export function Introduce() {
         <AccordionTrigger>Settings</AccordionTrigger>
         <AccordionContent className="flex flex-col gap-4 text-balance">
           <div className="flex justify-between">
-            <Button onClick={handleNewWindow} title={t("header.openNewWindow")}>
-              <ExternalLink /> {t("header.openNewWindow")}
-            </Button>
+            <span className="flex gap-2">
+              <Button onClick={handleNewWindow} title={t("header.openNewWindow")}>
+                <ExternalLink /> {t("header.openNewWindow")}
+              </Button>
+              <Link
+                to="/login"
+                className="flex hover:text-primary items-center justify-end"
+              >
+                <Button>
+                  Codexia login
+                </Button>
+              </Link>
+            </span>
             <Link
               to="/settings"
               className="flex hover:text-primary items-center justify-end"
@@ -89,7 +99,7 @@ export function Introduce() {
         </AccordionContent>
       </AccordionItem>
       <AccordionItem value="item-3">
-        <AccordionTrigger>Keep in touch</AccordionTrigger>
+        <AccordionTrigger>Keep in touch and community</AccordionTrigger>
         <AccordionContent className="flex gap-4 text-balance">
           <Button
             onClick={() =>
@@ -110,6 +120,10 @@ export function Introduce() {
           <Button onClick={() => open("https://www.reddit.com/r/codexia/")}>
             <img src="/reddit.svg" height={24} width={24} />
             r/codexia
+          </Button>
+          <Button onClick={() => open("https://www.reddit.com/r/codex/")}>
+            <img src="/reddit.svg" height={24} width={24} />
+            r/codex
           </Button>
         </AccordionContent>
       </AccordionItem>
