@@ -6,16 +6,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useProviderStore } from "@/stores";
 import { ChevronDown, PlusCircle, Trash2 } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { AddModelForm, AddProviderForm } from "./model-provider-profile-form";
-import { ProviderDetailsCollapsible } from "./provider-details-collapsible";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useNavigate } from "react-router-dom";
+import { PromptOptimizerSettings } from "@/components/settings/PromptOptimizerSettings";
 
 export function ProviderModels() {
   const {
@@ -24,14 +21,10 @@ export function ProviderModels() {
     selectedModel,
     setSelectedProviderId,
     setSelectedModel,
-    setApiKey,
-    setEnvKey,
-    setBaseUrl,
     setOllamaModels,
     deleteModel,
     deleteProvider,
   } = useProviderStore();
-  const navigate = useNavigate();
   useEffect(() => {
     if (selectedProviderId === "ollama") {
       fetch("http://localhost:11434/v1/models")
@@ -51,25 +44,6 @@ export function ProviderModels() {
 
   const selectedProvider = providers.find((p) => p.id === selectedProviderId);
 
-  const currentApiKey = selectedProvider?.apiKey ?? "";
-  const currentEnvKey = selectedProvider?.envKey ?? "";
-  const currentBaseUrl = selectedProvider?.baseUrl ?? "";
-  const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (selectedProviderId) {
-      setApiKey(selectedProviderId, e.target.value);
-    }
-  };
-  const handleEnvKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (selectedProviderId) {
-      setEnvKey(selectedProviderId, e.target.value);
-    }
-  };
-  const handleBaseUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (selectedProviderId) {
-      setBaseUrl(selectedProviderId, e.target.value);
-    }
-  };
-
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   return (
@@ -88,9 +62,10 @@ export function ProviderModels() {
       </PopoverTrigger>
       <PopoverContent className="w-[480px] h-[480px] p-0" align="end">
         <Tabs defaultValue="model-settiongs">
-          <TabsList className="grid grid-cols-2 w-full">
+          <TabsList className="grid grid-cols-3 w-full">
             <TabsTrigger value="model-settiongs">Model Settiongs</TabsTrigger>
             <TabsTrigger value="add-profile">Add profile</TabsTrigger>
+            <TabsTrigger value="prompt-optimizer">Prompt Optimizer</TabsTrigger>
           </TabsList>
           <TabsContent value="model-settiongs">
             <div className="flex">
@@ -146,37 +121,6 @@ export function ProviderModels() {
 
               {/* Right: Content */}
               <div className="flex-1 flex flex-col">
-                {/* Top: API Key */}
-                <div className="p-4 space-y-3">
-                  <div className="flex justify-between">
-                    <Label className="text-xs font-semibold tracking-wide text-muted-foreground">
-                      API Key {selectedProviderId !== "ollama" && "option"}
-                    </Label>
-                    <Button onClick={() => navigate("/settings")}>
-                      Prompt Optimizer
-                    </Button>
-                  </div>
-                  <div className="space-y-2">
-                    <Input
-                      type="password"
-                      placeholder="api key"
-                      value={currentApiKey}
-                      onChange={handleApiKeyChange}
-                      className="font-mono text-xs"
-                      disabled={!selectedProviderId}
-                    />
-                  </div>
-                  <ProviderDetailsCollapsible
-                    selectedProviderId={selectedProviderId}
-                    currentEnvKey={currentEnvKey}
-                    currentBaseUrl={currentBaseUrl}
-                    handleEnvKeyChange={handleEnvKeyChange}
-                    handleBaseUrlChange={handleBaseUrlChange}
-                  />
-                </div>
-
-                <Separator />
-                {/* Bottom: Models */}
                 <div className="flex-1 p-4 space-y-3">
                   <div className="flex items-center justify-between">
                     <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
@@ -242,6 +186,9 @@ export function ProviderModels() {
           </TabsContent>
           <TabsContent value="add-profile">
             <AddProviderForm />
+          </TabsContent>
+          <TabsContent value="prompt-optimizer">
+            <PromptOptimizerSettings />
           </TabsContent>
         </Tabs>
       </PopoverContent>

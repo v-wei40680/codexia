@@ -6,6 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   type ProviderStateModelProvider,
@@ -15,7 +16,7 @@ import {
 
 export function PromptOptimizerSettings() {
   const { provider, model, setProvider, setModel } = usePromptOptimizerStore();
-  const { providers } = useProviderStore();
+  const { providers, setApiKey, setBaseUrl } = useProviderStore();
 
   const fallbackProviderId = providers[0]?.id ?? "openai";
   const normalizedProvider = providers.some(
@@ -35,6 +36,21 @@ export function PromptOptimizerSettings() {
   );
   const availableModels = activeProvider?.models ?? [];
 
+  const currentApiKey = activeProvider?.apiKey ?? "";
+  const currentBaseUrl = activeProvider?.baseUrl ?? "";
+
+  const handleApiKeyChange = (event: ChangeEvent<HTMLInputElement>) => {
+    if (activeProvider) {
+      setApiKey(activeProvider.id, event.target.value);
+    }
+  };
+
+  const handleBaseUrlChange = (event: ChangeEvent<HTMLInputElement>) => {
+    if (activeProvider) {
+      setBaseUrl(activeProvider.id, event.target.value);
+    }
+  };
+
   const handleProviderChange = (event: ChangeEvent<HTMLSelectElement>) => {
     const nextProviderId = event.target.value;
     setProvider(nextProviderId);
@@ -52,7 +68,7 @@ export function PromptOptimizerSettings() {
   }, [availableModels, model, setModel]);
 
   return (
-    <Card className="max-w-3xl my-6">
+    <Card>
       <CardHeader>
         <CardTitle>Prompt Optimization Model</CardTitle>
         <CardDescription>
@@ -61,6 +77,31 @@ export function PromptOptimizerSettings() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        <div className="space-y-2">
+          <Label className="text-xs font-semibold tracking-wide text-muted-foreground">
+            API Key {normalizedProvider !== "ollama"}
+          </Label>
+          <Input
+            type="password"
+            placeholder="api key"
+            value={currentApiKey}
+            onChange={handleApiKeyChange}
+            className="font-mono text-xs"
+            disabled={!activeProvider}
+          />
+          <div className="space-y-2">
+            <Label className="text-xs font-semibold tracking-wide text-muted-foreground">
+              base_url
+            </Label>
+            <Input
+              placeholder="https://api.example.com/v1"
+              value={currentBaseUrl}
+              onChange={handleBaseUrlChange}
+              className="font-mono text-xs"
+              disabled={!activeProvider}
+            />
+          </div>
+        </div>
         <div>
           <Label htmlFor="optimizer-provider">Provider</Label>
           <select
