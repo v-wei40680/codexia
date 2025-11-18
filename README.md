@@ -8,10 +8,10 @@
 Create custom agents, manage interactive Codex CLI sessions, run secure background agents, ~~fork chat~~, file-tree integration, prompt notepad, git diff, build-in pdf csv/xlsx viewer, and more.
 
   <p>
-    <a href="#features"><img src="https://img.shields.io/badge/Features-✨-blue?style=for-the-badge" alt="Features"></a>
-    <a href="#installation"><img src="https://img.shields.io/badge/Install-🚀-green?style=for-the-badge" alt="Installation"></a>
-    <a href="#usage"><img src="https://img.shields.io/badge/Usage-📖-purple?style=for-the-badge" alt="Usage"></a>
-    <a href="#development"><img src="https://img.shields.io/badge/Develop-🛠️-orange?style=for-the-badge" alt="Development"></a>
+    <a href="#-features"><img src="https://img.shields.io/badge/Features-✨-blue?style=for-the-badge" alt="Features"></a>
+    <a href="#-installation"><img src="https://img.shields.io/badge/Install-🚀-green?style=for-the-badge" alt="Installation"></a>
+    <a href="#-usage"><img src="https://img.shields.io/badge/Usage-📖-purple?style=for-the-badge" alt="Usage"></a>
+    <a href="#-development"><img src="https://img.shields.io/badge/Develop-🛠️-orange?style=for-the-badge" alt="Development"></a>
     <a href="https://discord.gg/zAjtD4kf5K"><img src="https://img.shields.io/badge/Discord-Join-5865F2?style=for-the-badge&logo=discord&logoColor=white" alt="Discord"></a>
   </p>
 </div>
@@ -152,6 +152,19 @@ Menu → MCP Manager → Add Server → Configure
 - Quick Add Servers - desktop-commander and deepwiki
 - Manage MPC Servers - Add, Edit, delete, enable/disable
 - If you want more features for MCP Servers, get [mcp-linker](https://github.com/milisp/mcp-linker) - mcp marketplace, add and sync mcp servers for multi clients
+
+### Remote control
+
+```
+Menu → Settings → Remote access → Static bundle path - start
+```
+
+1. build static asset
+```sh
+bun run export:bindings
+bun run build
+```
+2. start remote server
 
 ## 📋 Supported Codex Features
 
