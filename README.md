@@ -274,6 +274,7 @@ brew install pkg-config
    **For Production Build**
    ```bash
    # Build the application
+   bun run export:bindings or codex generate-ts --out src/bindings
    bun tauri build
    
    # The built executable will be in:
