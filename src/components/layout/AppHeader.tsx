@@ -11,7 +11,14 @@ import {
   BotMessageSquare,
   FileText,
 } from "lucide-react";
-import { Eye, EyeOff } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import { useLayoutStore } from "@/stores/settings/layoutStore";
@@ -22,16 +29,11 @@ import { AccentColorSelector } from "../common/AccentColorSelector";
 import { LanguageSelector } from "../common/LanguageSelector";
 import { PublishCloudDialog } from "../dialogs/PublishCloudDialog";
 import { ClientPicker } from "../common/ClientPicker";
+import { UserDropdown } from "../common/UserDropdown";
 // import { UserDropdown } from "../common/UserDropdown";
 
 export function AppHeader() {
-  const {
-    showFileTree,
-    toggleFileTree,
-    toggleChatPane,
-    showHeaderActions,
-    toggleHeaderActions,
-  } = useLayoutStore();
+  const { showFileTree, toggleFileTree, toggleChatPane } = useLayoutStore();
   const { theme, toggleTheme } = useThemeStore();
   const location = useLocation();
   const { t } = useTranslation();
@@ -69,15 +71,6 @@ export function AppHeader() {
           <PartyPopper className="w-4 h-4" /> {t("header.projects")}
         </Link>
 
-        <Button
-          variant="ghost"
-          onClick={handleNewWindow}
-          className="h-6 w-6"
-          title={t("header.openNewWindow")}
-        >
-          <ExternalLink />
-        </Button>
-
         {location.pathname === "/chat" && (
           <Button
             variant="ghost"
@@ -92,78 +85,97 @@ export function AppHeader() {
       </div>
 
       {/* Right Section */}
-      <div className="flex items-center gap-3">
-        <Button
-          variant="ghost"
-          className="h-6 w-6"
-          onClick={toggleHeaderActions}
-          title={
-            showHeaderActions
-              ? t("header.hideHeaderActions")
-              : t("header.showHeaderActions")
-          }
-        >
-          {showHeaderActions ? <EyeOff /> : <Eye />}
-        </Button>
-
-        {showHeaderActions && (
-          <>
-            <Link
-              to="/mcp"
-              className="flex hover:text-primary items-center gap-1"
-              title={t("header.mcp")}
-            >
-              <Usb className="w-4 h-4" />{t("header.mcp")}
-            </Link>
-            <Link
-              to="/usage"
-              className="flex hover:text-primary items-center gap-1"
-              title={t("header.usage")}
-            >
-              <BarChart3 className="w-4 h-4" />{t("header.usage")}
-            </Link>
-
-            <Link
-              to="/agents.md"
-              className="flex hover:text-primary items-center gap-1"
-              title="AGENTS"
-            >
-              <FileText className="w-4 h-4" /> AGENTS
-            </Link>
-
-
-            <Button
-              variant="ghost"
-              onClick={toggleChatPane}
-              className="h-6 w-6"
-              title={t("header.toggleChatPane")}
-            >
-              <Brain />
-            </Button>
-
+      <div className="flex gap-2">
+        <AccentColorSelector />
+        <LanguageSelector />
+        <PublishCloudDialog />
+        <UserDropdown />
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
               className="h-6 w-6"
-              onClick={toggleTheme}
-              title={t("header.toggleTheme")}
+              title={t("header.menu")}
             >
-              {theme === "dark" ? <Sun /> : <Moon />}
+              <Menu />
             </Button>
-
-            <LanguageSelector />
-            <AccentColorSelector />
-
-            <Link
-              to="/settings"
-              className="flex hover:text-primary items-center gap-1"
-            >
-              <Settings className="w-4 h-4" />
-            </Link>
-
-            {/* <UserDropdown /> */}
-            <PublishCloudDialog />
-          </>
-        )}
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="min-w-64">
+            <DropdownMenuItem asChild>
+              <Button
+                variant="ghost"
+                onClick={handleNewWindow}
+                className="h-6 w-6 justify-start"
+                title={t("header.openNewWindow")}
+              >
+                <ExternalLink />
+                {t("header.openNewWindow")}
+              </Button>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link
+                to="/mcp"
+                className="flex items-center gap-1"
+                title={t("header.mcp")}
+              >
+                <Usb className="w-4 h-4" />
+                {t("header.mcp")}
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link
+                to="/usage"
+                className="flex items-center gap-1"
+                title={t("header.usage")}
+              >
+                <BarChart3 className="w-4 h-4" />
+                {t("header.usage")}
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link
+                to="/agents.md"
+                className="flex items-center gap-1"
+                title="AGENTS"
+              >
+                <FileText className="w-4 h-4" /> AGENTS
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem>
+              <Button
+                variant="ghost"
+                onClick={toggleChatPane}
+                className="h-6 w-6 justify-start"
+                title={t("header.toggleChatPane")}
+              >
+                <Brain className="w-4 h-4" /> {t("header.toggleChatPane")}
+              </Button>
+            </DropdownMenuItem>
+            <DropdownMenuItem>
+              <Button
+                variant="ghost"
+                className="h-6 w-6 justify-start"
+                onClick={toggleTheme}
+                title={t("header.toggleTheme")}
+              >
+                {theme === "dark" ? (
+                  <Sun className="w-4 h-4" />
+                ) : (
+                  <Moon className="w-4 h-4" />
+                )}
+                {t("header.toggleTheme")}
+              </Button>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link to="/settings" className="flex items-center gap-1">
+                <Settings className="w-4 h-4" /> {t("header.settings")}
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </div>
   );

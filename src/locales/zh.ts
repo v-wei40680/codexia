@@ -9,8 +9,6 @@ export const zh = {
     usage: "使用情况",
     toggleChatPane: "切换聊天面板",
     toggleTheme: "切换主题",
-    settings: "设置",
-    viewPublicPage: "查看公开页面",
     signOut: "退出登录",
     login: "登录",
     mcp: "MCP",
@@ -18,5 +16,8 @@ export const zh = {
     codexVersion: "版本",
     language: "语言",
     changeLanguage: "切换语言",
+    menu: "菜单",
+    settings: "设置",
+    accentColor: "主题颜色",
   },
 };

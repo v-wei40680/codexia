@@ -10,8 +10,6 @@ interface LayoutState {
   showNotesList: boolean;
   showWebPreview: boolean;
   showReview: boolean;
-  // Header actions visibility
-  showHeaderActions: boolean;
   
   // Selected file
   selectedFile: string | null;
@@ -46,13 +44,11 @@ interface LayoutState {
   setFileTree: (visible: boolean) => void;
   setWebPreview: (visible: boolean) => void;
   setReview: (visible: boolean) => void;
-  setHeaderActions: (visible: boolean) => void;
   toggleSessionList: () => void;
   toggleNotesList: () => void;
   toggleChatPane: () => void;
   toggleFileTree: () => void;
   toggleWebPreview: () => void;
-  toggleHeaderActions: () => void;
   setWebPreviewUrl: (url: string | null) => void;
   openFile: (filePath: string) => void;
   closeFile: () => void;
@@ -75,7 +71,6 @@ export const useLayoutStore = create<LayoutState>()(
       showNotesList: true,
       showWebPreview: false,
       showReview: false,
-      showHeaderActions: true,
       selectedFile: null,
       webPreviewUrl: null,
       diffFile: null,
@@ -92,22 +87,20 @@ export const useLayoutStore = create<LayoutState>()(
       setFileTree: (visible) => set({ showFileTree: visible }),
       setWebPreview: (visible) => set({ showWebPreview: visible }),
       setReview: (visible) => set({ showReview: visible }),
-      setHeaderActions: (visible) => set({ showHeaderActions: visible }),
       
-      toggleSessionList: () => set((state) => ({ 
-        showSessionList: !state.showSessionList 
+      toggleSessionList: () => set((state) => ({
+        showSessionList: !state.showSessionList
       })),
       
-      toggleNotesList: () => set((state) => ({ 
-        showNotesList: !state.showNotesList 
+      toggleNotesList: () => set((state) => ({
+        showNotesList: !state.showNotesList
       })),
       
       toggleChatPane: () => set((state) => ({ showChatPane: !state.showChatPane })),
       toggleFileTree: () => set((state) => ({ showFileTree: !state.showFileTree })),
       toggleWebPreview: () => set((state) => ({ showWebPreview: !state.showWebPreview })),
-      toggleHeaderActions: () => set((state) => ({ showHeaderActions: !state.showHeaderActions })),
       
-      setWebPreviewUrl: (url) => set({ 
+      setWebPreviewUrl: (url) => set({
         webPreviewUrl: url,
         showWebPreview: url !== null,
         selectedFile: url !== null ? null : get().selectedFile,
@@ -117,8 +110,8 @@ export const useLayoutStore = create<LayoutState>()(
       
       openFile: (filePath) => {
         console.log('layoutStore: openFile called with', filePath);
-        set({ 
-          selectedFile: filePath, 
+        set({
+          selectedFile: filePath,
           showFilePanel: true,
           webPreviewUrl: null,
           showWebPreview: false,
@@ -126,12 +119,12 @@ export const useLayoutStore = create<LayoutState>()(
         });
       },
       
-      closeFile: () => set({ 
-        selectedFile: null, 
-        showFilePanel: false 
+      closeFile: () => set({
+        selectedFile: null,
+        showFilePanel: false
       }),
       
-      setDiffFile: (diffFile) => set({ 
+      setDiffFile: (diffFile) => set({
         diffFile,
         selectedFile: null,
         webPreviewUrl: null,
@@ -139,7 +132,7 @@ export const useLayoutStore = create<LayoutState>()(
         showFilePanel: diffFile !== null
       }),
       
-      closeDiffFile: () => set({ 
+      closeDiffFile: () => set({
         diffFile: null,
         showFilePanel: false
       }),
@@ -159,7 +152,6 @@ export const useLayoutStore = create<LayoutState>()(
         showChatPane: state.showChatPane,
         showFileTree: state.showFileTree,
         showNotesList: state.showNotesList,
-        showHeaderActions: state.showHeaderActions,
         activeTab: state.activeTab,
         conversationListTab: state.conversationListTab,
         selectedLeftPanelTab: state.selectedLeftPanelTab,

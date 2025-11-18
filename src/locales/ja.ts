@@ -9,8 +9,6 @@ export const ja = {
     usage: "使用状況",
     toggleChatPane: "チャットペインを切り替え",
     toggleTheme: "テーマを切り替え",
-    settings: "設定",
-    viewPublicPage: "公開ページを見る",
     signOut: "サインアウト",
     login: "ログイン",
     mcp: "MCP",
@@ -18,5 +16,8 @@ export const ja = {
     codexVersion: "バージョン",
     language: "言語",
     changeLanguage: "言語を変更",
+    menu: "メニュー",
+    settings: "設定",
+    accentColor: "アクセントカラー",
   },
 };
