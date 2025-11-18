@@ -1,6 +1,6 @@
 import { readTextFileLines } from "@tauri-apps/plugin-fs";
 import { useEffect, useState } from "react";
-import { Dot } from "lucide-react";
+import { Dot, X } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { TurnDiffView } from "@/components/events/TurnDiffView";
 import { AccordionMsg } from "@/components/events/AccordionMsg";
@@ -11,6 +11,10 @@ import { MarkdownRenderer } from "@/components/chat/MarkdownRenderer";
 import { RawMessage } from "./type";
 import { aggregateMessages } from "./aggregateMessages";
 import { PlanDisplay, SimplePlanStep } from "../chat/messages/PlanDisplay";
+import { useAuth } from "@/hooks/useAuth";
+import { LoginRequire } from "../common/LoginRequire";
+import { useLayoutStore } from "@/stores";
+import { Button } from "../ui/button";
 
 export function Review() {
   const { selectConversation } = useActiveConversationStore();
@@ -19,6 +23,8 @@ export function Review() {
   const [expandedExecCommands, setExpandedExecCommands] = useState<
     Record<string, boolean>
   >({});
+  const { showReview, setReview } = useLayoutStore();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
     let isMounted = true;
@@ -110,6 +116,19 @@ export function Review() {
       [id]: !prev[id],
     }));
   };
+
+  if (loading) return;
+
+  if (!user && !import.meta.env.DEV) {
+    return (
+      <div className="flex">
+        <LoginRequire />
+        <Button onClick={() => setReview(!showReview)}>
+          <X />
+        </Button>
+      </div>
+    );
+  }
 
   if (!currentPath) {
     return (
