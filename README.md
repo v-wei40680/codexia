@@ -115,11 +115,16 @@ Projects → Select/Open Project → View Sessions → Resume or Start New
 Configure → Input your prompt → Agent start → Execute
 ```
 
-1. **Design Your Agent**: Input your prompt
-2. **Set Permissions**: chat and plan, Agent, Agent(full), Configure file read/write and network access
+1. **Design Your Agent**: Input your prompt, 
+  * option steps
+  - type @ to show file select
+  - One-click @ file or folder
+  - Prompt optimizer
+2. **Set Permissions**: chat and plan, Agent, Agent(full), Configure file read/write and toggle network access icon
 3. **Configure Model**: Choose between available Codex models
 4. **Set Reasoning Effort**: Configure reasoning models, choose between available Reasoning Effort levels
-5. **Execute Tasks**: Run your agent on selected project by sending prompt.
+5. **(option) Choose image or screenshot**: click image icon or screenshot icon
+6. **Execute Tasks**: Run your agent on selected project by sending prompt
 
 ### Manage Sessions
 
