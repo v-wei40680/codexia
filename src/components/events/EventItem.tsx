@@ -117,6 +117,8 @@ export const EventItem = memo(function EventItem({
     case "error":
     case "stream_error":
       return <Badge variant="destructive">{msg.message}</Badge>;
+    case "warning":
+      return <p className="bg-yellow-200 dark:bg-yellow-700 rounded p-1">{msg.message}</p>;
     default:
       return (
         <AccordionMsg title={msg.type} content={JSON.stringify(msg, null, 2)} />
