@@ -172,7 +172,7 @@ Menu → MCP Manager → Add Server → Configure
 
 ### Download
 
-- [release](https://github.com/codexia-team/codexia/releases)
+- [release](https://github.com/milisp/codexia/releases)
 - [modern-github-release](https://milisp.github.io/modern-github-release/#/repo/milisp/codexia)
 
 ### macOS homebrew
