@@ -3,7 +3,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::str::FromStr;
 use tauri::command;
-use toml_edit::{value, Document, Item, Table};
+use toml_edit::{value, Document, Item, Table, Value};
 
 use crate::config::{get_config_path, CodexConfig};
 use crate::config::toml_helpers::serialize_to_table;
@@ -14,6 +14,19 @@ fn default_enabled() -> bool {
 
 fn is_enabled_true(enabled: &bool) -> bool {
     *enabled
+}
+
+fn inline_env_table(table: &mut Table) {
+    if let Some(env_entry) = table.get_mut("env") {
+        if env_entry.is_table() {
+            let env_item = std::mem::take(env_entry);
+            if let Item::Table(env_table) = env_item {
+                *env_entry = Item::Value(Value::InlineTable(env_table.into_inline_table()));
+            } else {
+                *env_entry = env_item;
+            }
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -168,7 +181,8 @@ pub async fn add_mcp_server(name: String, config: McpServerConfig) -> Result<(),
         }
     };
 
-    let server_table = serialize_to_table(&config)?;
+    let mut server_table = serialize_to_table(&config)?;
+    inline_env_table(&mut server_table);
     mcp_servers_table.insert(&name, Item::Table(server_table));
 
     let toml_content = doc.to_string();
