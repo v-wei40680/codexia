@@ -5,7 +5,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { FolderOpen } from "lucide-react";
 import { enableRemoteAccess, disableRemoteAccess, fetchRemoteAccessStatus } from "@/services/remoteAccessService";
+import { open } from "@tauri-apps/plugin-dialog";
 import { useRemoteAccessStore } from "@/stores/settings/RemoteAccessStore";
 import type { RemoteOriginOption } from "@/types/remote";
 import { toast } from "sonner";
@@ -142,15 +144,37 @@ export function RemoteAccessSettings(): JSX.Element {
 
           <div className="space-y-3">
             <Label htmlFor="bundle-path">Static bundle path</Label>
-            <Input
-              id="bundle-path"
-              placeholder="Defaults to the built dist directory"
-              value={config.bundlePath ?? ""}
-              onChange={(event) => {
-                const value = event.target.value.trim();
-                setConfig({ bundlePath: value.length ? value : undefined });
-              }}
-            />
+            <div className="flex items-center space-x-2">
+              <Input
+                id="bundle-path"
+                placeholder="Defaults to the built dist directory"
+                value={config.bundlePath ?? ""}
+                onChange={(event) => {
+                  const value = event.target.value.trim();
+                  setConfig({ bundlePath: value.length ? value : undefined });
+                }}
+              />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={async () => {
+                  try {
+                    const result = await open({
+                      directory: true,
+                      multiple: false,
+                    });
+                    if (result) {
+                      setConfig({ bundlePath: result as string });
+                    }
+                  } catch (error) {
+                    console.error("Failed to select directory:", error);
+                    toast.error("Failed to select directory");
+                  }
+                }}
+              >
+                <FolderOpen className="h-4 w-4" />
+              </Button>
+            </div>
             <p className="text-xs text-muted-foreground">
               Provide a custom directory if you serve a specific build. Leave blank to use the Tauri
               bundle output.
