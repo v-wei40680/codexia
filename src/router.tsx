@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { createHashRouter, Outlet } from "react-router-dom";
+import { createHashRouter, Navigate, Outlet } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { RouteErrorFallback } from "@/components/common/RouteErrorFallback";
 import ChatPage from "@/pages/chat";
@@ -32,10 +32,14 @@ function Root() {
 }
 
 function RequireAuth() {
-  const { loading } = useAuth();
+  const { loading, user } = useAuth();
 
   if (loading) {
     return null;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
   }
 
   return <Outlet />;
@@ -60,31 +64,31 @@ export const router = createHashRouter([
         element: <PublicUserPage />,
       },
       {
+        path: "chat",
+        element: <ChatPage />,
+      },
+      {
+        path: "settings",
+        element: <SettingsPage />,
+      },
+      {
+        path: "mcp",
+        element: <McpPage />,
+      },
+      {
+        path: "agents.md",
+        element: <AgentPage />,
+      },
+      {
         element: <RequireAuth />,
         children: [
-          {
-            path: "chat",
-            element: <ChatPage />,
-          },
-          {
-            path: "settings",
-            element: <SettingsPage />,
-          },
           {
             path: "usage",
             element: <UsagePage />,
           },
           {
-            path: "mcp",
-            element: <McpPage />,
-          },
-          {
             path: "review",
             element: <ReviewPage />,
-          },
-          {
-            path: "agents.md",
-            element: <AgentPage />,
           },
         ],
       },
