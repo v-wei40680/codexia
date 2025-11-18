@@ -1,6 +1,6 @@
 import { readTextFileLines } from "@tauri-apps/plugin-fs";
 import { useEffect, useState } from "react";
-import { Dot, X } from "lucide-react";
+import { Dot } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { TurnDiffView } from "@/components/events/TurnDiffView";
 import { AccordionMsg } from "@/components/events/AccordionMsg";
@@ -12,9 +12,9 @@ import { RawMessage } from "./type";
 import { aggregateMessages } from "./aggregateMessages";
 import { PlanDisplay, SimplePlanStep } from "../chat/messages/PlanDisplay";
 import { useAuth } from "@/hooks/useAuth";
-import { LoginRequire } from "../common/LoginRequire";
 import { useLayoutStore } from "@/stores";
 import { Button } from "../ui/button";
+import { Link } from "react-router-dom";
 
 export function Review() {
   const { selectConversation } = useActiveConversationStore();
@@ -23,7 +23,7 @@ export function Review() {
   const [expandedExecCommands, setExpandedExecCommands] = useState<
     Record<string, boolean>
   >({});
-  const { showReview, setReview } = useLayoutStore();
+  const { setReview } = useLayoutStore();
   const { user, loading } = useAuth();
 
   useEffect(() => {
@@ -117,18 +117,7 @@ export function Review() {
     }));
   };
 
-  if (loading) return;
-
-  if (!user && !import.meta.env.DEV) {
-    return (
-      <div className="flex">
-        <LoginRequire />
-        <Button onClick={() => setReview(!showReview)}>
-          <X />
-        </Button>
-      </div>
-    );
-  }
+  if (loading) return null;
 
   if (!currentPath) {
     return (
@@ -138,100 +127,114 @@ export function Review() {
     );
   }
 
-  return (
-    <div className="flex flex-col p-4 gap-2 overflow-auto h-full">
-      {msgs &&
-        msgs.map((msg, index) => {
-          switch (msg.type) {
-            case "agent_message":
-              return (
-                <div className="flex w-full text-wrap">
-                  <MarkdownRenderer content={msg.message} />
-                </div>
-              );
-            case "user_message":
-              return (
-                <div
-                  key={index}
-                  className="flex w-full justify-end text-wrap text-right"
-                >
-                  <MarkdownRenderer
-                    className="px-2 border rounded"
-                    content={msg.message}
-                  />
-                </div>
-              );
-
-            case "agent_reasoning_raw_content":
-            case "agent_reasoning": {
-              if (!msg.text.includes("\n")) {
+  if (user || import.meta.env.DEV) {
+    return (
+      <div className="flex flex-col p-4 gap-2 overflow-auto h-full">
+        {msgs &&
+          msgs.map((msg, index) => {
+            switch (msg.type) {
+              case "agent_message":
                 return (
-                  <span className="flex items-center gap-2" key={index}>
+                  <div className="flex w-full text-wrap">
+                    <MarkdownRenderer content={msg.message} />
+                  </div>
+                );
+              case "user_message":
+                return (
+                  <div
+                    key={index}
+                    className="flex w-full justify-end text-wrap text-right"
+                  >
+                    <MarkdownRenderer
+                      className="px-2 border rounded"
+                      content={msg.message}
+                    />
+                  </div>
+                );
+
+              case "agent_reasoning_raw_content":
+              case "agent_reasoning": {
+                if (!msg.text.includes("\n")) {
+                  return (
+                    <span className="flex items-center gap-2" key={index}>
+                      <Dot size={8} />
+                      <MarkdownRenderer content={msg.text} />
+                    </span>
+                  );
+                }
+                const firstNewlineIndex = msg.text.indexOf("\n");
+                const title = msg.text.substring(0, firstNewlineIndex);
+                const content = msg.text.substring(firstNewlineIndex + 1);
+                return (
+                  <span className="flex items-center" key={index}>
                     <Dot size={8} />
-                    <MarkdownRenderer content={msg.text} />
+                    <AccordionMsg title={title} content={content} />
                   </span>
                 );
               }
-              const firstNewlineIndex = msg.text.indexOf("\n");
-              const title = msg.text.substring(0, firstNewlineIndex);
-              const content = msg.text.substring(firstNewlineIndex + 1);
-              return (
-                <span className="flex items-center" key={index}>
-                  <Dot size={8} />
-                  <AccordionMsg title={title} content={content} />
-                </span>
-              );
+              case "turn_aborted":
+                return (
+                  <Badge key={index} className="bg-red-200 dark:bg-red-500">
+                    {msg.reason}
+                  </Badge>
+                );
+              case "exec_command": {
+                const begin = msg.begin ?? null;
+                const end = msg.end ?? null;
+                const callId =
+                  begin?.call_id ?? end?.call_id ?? `exec-${index}`;
+                const isOpen = expandedExecCommands[callId] ?? false;
+                return (
+                  <ReviewExecCommandItem
+                    key={`${callId}-${index}`}
+                    begin={begin}
+                    end={end}
+                    isOpen={isOpen}
+                    onToggle={() => toggleExecCommand(callId)}
+                  />
+                );
+              }
+              case "update_plan":
+                let planArgs: { plan: SimplePlanStep[]; explanation: string } =
+                  JSON.parse(msg.arguments);
+                return <PlanDisplay steps={planArgs.plan} />;
+              case "apply_patch":
+                let applyPatchArgs = JSON.parse(msg.arguments);
+                return (
+                  <div key={index}>
+                    <TurnDiffView content={applyPatchArgs.input} />
+                  </div>
+                );
+              case "custom_tool_call":
+                return (
+                  <div key={index}>
+                    <TurnDiffView content={msg.input} />
+                  </div>
+                );
+              case "custom_tool_call_output":
+                return (
+                  <div key={index}>
+                    <ReviewPatchOutputIcon patch_output={msg.output} />
+                  </div>
+                );
+              case "ghost_snapshot":
+                return null;
+              default:
+                return <code key={index}>{JSON.stringify(msg)}</code>;
             }
-            case "turn_aborted":
-              return (
-                <Badge key={index} className="bg-red-200 dark:bg-red-500">
-                  {msg.reason}
-                </Badge>
-              );
-            case "exec_command": {
-              const begin = msg.begin ?? null;
-              const end = msg.end ?? null;
-              const callId = begin?.call_id ?? end?.call_id ?? `exec-${index}`;
-              const isOpen = expandedExecCommands[callId] ?? false;
-              return (
-                <ReviewExecCommandItem
-                  key={`${callId}-${index}`}
-                  begin={begin}
-                  end={end}
-                  isOpen={isOpen}
-                  onToggle={() => toggleExecCommand(callId)}
-                />
-              );
-            }
-            case "update_plan":
-              let planArgs: { plan: SimplePlanStep[]; explanation: string } =
-                JSON.parse(msg.arguments);
-              return <PlanDisplay steps={planArgs.plan} />;
-            case "apply_patch":
-              let applyPatchArgs = JSON.parse(msg.arguments);
-              return (
-                <div key={index}>
-                  <TurnDiffView content={applyPatchArgs.input} />
-                </div>
-              );
-            case "custom_tool_call":
-              return (
-                <div key={index}>
-                  <TurnDiffView content={msg.input} />
-                </div>
-              );
-            case "custom_tool_call_output":
-              return (
-                <div key={index}>
-                  <ReviewPatchOutputIcon patch_output={msg.output} />
-                </div>
-              );
-            case "ghost_snapshot":
-              return null;
-            default:
-              return <code key={index}>{JSON.stringify(msg)}</code>;
-          }
-        })}
-    </div>
-  );
+          })}
+      </div>
+    );
+  } else {
+    return (
+      <div className="flex flex-col gap-2 h-full min-h-0 items-center justify-center p-4 text-sm text-muted-foreground">
+        <Link to="/login" className="w-full">
+          <Button className="w-full">Login to access history</Button>
+        </Link>
+        <Button className="w-full" onClick={() => setReview(false)}>
+          return to conversation
+        </Button>
+      </div>
+    );
+  }
 }

@@ -1,8 +1,11 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { invoke } from "@/lib/tauri-proxy";
 import { ConversationSummary } from "@/bindings/ConversationSummary";
 import { useConversationListStore } from "@/stores/useConversationListStore";
+import { useAuth } from "@/hooks/useAuth";
+import { LoginRequire } from "@/components/common/LoginRequire";
 
 interface BulkDeleteButtonsProps {
   showBulkDeleteButtons: boolean;
@@ -20,9 +23,15 @@ export function BulkDeleteButtons({
   conversations,
 }: BulkDeleteButtonsProps) {
   const { removeConversation } = useConversationListStore();
+  const { user, loading } = useAuth();
+  const [loginDialogOpen, setLoginDialogOpen] = useState(false);
 
   return (
     <div className="flex items-center justify-end">
+      <LoginRequire
+        open={loginDialogOpen}
+        onOpenChange={(open) => setLoginDialogOpen(open)}
+      />
       {showBulkDeleteButtons ? (
         <div className="flex gap-2">
           <Button
@@ -59,7 +68,15 @@ export function BulkDeleteButtons({
         <Button
           variant="ghost"
           size="icon"
-          onClick={() => setShowBulkDeleteButtons(true)}
+          onClick={() => {
+            if (!user) {
+              if (!loading) {
+                setLoginDialogOpen(true);
+              }
+              return;
+            }
+            setShowBulkDeleteButtons(true);
+          }}
         >
           <Trash2 className="h-4 w-4" />
         </Button>
