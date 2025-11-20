@@ -48,6 +48,7 @@ export function ChatScrollArea({
     scrollToBottom,
     scrollToTop,
     isAutoScrollEnabled,
+    elapsedLabel,
   } = useChatScroll({
     activeConversationId,
   });
@@ -123,7 +124,10 @@ export function ChatScrollArea({
           })}
 
           {isBusy && !isResumingConversation && (
-            <BouncingDotsLoader conversationId={activeConversationId} />
+            <BouncingDotsLoader
+              elapsedLabel={elapsedLabel}
+              conversationId={activeConversationId}
+            />
           )}
         </div>
       </ScrollArea>

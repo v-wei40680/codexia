@@ -14,6 +14,8 @@ import { ExecCommandBeginItem } from "./ExecCommandBeginItem";
 import { PatchApplyBeginItem } from "./PatchApplyBeginItem";
 import { useTurnDiffStore } from "@/stores/useTurnDiffStore";
 import { UserMessage } from "./UserMessage";
+import { useSessionStore } from "@/stores/useSessionStore";
+import { formatDurationMs } from "@/utils/formatDuration";
 
 export const EventItem = memo(function EventItem({
   event,
@@ -25,6 +27,9 @@ export const EventItem = memo(function EventItem({
   const { msg } = event.payload.params;
   const durationLabel = getStreamDurationLabel(event);
   const { diffsByConversationId } = useTurnDiffStore();
+  const busyState = useSessionStore((state) =>
+    conversationId ? state.busyByConversationId[conversationId] : undefined,
+  );
   const canUndo =
     !!conversationId &&
     (diffsByConversationId[conversationId]?.length || 0) > 0;
@@ -106,7 +111,6 @@ export const EventItem = memo(function EventItem({
       return <PatchApplyBeginItem event={event} />;
     case "patch_apply_end":
     case "exec_command_end":
-    case "task_complete":
     case "task_started":
     case "token_count":
     case "item_started":
@@ -115,6 +119,17 @@ export const EventItem = memo(function EventItem({
     case "session_configured":
     case "mcp_startup_complete":
       return null;
+    case "task_complete": {
+      const taskDuration =
+        busyState?.lastDurationMs !== null && busyState?.lastDurationMs !== undefined
+          ? formatDurationMs(busyState.lastDurationMs)
+          : null;
+      return (
+        <div className="text-xs text-muted-foreground font-mono">
+          Worked for{taskDuration ? ` in ${taskDuration}` : ""}
+        </div>
+      );
+    }
     case "error":
     case "stream_error":
       return <Badge variant="destructive">{msg.message}</Badge>;

@@ -3,6 +3,7 @@ import { create } from "zustand";
 interface ConversationBusyState {
   isBusy: boolean;
   busyStartTime: number | null;
+  lastDurationMs: number | null;
 }
 
 interface SessionState {
@@ -21,12 +22,16 @@ export const useSessionStore = create<SessionState & SessionActions>()(
       set((state) => {
         const prev = state.busyByConversationId[conversationId];
         if (!value) {
+          const duration = prev?.busyStartTime
+            ? Math.max(Date.now() - prev.busyStartTime, 0)
+            : prev?.lastDurationMs ?? null;
           return {
             busyByConversationId: {
               ...state.busyByConversationId,
               [conversationId]: {
                 isBusy: false,
                 busyStartTime: null,
+                lastDurationMs: duration,
               },
             },
           };
@@ -34,6 +39,7 @@ export const useSessionStore = create<SessionState & SessionActions>()(
 
         const wasBusy = prev?.isBusy ?? false;
         const busyStartTime = wasBusy ? prev?.busyStartTime ?? null : Date.now();
+        const lastDurationMs = prev?.lastDurationMs ?? null;
 
         return {
           busyByConversationId: {
@@ -41,6 +47,7 @@ export const useSessionStore = create<SessionState & SessionActions>()(
             [conversationId]: {
               isBusy: true,
               busyStartTime,
+              lastDurationMs,
             },
           },
         };
