@@ -11,7 +11,6 @@ mod state;
 mod terminal;
 mod utils;
 
-use crate::config::provider::ensure_default_providers;
 use commands::{ check_codex_version, check_coder_version, create_new_window, disable_remote_ui, enable_remote_ui, get_remote_ui_status, };
 use filesystem::{
     directory_ops::{canonicalize_path, get_default_directories, read_directory, search_files},
@@ -110,7 +109,6 @@ pub fn run() {
             config::profile::delete_profile,
             config::provider::add_or_update_model_provider,
             config::provider::delete_model_provider,
-            config::provider::ensure_default_providers,
             enable_remote_ui,
             disable_remote_ui,
             get_remote_ui_status,
@@ -157,9 +155,6 @@ pub fn run() {
                 _app.deep_link().register_all()?;
             }
 
-            tauri::async_runtime::spawn(async {
-                let _ = ensure_default_providers().await;
-            });
             Ok(())
         })
         .run(tauri::generate_context!())
