@@ -11,7 +11,10 @@ mod state;
 mod terminal;
 mod utils;
 
-use commands::{ check_codex_version, check_coder_version, create_new_window, disable_remote_ui, enable_remote_ui, get_remote_ui_status, };
+use commands::{
+    check_codex_version, check_coder_version, create_new_window, disable_remote_ui, enable_remote_ui,
+    get_remote_ui_status,
+};
 use filesystem::{
     directory_ops::{canonicalize_path, get_default_directories, read_directory, search_files},
     file_analysis::calculate_file_tokens,
@@ -38,9 +41,10 @@ use session_files::{
     usage::read_token_usage,
 };
 use sleep::{allow_sleep, prevent_sleep, SleepState};
-use state::{AppState, RemoteAccessState};
+use crate::state::{AppState, RemoteAccessState};
 use tauri::{AppHandle, Emitter, Manager};
 use terminal::open_terminal_with_command;
+use log::error;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -154,6 +158,14 @@ pub fn run() {
                 use tauri_plugin_deep_link::DeepLinkExt;
                 _app.deep_link().register_all()?;
             }
+
+            let app_handle = _app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                let state = app_handle.state::<AppState>();
+                if let Err(err) = state::get_client(&state, &app_handle).await {
+                    error!("Failed to prewarm Codex client: {err}");
+                }
+            });
 
             Ok(())
         })
