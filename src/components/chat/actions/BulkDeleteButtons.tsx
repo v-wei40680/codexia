@@ -69,7 +69,7 @@ export function BulkDeleteButtons({
           variant="ghost"
           size="icon"
           onClick={() => {
-            if (!user) {
+            if (!import.meta.env.DEV && !user) {
               if (!loading) {
                 setLoginDialogOpen(true);
               }
