@@ -1,6 +1,6 @@
 import { ProviderStateModelProvider } from "./useProviderStore";
 
-export const initialProviders: ProviderStateModelProvider[] = [
+const baseProviders: ProviderStateModelProvider[] = [
   {
     id: "openai",
     name: "OpenAI",
@@ -50,3 +50,24 @@ export const initialProviders: ProviderStateModelProvider[] = [
     baseUrl: "https://api.x.ai/v1",
   },
 ];
+
+const cloneProvider = (
+  provider: ProviderStateModelProvider,
+): ProviderStateModelProvider => ({
+  ...provider,
+  models: [...provider.models],
+});
+
+export const initialProviders: ProviderStateModelProvider[] = baseProviders
+  .filter((provider) => provider.id === "openai")
+  .map(cloneProvider);
+
+export const builtInProviderTemplates: ProviderStateModelProvider[] =
+  baseProviders.map(cloneProvider);
+
+export const getProviderTemplateById = (
+  id: string,
+): ProviderStateModelProvider | null => {
+  const template = baseProviders.find((provider) => provider.id === id);
+  return template ? cloneProvider(template) : null;
+};

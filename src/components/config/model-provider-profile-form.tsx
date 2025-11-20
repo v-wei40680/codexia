@@ -6,6 +6,10 @@ import { toast } from "sonner";
 import { useProviderStore } from "@/stores";
 import { ConfigTip } from "./config-tip";
 import { ConfigService } from "@/services/configService";
+import {
+  builtInProviderTemplates,
+  getProviderTemplateById,
+} from "@/stores/config/initialProviders";
 
 export function AddProviderForm() {
   const [name, setName] = useState("");
@@ -14,6 +18,22 @@ export function AddProviderForm() {
   const [envKey, setEnvKey] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { addProvider, providers } = useProviderStore();
+  const quickAddOptions = ["google", "openrouter", "ollama", "hf", "xai"]
+    .map((id) => getProviderTemplateById(id))
+    .filter(Boolean) as typeof builtInProviderTemplates;
+
+  const handleQuickAdd = (providerId: string) => {
+    const template = getProviderTemplateById(providerId);
+
+    if (!template) {
+      toast.error("Provider template not found.");
+      return;
+    }
+    setName(template.name);
+    setModels(template.models.join(", "));
+    setBaseUrl(template.baseUrl || "");
+    setEnvKey(template.envKey || "");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,8 +89,31 @@ export function AddProviderForm() {
   };
 
   return (
-    <div>
-      <form onSubmit={handleSubmit} className="p-4 space-y-4">
+    <div className="p-4 space-y-6">
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <Label className="text-sm font-semibold">Quick fill</Label>
+          <span className="text-xs text-muted-foreground">Click to prefill.</span>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          {quickAddOptions.map((provider) => {
+            return (
+              <Button
+                key={provider.id}
+                variant="outline"
+                size="sm"
+                className="justify-center"
+                disabled={isSubmitting}
+                onClick={() => handleQuickAdd(provider.id)}
+              >
+                <span className="font-medium">{provider.name}</span>
+              </Button>
+            );
+          })}
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-4">
         <div className="space-y-2">
           <Label>Provider Name</Label>
           <Input
