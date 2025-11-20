@@ -30,13 +30,15 @@ import { LanguageSelector } from "../common/LanguageSelector";
 import { PublishCloudDialog } from "../dialogs/PublishCloudDialog";
 import { ClientPicker } from "../common/ClientPicker";
 import { UserDropdown } from "../common/UserDropdown";
-// import { UserDropdown } from "../common/UserDropdown";
+import { useCodexStore } from "@/stores/useCodexStore";
+import { Badge } from "../ui/badge";
 
 export function AppHeader() {
   const { showFileTree, toggleFileTree, toggleChatPane } = useLayoutStore();
   const { theme, toggleTheme } = useThemeStore();
   const location = useLocation();
   const { t } = useTranslation();
+  const { cwd } = useCodexStore()
 
   const handleNewWindow = async () => {
     try {
@@ -83,6 +85,8 @@ export function AppHeader() {
           </Button>
         )}
       </div>
+
+      <Badge>{cwd}</Badge>
 
       {/* Right Section */}
       <div className="flex gap-2">
