@@ -1,17 +1,17 @@
-import { invoke } from "@/lib/tauri-proxy";
-import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Label } from "@/components/ui/label";
 import { useProviderStore } from "@/stores";
+import { invoke } from "@/lib/tauri-proxy";
 import { ChevronDown, PlusCircle, Trash2 } from "lucide-react";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { useEffect, useState } from "react";
 import { AddModelForm, AddProviderForm } from "./model-provider-profile-form";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PromptOptimizerSettings } from "@/components/settings/PromptOptimizerSettings";
 
 export function ProviderModels() {
@@ -60,68 +60,69 @@ export function ProviderModels() {
           <ChevronDown className="h-4 w-4 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[480px] h-[480px] p-0" align="end">
-        <Tabs defaultValue="model-settiongs">
+      <PopoverContent className="w-[520px] max-h-[520px] p-0" align="end">
+        <Tabs defaultValue="model-settings">
           <TabsList className="grid grid-cols-3 w-full">
-            <TabsTrigger value="model-settiongs">Model Settiongs</TabsTrigger>
+            <TabsTrigger value="model-settings">Model Settings</TabsTrigger>
             <TabsTrigger value="add-profile">Add profile</TabsTrigger>
             <TabsTrigger value="prompt-optimizer">Prompt Optimizer</TabsTrigger>
           </TabsList>
-          <TabsContent value="model-settiongs">
-            <div className="flex">
-              <div className="w-36 border-r">
-                <ScrollArea className="h-[calc(100%-48px)]">
-                  <div className="px-2 pb-2 space-y-1">
-                    {providers.map((p) => (
-                      <div
-                        key={p.id}
-                        className="flex items-center justify-between w-24"
-                      >
-                        <Button
-                          variant={
-                            p.id === selectedProviderId ? "secondary" : "ghost"
-                          }
-                          size="sm"
-                          className="w-full justify-start"
-                          onClick={() => {
-                            setSelectedProviderId(p.id);
-                            setShowAddModelForm(false); // Hide add model form when changing provider
-                          }}
-                        >
-                          {p.name}
-                        </Button>
-                        {p.id !== "openai" && (
+          <TabsContent value="model-settings">
+            <div className="p-3 space-y-3">
+              <div className="grid grid-cols-[180px_1fr] gap-3">
+                <div className="rounded-md border p-2 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Providers
+                    </Label>
+                  </div>
+                  <ScrollArea className="h-[360px] pr-1">
+                    <div className="grid gap-1">
+                      {providers.map((p) => (
+                        <div key={p.id} className="flex items-center gap-1">
                           <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 hover:bg-red-200"
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              deleteProvider(p.id);
-                              try {
-                                await invoke("delete_model_provider", {
-                                  providerName: p.id,
-                                });
-                              } catch (error) {
-                                console.error(
-                                  "Failed to delete model provider from backend:",
-                                  error,
-                                );
-                              }
+                            variant={
+                              p.id === selectedProviderId ? "secondary" : "ghost"
+                            }
+                            size="sm"
+                            className="w-full justify-start overflow-hidden text-left"
+                            onClick={() => {
+                              setSelectedProviderId(p.id);
+                              setShowAddModelForm(false);
                             }}
                           >
-                            <Trash2 className="h-3 w-3" />
+                            <span className="truncate">{p.name}</span>
                           </Button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </div>
+                          {p.id !== "openai" && (
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                deleteProvider(p.id);
+                                try {
+                                  await invoke("delete_model_provider", {
+                                    providerName: p.id,
+                                  });
+                                } catch (error) {
+                                  console.error(
+                                    "Failed to delete model provider from backend:",
+                                    error,
+                                  );
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
 
-              {/* Right: Content */}
-              <div className="flex-1 flex flex-col">
-                <div className="flex-1 p-4 space-y-3">
+                <div className="rounded-md border p-2 space-y-2">
                   <div className="flex items-center justify-between">
                     <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       Models
@@ -130,7 +131,7 @@ export function ProviderModels() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-6 w-6"
+                        className="h-7 w-7"
                         onClick={() => setShowAddModelForm(!showAddModelForm)}
                       >
                         <PlusCircle className="h-4 w-4" />
@@ -144,29 +145,29 @@ export function ProviderModels() {
                     />
                   ) : (
                     selectedProvider && (
-                      <ScrollArea className="h-56 rounded-md border">
-                        <div className="p-2 space-y-1">
+                      <ScrollArea className="max-h-[360px] pr-1">
+                        <div className="grid gap-1">
                           {selectedProvider.models.map((m) => (
-                            <div className="flex" key={m}>
+                            <div className="flex items-center gap-1" key={m}>
                               <Button
                                 variant={
                                   m === selectedModel ? "secondary" : "ghost"
                                 }
                                 size="sm"
-                                className="w-full justify-start font-mono text-xs relative group"
+                                className="w-full justify-start font-mono text-xs overflow-hidden"
                                 onClick={() => {
                                   setSelectedModel(m);
                                   setIsPopoverOpen(false);
                                 }}
                               >
-                                <span className="grow text-left">{m}</span>
+                                <span className="truncate">{m}</span>
                               </Button>
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-6 w-6 transition-opacity absolute right-2 hover:bg-red-200"
+                                className="h-7 w-7 text-muted-foreground hover:text-destructive"
                                 onClick={(e) => {
-                                  e.stopPropagation(); // Prevent the model selection when clicking the delete button
+                                  e.stopPropagation();
                                   if (selectedProviderId) {
                                     deleteModel(selectedProviderId, m);
                                   }
