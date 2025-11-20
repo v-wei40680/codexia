@@ -100,22 +100,29 @@ export function Introduce() {
       </AccordionItem>
       <AccordionItem value="item-3">
         <AccordionTrigger>Keep in touch and community</AccordionTrigger>
-        <AccordionContent className="flex gap-4 text-balance">
+        <AccordionContent className="flex gap-2 text-balance">
           <Button
             onClick={() =>
               open("https://github.com/milisp/codexia/discussions")
             }
           >
             <Github />
-            Github
+            Discussion
+          </Button>
+          <Button
+            onClick={() =>
+              open("https://github.com/milisp/codexia/issues")
+            }
+          >
+            <Github />
+            Bug
           </Button>
           <Button onClick={() => open("https://discord.gg/zAjtD4kf5K")}>
             <img src="/discord.svg" height={24} width={24} />
-            Discord
           </Button>
           <Button onClick={() => open("https://x.com/lisp_mi")}>
             <Twitter />
-            milisp
+            lisp_mi
           </Button>
           <Button onClick={() => open("https://www.reddit.com/r/codexia/")}>
             <img src="/reddit.svg" height={24} width={24} />
