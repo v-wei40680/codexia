@@ -54,5 +54,5 @@ tauri-plugin-updater = "2"
 
 export_bindings = { path = "../export_bindings" }
 fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs" }
-codex-protocol = { git = "https://github.com/openai/codex.git", package = "codex-protocol" }
-codex-app-server-protocol = { git = "https://github.com/openai/codex.git", package = "codex-app-server-protocol"}
+codex-protocol = { git = "https://github.com/openai/codex.git", package = "codex-protocol", rev = "54e6e4ac" }
+codex-app-server-protocol = { git = "https://github.com/openai/codex.git", package = "codex-app-server-protocol", rev = "54e6e4ac"}

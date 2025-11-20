@@ -1,8 +1,18 @@
+use std::collections::HashMap;
+use std::path::PathBuf;
 use std::sync::Arc;
 
 use codex_app_server_protocol::{
-    ApplyPatchApprovalParams, ExecCommandApprovalParams, JSONRPCErrorError, JSONRPCNotification,
-    JSONRPCRequest, RequestId, ServerNotification, ServerRequest,
+    ApplyPatchApprovalParams,
+    CommandExecutionRequestApprovalParams,
+    ExecCommandApprovalParams,
+    FileChangeRequestApprovalParams,
+    JSONRPCErrorError,
+    JSONRPCNotification,
+    JSONRPCRequest,
+    RequestId,
+    ServerNotification,
+    ServerRequest,
 };
 use log::{debug, error, info, warn};
 use serde::Serialize;
@@ -10,6 +20,8 @@ use serde_json::Value;
 use tauri::{AppHandle, Emitter};
 use tokio::process::ChildStdin;
 use tokio::sync::Mutex;
+
+use codex_protocol::ConversationId;
 
 use super::transport::send_error;
 use super::{PendingRequestKind, PendingServerRequest, PendingServerRequestMap};
@@ -88,69 +100,18 @@ pub(super) async fn handle_server_request(
 ) {
     match ServerRequest::try_from(request.clone()) {
         Ok(ServerRequest::ExecCommandApproval { request_id, params }) => {
-            info!(
-                "Exec approval requested for conversation {} call {}",
-                params.conversation_id, params.call_id
-            );
-            let token = request_id_key(&request_id);
-            {
-                let mut pending = pending_server_requests.lock().await;
-                if pending
-                    .insert(
-                        token.clone(),
-                        PendingServerRequest {
-                            request_id: request_id.clone(),
-                            kind: PendingRequestKind::ExecCommand,
-                        },
-                    )
-                    .is_some()
-                {
-                    warn!(
-                        "Overwriting pending exec command approval for token {}",
-                        token
-                    );
-                }
-            }
-            let payload = ExecCommandApprovalNotification {
-                request_token: token.clone(),
-                params: params.clone(),
-            };
-            if let Err(err) = app.emit("codex:exec-command-request", payload) {
-                error!("Failed to emit exec command request: {err}");
-            }
+            process_exec_command_request(request_id, params, app, pending_server_requests).await;
+        }
+        Ok(ServerRequest::CommandExecutionRequestApproval { request_id, params }) => {
+            let converted = convert_command_execution_request(params);
+            process_exec_command_request(request_id, converted, app, pending_server_requests).await;
         }
         Ok(ServerRequest::ApplyPatchApproval { request_id, params }) => {
-            info!(
-                "Patch approval requested for conversation {} files={}",
-                params.conversation_id,
-                params.file_changes.len()
-            );
-            let token = request_id_key(&request_id);
-            {
-                let mut pending = pending_server_requests.lock().await;
-                if pending
-                    .insert(
-                        token.clone(),
-                        PendingServerRequest {
-                            request_id: request_id.clone(),
-                            kind: PendingRequestKind::ApplyPatch,
-                        },
-                    )
-                    .is_some()
-                {
-                    warn!(
-                        "Overwriting pending apply patch approval for token {}",
-                        token
-                    );
-                }
-            }
-            let payload = ApplyPatchApprovalNotification {
-                request_token: token.clone(),
-                params: params.clone(),
-            };
-            if let Err(err) = app.emit("codex:apply-patch-request", payload) {
-                error!("Failed to emit apply patch request: {err}");
-            }
+            process_apply_patch_request(request_id, params, app, pending_server_requests).await;
+        }
+        Ok(ServerRequest::FileChangeRequestApproval { request_id, params }) => {
+            let converted = convert_file_change_request(params);
+            process_apply_patch_request(request_id, converted, app, pending_server_requests).await;
         }
         Err(err) => {
             error!("Unsupported server request: {err}");
@@ -170,5 +131,132 @@ fn request_id_key(id: &RequestId) -> String {
     match id {
         RequestId::String(value) => value.clone(),
         RequestId::Integer(value) => value.to_string(),
+    }
+}
+
+fn parse_conversation_id(thread_id: &str) -> ConversationId {
+    match ConversationId::from_string(thread_id) {
+        Ok(id) => id,
+        Err(err) => {
+            warn!(
+                "Failed to parse conversation id from thread id {thread_id}: {err}"
+            );
+            ConversationId::default()
+        }
+    }
+}
+
+fn convert_command_execution_request(
+    params: CommandExecutionRequestApprovalParams,
+) -> ExecCommandApprovalParams {
+    let CommandExecutionRequestApprovalParams {
+        thread_id,
+        item_id,
+        reason,
+        risk,
+        ..
+    } = params;
+    ExecCommandApprovalParams {
+        conversation_id: parse_conversation_id(&thread_id),
+        call_id: item_id,
+        command: Vec::new(),
+        cwd: PathBuf::new(),
+        reason,
+        risk: risk.map(|r| r.into_core()),
+        parsed_cmd: Vec::new(),
+    }
+}
+
+fn convert_file_change_request(params: FileChangeRequestApprovalParams) -> ApplyPatchApprovalParams {
+    let FileChangeRequestApprovalParams {
+        thread_id,
+        item_id,
+        reason,
+        grant_root,
+        ..
+    } = params;
+    ApplyPatchApprovalParams {
+        conversation_id: parse_conversation_id(&thread_id),
+        call_id: item_id,
+        file_changes: HashMap::new(),
+        reason,
+        grant_root,
+    }
+}
+
+async fn process_exec_command_request(
+    request_id: RequestId,
+    params: ExecCommandApprovalParams,
+    app: &AppHandle,
+    pending_server_requests: &PendingServerRequestMap,
+) {
+    info!(
+        "Exec approval requested for conversation {} call {}",
+        params.conversation_id, params.call_id
+    );
+    let token = request_id_key(&request_id);
+    {
+        let mut pending = pending_server_requests.lock().await;
+        if pending
+            .insert(
+                token.clone(),
+                PendingServerRequest {
+                    request_id: request_id.clone(),
+                    kind: PendingRequestKind::ExecCommand,
+                },
+            )
+            .is_some()
+        {
+            warn!(
+                "Overwriting pending exec command approval for token {}",
+                token
+            );
+        }
+    }
+    let payload = ExecCommandApprovalNotification {
+        request_token: token.clone(),
+        params: params.clone(),
+    };
+    if let Err(err) = app.emit("codex:exec-command-request", payload) {
+        error!("Failed to emit exec command request: {err}");
+    }
+}
+
+async fn process_apply_patch_request(
+    request_id: RequestId,
+    params: ApplyPatchApprovalParams,
+    app: &AppHandle,
+    pending_server_requests: &PendingServerRequestMap,
+) {
+    info!(
+        "Patch approval requested for conversation {} files={}",
+        params.conversation_id,
+        params.file_changes.len()
+    );
+    let token = request_id_key(&request_id);
+    {
+        let mut pending = pending_server_requests.lock().await;
+        if pending
+            .insert(
+                token.clone(),
+                PendingServerRequest {
+                    request_id: request_id.clone(),
+                    kind: PendingRequestKind::ApplyPatch,
+                },
+            )
+            .is_some()
+        {
+            warn!(
+                "Overwriting pending apply patch approval for token {}",
+                token
+            );
+        }
+    }
+    let payload = ApplyPatchApprovalNotification {
+        request_token: token.clone(),
+        params: params.clone(),
+    };
+    if let Err(err) = app.emit("codex:apply-patch-request", payload) {
+        error!("Failed to emit apply patch request: {err}");
     }
 }

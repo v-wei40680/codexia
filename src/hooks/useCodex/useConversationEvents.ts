@@ -236,6 +236,7 @@ export function useConversationEvents(
               case "item_completed":
               case "agent_reasoning_raw_content":
               case "exec_command_output_delta":
+              case "mcp_startup_complete":
               case "turn_aborted":
                 break;
 

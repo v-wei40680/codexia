@@ -734,13 +734,12 @@ dependencies = [
 [[package]]
 name = "codex-app-server-protocol"
 version = "0.0.0"
-source = "git+https://github.com/openai/codex.git#530db0ad73a41ad97b647f4bafa998e57a91f039"
+source = "git+https://github.com/openai/codex.git?rev=54e6e4ac#54e6e4ac325c2fd207a95bccb35f454433553a8b"
 dependencies = [
  "anyhow",
  "clap",
  "codex-protocol",
  "mcp-types",
- "paste",
  "schemars 0.8.22",
  "serde",
  "serde_json",
@@ -752,7 +751,7 @@ dependencies = [
 [[package]]
 name = "codex-git"
 version = "0.0.0"
-source = "git+https://github.com/openai/codex.git#530db0ad73a41ad97b647f4bafa998e57a91f039"
+source = "git+https://github.com/openai/codex.git?rev=54e6e4ac#54e6e4ac325c2fd207a95bccb35f454433553a8b"
 dependencies = [
  "once_cell",
  "regex",
@@ -767,7 +766,7 @@ dependencies = [
 [[package]]
 name = "codex-protocol"
 version = "0.0.0"
-source = "git+https://github.com/openai/codex.git#530db0ad73a41ad97b647f4bafa998e57a91f039"
+source = "git+https://github.com/openai/codex.git?rev=54e6e4ac#54e6e4ac325c2fd207a95bccb35f454433553a8b"
 dependencies = [
  "base64 0.22.1",
  "codex-git",
@@ -792,7 +791,7 @@ dependencies = [
 [[package]]
 name = "codex-utils-cache"
 version = "0.0.0"
-source = "git+https://github.com/openai/codex.git#530db0ad73a41ad97b647f4bafa998e57a91f039"
+source = "git+https://github.com/openai/codex.git?rev=54e6e4ac#54e6e4ac325c2fd207a95bccb35f454433553a8b"
 dependencies = [
  "lru",
  "sha1",
@@ -802,7 +801,7 @@ dependencies = [
 [[package]]
 name = "codex-utils-image"
 version = "0.0.0"
-source = "git+https://github.com/openai/codex.git#530db0ad73a41ad97b647f4bafa998e57a91f039"
+source = "git+https://github.com/openai/codex.git?rev=54e6e4ac#54e6e4ac325c2fd207a95bccb35f454433553a8b"
 dependencies = [
  "base64 0.22.1",
  "codex-utils-cache",
@@ -2837,7 +2836,7 @@ checksum = "2532096657941c2fea9c289d370a250971c689d4f143798ff67113ec042024a5"
 [[package]]
 name = "mcp-types"
 version = "0.0.0"
-source = "git+https://github.com/openai/codex.git#530db0ad73a41ad97b647f4bafa998e57a91f039"
+source = "git+https://github.com/openai/codex.git?rev=54e6e4ac#54e6e4ac325c2fd207a95bccb35f454433553a8b"
 dependencies = [
  "schemars 0.8.22",
  "serde",
@@ -3596,12 +3595,6 @@ dependencies = [
  "smallvec",
  "windows-link 0.2.1",
 ]
-
-[[package]]
-name = "paste"
-version = "1.0.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
 
 [[package]]
 name = "pathdiff"

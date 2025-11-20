@@ -113,6 +113,7 @@ export const EventItem = memo(function EventItem({
     case "item_completed":
     case "agent_reasoning_section_break":
     case "session_configured":
+    case "mcp_startup_complete":
       return null;
     case "error":
     case "stream_error":

@@ -53,17 +53,17 @@ const buildSandboxPolicy = (
   switch (mode) {
     case "agent":
       return {
-        mode: "workspaceWrite",
-        writable_roots: normalizedCwd ? [normalizedCwd] : [],
-        network_access: true,
-        exclude_tmpdir_env_var: false,
-        exclude_slash_tmp: false,
+        type: "workspaceWrite",
+        writableRoots: normalizedCwd ? [normalizedCwd] : [],
+        networkAccess: true,
+        excludeTmpdirEnvVar: false,
+        excludeSlashTmp: false,
       };
     case "agent-full":
-      return { mode: "dangerFullAccess" };
+      return { type: "dangerFullAccess" };
     case "chat":
     default:
-      return { mode: "readOnly" };
+      return { type: "readOnly" };
   }
 };
 
