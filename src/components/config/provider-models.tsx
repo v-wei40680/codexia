@@ -7,6 +7,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { useProviderStore } from "@/stores";
 import { invoke } from "@/lib/tauri-proxy";
 import { ChevronDown, PlusCircle, Trash2 } from "lucide-react";
@@ -85,7 +96,7 @@ export function ProviderModels() {
                               p.id === selectedProviderId ? "secondary" : "ghost"
                             }
                             size="sm"
-                            className="w-full justify-start overflow-hidden text-left"
+                            className="flex-1 min-w-0 justify-start overflow-hidden text-left"
                             onClick={() => {
                               setSelectedProviderId(p.id);
                               setShowAddModelForm(false);
@@ -94,27 +105,50 @@ export function ProviderModels() {
                             <span className="truncate">{p.name}</span>
                           </Button>
                           {p.id !== "openai" && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                deleteProvider(p.id);
-                                try {
-                                  await invoke("delete_model_provider", {
-                                    providerName: p.id,
-                                  });
-                                } catch (error) {
-                                  console.error(
-                                    "Failed to delete model provider from backend:",
-                                    error,
-                                  );
-                                }
-                              }}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 flex-shrink-0 text-foreground hover:text-destructive"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>
+                                    Delete provider?
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This removes the provider and its models.
+                                    This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    onClick={async () => {
+                                      deleteProvider(p.id);
+                                      try {
+                                        await invoke("delete_model_provider", {
+                                          providerName: p.id,
+                                        });
+                                      } catch (error) {
+                                        console.error(
+                                          "Failed to delete model provider from backend:",
+                                          error,
+                                        );
+                                      }
+                                    }}
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
                           )}
                         </div>
                       ))}
@@ -150,31 +184,54 @@ export function ProviderModels() {
                           {selectedProvider.models.map((m) => (
                             <div className="flex items-center gap-1" key={m}>
                               <Button
-                                variant={
-                                  m === selectedModel ? "secondary" : "ghost"
-                                }
-                                size="sm"
-                                className="w-full justify-start font-mono text-xs overflow-hidden"
-                                onClick={() => {
-                                  setSelectedModel(m);
-                                  setIsPopoverOpen(false);
-                                }}
-                              >
+                              variant={
+                                m === selectedModel ? "secondary" : "ghost"
+                              }
+                              size="sm"
+                              className="flex-1 min-w-0 justify-start font-mono text-xs overflow-hidden"
+                              onClick={() => {
+                                setSelectedModel(m);
+                                setIsPopoverOpen(false);
+                              }}
+                            >
                                 <span className="truncate">{m}</span>
                               </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 text-muted-foreground hover:text-destructive"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (selectedProviderId) {
-                                    deleteModel(selectedProviderId, m);
-                                  }
-                                }}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 flex-shrink-0 text-foreground hover:text-destructive"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                      Delete model?
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      The model will be removed from this
+                                      provider. This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      onClick={() => {
+                                        if (selectedProviderId) {
+                                          deleteModel(selectedProviderId, m);
+                                        }
+                                      }}
+                                    >
+                                      Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
                             </div>
                           ))}
                         </div>
