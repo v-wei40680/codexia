@@ -1,5 +1,4 @@
 import {
-  CheckCircle2,
   ChevronDown,
   ChevronUp,
   Copy,
@@ -24,16 +23,10 @@ export function ExecCommandBeginItem({ event }: { event: CodexEvent }) {
     return undefined;
   });
 
-  const statusIcon = execCommandStatus ? (
-    execCommandStatus.success ? (
-      <CheckCircle2
-        className="h-4 w-4 text-emerald-500"
-        aria-label="Command succeeded"
-      />
-    ) : (
+  const statusIcon =
+    execCommandStatus && !execCommandStatus.success ? (
       <X className="h-4 w-4 text-destructive" aria-label="Command failed" />
-    )
-  ) : null;
+    ) : null;
 
   return (
     <div>
