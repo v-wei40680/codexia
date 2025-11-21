@@ -16,6 +16,7 @@ import { useTurnDiffStore } from "@/stores/useTurnDiffStore";
 import { UserMessage } from "./UserMessage";
 import { useSessionStore } from "@/stores/useSessionStore";
 import { formatDurationMs } from "@/utils/formatDuration";
+import { McpToolCallItem } from "./McpToolCallItem";
 
 export const EventItem = memo(function EventItem({
   event,
@@ -109,8 +110,11 @@ export const EventItem = memo(function EventItem({
       return <ExecCommandBeginItem event={event} />;
     case "patch_apply_begin":
       return <PatchApplyBeginItem event={event} />;
+    case "mcp_tool_call_begin":
+      return <McpToolCallItem event={event} />
     case "patch_apply_end":
     case "exec_command_end":
+    case "mcp_tool_call_end":
     case "task_started":
     case "token_count":
     case "item_started":
@@ -118,6 +122,7 @@ export const EventItem = memo(function EventItem({
     case "agent_reasoning_section_break":
     case "session_configured":
     case "mcp_startup_complete":
+    case "mcp_startup_update":
       return null;
     case "task_complete": {
       const taskDuration =
