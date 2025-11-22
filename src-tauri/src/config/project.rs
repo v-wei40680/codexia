@@ -6,7 +6,7 @@ use tauri::command;
 use toml_edit::{Document, Item, Table};
 
 use super::{get_config_path, CodexConfig};
-use super::toml_helpers::serialize_to_table;
+use super::toml_helpers::{serialize_to_table, write_document_with_backup};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ProjectConfig {
@@ -84,15 +84,7 @@ pub async fn set_project_trust(path: String, trust_level: String) -> Result<(), 
     let project_table = serialize_to_table(&ProjectConfig { trust_level })?;
     projects_table.insert(&path, Item::Table(project_table));
 
-    let toml_content = doc.to_string();
-
-    if let Some(parent) = config_path.parent() {
-        fs::create_dir_all(parent)
-            .map_err(|e| format!("Failed to create config directory: {}", e))?;
-    }
-
-    fs::write(&config_path, toml_content)
-        .map_err(|e| format!("Failed to write config file: {}", e))?;
+    write_document_with_backup(&config_path, &doc)?;
 
     Ok(())
 }

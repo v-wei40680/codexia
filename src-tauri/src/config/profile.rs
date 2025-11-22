@@ -7,7 +7,7 @@ use toml_edit::{Document, Item, Table};
 
 use super::{get_config_path, CodexConfig};
 use super::provider::ModelProvider;
-use super::toml_helpers::serialize_to_table;
+use super::toml_helpers::{serialize_to_table, write_document_with_backup};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Profile {
@@ -92,15 +92,7 @@ pub async fn add_or_update_profile(profile_name: String, profile: Profile) -> Re
     let profile_table = serialize_to_table(&profile)?;
     profiles_table.insert(&profile_name, Item::Table(profile_table));
 
-    let toml_content = doc.to_string();
-
-    if let Some(parent) = config_path.parent() {
-        fs::create_dir_all(parent)
-            .map_err(|e| format!("Failed to create config directory: {}", e))?;
-    }
-
-    fs::write(&config_path, toml_content)
-        .map_err(|e| format!("Failed to write config file: {}", e))?;
+    write_document_with_backup(&config_path, &doc)?;
 
     Ok(())
 }
@@ -129,10 +121,7 @@ pub async fn delete_profile(profile_name: String) -> Result<(), String> {
         return Err(format!("Profile '{}' not found", profile_name));
     }
 
-    let toml_content = doc.to_string();
-
-    fs::write(&config_path, toml_content)
-        .map_err(|e| format!("Failed to write config file: {}", e))?;
+    write_document_with_backup(&config_path, &doc)?;
 
     Ok(())
 }
