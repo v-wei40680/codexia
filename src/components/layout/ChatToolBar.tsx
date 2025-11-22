@@ -26,6 +26,7 @@ export const ChatToolbar: React.FC = () => {
     setActiveConversationId(null);
     clearAll();
     requestFocus();
+    setReview(false)
   }, [setActiveConversationId, clearAll, requestFocus]);
 
   const handleToggleWebPreview = React.useCallback(async () => {
