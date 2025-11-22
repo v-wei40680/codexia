@@ -6,7 +6,7 @@ use tauri::command;
 use toml_edit::{value, Document, Item, Table, Value};
 
 use crate::config::{get_config_path, CodexConfig};
-use crate::config::toml_helpers::serialize_to_table;
+use crate::config::toml_helpers::{serialize_to_table, write_document_with_backup};
 
 fn default_enabled() -> bool {
     true
@@ -185,15 +185,7 @@ pub async fn add_mcp_server(name: String, config: McpServerConfig) -> Result<(),
     inline_env_table(&mut server_table);
     mcp_servers_table.insert(&name, Item::Table(server_table));
 
-    let toml_content = doc.to_string();
-
-    if let Some(parent) = config_path.parent() {
-        fs::create_dir_all(parent)
-            .map_err(|e| format!("Failed to create config directory: {}", e))?;
-    }
-
-    fs::write(&config_path, toml_content)
-        .map_err(|e| format!("Failed to write config file: {}", e))?;
+    write_document_with_backup(&config_path, &doc)?;
 
     Ok(())
 }
@@ -227,10 +219,7 @@ pub async fn delete_mcp_server(name: String) -> Result<(), String> {
         return Err(format!("MCP server '{}' not found", name));
     }
 
-    let toml_content = doc.to_string();
-
-    fs::write(&config_path, toml_content)
-        .map_err(|e| format!("Failed to write config file: {}", e))?;
+    write_document_with_backup(&config_path, &doc)?;
 
     Ok(())
 }
@@ -271,10 +260,7 @@ pub async fn set_mcp_server_enabled(name: String, enabled: bool) -> Result<(), S
         server_table.insert("enabled", value(enabled));
     }
 
-    let toml_content = doc.to_string();
-
-    fs::write(&config_path, toml_content)
-        .map_err(|e| format!("Failed to write config file: {}", e))?;
+    write_document_with_backup(&config_path, &doc)?;
 
     Ok(())
 }
