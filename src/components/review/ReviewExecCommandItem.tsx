@@ -28,16 +28,20 @@ const parseShellCommandParts = (parsedArgs: unknown): string[] => {
     return [];
   }
 
-  const commandParts = Array.isArray((parsedArgs as any).command)
-    ? (parsedArgs as any).command
-    : [];
-  if (!Array.isArray(commandParts)) {
-    return [];
+  const argsRecord = parsedArgs as Record<string, unknown>;
+  const commandValue = argsRecord.command;
+
+  if (Array.isArray(commandValue)) {
+    return commandValue.filter(
+      (entry: unknown): entry is string => typeof entry === "string",
+    );
   }
 
-  return commandParts.filter(
-    (entry: unknown): entry is string => typeof entry === "string",
-  );
+  if (typeof commandValue === "string" && commandValue.trim().length) {
+    return [commandValue.trim()];
+  }
+
+  return [];
 };
 
 const buildCommandTitle = (
@@ -146,6 +150,13 @@ const extractCommandOutput = (end?: ExecCommandMessage | null) => {
   }
 };
 
+const getCommandHeading = (begin?: ExecCommandMessage | null) => {
+  if (begin?.name === "shell" || begin?.name === "shell_command") {
+    return "Shell";
+  }
+  return begin?.name || "Command";
+};
+
 export default function ReviewExecCommandItem({
   begin,
   end,
@@ -158,6 +169,7 @@ export default function ReviewExecCommandItem({
   const commandLabel = commandTitle || "command";
   const commandOutput = extractCommandOutput(end);
   const argumentSummary = formatArgumentSummary(parsedBeginArguments);
+  const commandHeading = getCommandHeading(begin);
 
   return (
     <div className="flex flex-col">
@@ -171,7 +183,7 @@ export default function ReviewExecCommandItem({
       {isOpen && commandOutput && (
         <div className="border">
           <div className="flex justify-between bg-gray-200 dark:bg-gray-800 px-2">
-            {begin?.name === "shell" ? "Shell" : begin?.name || "Command"}
+            {commandHeading}
             <span className="flex gap-2">
               <Copy size={16} />
               <Minimize2 size={16} />
