@@ -55,7 +55,10 @@ jobs:
 
       - name: Detect .deb filename
         id: set_deb
-        run: echo "deb_file=$(basename $(ls src-tauri/target/release/bundle/deb/*.deb))" >> $GITHUB_OUTPUT
+        run: |
+          DEB_PATH=$(find src-tauri/target/release/bundle -name "*.deb" -type f | head -n 1)
+          echo "deb_path=$DEB_PATH" >> $GITHUB_OUTPUT
+          echo "deb_file=$(basename $DEB_PATH)" >> $GITHUB_OUTPUT
 
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
@@ -63,23 +66,10 @@ jobs:
           name: Codexia-linux-arm
           path: src-tauri/target/release/bundle/**/*.deb
 
-      - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
+      - name: Create Release and Upload Asset via gh
+        run: |
+          gh release create "${{ github.ref_name }}" "${{ steps.set_deb.outputs.deb_path }}" \
+            --title "${{ github.ref_name }}" \
+            --notes ""
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.ref_name }}
-          release_name: ${{ github.ref_name }}
-          draft: false
-          prerelease: false
-
-      - name: Upload .deb to Release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: src-tauri/target/release/bundle/deb/*.deb
-          asset_name: ${{ steps.set_deb.outputs.deb_file }}
-          asset_content_type: application/vnd.debian.binary-package
