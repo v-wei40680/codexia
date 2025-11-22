@@ -2,10 +2,7 @@ import { create } from "zustand";
 import { invoke } from "@/lib/tauri-proxy";
 import type { ConversationSummary } from "@/bindings/ConversationSummary";
 import type { SessionSource } from "@/bindings/SessionSource";
-
-type RawConversationSummary = Partial<ConversationSummary> & {
-  conversationId: string;
-};
+import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
 
 const KNOWN_SESSION_SOURCES: readonly SessionSource[] = [
   "cli",
@@ -31,7 +28,7 @@ function normalizeSessionSource(value: unknown): SessionSource {
 }
 
 function buildConversationSummary(
-  summary: RawConversationSummary,
+  summary: ConversationSummary,
   cwdFallback: string,
 ): ConversationSummary {
   return {
@@ -57,7 +54,7 @@ interface ConversationListState {
 }
 
 interface ConversationListActions {
-  addConversation: (cwd: string, summary: RawConversationSummary) => Promise<void>;
+  addConversation: (cwd: string, summary: ConversationSummary) => Promise<void>;
   updateConversationPreview: (conversationId: string, preview: string) => void;
   removeConversation: (conversationId: string) => Promise<void>;
   setFavorite: (conversationId: string, isFavorite: boolean) => Promise<void>;
@@ -65,15 +62,17 @@ interface ConversationListActions {
   reset: () => void;
 }
 
-async function syncCacheToBackend(cwd: string) {
+async function syncFavoritesToBackend(cwd: string) {
   const state = useConversationListStore.getState();
-  const conversations = state.conversationsByCwd[cwd] ?? [];
   const favorites = state.favoriteConversationIdsByCwd[cwd] ?? [];
-  await invoke("write_project_cache", { 
-    projectPath: cwd, 
-    sessions: conversations, 
-    favorites 
+  await invoke("update_project_favorites", {
+    projectPath: cwd,
+    favorites,
   });
+}
+
+async function removeConversationFromBackend(cwd: string, conversationId: string) {
+  await invoke("remove_project_session", { projectPath: cwd, conversationId });
 }
 
 export const useConversationListStore = create<
@@ -86,7 +85,7 @@ export const useConversationListStore = create<
     loadedAllByCwd: {},
     hasMoreByCwd: {},
 
-    addConversation: async (cwd, summary: RawConversationSummary) => {
+    addConversation: async (cwd, summary: ConversationSummary) => {
       set((state) => {
         const existingList = state.conversationsByCwd[cwd] ?? [];
         const normalizedSummary = buildConversationSummary(summary, cwd);
@@ -148,6 +147,9 @@ export const useConversationListStore = create<
     removeConversation: async (conversationId) => {
       const cwd = get().conversationIndex[conversationId];
       if (!cwd) return;
+      const activeStore = useActiveConversationStore.getState();
+      const shouldClearActive =
+        activeStore.activeConversationId === conversationId;
       set((state) => {
         const list = state.conversationsByCwd[cwd] ?? [];
         const nextList = list.filter(
@@ -174,7 +176,11 @@ export const useConversationListStore = create<
           favoriteConversationIdsByCwd,
         };
       });
-      await syncCacheToBackend(cwd);
+      activeStore.removeConversationId(conversationId);
+      if (shouldClearActive) {
+        activeStore.clearActiveConversation();
+      }
+      await removeConversationFromBackend(cwd, conversationId);
     },
 
     setFavorite: async (conversationId, isFavorite) => {
@@ -207,7 +213,7 @@ export const useConversationListStore = create<
 
         return { favoriteConversationIdsByCwd };
       });
-      await syncCacheToBackend(cwd);
+      await syncFavoritesToBackend(cwd);
     },
 
     toggleFavorite: async (conversationId) => {
@@ -231,51 +237,38 @@ export const useConversationListStore = create<
 
 // Helper to load project sessions from backend and update the store
 export async function loadProjectSessions(cwd: string, loadAll: boolean = false) {
-  let result: { sessions?: any[]; favorites?: string[]; last10Sessions?: any[] } | null = null;
+  let result: { sessions?: any[]; favorites?: string[] } | null = null;
   try {
     result = (await invoke("load_project_sessions", { projectPath: cwd })) as {
       sessions?: any[];
       favorites?: string[];
-      last10Sessions?: any[];
     };
   } catch (_) {
-    // Swallow and fall back to empty lists
-    result = { sessions: [], favorites: [], last10Sessions: [] };
+    result = { sessions: [], favorites: [] };
   }
 
   const sessions = result?.sessions ?? [];
   const favorites = result?.favorites ?? [];
-  const last10Sessions = result?.last10Sessions ?? sessions.slice(0, 10);
-  
-  // Reset the store
+  const visibleSessions = loadAll ? sessions : sessions.slice(0, 10);
+
   useConversationListStore.getState().reset();
-  
-  // First set the favorites and flags before adding items
-  useConversationListStore.setState(state => ({
+
+  useConversationListStore.setState((state) => ({
     favoriteConversationIdsByCwd: {
       ...state.favoriteConversationIdsByCwd,
-      [cwd]: favorites ?? [],
+      [cwd]: favorites,
     },
     loadedAllByCwd: {
       ...state.loadedAllByCwd,
-      [cwd]: !!loadAll,
+      [cwd]: loadAll,
     },
     hasMoreByCwd: {
       ...state.hasMoreByCwd,
-      [cwd]: (sessions?.length ?? 0) > (last10Sessions?.length ?? 0),
+      [cwd]: sessions.length > visibleSessions.length,
     },
   }));
 
-  console.log("last10Sessions", last10Sessions)
-
-  // Then add each conversation/session (this will sync with the correct favorites)
-  if (loadAll) {
-    for (const summary of sessions) {
-      await useConversationListStore.getState().addConversation(cwd, summary);
-    }
-  } else {
-    for (const summary of last10Sessions) {
-      await useConversationListStore.getState().addConversation(cwd, summary);
-    }
+  for (const summary of visibleSessions) {
+    await useConversationListStore.getState().addConversation(cwd, summary);
   }
 }

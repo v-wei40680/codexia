@@ -68,7 +68,7 @@ export const getNewConversationParams = (
     cwd,
     approvalPolicy: approvalPolicy,
     sandbox: mode === "chat" ? "read-only" : mode === "agent" ? "workspace-write" : "danger-full-access",
-    includeApplyPatchTool: true,
+    includeApplyPatchTool: null,
     config: mergeConfig,
     baseInstructions: null,
     developerInstructions: null,

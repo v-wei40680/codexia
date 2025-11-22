@@ -15,8 +15,8 @@ import { useEventStore } from "@/stores/useEventStore";
 import { useConversation } from "./useConversation";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
 import { useSessionStore } from "@/stores/useSessionStore";
-import { useProviderStore } from "@/stores/useProviderStore";
-import { useSandboxStore } from "@/stores/useSandboxStore";
+import { useProviderStore, useSandboxStore } from "@/stores";
+import { waitForConversationListenerReady } from "@/stores/useConversationListenerStore";
 
 const buildUserInputs = (
   text: string,
@@ -53,17 +53,17 @@ const buildSandboxPolicy = (
   switch (mode) {
     case "agent":
       return {
-        mode: "workspaceWrite",
-        writable_roots: normalizedCwd ? [normalizedCwd] : [],
-        network_access: true,
-        exclude_tmpdir_env_var: false,
-        exclude_slash_tmp: false,
+        type: "workspaceWrite",
+        writableRoots: normalizedCwd ? [normalizedCwd] : [],
+        networkAccess: true,
+        excludeTmpdirEnvVar: false,
+        excludeSlashTmp: false,
       };
     case "agent-full":
-      return { mode: "dangerFullAccess" };
+      return { type: "dangerFullAccess" };
     case "chat":
     default:
-      return { mode: "readOnly" };
+      return { type: "readOnly" };
   }
 };
 
@@ -83,7 +83,18 @@ const normalizeApprovalPolicy = (policy: string): V2AskForApproval => {
 };
 
 export function useSendMessage() {
-  const { isBusy, setIsBusy } = useSessionStore();
+  const activeConversationId = useActiveConversationStore(
+    (state) => state.activeConversationId,
+  );
+  const setConversationBusy = useSessionStore(
+    (state) => state.setConversationBusy,
+  );
+  const isBusy = useSessionStore((state) => {
+    if (!activeConversationId) {
+      return false;
+    }
+    return state.busyByConversationId[activeConversationId]?.isBusy ?? false;
+  });
   const buildNewConversationParams = useBuildNewConversationParams();
   const { cwd } = useCodexStore();
   const { clearEvents } = useEventStore();
@@ -105,7 +116,7 @@ export function useSendMessage() {
     text: string,
     attachments: MediaAttachment[],
   ) => {
-    setIsBusy(true);
+    setConversationBusy(conversationId, true);
     try {
       const shouldStartTurn =
         lastTurnStartConfig.current?.conversationId !== conversationId ||
@@ -146,7 +157,7 @@ export function useSendMessage() {
       });
       markConversationReady();
     } catch (error) {
-      setIsBusy(false);
+      setConversationBusy(conversationId, false);
       throw error;
     }
   };
@@ -207,6 +218,7 @@ export function useSendMessage() {
     setActiveConversationId(newConversation.conversationId);
     addActiveConversationId(newConversation.conversationId);
     clearEvents(newConversation.conversationId);
+    await waitForConversationListenerReady(newConversation.conversationId);
     return newConversation.conversationId;
   };
 

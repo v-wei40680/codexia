@@ -90,8 +90,8 @@ const updateStreamStateForItemStarted = (
   item: TurnItem,
   streamState: ConversationStreamState,
 ) => {
-  if ("Reasoning" in item) {
-    const reasoningId = item.Reasoning.id;
+  if (item.type === "Reasoning") {
+    const reasoningId = item.id;
     streamState.reasoningItemId = reasoningId;
     delete streamState.eventIndexByStreamKey[`agent_reasoning:${reasoningId}`];
     delete streamState.streamStartTimeByKey[`agent_reasoning:${reasoningId}`];
@@ -104,8 +104,8 @@ const updateStreamStateForItemStarted = (
     delete streamState.streamStartTimeByKey[
       `reasoning_raw_content:${reasoningId}`
     ];
-  } else if ("AgentMessage" in item) {
-    const agentMessageId = item.AgentMessage.id;
+  } else if (item.type === "AgentMessage") {
+    const agentMessageId = item.id;
     streamState.agentMessageItemId = agentMessageId;
     delete streamState.eventIndexByStreamKey[
       `agent_message:${agentMessageId}`

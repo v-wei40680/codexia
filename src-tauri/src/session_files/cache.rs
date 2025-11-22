@@ -19,8 +19,6 @@ struct ProjectCache {
     favorites: Vec<String>,
     #[serde(default)]
     scan_metadata: Option<ScanMetadata>,
-    #[serde(default)]
-    last10_sessions: Vec<Value>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Default)]
@@ -30,6 +28,8 @@ struct ScanMetadata {
     cache_path_name: String,
     scanned_count: usize,
     added_count: usize,
+    #[serde(default)]
+    total: usize,
 }
 
 struct CachedProjectData {
@@ -37,7 +37,6 @@ struct CachedProjectData {
     sessions: Vec<Value>,
     favorites: Vec<String>,
     scan_metadata: Option<ScanMetadata>,
-    last10_sessions: Vec<Value>,
 }
 
 /// Read cache file for a project
@@ -68,7 +67,6 @@ fn read_project_cache(project_path: &str) -> Result<Option<CachedProjectData>, S
             sessions: cache.sessions,
             favorites: cache.favorites,
             scan_metadata: cache.scan_metadata,
-            last10_sessions: cache.last10_sessions,
         })),
         None => Ok(None),
     }
@@ -78,7 +76,6 @@ fn write_project_cache_with_metadata(
     project_path: &str,
     sessions: Vec<Value>,
     favorites: Vec<String>,
-    last10_sessions: Vec<Value>,
     scan_metadata: Option<ScanMetadata>,
 ) -> Result<(), String> {
     let cache_path = get_cache_path_for_project(project_path)?;
@@ -106,7 +103,6 @@ fn write_project_cache_with_metadata(
         last_scanned: Utc::now().to_rfc3339(),
         sessions,
         favorites,
-        last10_sessions,
         scan_metadata: metadata_to_write,
     };
 
@@ -123,8 +119,51 @@ fn write_project_cache_with_metadata(
 /// Write updated cache to disk
 #[tauri::command]
 pub fn write_project_cache(project_path: String, sessions: Vec<Value>, favorites: Vec<String>) -> Result<(), String> {
-    let last10_sessions = sessions.iter().take(10).cloned().collect();
-    write_project_cache_with_metadata(&project_path, sessions, favorites, last10_sessions, None)
+    write_project_cache_with_metadata(&project_path, sessions, favorites, None)
+}
+
+#[tauri::command]
+pub fn update_project_favorites(project_path: String, favorites: Vec<String>) -> Result<(), String> {
+    match read_project_cache(&project_path)? {
+        Some(CachedProjectData {
+            sessions,
+            scan_metadata,
+            ..
+        }) => write_project_cache_with_metadata(
+            &project_path,
+            sessions,
+            favorites,
+            scan_metadata,
+        ),
+        None => write_project_cache_with_metadata(&project_path, Vec::new(), favorites, None),
+    }
+}
+
+#[tauri::command]
+pub fn remove_project_session(project_path: String, conversation_id: String) -> Result<(), String> {
+    match read_project_cache(&project_path)? {
+        Some(CachedProjectData {
+            mut sessions,
+            mut favorites,
+            scan_metadata,
+            ..
+        }) => {
+            sessions.retain(|session| {
+                session
+                    .get("conversationId")
+                    .and_then(|value| value.as_str())
+                    != Some(conversation_id.as_str())
+            });
+            favorites.retain(|id| id != &conversation_id);
+            write_project_cache_with_metadata(
+                &project_path,
+                sessions,
+                favorites,
+                scan_metadata,
+            )
+        }
+        None => Ok(()),
+    }
 }
 
 /// Main tauri command: load or refresh sessions for given project
@@ -136,7 +175,6 @@ pub async fn load_project_sessions(project_path: String) -> Result<Value, String
             let mut cached_sessions = cache_data.sessions;
             let favorites = cache_data.favorites;
             let last_scanned = cache_data.last_scanned;
-            let _last10_sessions = cache_data.last10_sessions;
 
             let ScanResult {
                 sessions: mut new_sessions,
@@ -157,6 +195,7 @@ pub async fn load_project_sessions(project_path: String) -> Result<Value, String
 
             let added_count = new_sessions.len();
             cached_sessions.append(&mut new_sessions);
+            let total = cached_sessions.len();
 
             // Sort newest first
             cached_sessions.sort_by(|a, b| {
@@ -171,13 +210,12 @@ pub async fn load_project_sessions(project_path: String) -> Result<Value, String
                 }
             });
 
-            let last10_sessions: Vec<Value> = cached_sessions.iter().take(10).cloned().collect();
-
             let cache_path = get_cache_path_for_project(&project_path)?;
             let cache_path_name = decode_cache_file_name(&cache_path)?;
             let scan_metadata = ScanMetadata {
-                scanned_count: cached_sessions.len(),
+                scanned_count: added_count,
                 added_count,
+                total,
                 cache_path_name,
             };
 
@@ -186,14 +224,12 @@ pub async fn load_project_sessions(project_path: String) -> Result<Value, String
                 &project_path,
                 cached_sessions.clone(),
                 favorites.clone(),
-                last10_sessions.clone(),
                 Some(metadata_for_cache),
             )?;
             Ok(json!({
                 "sessions": cached_sessions,
                 "favorites": favorites,
                 "scanMetadata": scan_metadata,
-                "last10Sessions": last10_sessions
             }))
         }
         None => {
@@ -205,6 +241,7 @@ pub async fn load_project_sessions(project_path: String) -> Result<Value, String
             let scan_metadata = ScanMetadata {
                 scanned_count: sessions.len(),
                 added_count: sessions.len(),
+                total: sessions.len(),
                 cache_path_name,
             };
 
@@ -213,14 +250,12 @@ pub async fn load_project_sessions(project_path: String) -> Result<Value, String
                 &project_path,
                 sessions.clone(),
                 favorites.clone(),
-                Vec::new(), // last10_sessions will be empty on a full scan
                 Some(metadata_for_cache),
             )?;
             Ok(json!({
                 "sessions": sessions,
                 "favorites": favorites,
                 "scanMetadata": scan_metadata,
-                "last10Sessions": Vec::<Value>::new()
             }))
         }
     }

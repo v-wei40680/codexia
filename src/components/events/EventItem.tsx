@@ -1,20 +1,22 @@
 import { memo } from "react";
 import { MarkdownRenderer } from "@/components/chat/MarkdownRenderer";
 import { Badge } from "@/components/ui/badge";
-import { formatAbortReason } from "./helpers";
 import { PlanDisplay } from "../chat/messages/PlanDisplay";
 import { TurnDiffView } from "./TurnDiffView";
 import { AccordionMsg } from "./AccordionMsg";
 import { ExecApprovalRequestItem } from "./ExecApprovalRequestItem";
 import { ApplyPatchApprovalRequestItem } from "./ApplyPatchApprovalRequestItem";
 import { CodexEvent } from "@/types/chat";
-import { Bot, CheckCircle2, X } from "lucide-react";
+import { Dot } from "lucide-react";
 import { MsgFooter } from "../chat/messages/MsgFooter";
 import { getStreamDurationLabel } from "@/utils/getDurationLable";
+import { ExecCommandBeginItem } from "./ExecCommandBeginItem";
 import { PatchApplyBeginItem } from "./PatchApplyBeginItem";
 import { useTurnDiffStore } from "@/stores/useTurnDiffStore";
-import { useExecCommandStore } from "@/stores/useExecCommandStore";
 import { UserMessage } from "./UserMessage";
+import { useSessionStore } from "@/stores/useSessionStore";
+import { formatDurationMs } from "@/utils/formatDuration";
+import { McpToolCallItem } from "./McpToolCallItem";
 
 export const EventItem = memo(function EventItem({
   event,
@@ -24,14 +26,11 @@ export const EventItem = memo(function EventItem({
   conversationId: string | null;
 }) {
   const { msg } = event.payload.params;
-  const execCommandStatus = useExecCommandStore((state) => {
-    if (msg.type === "exec_command_begin" && "call_id" in msg) {
-      return state.statuses[msg.call_id];
-    }
-    return undefined;
-  });
   const durationLabel = getStreamDurationLabel(event);
   const { diffsByConversationId } = useTurnDiffStore();
+  const busyState = useSessionStore((state) =>
+    conversationId ? state.busyByConversationId[conversationId] : undefined,
+  );
   const canUndo =
     !!conversationId &&
     (diffsByConversationId[conversationId]?.length || 0) > 0;
@@ -51,12 +50,11 @@ export const EventItem = memo(function EventItem({
     case "agent_message": {
       const messageText = msg.message;
       return (
-        <div className="group space-y-1">
-          <div className="flex gap-2">
-            <Bot />
+        <div>
+          <div className="flex peer items-start">
             <MarkdownRenderer content={messageText} />
           </div>
-          <div className="opacity-0 group-hover:opacity-100 h-0 group-hover:h-auto overflow-hidden transition-all duration-200">
+          <div className="opacity-0 transition-opacity duration-200 peer-hover:opacity-100 hover:opacity-100">
             <MsgFooter
               content={messageText}
               align="start"
@@ -69,7 +67,8 @@ export const EventItem = memo(function EventItem({
     case "agent_reasoning":
     case "agent_reasoning_raw_content":
       return (
-        <div className="space-y-1">
+        <div className="flex gap-2 items-center">
+          <Dot size={12} />
           <span className="flex">
             {msg.text.includes("\n") ? (
               (() => {
@@ -102,65 +101,45 @@ export const EventItem = memo(function EventItem({
         />
       );
     case "turn_aborted":
-      return (
-        <div className="flex gap-2">
-          <Badge variant="destructive">{msg.reason}</Badge>
-          {formatAbortReason(msg.reason)}
-        </div>
-      );
+      return <Badge variant="destructive">{msg.reason}</Badge>;
     case "turn_diff":
       return <TurnDiffView content={msg.unified_diff} />;
     case "plan_update":
       return <PlanDisplay steps={msg.plan} />;
-    case "exec_command_begin": {
-      const statusIcon = execCommandStatus
-        ? execCommandStatus.success
-          ? (
-            <CheckCircle2
-              className="h-4 w-4 text-emerald-500"
-              aria-label="Command succeeded"
-            />
-          )
-          : (
-            <X
-              className="h-4 w-4 text-destructive"
-              aria-label="Command failed"
-            />
-          )
-        : null;
-      return (
-        <div className="flex w-full font-semibold rounded-md">
-          <div
-            className="
-            flex w-full items-center gap-2 rounded-md font-semibold
-            bg-gray-100 text-gray-900
-            dark:bg-gray-800 dark:text-gray-100
-            transition-colors duration-300
-          "
-          >
-            <span className="mr-2">$</span>
-            <span className="flex-1">{msg.command.join(" ")}</span>
-            {statusIcon}
-          </div>
-        </div>
-      );
-    }
+    case "exec_command_begin":
+      return <ExecCommandBeginItem event={event} />;
     case "patch_apply_begin":
       return <PatchApplyBeginItem event={event} />;
+    case "mcp_tool_call_begin":
+      return <McpToolCallItem event={event} />
     case "patch_apply_end":
     case "exec_command_end":
-    case "task_complete":
+    case "mcp_tool_call_end":
     case "task_started":
     case "token_count":
     case "item_started":
     case "item_completed":
     case "agent_reasoning_section_break":
     case "session_configured":
+    case "mcp_startup_complete":
+    case "mcp_startup_update":
       return null;
+    case "task_complete": {
+      const taskDuration =
+        busyState?.lastDurationMs !== null && busyState?.lastDurationMs !== undefined
+          ? formatDurationMs(busyState.lastDurationMs)
+          : null;
+      return (
+        <div className="text-xs text-muted-foreground font-mono">
+          Worked for{taskDuration ? ` in ${taskDuration}` : ""}
+        </div>
+      );
+    }
     case "error":
-      return <span className="bg-red-500">{msg.message}</span>;
     case "stream_error":
-      return <span className="bg-red-500">{msg.message}</span>;
+      return <Badge variant="destructive">{msg.message}</Badge>;
+    case "warning":
+      return <p className="bg-yellow-200 dark:bg-yellow-700 rounded p-1">{msg.message}</p>;
     default:
       return (
         <AccordionMsg title={msg.type} content={JSON.stringify(msg, null, 2)} />

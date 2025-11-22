@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { createHashRouter, Outlet } from "react-router-dom";
+import { createHashRouter, Navigate, Outlet } from "react-router-dom";
 import { Layout } from "@/components/layout/Layout";
 import { RouteErrorFallback } from "@/components/common/RouteErrorFallback";
 import ChatPage from "@/pages/chat";
@@ -9,6 +9,9 @@ import ProjectsPage from "@/pages/projects";
 import PublicUserPage from "@/pages/user";
 import SettingsPage from "./pages/settings";
 import UsagePage from "./pages/usage";
+import ReviewPage from "./pages/review";
+import McpPage from "./pages/mcp";
+import AgentPage from "@/pages/agents";
 import { useDeepLink } from "./hooks/useDeepLink";
 import { useLayoutStore } from "./stores/settings/layoutStore";
 import { useAuth } from "./hooks/useAuth";
@@ -29,10 +32,14 @@ function Root() {
 }
 
 function RequireAuth() {
-  const { loading } = useAuth();
+  const { loading, user } = useAuth();
 
   if (loading) {
     return null;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
   }
 
   return <Outlet />;
@@ -57,19 +64,31 @@ export const router = createHashRouter([
         element: <PublicUserPage />,
       },
       {
+        path: "chat",
+        element: <ChatPage />,
+      },
+      {
+        path: "settings",
+        element: <SettingsPage />,
+      },
+      {
+        path: "mcp",
+        element: <McpPage />,
+      },
+      {
+        path: "agents.md",
+        element: <AgentPage />,
+      },
+      {
         element: <RequireAuth />,
         children: [
           {
-            path: "chat",
-            element: <ChatPage />,
-          },
-          {
-            path: "settings",
-            element: <SettingsPage />,
-          },
-          {
             path: "usage",
             element: <UsagePage />,
+          },
+          {
+            path: "review",
+            element: <ReviewPage />,
           },
         ],
       },

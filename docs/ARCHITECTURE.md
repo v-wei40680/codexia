@@ -26,11 +26,11 @@ Codexia is a cross‑platform desktop app built with Tauri v2 (Rust backend) and
 - Configurable startup parameters (model, sandboxing, approval policy, working directory)
 - Event isolation between sessions for security and clarity
 
-important files connect Codexia and Codex CLI
+important files connect Codexia and Codex CLI via `app-server` json RPC
  
 ```
-useCodexEvents.rs
-codex_client.rs
+src/hooks/useCodex/useConversationEvents.ts
+src-tauri/src/codex/client
 ```
 
 ## Project Structure
@@ -46,7 +46,7 @@ codexia/
 ├── src-tauri/              # Rust backend source
 │   ├── src/
 │   │   ├── lib.rs          # Main Tauri application
-│   │   └── codex_client.rs # Codex process management
+│   │   └── codex # Codex process management
 │   └── Cargo.toml          # Rust dependencies
 ├── public/                 # Static assets
 └── package.json            # Node.js dependencies

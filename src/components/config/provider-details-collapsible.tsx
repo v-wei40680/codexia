@@ -11,17 +11,17 @@ import {
 
 interface ProviderDetailsCollapsibleProps {
   selectedProviderId: string | null;
-  currentApiKeyVar: string;
+  currentEnvKey: string;
   currentBaseUrl: string;
-  handleApiKeyVarChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  handleEnvKeyChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleBaseUrlChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export function ProviderDetailsCollapsible({
   selectedProviderId,
-  currentApiKeyVar,
+  currentEnvKey,
   currentBaseUrl,
-  handleApiKeyVarChange,
+  handleEnvKeyChange,
   handleBaseUrlChange,
 }: ProviderDetailsCollapsibleProps) {
   const [showProviderDetails, setShowProviderDetails] = useState(false);
@@ -51,20 +51,20 @@ export function ProviderDetailsCollapsible({
       </CollapsibleTrigger>
       <CollapsibleContent className="mt-3 space-y-3">
         <div className="space-y-2">
-          <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            API Key Variable
+          <Label className="text-xs font-semibold tracking-wide text-muted-foreground">
+            env_key
           </Label>
           <Input
             placeholder="e.g., OPENAI_API_KEY"
-            value={currentApiKeyVar}
-            onChange={handleApiKeyVarChange}
+            value={currentEnvKey}
+            onChange={handleEnvKeyChange}
             className="font-mono text-xs"
             disabled={!selectedProviderId}
           />
         </div>
         <div className="space-y-2">
-          <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-            Base URL
+          <Label className="text-xs font-semibold tracking-wide text-muted-foreground">
+            base_url
           </Label>
           <Input
             placeholder="https://api.example.com/v1"

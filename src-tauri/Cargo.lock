@@ -734,13 +734,12 @@ dependencies = [
 [[package]]
 name = "codex-app-server-protocol"
 version = "0.0.0"
-source = "git+https://github.com/openai/codex.git#530db0ad73a41ad97b647f4bafa998e57a91f039"
+source = "git+https://github.com/openai/codex.git?rev=54e6e4ac#54e6e4ac325c2fd207a95bccb35f454433553a8b"
 dependencies = [
  "anyhow",
  "clap",
  "codex-protocol",
  "mcp-types",
- "paste",
  "schemars 0.8.22",
  "serde",
  "serde_json",
@@ -752,7 +751,7 @@ dependencies = [
 [[package]]
 name = "codex-git"
 version = "0.0.0"
-source = "git+https://github.com/openai/codex.git#530db0ad73a41ad97b647f4bafa998e57a91f039"
+source = "git+https://github.com/openai/codex.git?rev=54e6e4ac#54e6e4ac325c2fd207a95bccb35f454433553a8b"
 dependencies = [
  "once_cell",
  "regex",
@@ -767,7 +766,7 @@ dependencies = [
 [[package]]
 name = "codex-protocol"
 version = "0.0.0"
-source = "git+https://github.com/openai/codex.git#530db0ad73a41ad97b647f4bafa998e57a91f039"
+source = "git+https://github.com/openai/codex.git?rev=54e6e4ac#54e6e4ac325c2fd207a95bccb35f454433553a8b"
 dependencies = [
  "base64 0.22.1",
  "codex-git",
@@ -792,7 +791,7 @@ dependencies = [
 [[package]]
 name = "codex-utils-cache"
 version = "0.0.0"
-source = "git+https://github.com/openai/codex.git#530db0ad73a41ad97b647f4bafa998e57a91f039"
+source = "git+https://github.com/openai/codex.git?rev=54e6e4ac#54e6e4ac325c2fd207a95bccb35f454433553a8b"
 dependencies = [
  "lru",
  "sha1",
@@ -802,7 +801,7 @@ dependencies = [
 [[package]]
 name = "codex-utils-image"
 version = "0.0.0"
-source = "git+https://github.com/openai/codex.git#530db0ad73a41ad97b647f4bafa998e57a91f039"
+source = "git+https://github.com/openai/codex.git?rev=54e6e4ac#54e6e4ac325c2fd207a95bccb35f454433553a8b"
 dependencies = [
  "base64 0.22.1",
  "codex-utils-cache",
@@ -812,8 +811,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "codex_bindings"
+version = "0.1.0"
+dependencies = [
+ "codex-app-server-protocol",
+ "codex-protocol",
+ "ts-rs",
+]
+
+[[package]]
 name = "codexia"
-version = "0.10.1"
+version = "0.14.0"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -821,8 +829,10 @@ dependencies = [
  "chrono",
  "codex-app-server-protocol",
  "codex-protocol",
+ "codex_bindings",
  "csv",
  "dirs",
+ "fix-path-env",
  "log",
  "nosleep",
  "notify",
@@ -844,7 +854,7 @@ dependencies = [
  "tauri-remote-ui",
  "tokio",
  "toml 0.9.8",
- "ts-rs",
+ "toml_edit 0.20.2",
  "uuid",
  "walkdir",
  "which",
@@ -1473,6 +1483,16 @@ name = "find-msvc-tools"
 version = "0.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "52051878f80a721bb68ebfbc930e07b65ba72f2da88968ea5c06fd6ca3d3a127"
+
+[[package]]
+name = "fix-path-env"
+version = "0.0.0"
+source = "git+https://github.com/tauri-apps/fix-path-env-rs#c4c45d503ea115a839aae718d02f79e7c7f0f673"
+dependencies = [
+ "home",
+ "strip-ansi-escapes",
+ "thiserror 1.0.69",
+]
 
 [[package]]
 name = "fixed_decimal"
@@ -2816,7 +2836,7 @@ checksum = "2532096657941c2fea9c289d370a250971c689d4f143798ff67113ec042024a5"
 [[package]]
 name = "mcp-types"
 version = "0.0.0"
-source = "git+https://github.com/openai/codex.git#530db0ad73a41ad97b647f4bafa998e57a91f039"
+source = "git+https://github.com/openai/codex.git?rev=54e6e4ac#54e6e4ac325c2fd207a95bccb35f454433553a8b"
 dependencies = [
  "schemars 0.8.22",
  "serde",
@@ -3575,12 +3595,6 @@ dependencies = [
  "smallvec",
  "windows-link 0.2.1",
 ]
-
-[[package]]
-name = "paste"
-version = "1.0.15"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "57c0d7b74b563b49d38dae00a0c37d4d6de9b432382b2892f0574ddcae73fd0a"
 
 [[package]]
 name = "pathdiff"
@@ -5001,6 +5015,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "strip-ansi-escapes"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2a8f8038e7e7969abb3f1b7c2a811225e9296da208539e0f79c5251d6cac0025"
+dependencies = [
+ "vte",
+]
+
+[[package]]
 name = "strsim"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6261,6 +6284,15 @@ checksum = "fb067e4cbd1ff067d1df46c9194b5de0e98efd2810bbc95c5d5e5f25a3231150"
 dependencies = [
  "cc",
  "libc",
+]
+
+[[package]]
+name = "vte"
+version = "0.14.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "231fdcd7ef3037e8330d8e17e61011a2c244126acc0a982f4040ac3f9f0bc077"
+dependencies = [
+ "memchr",
 ]
 
 [[package]]

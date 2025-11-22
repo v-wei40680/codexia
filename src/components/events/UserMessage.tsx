@@ -68,11 +68,13 @@ export function UserMessage({ message, conversationId, canUndo }: UserMessagePro
 
   return (
     <>
-      <div className="group space-y-1">
-        <EventBubble align="end" variant="user">
-          <p className="whitespace-pre-wrap leading-relaxed">{message}</p>
-        </EventBubble>
-        <div className="opacity-0 group-hover:opacity-100 h-0 group-hover:h-auto overflow-hidden transition-all duration-200">
+      <div className="space-y-1">
+        <div className="peer">
+          <EventBubble align="end" variant="user">
+            <p className="whitespace-pre-wrap leading-relaxed">{message}</p>
+          </EventBubble>
+        </div>
+        <div className="opacity-0 transition-opacity duration-200 peer-hover:opacity-100 hover:opacity-100">
           <MsgFooter
             content={message}
             align="end"

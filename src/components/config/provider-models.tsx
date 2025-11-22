@@ -1,21 +1,29 @@
-import { invoke } from "@/lib/tauri-proxy";
-import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { useProviderStore } from "@/stores/useProviderStore";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { useProviderStore } from "@/stores";
+import { invoke } from "@/lib/tauri-proxy";
 import { ChevronDown, PlusCircle, Trash2 } from "lucide-react";
-import { Separator } from "@/components/ui/separator";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { useEffect, useState } from "react";
 import { AddModelForm, AddProviderForm } from "./model-provider-profile-form";
-import { ProviderDetailsCollapsible } from "./provider-details-collapsible";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useNavigate } from "react-router-dom";
+import { PromptOptimizerSettings } from "@/components/settings/PromptOptimizerSettings";
 
 export function ProviderModels() {
   const {
@@ -24,14 +32,10 @@ export function ProviderModels() {
     selectedModel,
     setSelectedProviderId,
     setSelectedModel,
-    setApiKey,
-    setApiKeyVar,
-    setBaseUrl,
     setOllamaModels,
     deleteModel,
     deleteProvider,
   } = useProviderStore();
-  const navigate = useNavigate();
   useEffect(() => {
     if (selectedProviderId === "ollama") {
       fetch("http://localhost:11434/v1/models")
@@ -51,25 +55,6 @@ export function ProviderModels() {
 
   const selectedProvider = providers.find((p) => p.id === selectedProviderId);
 
-  const currentApiKey = selectedProvider?.apiKey ?? "";
-  const currentApiKeyVar = selectedProvider?.apiKeyVar ?? "";
-  const currentBaseUrl = selectedProvider?.baseUrl ?? "";
-  const handleApiKeyChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (selectedProviderId) {
-      setApiKey(selectedProviderId, e.target.value);
-    }
-  };
-  const handleApiKeyVarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (selectedProviderId) {
-      setApiKeyVar(selectedProviderId, e.target.value);
-    }
-  };
-  const handleBaseUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (selectedProviderId) {
-      setBaseUrl(selectedProviderId, e.target.value);
-    }
-  };
-
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
   return (
@@ -86,98 +71,92 @@ export function ProviderModels() {
           <ChevronDown className="h-4 w-4 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[480px] h-[480px] p-0" align="end">
-        <Tabs defaultValue="model-settiongs">
-          <TabsList className="grid grid-cols-2 w-full">
-            <TabsTrigger value="model-settiongs">Model Settiongs</TabsTrigger>
+      <PopoverContent className="w-[520px] max-h-[520px] p-0" align="end">
+        <Tabs defaultValue="model-settings">
+          <TabsList className="grid grid-cols-3 w-full">
+            <TabsTrigger value="model-settings">Model Settings</TabsTrigger>
             <TabsTrigger value="add-profile">Add profile</TabsTrigger>
+            <TabsTrigger value="prompt-optimizer">Prompt Optimizer</TabsTrigger>
           </TabsList>
-          <TabsContent value="model-settiongs">
-            <div className="flex">
-              <div className="w-36 border-r">
-                <ScrollArea className="h-[calc(100%-48px)]">
-                  <div className="px-2 pb-2 space-y-1">
-                    {providers.map((p) => (
-                      <div
-                        key={p.id}
-                        className="flex items-center justify-between w-24"
-                      >
-                        <Button
-                          variant={
-                            p.id === selectedProviderId ? "secondary" : "ghost"
-                          }
-                          size="sm"
-                          className="w-full justify-start"
-                          onClick={() => {
-                            setSelectedProviderId(p.id);
-                            setShowAddModelForm(false); // Hide add model form when changing provider
-                          }}
-                        >
-                          {p.name}
-                        </Button>
-                        {p.id !== "ollama" && p.id !== "openai" && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6 hover:bg-red-200"
-                              onClick={async (e) => {
-                                e.stopPropagation();
-                                deleteProvider(p.id);
-                                try {
-                                  await invoke("delete_model_provider", {
-                                    providerName: p.id,
-                                  });
-                                } catch (error) {
-                                  console.error(
-                                    "Failed to delete model provider from backend:",
-                                    error,
-                                  );
-                                }
-                              }}
-                          >
-                            <Trash2 className="h-3 w-3" />
-                          </Button>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </ScrollArea>
-              </div>
-
-              {/* Right: Content */}
-              <div className="flex-1 flex flex-col">
-                {/* Top: API Key */}
-                <div className="p-4 space-y-3">
-                  <div className="flex justify-between">
+          <TabsContent value="model-settings">
+            <div className="p-3 space-y-3">
+              <div className="grid grid-cols-[180px_1fr] gap-3">
+                <div className="rounded-md border p-2 space-y-2">
+                  <div className="flex items-center justify-between">
                     <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                      API Key {selectedProviderId !== "ollama" && "option"}
+                      Providers
                     </Label>
-                    <Button onClick={() => navigate("/settings")}>
-                      Prompt Optimizer
-                    </Button>
                   </div>
-                  <div className="space-y-2">
-                    <Input
-                      type="password"
-                      placeholder="api key"
-                      value={currentApiKey}
-                      onChange={handleApiKeyChange}
-                      className="font-mono text-xs"
-                      disabled={!selectedProviderId}
-                    />
-                  </div>
-                  <ProviderDetailsCollapsible
-                    selectedProviderId={selectedProviderId}
-                    currentApiKeyVar={currentApiKeyVar}
-                    currentBaseUrl={currentBaseUrl}
-                    handleApiKeyVarChange={handleApiKeyVarChange}
-                    handleBaseUrlChange={handleBaseUrlChange}
-                  />
+                  <ScrollArea className="h-[360px] pr-1">
+                    <div className="grid gap-1">
+                      {providers.map((p) => (
+                        <div key={p.id} className="flex items-center gap-1">
+                          <Button
+                            variant={
+                              p.id === selectedProviderId ? "secondary" : "ghost"
+                            }
+                            size="sm"
+                            className="flex-1 min-w-0 justify-start overflow-hidden text-left"
+                            onClick={() => {
+                              setSelectedProviderId(p.id);
+                              setShowAddModelForm(false);
+                            }}
+                          >
+                            <span className="truncate">{p.name}</span>
+                          </Button>
+                          {p.id !== "openai" && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-7 w-7 flex-shrink-0 text-foreground hover:text-destructive"
+                                  onClick={(e) => e.stopPropagation()}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>
+                                    Delete provider?
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This removes the provider and its models.
+                                    This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    onClick={async () => {
+                                      deleteProvider(p.id);
+                                      try {
+                                        await invoke("delete_model_provider", {
+                                          providerName: p.id,
+                                        });
+                                      } catch (error) {
+                                        console.error(
+                                          "Failed to delete model provider from backend:",
+                                          error,
+                                        );
+                                      }
+                                    }}
+                                  >
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
                 </div>
 
-                <Separator />
-                {/* Bottom: Models */}
-                <div className="flex-1 p-4 space-y-3">
+                <div className="rounded-md border p-2 space-y-2">
                   <div className="flex items-center justify-between">
                     <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       Models
@@ -186,7 +165,7 @@ export function ProviderModels() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-6 w-6"
+                        className="h-7 w-7"
                         onClick={() => setShowAddModelForm(!showAddModelForm)}
                       >
                         <PlusCircle className="h-4 w-4" />
@@ -200,36 +179,59 @@ export function ProviderModels() {
                     />
                   ) : (
                     selectedProvider && (
-                      <ScrollArea className="h-56 rounded-md border">
-                        <div className="p-2 space-y-1">
+                      <ScrollArea className="max-h-[360px] pr-1">
+                        <div className="grid gap-1">
                           {selectedProvider.models.map((m) => (
-                            <div className="flex" key={m}>
+                            <div className="flex items-center gap-1" key={m}>
                               <Button
-                                variant={
-                                  m === selectedModel ? "secondary" : "ghost"
-                                }
-                                size="sm"
-                                className="w-full justify-start font-mono text-xs relative group"
-                                onClick={() => {
-                                  setSelectedModel(m);
-                                  setIsPopoverOpen(false);
-                                }}
-                              >
-                                <span className="grow text-left">{m}</span>
+                              variant={
+                                m === selectedModel ? "secondary" : "ghost"
+                              }
+                              size="sm"
+                              className="flex-1 min-w-0 justify-start font-mono text-xs overflow-hidden"
+                              onClick={() => {
+                                setSelectedModel(m);
+                                setIsPopoverOpen(false);
+                              }}
+                            >
+                                <span className="truncate">{m}</span>
                               </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-6 w-6 transition-opacity absolute right-2 hover:bg-red-200"
-                                onClick={(e) => {
-                                  e.stopPropagation(); // Prevent the model selection when clicking the delete button
-                                  if (selectedProviderId) {
-                                    deleteModel(selectedProviderId, m);
-                                  }
-                                }}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7 flex-shrink-0 text-foreground hover:text-destructive"
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <Trash2 className="h-3 w-3" />
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>
+                                      Delete model?
+                                    </AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      The model will be removed from this
+                                      provider. This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                      onClick={() => {
+                                        if (selectedProviderId) {
+                                          deleteModel(selectedProviderId, m);
+                                        }
+                                      }}
+                                    >
+                                      Delete
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
                             </div>
                           ))}
                         </div>
@@ -242,6 +244,9 @@ export function ProviderModels() {
           </TabsContent>
           <TabsContent value="add-profile">
             <AddProviderForm />
+          </TabsContent>
+          <TabsContent value="prompt-optimizer">
+            <PromptOptimizerSettings />
           </TabsContent>
         </Tabs>
       </PopoverContent>

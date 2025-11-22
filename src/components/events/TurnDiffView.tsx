@@ -16,6 +16,16 @@ function getDiffName(diffHeader: string) {
   return filename;
 }
 
+function getPathName(diffHeader: string) {
+  const regex = /^\*\*\* Update File: (.*)$/m;
+  const match = diffHeader.match(regex);
+  let filename = null;
+  if (match && match.length >= 2) {
+    filename = match[1];
+  }
+  return filename;
+}
+
 function parseDiffStats(diffContent: string) {
   let added = 0;
   let removed = 0;
@@ -55,7 +65,9 @@ export function TurnDiffView({ content }: TurnDiffViewProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
   const cleanedContent = cleanDiffContent(content);
-  const filename = getDiffName(content);
+  const filename = getDiffName(content)
+    ? getDiffName(content)
+    : getPathName(content);
   const { added, removed } = parseDiffStats(content);
 
   const toggleExpand = () => {
@@ -71,7 +83,7 @@ export function TurnDiffView({ content }: TurnDiffViewProps) {
   };
 
   return (
-    <div className="w-full border rounded-md overflow-hidden max-h-96">
+    <div className="w-full border rounded-md overflow-hidden max-h-64">
       <div
         className="flex justify-between items-center bg-gray-200 dark:bg-gray-700 cursor-pointer"
         onClick={toggleExpand}

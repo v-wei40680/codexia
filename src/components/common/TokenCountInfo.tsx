@@ -13,7 +13,6 @@ export function TokenCountInfo({ usage, className }: TokenCountInfoProps) {
   return (
     <span className={"flex items-center gap-3 " + (className ?? "")}>
       <span className="text-sm">
-        <span className="text-muted-foreground">Total</span>{" "}
         <span className="font-medium">{usage.total_tokens.toLocaleString()}</span>
         <span className="text-muted-foreground"> tokens</span>
       </span>

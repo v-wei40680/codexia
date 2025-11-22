@@ -1,4 +1,6 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSessionStore } from "@/stores/useSessionStore";
+import { formatDurationMs } from "@/utils/formatDuration";
 
 interface UseChatScrollOptions {
   activeConversationId?: string | null;
@@ -15,6 +17,17 @@ export function useChatScroll({
   const [isManualOverride, setIsManualOverride] = useState(false);
   const autoScrollRef = useRef(isAutoScrollEnabled);
   const manualOverrideRef = useRef(isManualOverride);
+  const [elapsedMs, setElapsedMs] = useState(0);
+
+  const busyState = useSessionStore((state) =>
+    activeConversationId ? state.busyByConversationId[activeConversationId] : undefined,
+  );
+  const isConversationBusy = busyState?.isBusy ?? false;
+  const busyStartTime = busyState?.busyStartTime ?? null;
+  const elapsedLabel = useMemo(
+    () => formatDurationMs(elapsedMs),
+    [elapsedMs],
+  );
 
   const scrollToBottom = useCallback(() => {
     const viewport = viewportRef.current;
@@ -98,6 +111,27 @@ export function useChatScroll({
     };
   }, [activeConversationId, scrollThreshold]);
 
+  useEffect(() => {
+    if (!isConversationBusy || busyStartTime === null) {
+      setElapsedMs(0);
+      return undefined;
+    }
+
+    const updateElapsed = () => setElapsedMs(Date.now() - busyStartTime);
+    updateElapsed();
+
+    const intervalId =
+      typeof window !== "undefined"
+        ? window.setInterval(updateElapsed, 1000)
+        : undefined;
+
+    return () => {
+      if (intervalId) {
+        window.clearInterval(intervalId);
+      }
+    };
+  }, [busyStartTime, isConversationBusy]);
+
   // Reset scroll state on conversation change
   useEffect(() => {
     autoScrollRef.current = true;
@@ -124,5 +158,6 @@ export function useChatScroll({
     isManualOverride,
     scrollToBottom,
     scrollToTop,
+    elapsedLabel,
   };
 }

@@ -7,14 +7,12 @@ import { useNoteStore } from "@/stores/NoteStore";
 import { DiffViewer } from "@/components/filetree/DiffViewer";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
-  Files,
   GitBranch,
   Bot,
   NotebookPen,
   Brain,
   Folder,
 } from "lucide-react";
-import { AttachedFilesTab } from "@/components/AttachedFilesTab";
 import { NoteList } from "@/components/notes";
 import { WebPreview } from "@/components/WebPreview";
 import { SourceControl } from "@/components/SourceControl";
@@ -52,19 +50,16 @@ export default function ChatPage() {
             onValueChange={setSelectedLeftPanelTab}
             className="h-full flex flex-col"
           >
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="files">Files</TabsTrigger>
-              <TabsTrigger value="git">
-                <GitBranch />
-              </TabsTrigger>
-              <TabsTrigger value="attached">
-                <Files />
-              </TabsTrigger>
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="chat">
                 <Bot />
               </TabsTrigger>
               <TabsTrigger value="notes">
                 <NotebookPen />
+              </TabsTrigger>
+              <TabsTrigger value="files">Files</TabsTrigger>
+              <TabsTrigger value="git">
+                <GitBranch />
               </TabsTrigger>
             </TabsList>
             <TabsContent value="files" className="flex-1 overflow-hidden mt-0">
@@ -79,12 +74,6 @@ export default function ChatPage() {
             </TabsContent>
             <TabsContent value="git" className="flex-1 overflow-hidden mt-0">
               <SourceControl />
-            </TabsContent>
-            <TabsContent
-              value="attached"
-              className="flex-1 overflow-hidden mt-0"
-            >
-              <AttachedFilesTab />
             </TabsContent>
             <TabsContent value="chat" className="flex-1 overflow-y-auto mt-0">
               <ChatTab />

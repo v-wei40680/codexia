@@ -2,11 +2,12 @@ use codex_app_server_protocol::{
     AddConversationListenerParams, AddConversationSubscriptionResponse, AuthMode, ClientInfo,
     ConversationSummary, ExecCommandApprovalParams, InitializeParams, InitializeResponse,
     InputItem, InterruptConversationParams, InterruptConversationResponse, ListConversationsResponse,
-    NewConversationParams, NewConversationResponse, SendUserMessageParams, SendUserMessageResponse,
-    ResumeConversationParams, ResumeConversationResponse, RemoveConversationListenerParams,
-    TurnStartParams, TurnStartResponse,
+    NewConversationParams, NewConversationResponse, ResumeConversationParams, ResumeConversationResponse,
+    RemoveConversationListenerParams, SendUserMessageParams, SendUserMessageResponse, TurnStartParams,
+    TurnStartResponse, GetAccountParams, GetAccountResponse,
+    GetAccountRateLimitsResponse,
 };
-use codex_protocol::protocol::{EventMsg};
+use codex_protocol::protocol::EventMsg;
 use std::path::Path;
 use ts_rs::TS;
 
@@ -39,4 +40,7 @@ pub fn export_ts_types() {
     InterruptConversationResponse::export_all_to(&out_dir).unwrap();
     TurnStartParams::export_all_to(&out_dir).unwrap();
     TurnStartResponse::export_all_to(&out_dir).unwrap();
+    GetAccountParams::export_all_to(&out_dir).unwrap();
+    GetAccountResponse::export_all_to(&out_dir).unwrap();
+    GetAccountRateLimitsResponse::export_all_to(&out_dir).unwrap();
 }

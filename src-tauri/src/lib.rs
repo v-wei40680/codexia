@@ -2,7 +2,6 @@ mod cmd;
 mod codex;
 mod commands;
 pub mod config;
-mod export_bindings;
 mod filesystem;
 mod mcp;
 mod services;
@@ -12,12 +11,14 @@ mod state;
 mod terminal;
 mod utils;
 
-use crate::config::provider::ensure_default_providers;
-use commands::{ check_codex_version, check_coder_version, create_new_window, disable_remote_ui, enable_remote_ui, get_remote_ui_status, };
+use commands::{
+    check_codex_version, check_coder_version, create_new_window, disable_remote_ui, enable_remote_ui,
+    get_remote_ui_status,
+};
 use filesystem::{
     directory_ops::{canonicalize_path, get_default_directories, read_directory, search_files},
     file_analysis::calculate_file_tokens,
-    file_io::{read_file, write_file, append_jsonl_file},
+    file_io::{read_file, write_file},
     file_parsers::{csv::read_csv_content, pdf::read_pdf_content, xlsx::read_xlsx_content},
     git_diff::get_git_file_diff,
     git_status::get_git_status,
@@ -30,9 +31,9 @@ use filesystem::{
     },
     watch::{start_watch_directory, stop_watch_directory},
 };
-use mcp::{add_mcp_server, delete_mcp_server, read_mcp_servers};
+use mcp::{add_mcp_server, delete_mcp_server, read_mcp_servers, set_mcp_server_enabled};
 use session_files::{
-    cache::{load_project_sessions, write_project_cache},
+    cache::{load_project_sessions, write_project_cache, update_project_favorites, remove_project_session},
     delete::{delete_session_file, delete_sessions_files},
     get::{get_session_files, read_session_file},
     scanner::scan_projects,
@@ -43,10 +44,6 @@ use sleep::{allow_sleep, prevent_sleep, SleepState};
 use state::{AppState, RemoteAccessState};
 use tauri::{AppHandle, Emitter, Manager};
 use terminal::open_terminal_with_command;
-
-pub fn export_ts_bindings() {
-    export_bindings::export_ts_types();
-}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -87,7 +84,6 @@ pub fn run() {
             calculate_file_tokens,
             read_file,
             write_file,
-            append_jsonl_file,
             read_pdf_content,
             read_csv_content,
             read_xlsx_content,
@@ -107,6 +103,7 @@ pub fn run() {
             read_mcp_servers,
             add_mcp_server,
             delete_mcp_server,
+            set_mcp_server_enabled,
             config::provider::read_model_providers,
             config::profile::read_profiles,
             config::profile::get_provider_config,
@@ -115,7 +112,6 @@ pub fn run() {
             config::profile::delete_profile,
             config::provider::add_or_update_model_provider,
             config::provider::delete_model_provider,
-            config::provider::ensure_default_providers,
             enable_remote_ui,
             disable_remote_ui,
             get_remote_ui_status,
@@ -126,9 +122,18 @@ pub fn run() {
             cmd::interrupt_conversation,
             cmd::respond_exec_command_request,
             cmd::respond_apply_patch_request,
-            cmd::delete_file,
+            cmd::get_account,
+            cmd::login_account_chatgpt,
+            cmd::login_account_api_key,
+            cmd::cancel_login_account,
+            cmd::logout_account,
             cmd::add_conversation_listener,
             cmd::remove_conversation_listener,
+            cmd::get_account_rate_limits,
+            cmd::initialize_client,
+            commands::delete_file,
+            commands::set_system_env,
+            commands::get_system_env,
             scan_projects,
             load_project_sessions,
             delete_session_file,
@@ -136,6 +141,8 @@ pub fn run() {
             open_terminal_with_command,
             delete_sessions_files,
             write_project_cache,
+            update_project_favorites,
+            remove_project_session,
             get_session_files,
             read_session_file,
             prevent_sleep,
@@ -144,7 +151,7 @@ pub fn run() {
         ])
         .setup(|_app| {
             #[cfg(debug_assertions)]
-            export_bindings::export_ts_types();
+            codex_bindings::export_ts_types();
 
             #[cfg(any(windows, target_os = "linux"))]
             {
@@ -152,9 +159,6 @@ pub fn run() {
                 _app.deep_link().register_all()?;
             }
 
-            tauri::async_runtime::spawn(async {
-                let _ = ensure_default_providers().await;
-            });
             Ok(())
         })
         .run(tauri::generate_context!())

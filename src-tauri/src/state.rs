@@ -8,9 +8,13 @@ use log::info;
 use tauri::{AppHandle, State};
 
 use crate::codex::CodexAppServerClient;
+use codex_app_server_protocol::InitializeResponse;
 
 pub struct AppState {
     pub client: Arc<Mutex<Option<Arc<CodexAppServerClient>>>>,
+    pub initialize_lock: Arc<Mutex<()>>,
+    pub initialize_response: Arc<Mutex<Option<InitializeResponse>>>,
+    pub initialized_client_name: Arc<RwLock<Option<String>>>,
     // Tracks the requested client name ("codex" or "coder"). Default is "codex".
     pub selected_client_name: Arc<RwLock<String>>,
     // Remembers which client name the active client was spawned with, to avoid unnecessary respawns.
@@ -23,6 +27,9 @@ impl AppState {
     pub fn new() -> Self {
         Self {
             client: Arc::new(Mutex::new(None)),
+            initialize_lock: Arc::new(Mutex::new(())),
+            initialize_response: Arc::new(Mutex::new(None)),
+            initialized_client_name: Arc::new(RwLock::new(None)),
             selected_client_name: Arc::new(RwLock::new("codex".to_string())),
             active_client_name: Arc::new(RwLock::new(None)),
             watchers: Arc::new(Mutex::new(HashMap::new())),
@@ -57,6 +64,14 @@ pub async fn get_client(
     {
         let mut guard = state.client.lock().await;
         *guard = Some(client.clone());
+    }
+    {
+        let mut init_guard = state.initialize_response.lock().await;
+        *init_guard = None;
+    }
+    {
+        let mut initialized_name_guard = state.initialized_client_name.write().await;
+        *initialized_name_guard = None;
     }
     {
         let mut name_guard = state.active_client_name.write().await;
@@ -129,6 +144,14 @@ pub async fn set_client_name(state: State<'_, AppState>, name: String) -> Result
     {
         let mut client_guard = state.client.lock().await;
         *client_guard = None;
+    }
+    {
+        let mut init_guard = state.initialize_response.lock().await;
+        *init_guard = None;
+    }
+    {
+        let mut initialized_name_guard = state.initialized_client_name.write().await;
+        *initialized_name_guard = None;
     }
     {
         let mut name_guard = state.active_client_name.write().await;

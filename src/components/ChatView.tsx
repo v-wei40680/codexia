@@ -15,10 +15,13 @@ import { useTokenCount } from "@/hooks/useCodex/useTokenCount";
 import { TurnDiffPanel } from "./events/TurnDiffPanel";
 import { TurnDiffActions } from "./events/TurnDiffActions";
 import { useTurnDiffStore } from "@/stores/useTurnDiffStore";
-import { useExecCommandStore } from "@/stores/useExecCommandStore";
+import { useExecCommandStore, useLayoutStore } from "@/stores";
+import { useResumeConversationStore } from "@/stores/useResumeConversationStore";
+import { Review } from "@/components/review";
 
 export function ChatView() {
   useCodexApprovalRequests();
+  const { showReview } = useLayoutStore();
   const { status: conversationStatus } = useConversation();
   const { activeConversationId } = useActiveConversationStore();
   const { events, addEvent } = useEventStore();
@@ -37,26 +40,32 @@ export function ChatView() {
     ? tokenUsages[activeConversationId]
     : null;
   const { handleTokenCount } = useTokenCount();
+  const { resumingConversationId } = useResumeConversationStore();
+  const isResumingConversation = Boolean(resumingConversationId);
 
   // Memoize callbacks to prevent unnecessary re-subscriptions
   const handleAnyEvent = useCallback(
     (event: CodexEvent) => {
-      if (!activeConversationId) return;
-      const { msg } = event.payload.params;
+      const { params } = event.payload;
+      const { conversationId, msg } = params;
+      if (!conversationId) {
+        return;
+      }
+
       if (msg.type === "turn_diff") {
         const unified = msg.unified_diff as string | undefined;
-        const existing = diffsByConversationId[activeConversationId] || [];
+        const existing = diffsByConversationId[conversationId] || [];
         if (!unified || existing.includes(unified)) {
           return; // duplicate or invalid; skip entirely
         }
         // First add to store, then record event
-        addTurnDiff(activeConversationId, unified);
-        addEvent(activeConversationId, event);
+        addTurnDiff(conversationId, unified);
+        addEvent(conversationId, event);
         return;
       }
-      addEvent(activeConversationId, event);
+      addEvent(conversationId, event);
     },
-    [activeConversationId, addEvent, addTurnDiff, diffsByConversationId],
+    [addEvent, addTurnDiff, diffsByConversationId],
   );
 
   const handleExecCommandEnd = useCallback(
@@ -87,35 +96,45 @@ export function ChatView() {
   return (
     <div className="flex flex-col h-full">
       <ChatToolbar />
-      <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
-        {currentEvents.length > 0 ? (
-          <ChatScrollArea
-            events={currentEvents}
-            activeConversationId={activeConversationId ?? undefined}
+      {showReview ? (
+        <div className="flex-1 h-full min-h-0 overflow-hidden">
+          <Review />
+        </div>
+      ) : (
+        <>
+          <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
+            {currentEvents.length > 0 || isResumingConversation ? (
+              <ChatScrollArea
+                events={currentEvents}
+                activeConversationId={activeConversationId ?? undefined}
+                isResumingConversation={isResumingConversation}
+                isBusy={isBusy}
+              />
+            ) : (
+              <Introduce />
+            )}
+            <TurnDiffActions
+              onOpenDiffPanel={() => setDiffPanelOpen(true)}
+              onCloseDiffPanel={() => setDiffPanelOpen(false)}
+            />
+            <ChatCompose
+              inputValue={inputValue}
+              onInputChange={handleInputChange}
+              onSendMessage={handleSendMessage}
+              onStopStreaming={() =>
+                activeConversationId && interrupt(activeConversationId)
+              }
+              isBusy={isBusy}
+              tokenUsage={tokenUsage}
+            />
+          </div>
+          <TurnDiffPanel
+            open={diffPanelOpen}
+            onOpenChange={setDiffPanelOpen}
+            conversationId={activeConversationId ?? undefined}
           />
-        ) : (
-          <Introduce />
-        )}
-        <TurnDiffActions
-          onOpenDiffPanel={() => setDiffPanelOpen(true)}
-          onCloseDiffPanel={() => setDiffPanelOpen(false)}
-        />
-        <ChatCompose
-          inputValue={inputValue}
-          onInputChange={handleInputChange}
-          onSendMessage={handleSendMessage}
-          onStopStreaming={() =>
-            activeConversationId && interrupt(activeConversationId)
-          }
-          isBusy={isBusy}
-          tokenUsage={tokenUsage}
-        />
-      </div>
-      <TurnDiffPanel
-        open={diffPanelOpen}
-        onOpenChange={setDiffPanelOpen}
-        conversationId={activeConversationId ?? undefined}
-      />
+        </>
+      )}
     </div>
   );
 }

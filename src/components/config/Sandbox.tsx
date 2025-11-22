@@ -11,14 +11,12 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-
 import {
   APPROVAL_POLICIES,
   SANDBOX_MODES,
   MODE_OPTIONS,
 } from "@/components/config/ConversationParams";
-
-import { useSandboxStore } from "@/stores/useSandboxStore";
+import { useSandboxStore } from "@/stores";
 
 export const Sandbox: React.FC = () => {
   const [open, setOpen] = useState(false);

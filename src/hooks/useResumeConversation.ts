@@ -4,8 +4,8 @@ import { useConversation } from "@/hooks/useCodex";
 import { useBuildNewConversationParams } from "@/hooks/useBuildNewConversationParams";
 import { useEventStore } from "@/stores/useEventStore";
 import { extractInitialMessages, type CodexEvent } from "@/types/chat";
-import { readEventMessages } from "@/utils/appendEventLine";
-import { exists, BaseDirectory } from '@tauri-apps/plugin-fs';
+import { useResumeConversationStore } from "@/stores/useResumeConversationStore";
+import type { ConversationSummary } from "@/bindings/ConversationSummary";
 
 const pendingResumes = new Set<string>();
 
@@ -14,13 +14,16 @@ export const useResumeConversation = () => {
     addActiveConversationId,
     setActiveConversationId,
     activeConversationIds: rawActiveConversationIds,
+    setActiveConversation,
   } = useActiveConversationStore();
   const { resumeConversation } = useConversation();
   const buildNewConversationParams = useBuildNewConversationParams();
   const { setEvents } = useEventStore();
+  const { setResumingConversationId, clearResumingConversationId } = useResumeConversationStore();
 
   const handleSelectConversation = useCallback(
-    async (conversationId: string, path: string, cwd: string) => {
+    async (conversation: ConversationSummary) => {
+      const { conversationId, path } = conversation;
       const activeConversationIds =
         rawActiveConversationIds instanceof Set
           ? rawActiveConversationIds
@@ -32,18 +35,20 @@ export const useResumeConversation = () => {
 
       if (!shouldResume) {
         setActiveConversationId(conversationId);
+        setActiveConversation(conversation);
         return;
       }
 
       if (!path) {
         setActiveConversationId(conversationId);
+        setActiveConversation(conversation);
         return;
       }
 
       if (pendingResumes.has(conversationId)) {
         return;
       }
-
+      setResumingConversationId(conversationId);
       pendingResumes.add(conversationId);
       try {
         console.log("Resuming conversation", conversationId, path);
@@ -53,49 +58,38 @@ export const useResumeConversation = () => {
         );
         console.log("Resumed conversation", resumedConversation);
         setActiveConversationId(resumedConversation.conversationId);
+        setActiveConversation(conversation);
         addActiveConversationId(resumedConversation.conversationId);
-        const eventsPath = `.codexia/projects/${btoa(cwd)}/${conversationId}.jsonl`
-        const eventsPathExists = await exists(eventsPath, {
-          baseDir: BaseDirectory.Home,
-        });
-        console.log("eventsPathExists", eventsPathExists)
-        if (eventsPathExists) {
-          const persistedEvents = await readEventMessages(
-            eventsPath,
-            conversationId,
-          );
-          setEvents(conversationId, persistedEvents);
-        } else {
-          const initialMessages = extractInitialMessages(resumedConversation);
-          const initialEvents: CodexEvent[] = [];
-          if (initialMessages) {
-            let currentTurn = -1;
-            const baseId = Date.now();
-            initialMessages.forEach(
-              (msg: CodexEvent["payload"]["params"]["msg"], idx: number) => {
-                if (msg.type === "user_message") {
-                  currentTurn += 1;
-                }
-                const turnId = String(currentTurn === -1 ? 0 : currentTurn);
-                initialEvents.push({
-                  id: baseId + idx,
-                  event: "codex:event",
-                  payload: {
-                    method: `codex/event/${msg.type}`,
-                    params: {
-                      conversationId: resumedConversation.conversationId,
-                      id: turnId,
-                      msg,
-                    },
+        const initialMessages = extractInitialMessages(resumedConversation);
+        const initialEvents: CodexEvent[] = [];
+        if (initialMessages) {
+          let currentTurn = -1;
+          const baseId = Date.now();
+          initialMessages.forEach(
+            (msg: CodexEvent["payload"]["params"]["msg"], idx: number) => {
+              if (msg.type === "user_message") {
+                currentTurn += 1;
+              }
+              const turnId = String(currentTurn === -1 ? 0 : currentTurn);
+              initialEvents.push({
+                id: baseId + idx,
+                event: "codex:event",
+                payload: {
+                  method: `codex/event/${msg.type}`,
+                  params: {
+                    conversationId: resumedConversation.conversationId,
+                    id: turnId,
+                    msg,
                   },
-                });
-              },
-            );
-          }
-          setEvents(resumedConversation.conversationId, initialEvents);
+                },
+              });
+            },
+          );
         }
+        setEvents(resumedConversation.conversationId, initialEvents);
       } finally {
         pendingResumes.delete(conversationId);
+        clearResumingConversationId();
       }
     },
     [
@@ -103,7 +97,11 @@ export const useResumeConversation = () => {
       buildNewConversationParams,
       resumeConversation,
       setActiveConversationId,
+      setActiveConversation,
       setEvents,
+      addActiveConversationId,
+      setResumingConversationId,
+      clearResumingConversationId,
     ],
   );
 

@@ -6,9 +6,19 @@ import { CodexEvent } from "@/types/chat";
 export function useSystemSleepPrevention(
   conversationId: ConversationId | null,
   event: CodexEvent | null,
+  enabled = true,
 ) {
+  const allowSleep = (
+    id: ConversationId | null,
+  ) => {
+    if (id) {
+      return invoke("allow_sleep", { conversationId: id });
+    }
+    return invoke("allow_sleep");
+  };
+
   useEffect(() => {
-    if (!conversationId || !event) return;
+    if (!enabled || !conversationId || !event) return;
 
     const { msg } = event.payload.params;
     const conversationIdForSleep = event.payload.params.conversationId;
@@ -28,9 +38,7 @@ export function useSystemSleepPrevention(
       msg.type === "error" ||
       msg.type === "turn_aborted"
     ) {
-      invoke("allow_sleep", {
-        conversationId: conversationIdForSleep,
-      })
+      allowSleep(conversationIdForSleep)
         .catch((error) => {
           console.error("Failed to restore system sleep:", error);
         })
@@ -38,19 +46,35 @@ export function useSystemSleepPrevention(
           console.log("allow_sleep", conversationIdForSleep);
         });
     }
-  }, [conversationId, event]);
+  }, [conversationId, event, enabled]);
 
   useEffect(() => {
+    if (!enabled || !conversationId) {
+      return;
+    }
+
+    allowSleep(conversationId)
+      .catch((error) => {
+        console.error("Failed to restore system sleep:", error);
+      })
+      .finally(() => {
+        console.log("allow_sleep", conversationId);
+      });
+  }, [conversationId, enabled]);
+
+  useEffect(() => {
+    if (!enabled) {
+      return;
+    }
+
     return () => {
-      if (conversationId) {
-        invoke("allow_sleep", { conversationId }).catch((error) => {
+      allowSleep(conversationId)
+        .catch((error) => {
           console.error("Failed to restore system sleep during cleanup:", error);
+        })
+        .finally(() => {
+          console.log("allow_sleep", conversationId);
         });
-      } else {
-        invoke("allow_sleep").catch((error) => {
-          console.error("Failed to restore system sleep during cleanup:", error);
-        });
-      }
     };
-  }, [conversationId]);
+  }, [conversationId, enabled]);
 }

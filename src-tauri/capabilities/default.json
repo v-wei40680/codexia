@@ -33,7 +33,7 @@
     },
     {
       "identifier": "fs:allow-read-text-file-lines",
-      "allow": [{ "path": "$HOME/.codexia/**/*" }]
+      "allow": [{ "path": "$HOME/.codexia/**/*" },{ "path": "$HOME/.codex/sessions/**/*" }]
     },
     "screenshots:default",
     "log:default",

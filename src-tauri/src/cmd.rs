@@ -1,10 +1,24 @@
-use std::path::PathBuf;
-
 use codex_app_server_protocol::{
-    AddConversationListenerParams, AddConversationSubscriptionResponse, InterruptConversationParams,
-    InterruptConversationResponse, NewConversationParams, NewConversationResponse,
-    ResumeConversationParams, ResumeConversationResponse, SendUserMessageParams,
-    SendUserMessageResponse, TurnStartParams, TurnStartResponse, RemoveConversationListenerParams
+    AddConversationListenerParams,
+    AddConversationSubscriptionResponse,
+    InterruptConversationParams,
+    InterruptConversationResponse,
+    LoginAccountParams,
+    LoginAccountResponse,
+    LogoutAccountResponse,
+    NewConversationParams,
+    NewConversationResponse,
+    RemoveConversationListenerParams,
+    ResumeConversationParams,
+    ResumeConversationResponse,
+    SendUserMessageParams,
+    SendUserMessageResponse,
+    TurnStartParams,
+    TurnStartResponse,
+    InitializeResponse,
+    CancelLoginAccountResponse,
+    GetAccountResponse,
+    GetAccountRateLimitsResponse,
 };
 use codex_protocol::protocol::ReviewDecision;
 use log::{error, info, warn};
@@ -195,21 +209,100 @@ pub async fn resume_conversation(
 }
 
 #[tauri::command]
-pub async fn delete_file(path: String) -> Result<(), String> {
-    let trimmed = path.trim();
-    if trimmed.is_empty() {
-        warn!("delete_file invoked with empty path");
-        return Err("Path is empty.".to_string());
+pub async fn get_account(
+    state: State<'_, AppState>,
+    app_handle: AppHandle,
+    refresh_token: Option<bool>,
+) -> Result<GetAccountResponse, String> {
+    let client = get_client(&state, &app_handle).await?;
+    client
+        .get_account(refresh_token.unwrap_or(false))
+        .await
+}
+
+#[tauri::command]
+pub async fn get_account_rate_limits(
+    state: State<'_, AppState>,
+    app_handle: AppHandle,
+) -> Result<GetAccountRateLimitsResponse, String> {
+    let client = get_client(&state, &app_handle).await?;
+    client.get_account_rate_limits().await
+}
+
+#[tauri::command]
+pub async fn login_account_chatgpt(
+    state: State<'_, AppState>,
+    app_handle: AppHandle,
+) -> Result<LoginAccountResponse, String> {
+    let client = get_client(&state, &app_handle).await?;
+    client
+        .login_account(LoginAccountParams::Chatgpt)
+        .await
+}
+
+#[tauri::command]
+pub async fn login_account_api_key(
+    state: State<'_, AppState>,
+    app_handle: AppHandle,
+    api_key: String,
+) -> Result<LoginAccountResponse, String> {
+    let client = get_client(&state, &app_handle).await?;
+    client
+        .login_account(LoginAccountParams::ApiKey { api_key })
+        .await
+}
+
+#[tauri::command]
+pub async fn cancel_login_account(
+    state: State<'_, AppState>,
+    app_handle: AppHandle,
+    login_id: String,
+) -> Result<CancelLoginAccountResponse, String> {
+    let client = get_client(&state, &app_handle).await?;
+    client.cancel_login_account(login_id).await
+}
+
+#[tauri::command]
+pub async fn logout_account(
+    state: State<'_, AppState>,
+    app_handle: AppHandle,
+) -> Result<LogoutAccountResponse, String> {
+    let client = get_client(&state, &app_handle).await?;
+    client.logout_account().await
+}
+
+#[tauri::command]
+pub async fn initialize_client(
+    state: State<'_, AppState>,
+    app_handle: AppHandle,
+) -> Result<InitializeResponse, String> {
+    let _guard = state.initialize_lock.lock().await;
+    let desired = { state.selected_client_name.read().await.clone() };
+    {
+        let initialized_name = { state.initialized_client_name.read().await.clone() };
+        if let (Some(active_name), Some(response)) = (
+            initialized_name,
+            { state.initialize_response.lock().await.clone() },
+        ) {
+            if active_name == desired {
+                return Ok(response);
+            }
+        }
     }
 
-    info!("Deleting conversation file {}", trimmed);
-    let path_buf = PathBuf::from(trimmed);
-    tokio::fs::remove_file(path_buf)
-        .await
-        .map_err(|err| {
-            error!("Failed to delete file {trimmed}: {err}");
-            format!("Failed to delete file: {err}")
-        })
+    let client = get_client(&state, &app_handle).await?;
+    let response = client.initialize().await?;
+
+    {
+        let mut guard = state.initialize_response.lock().await;
+        *guard = Some(response.clone());
+    }
+    {
+        let mut name_guard = state.initialized_client_name.write().await;
+        *name_guard = Some(desired);
+    }
+
+    Ok(response)
 }
 
 fn parse_review_decision(decision: &str) -> Result<ReviewDecision, String> {

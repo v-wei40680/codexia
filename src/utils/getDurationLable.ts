@@ -18,5 +18,5 @@ export const getStreamDurationLabel = (event: CodexEvent): string | null => {
         ? `${seconds.toFixed(2)}s`
         : `${durationMs.toFixed(0)}ms`;
 
-  return `Stream duration: ${formatted}`;
+  return formatted;
 };
