@@ -811,6 +811,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "codex_bindings"
+version = "0.1.0"
+dependencies = [
+ "codex-app-server-protocol",
+ "codex-protocol",
+ "ts-rs",
+]
+
+[[package]]
 name = "codexia"
 version = "0.13.0"
 dependencies = [
@@ -820,9 +829,9 @@ dependencies = [
  "chrono",
  "codex-app-server-protocol",
  "codex-protocol",
+ "codex_bindings",
  "csv",
  "dirs",
- "export_bindings",
  "fix-path-env",
  "log",
  "nosleep",
@@ -1421,15 +1430,6 @@ checksum = "8be9f3dfaaffdae2972880079a491a1a8bb7cbed0b8dd7a347f668b4150a3b93"
 dependencies = [
  "event-listener",
  "pin-project-lite",
-]
-
-[[package]]
-name = "export_bindings"
-version = "0.1.0"
-dependencies = [
- "codex-app-server-protocol",
- "codex-protocol",
- "ts-rs",
 ]
 
 [[package]]

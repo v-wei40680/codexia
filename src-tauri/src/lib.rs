@@ -151,7 +151,7 @@ pub fn run() {
         ])
         .setup(|_app| {
             #[cfg(debug_assertions)]
-            export_bindings::export_ts_types();
+            codex_bindings::export_ts_types();
 
             #[cfg(any(windows, target_os = "linux"))]
             {
