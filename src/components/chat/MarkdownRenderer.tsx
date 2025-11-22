@@ -1,55 +1,94 @@
-import { memo } from 'react';
+import { memo, useMemo } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import rehypePrism from 'rehype-prism-plus';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { cn } from '@/lib/utils';
 import { useThemeStore } from '@/stores/settings/ThemeStore';
-import 'prismjs/themes/prism.css';
-import 'prismjs/themes/prism-dark.css';
 
 interface MarkdownRendererProps {
   content: string;
   className?: string;
 }
 
+const getLanguage = (className?: string) => {
+  if (!className) return undefined;
+  const match = /language-([\w-]+)/.exec(className);
+  return match ? match[1] : undefined;
+};
 
 export const MarkdownRenderer = memo<MarkdownRendererProps>(({ 
   content, 
   className = "" 
 }) => {
-  const { theme } = useThemeStore();
+  const theme = useThemeStore((state) => state.theme);
+  const syntaxTheme = useMemo(
+    () => (theme === 'dark' ? oneDark : oneLight),
+    [theme]
+  );
   
   return (
-    <div className={`text-sm text-foreground leading-relaxed prose prose-sm ${theme === 'dark' ? 'prose-invert' : ''} max-w-full break-words overflow-hidden ${className}`}>
+    <div
+      className={cn(
+        'text-sm text-foreground leading-relaxed prose prose-sm max-w-full break-words overflow-hidden',
+        theme === 'dark' && 'prose-invert',
+        className,
+      )}
+    >
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[[rehypePrism as any, { ignoreMissing: true }]]}
         components={{
           p: ({ children }) => <p className="mb-2 last:mb-0 select-text">{children}</p>,
           
           code: ({ inline, className, children, ...props }: any) => {
-            if (inline) {
+            if (!inline) {
+              const language = getLanguage(className);
+              const codeContent = String(children || '').replace(/\n$/, '');
+              
               return (
-                <code className={`px-1 py-0.5 rounded text-sm font-mono select-text ${theme === 'dark' ? 'bg-muted text-primary' : 'bg-gray-100 text-gray-800'}`} {...props}>
-                  {children}
-                </code>
+                <SyntaxHighlighter
+                  style={syntaxTheme}
+                  language={language || 'text'}
+                  PreTag="div"
+                  wrapLongLines
+                  customStyle={{ margin: 0, borderRadius: 8, background: 'transparent' }}
+                  codeTagProps={{ className: 'select-text' }}
+                  {...props}
+                >
+                  {codeContent}
+                </SyntaxHighlighter>
               );
             }
-            // Sanitize unknown/invalid language class names to avoid runtime errors
-            let safeClass = className || '';
-            if (/language-\d+/.test(safeClass) || /language-[^a-z0-9+-]/i.test(safeClass)) {
-              safeClass = '';
-            }
-            return <code className={`${safeClass} select-text`} {...props}>{children}</code>;
+            
+            return (
+              <code
+                className={cn(
+                  'px-1 py-0.5 rounded text-[13px] font-mono select-text',
+                  theme === 'dark' ? 'bg-muted text-primary' : 'bg-gray-100 text-gray-800'
+                )}
+                {...props}
+              >
+                {children}
+              </code>
+            );
           },
           
           pre: ({ children }) => (
-            <pre className={`border rounded-md p-3 overflow-x-auto my-2 select-text max-w-full ${theme === 'dark' ? 'bg-muted/50' : 'bg-gray-50'}`}>
+            <div
+              className={cn(
+                'border rounded-md overflow-x-auto my-2 select-text max-w-full',
+                theme === 'dark' ? 'bg-muted/50 border-border' : 'bg-gray-50 border-gray-200'
+              )}
+            >
               {children}
-            </pre>
+            </div>
           ),
           
           blockquote: ({ children }) => (
-            <blockquote className={`border-l-4 pl-4 italic my-2 select-text ${theme === 'dark' ? 'border-muted-foreground/30' : 'border-gray-300'}`}>
+            <blockquote className={cn(
+              'border-l-4 pl-4 italic my-2 select-text',
+              theme === 'dark' ? 'border-muted-foreground/30' : 'border-gray-300'
+            )}>
               {children}
             </blockquote>
           ),
@@ -64,27 +103,40 @@ export const MarkdownRenderer = memo<MarkdownRendererProps>(({
           
           table: ({ children }) => (
             <div className="overflow-x-auto my-2 max-w-full">
-              <table className={`w-full border-collapse border select-text ${theme === 'dark' ? 'border-border' : 'border-gray-300'}`}>
+              <table className={cn(
+                'w-full border-collapse border select-text',
+                theme === 'dark' ? 'border-border' : 'border-gray-300'
+              )}>
                 {children}
               </table>
             </div>
           ),
           
           th: ({ children }) => (
-            <th className={`border px-2 py-1 font-medium text-left select-text ${theme === 'dark' ? 'border-border bg-muted/50' : 'border-gray-300 bg-gray-100'}`}>
+            <th className={cn(
+              'border px-2 py-1 font-medium text-left select-text',
+              theme === 'dark' ? 'border-border bg-muted/50' : 'border-gray-300 bg-gray-100'
+            )}>
               {children}
             </th>
           ),
           
           td: ({ children }) => (
-            <td className={`border px-2 py-1 select-text ${theme === 'dark' ? 'border-border' : 'border-gray-300'}`}>{children}</td>
+            <td className={cn(
+              'border px-2 py-1 select-text',
+              theme === 'dark' ? 'border-border' : 'border-gray-300'
+            )}>
+              {children}
+            </td>
           ),
           
-          // Make links selectable
           a: ({ href, children, ...props }) => (
             <a 
               href={href} 
-              className={`underline select-text ${theme === 'dark' ? 'text-primary hover:text-primary/80' : 'text-blue-600 hover:text-blue-800'}`} 
+              className={cn(
+                'underline select-text',
+                theme === 'dark' ? 'text-primary hover:text-primary/80' : 'text-blue-600 hover:text-blue-800'
+              )}
               target="_blank" 
               rel="noopener noreferrer" 
               {...props}
@@ -93,7 +145,6 @@ export const MarkdownRenderer = memo<MarkdownRendererProps>(({
             </a>
           ),
           
-          // Ensure other text elements are selectable
           strong: ({ children }) => <strong className="select-text">{children}</strong>,
           em: ({ children }) => <em className="select-text">{children}</em>,
           span: ({ children }) => <span className="select-text">{children}</span>,
