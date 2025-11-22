@@ -1,6 +1,6 @@
 [package]
 name = "codexia"
-version = "0.13.0"
+version = "0.14.0"
 description = "A powerful IDE/GUI and Toolkit for Codex CLI"
 authors = ["milisp"]
 edition = "2021"
