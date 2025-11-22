@@ -1,6 +1,9 @@
 name: CI-linux-arm
 
 on:
+  push:
+    tags:
+      - "v*"
   workflow_dispatch:
 
 env:
@@ -24,7 +27,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt update
-          sudo apt install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf xdg-utils
+          sudo apt install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -50,8 +53,33 @@ jobs:
           bun run export:bindings
           bun tauri build --bundles deb
 
+      - name: Detect .deb filename
+        id: set_deb
+        run: echo "deb_file=$(basename $(ls src-tauri/target/release/bundle/deb/*.deb))" >> $GITHUB_OUTPUT
+
       - name: Upload build artifacts
         uses: actions/upload-artifact@v4
         with:
           name: Codexia-linux-arm
           path: src-tauri/target/release/bundle/**/*.deb
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: ${{ github.ref_name }}
+          draft: false
+          prerelease: false
+
+      - name: Upload .deb to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: src-tauri/target/release/bundle/deb/*.deb
+          asset_name: ${{ steps.set_deb.outputs.deb_file }}
+          asset_content_type: application/vnd.debian.binary-package
