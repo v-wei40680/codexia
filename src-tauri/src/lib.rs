@@ -41,10 +41,9 @@ use session_files::{
     usage::read_token_usage,
 };
 use sleep::{allow_sleep, prevent_sleep, SleepState};
-use crate::state::{AppState, RemoteAccessState};
+use state::{AppState, RemoteAccessState};
 use tauri::{AppHandle, Emitter, Manager};
 use terminal::open_terminal_with_command;
-use log::error;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -131,6 +130,7 @@ pub fn run() {
             cmd::add_conversation_listener,
             cmd::remove_conversation_listener,
             cmd::get_account_rate_limits,
+            cmd::initialize_client,
             commands::delete_file,
             commands::set_system_env,
             commands::get_system_env,
@@ -158,14 +158,6 @@ pub fn run() {
                 use tauri_plugin_deep_link::DeepLinkExt;
                 _app.deep_link().register_all()?;
             }
-
-            let app_handle = _app.handle().clone();
-            tauri::async_runtime::spawn(async move {
-                let state = app_handle.state::<AppState>();
-                if let Err(err) = state::get_client(&state, &app_handle).await {
-                    error!("Failed to prewarm Codex client: {err}");
-                }
-            });
 
             Ok(())
         })

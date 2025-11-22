@@ -8,6 +8,8 @@ import { useChatInputStore } from "@/stores/chatInputStore";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
 import { runCommand } from "@/utils/runCommand";
 import { useCodexStore } from "@/stores/useCodexStore";
+import { invoke } from "@/lib/tauri-proxy";
+import { InitializeResponse } from "@/bindings/InitializeResponse";
 
 const DEFAULT_DEV_URL = "http://localhost:3000";
 
@@ -18,6 +20,7 @@ export const ChatToolbar: React.FC = () => {
   const { currentFolder } = useFolderStore();
   const { clearAll, requestFocus } = useChatInputStore();
   const { setActiveConversationId, activeConversationId } = useActiveConversationStore();
+  const initializeRequestedRef = React.useRef(false);
 
   const handleNewConversation = React.useCallback(() => {
     setActiveConversationId(null);
@@ -69,6 +72,21 @@ export const ChatToolbar: React.FC = () => {
     window.addEventListener("keydown", handleShortcut);
     return () => window.removeEventListener("keydown", handleShortcut);
   }, [handleNewConversation]);
+
+  React.useEffect(() => {
+    const initializeClient = async () => {
+      if (initializeRequestedRef.current) return;
+      initializeRequestedRef.current = true;
+      try {
+        await invoke<InitializeResponse>("initialize_client");
+      } catch (error) {
+        console.error("Failed to initialize client", error);
+        initializeRequestedRef.current = false;
+      }
+    };
+
+    void initializeClient();
+  }, []);
 
   return (
     <div className="flex justify-between gap-2 px-2 w-full">

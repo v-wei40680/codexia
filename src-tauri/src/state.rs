@@ -11,7 +11,6 @@ use crate::codex::CodexAppServerClient;
 
 pub struct AppState {
     pub client: Arc<Mutex<Option<Arc<CodexAppServerClient>>>>,
-    pub client_spawn_lock: Arc<Mutex<()>>,
     // Tracks the requested client name ("codex" or "coder"). Default is "codex".
     pub selected_client_name: Arc<RwLock<String>>,
     // Remembers which client name the active client was spawned with, to avoid unnecessary respawns.
@@ -24,7 +23,6 @@ impl AppState {
     pub fn new() -> Self {
         Self {
             client: Arc::new(Mutex::new(None)),
-            client_spawn_lock: Arc::new(Mutex::new(())),
             selected_client_name: Arc::new(RwLock::new("codex".to_string())),
             active_client_name: Arc::new(RwLock::new(None)),
             watchers: Arc::new(Mutex::new(HashMap::new())),
@@ -40,16 +38,14 @@ pub async fn get_client(
     let desired = { state.selected_client_name.read().await.clone() };
 
     // If we already have a client spawned with the same name, return it
-    if let Some(existing) = get_matching_active_client(state, &desired).await {
-        return Ok(existing);
-    }
-
-    // Guard client creation so pre-warm and command paths don't spawn simultaneously
-    let _spawn_guard = state.client_spawn_lock.lock().await;
-
-    // Re-check after grabbing the spawn guard in case another task completed while we waited
-    if let Some(existing) = get_matching_active_client(state, &desired).await {
-        return Ok(existing);
+    let already_active = { state.active_client_name.read().await.clone() };
+    if let (Some(existing), Some(active_name)) = (
+        { state.client.lock().await.clone() },
+        already_active,
+    ) {
+        if active_name == desired {
+            return Ok(existing);
+        }
     }
 
     // Otherwise, (re)spawn the client matching the desired name
@@ -67,19 +63,6 @@ pub async fn get_client(
         *name_guard = Some(desired);
     }
     Ok(client)
-}
-
-async fn get_matching_active_client(
-    state: &State<'_, AppState>,
-    desired: &str,
-) -> Option<Arc<CodexAppServerClient>> {
-    let active_client = { state.client.lock().await.clone() };
-    let active_name = { state.active_client_name.read().await.clone() };
-
-    match (active_client, active_name) {
-        (Some(client), Some(active_name)) if active_name == desired => Some(client),
-        _ => None,
-    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

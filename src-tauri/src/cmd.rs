@@ -15,6 +15,7 @@ use codex_app_server_protocol::{
     SendUserMessageResponse,
     TurnStartParams,
     TurnStartResponse,
+    InitializeResponse,
     CancelLoginAccountResponse,
     GetAccountResponse,
     GetAccountRateLimitsResponse,
@@ -268,6 +269,15 @@ pub async fn logout_account(
 ) -> Result<LogoutAccountResponse, String> {
     let client = get_client(&state, &app_handle).await?;
     client.logout_account().await
+}
+
+#[tauri::command]
+pub async fn initialize_client(
+    state: State<'_, AppState>,
+    app_handle: AppHandle,
+) -> Result<InitializeResponse, String> {
+    let client = get_client(&state, &app_handle).await?;
+    client.initialize().await
 }
 
 fn parse_review_decision(decision: &str) -> Result<ReviewDecision, String> {

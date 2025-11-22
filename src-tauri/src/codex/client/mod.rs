@@ -13,6 +13,7 @@ use codex_app_server_protocol::{
     GetAccountRateLimitsResponse,
     GetAccountResponse,
     InitializeParams,
+    InitializeResponse,
     InterruptConversationParams,
     InterruptConversationResponse,
     JSONRPCErrorError,
@@ -149,11 +150,11 @@ impl CodexAppServerClient {
             spawn_stderr_reader(stderr, app_handle.clone());
         }
 
-        client.initialize().await?;
         Ok(client)
     }
 
-    async fn initialize(&self) -> Result<(), String> {
+    pub async fn initialize(&self) -> Result<InitializeResponse, String> {
+        let started = std::time::Instant::now();
         let params = InitializeParams {
             client_info: ClientInfo {
                 name: "codexia".to_string(),
@@ -162,9 +163,15 @@ impl CodexAppServerClient {
             },
         };
         let params_value = serde_json::to_value(params).map_err(|err| err.to_string())?;
-        self.request::<Value>("initialize", Some(params_value))
+        let response = self
+            .request::<InitializeResponse>("initialize", Some(params_value))
             .await?;
-        self.send_notification("initialized", None).await
+        self.send_notification("initialized", None).await?;
+        println!(
+            "client.initialize duration_ms={}",
+            started.elapsed().as_millis()
+        );
+        Ok(response)
     }
 
     pub async fn get_account(&self, refresh_token: bool) -> Result<GetAccountResponse, String> {
