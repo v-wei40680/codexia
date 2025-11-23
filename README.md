@@ -166,7 +166,17 @@ bun run build
 ```
 2. start remote server
 
-## 📋 Supported Codex Features
+## 💖 Support
+
+Your donation will be used to support Codexia’s continued development, server costs,
+new feature research, and long-term maintenance. Thank you for helping this project grow!
+
+- [Polar Donate](https://buy.polar.sh/polar_cl_4hLxfGGjyEuiyX6zBlVp2HNzygaGJZuPT3AvC2cUzlH) (credit card friendly)
+- **Crypto donations**
+  - **USDC (ERC20)**: `0xBE18F2cf09eE294781B98DBB1653f64ed54a911C`
+  - **Bitcoin (BTC)**: `bc1qg6xyywh76wkz9glf7n5pnt458yczzgk9eykkt9`
+
+ ## 📋 Supported Codex Features
 
 - ✅ Interactive chat
 - ✅ Code generation/editing

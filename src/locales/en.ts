@@ -20,4 +20,6 @@ export const en = {
     settings: "Settings",
     accentColor: "Accent Color",
   },
+  donationPurpose: "Your donation will be used to support Codexia’s continued development, server costs,\
+        new feature research, and long‑term maintenance. Thank you for helping this project grow!"
 };

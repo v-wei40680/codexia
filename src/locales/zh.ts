@@ -20,4 +20,6 @@ export const zh = {
     settings: "设置",
     accentColor: "主题颜色",
   },
+  donationPurpose:
+    "您的捐赠将用于支持 Codexia 的持续开发、服务器费用、新功能研发以及长期维护。感谢您帮助这个项目成长！",
 };

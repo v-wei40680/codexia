@@ -20,4 +20,6 @@ export const ja = {
     settings: "設定",
     accentColor: "アクセントカラー",
   },
+  donationPurpose:
+    "ご寄付は Codexia の継続的な開発、サーバー費用、新機能の研究、長期的な保守に活用されます。このプロジェクトの成長を支えていただきありがとうございます！",
 };
