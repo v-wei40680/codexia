@@ -24,6 +24,7 @@ import { ChevronDown, PlusCircle, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { AddModelForm, AddProviderForm } from "./model-provider-profile-form";
 import { PromptOptimizerSettings } from "@/components/settings/PromptOptimizerSettings";
+import { ConfigService } from "@/services/configService";
 
 export function ProviderModels() {
   const {
@@ -35,7 +36,23 @@ export function ProviderModels() {
     setOllamaModels,
     deleteModel,
     deleteProvider,
+    setProvidersFromConfig,
   } = useProviderStore();
+  useEffect(() => {
+    let isActive = true;
+    ConfigService.getAllProviders()
+      .then((configProviders) => {
+        if (isActive) {
+          setProvidersFromConfig(configProviders);
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to load providers from config:", error);
+      });
+    return () => {
+      isActive = false;
+    };
+  }, [setProvidersFromConfig]);
   useEffect(() => {
     if (selectedProviderId === "ollama") {
       fetch("http://localhost:11434/v1/models")

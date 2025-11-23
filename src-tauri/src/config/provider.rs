@@ -6,7 +6,7 @@ use tauri::command;
 use toml_edit::{Document, Item, Table};
 
 use super::{get_config_path, CodexConfig};
-use super::toml_helpers::serialize_to_table;
+use super::toml_helpers::{serialize_to_table, write_document_with_backup};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModelProvider {
@@ -92,16 +92,24 @@ pub async fn delete_model_provider(provider_name: String) -> Result<(), String> 
     let mut doc = Document::from_str(&content)
         .map_err(|e| format!("Failed to parse config file: {}", e))?;
 
-    if let Some(model_providers_table) = doc
-        .as_table_mut()
+    let doc_table = doc.as_table_mut();
+    let mut provider_removed = false;
+
+    if let Some(model_providers_table) = doc_table
         .get_mut("model_providers")
         .and_then(Item::as_table_mut)
     {
-        model_providers_table.remove(&provider_name);
+        provider_removed = model_providers_table.remove(&provider_name).is_some();
+        if model_providers_table.is_empty() {
+            doc_table.remove("model_providers");
+        }
     }
 
-    if let Some(profiles_table) = doc
-        .as_table_mut()
+    if !provider_removed {
+        return Err(format!("Model provider '{}' not found", provider_name));
+    }
+
+    if let Some(profiles_table) = doc_table
         .get_mut("profiles")
         .and_then(Item::as_table_mut)
     {
@@ -131,12 +139,13 @@ pub async fn delete_model_provider(provider_name: String) -> Result<(), String> 
         for name in to_remove {
             profiles_table.remove(&name);
         }
+
+        if profiles_table.is_empty() {
+            doc_table.remove("profiles");
+        }
     }
 
-    let toml_content = doc.to_string();
-
-    fs::write(&config_path, toml_content)
-        .map_err(|e| format!("Failed to write config file: {}", e))?;
+    write_document_with_backup(&config_path, &doc)?;
 
     Ok(())
 }

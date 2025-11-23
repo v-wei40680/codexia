@@ -44,6 +44,7 @@ type ProviderActions = {
   deleteProvider: (providerId: string) => void;
   setReasoningEffort: (effort: ReasoningEffort) => void;
   setOllamaModels: (models: string[]) => void;
+  setProvidersFromConfig: (configProviders: Record<string, ModelProvider>) => void;
 };
 
 export const useProviderStore = create<ProviderState & ProviderActions>()(
@@ -169,6 +170,56 @@ export const useProviderStore = create<ProviderState & ProviderActions>()(
 
           return {
             providers: updatedProviders,
+            selectedProviderId: newSelectedProviderId,
+            selectedModel: newSelectedModel,
+          };
+        });
+      },
+      setProvidersFromConfig: (configProviders) => {
+        set((state) => {
+          const providerById = new Map(
+            state.providers.map((provider) => [provider.id, provider]),
+          );
+
+          const openaiSource =
+            providerById.get("openai") ?? initialProviders[0];
+          const openaiProvider: ProviderStateModelProvider = {
+            ...openaiSource,
+            models: [...openaiSource.models],
+          };
+
+          const customProviders = Object.entries(configProviders)
+            .filter(([id]) => id !== "openai")
+            .map(([id, provider]) => {
+              const existing = providerById.get(id);
+              return {
+                id,
+                name: provider.name,
+                models: existing?.models ? [...existing.models] : [],
+                apiKey: existing?.apiKey ?? "",
+                envKey: provider.env_key ?? existing?.envKey ?? "",
+                baseUrl: provider.base_url ?? existing?.baseUrl ?? "",
+              };
+            });
+
+          const mergedProviders = [openaiProvider, ...customProviders];
+
+          let newSelectedProviderId = state.selectedProviderId;
+          if (!mergedProviders.some((provider) => provider.id === newSelectedProviderId)) {
+            newSelectedProviderId = "openai";
+          }
+
+          const activeProvider = mergedProviders.find(
+            (provider) => provider.id === newSelectedProviderId,
+          );
+
+          const newSelectedModel =
+            activeProvider?.models.find((model) => model === state.selectedModel) ??
+            activeProvider?.models[0] ??
+            null;
+
+          return {
+            providers: mergedProviders,
             selectedProviderId: newSelectedProviderId,
             selectedModel: newSelectedModel,
           };
