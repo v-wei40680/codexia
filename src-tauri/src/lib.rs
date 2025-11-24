@@ -1,15 +1,15 @@
 mod cmd;
 mod codex;
 mod commands;
-pub mod config;
 mod filesystem;
-mod mcp;
 mod services;
-mod session_files;
 mod sleep;
 mod state;
-mod terminal;
-mod utils;
+
+use codex::config;
+use codex::mcp;
+use codex::utils;
+
 use filesystem::{
     directory_ops::{canonicalize_path, get_default_directories, read_directory, search_files},
     file_analysis::calculate_file_tokens,
@@ -26,9 +26,8 @@ use filesystem::{
     },
     watch::{start_watch_directory, stop_watch_directory},
 };
-use mcp::{add_mcp_server, delete_mcp_server, read_mcp_servers, set_mcp_server_enabled};
-use session_files::{
-    cache::{load_project_sessions, write_project_cache, update_project_favorites, remove_project_session},
+use codex::mcp::{add_mcp_server, delete_mcp_server, read_mcp_servers, set_mcp_server_enabled};
+use codex::session_files::{cache::{load_project_sessions, write_project_cache, update_project_favorites, remove_project_session},
     delete::{delete_session_file, delete_sessions_files},
     get::{get_session_files, read_session_file},
     scanner::scan_projects,
@@ -38,7 +37,6 @@ use session_files::{
 use sleep::{allow_sleep, prevent_sleep, SleepState};
 use state::{AppState, RemoteAccessState};
 use tauri::{AppHandle, Emitter, Manager};
-use terminal::open_terminal_with_command;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -91,10 +89,10 @@ pub fn run() {
             commit_changes_to_worktree,
             start_watch_directory,
             stop_watch_directory,
-            config::project::read_codex_config,
-            config::project::get_project_name,
-            config::project::is_version_controlled,
-            config::project::set_project_trust,
+            codex::config::project::read_codex_config,
+            codex::config::project::get_project_name,
+            codex::config::project::is_version_controlled,
+            codex::config::project::set_project_trust,
             read_mcp_servers,
             add_mcp_server,
             delete_mcp_server,
@@ -133,7 +131,7 @@ pub fn run() {
             load_project_sessions,
             delete_session_file,
             update_cache_title,
-            open_terminal_with_command,
+            commands::terminal::open_terminal_with_command,
             delete_sessions_files,
             write_project_cache,
             update_project_favorites,
