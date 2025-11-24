@@ -1,14 +1,9 @@
 mod cmd;
-mod codex;
 mod commands;
 mod filesystem;
 mod services;
 mod sleep;
 mod state;
-
-use codex::config;
-use codex::mcp;
-use codex::utils;
 
 use filesystem::{
     directory_ops::{canonicalize_path, get_default_directories, read_directory, search_files},
@@ -25,14 +20,6 @@ use filesystem::{
         delete_git_worktree,
     },
     watch::{start_watch_directory, stop_watch_directory},
-};
-use codex::mcp::{add_mcp_server, delete_mcp_server, read_mcp_servers, set_mcp_server_enabled};
-use codex::session_files::{cache::{load_project_sessions, write_project_cache, update_project_favorites, remove_project_session},
-    delete::{delete_session_file, delete_sessions_files},
-    get::{get_session_files, read_session_file},
-    scanner::scan_projects,
-    update::update_cache_title,
-    usage::read_token_usage,
 };
 use sleep::{allow_sleep, prevent_sleep, SleepState};
 use state::{AppState, RemoteAccessState};
@@ -89,22 +76,22 @@ pub fn run() {
             commit_changes_to_worktree,
             start_watch_directory,
             stop_watch_directory,
-            codex::config::project::read_codex_config,
-            codex::config::project::get_project_name,
-            codex::config::project::is_version_controlled,
-            codex::config::project::set_project_trust,
-            read_mcp_servers,
-            add_mcp_server,
-            delete_mcp_server,
-            set_mcp_server_enabled,
-            config::provider::read_model_providers,
-            config::profile::read_profiles,
-            config::profile::get_provider_config,
-            config::profile::get_profile_config,
-            config::profile::add_or_update_profile,
-            config::profile::delete_profile,
-            config::provider::add_or_update_model_provider,
-            config::provider::delete_model_provider,
+            commands::codex::read_codex_config,
+            commands::codex::get_project_name,
+            commands::codex::is_version_controlled,
+            commands::codex::set_project_trust,
+            commands::codex::read_mcp_servers,
+            commands::codex::add_mcp_server,
+            commands::codex::delete_mcp_server,
+            commands::codex::set_mcp_server_enabled,
+            commands::codex::read_model_providers,
+            commands::codex::read_profiles,
+            commands::codex::get_provider_config,
+            commands::codex::get_profile_config,
+            commands::codex::add_or_update_profile,
+            commands::codex::delete_profile,
+            commands::codex::add_or_update_model_provider,
+            commands::codex::delete_model_provider,
             commands::remote::enable_remote_ui,
             commands::remote::disable_remote_ui,
             commands::remote::get_remote_ui_status,
@@ -127,20 +114,20 @@ pub fn run() {
             commands::file::delete_file,
             commands::env::set_system_env,
             commands::env::get_system_env,
-            scan_projects,
-            load_project_sessions,
-            delete_session_file,
-            update_cache_title,
+            commands::codex::scan_projects,
+            commands::codex::load_project_sessions,
+            commands::codex::delete_session_file,
+            commands::codex::update_cache_title,
             commands::terminal::open_terminal_with_command,
-            delete_sessions_files,
-            write_project_cache,
-            update_project_favorites,
-            remove_project_session,
-            get_session_files,
-            read_session_file,
+            commands::codex::delete_sessions_files,
+            commands::codex::write_project_cache,
+            commands::codex::update_project_favorites,
+            commands::codex::remove_project_session,
+            commands::codex::get_session_files,
+            commands::codex::read_session_file,
             prevent_sleep,
             allow_sleep,
-            read_token_usage,
+            commands::codex::read_token_usage,
         ])
         .setup(|_app| {
             #[cfg(debug_assertions)]

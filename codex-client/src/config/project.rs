@@ -2,7 +2,6 @@ use serde::{Deserialize, Serialize};
 use std::fs;
 use std::path::PathBuf;
 use std::str::FromStr;
-use tauri::command;
 use toml_edit::{Document, Item, Table};
 
 use super::{get_config_path, CodexConfig};
@@ -19,7 +18,6 @@ pub struct Project {
     pub trust_level: String,
 }
 
-#[command]
 pub async fn read_codex_config() -> Result<Vec<Project>, String> {
     let config_path = get_config_path()?;
 
@@ -46,7 +44,6 @@ pub async fn read_codex_config() -> Result<Vec<Project>, String> {
 }
 
 /// Check if a given path is a Git repository (version controlled).
-#[command]
 pub async fn is_version_controlled(path: String) -> Result<bool, String> {
     let path_buf = PathBuf::from(&path);
     let git_path = path_buf.join(".git");
@@ -54,7 +51,6 @@ pub async fn is_version_controlled(path: String) -> Result<bool, String> {
 }
 
 /// Set or update a project's trust level in `~/.codex/config.toml`.
-#[command]
 pub async fn set_project_trust(path: String, trust_level: String) -> Result<(), String> {
     let config_path = get_config_path()?;
 
@@ -89,7 +85,6 @@ pub async fn set_project_trust(path: String, trust_level: String) -> Result<(), 
     Ok(())
 }
 
-#[command]
 pub async fn get_project_name(path: String) -> Result<String, String> {
     let path_buf = PathBuf::from(&path);
     let name = path_buf

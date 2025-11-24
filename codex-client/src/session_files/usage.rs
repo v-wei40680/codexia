@@ -152,7 +152,6 @@ fn scan_usage_files_after(
     Ok(usage_vec)
 }
 
-#[tauri::command]
 pub async fn read_token_usage() -> Result<Vec<Session>, String> {
     let mut usage_cache = match read_usage_cache()? {
         Some(cache) => cache,

@@ -94,7 +94,6 @@ pub fn scan_sessions_after(
 }
 
 /// Scan all projects that appear in sessions folder
-#[tauri::command]
 pub async fn scan_projects() -> Result<Vec<Value>, String> {
     let sessions_dir = get_sessions_path()?;
     let mut unique_projects = HashSet::new();

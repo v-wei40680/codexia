@@ -2,7 +2,6 @@ use super::get::get_cache_path_for_project;
 use serde_json::{json, Value};
 use std::fs::read_to_string;
 
-#[tauri::command]
 pub async fn update_cache_title(
     project_path: String,
     session_path: String,

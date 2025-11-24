@@ -7,7 +7,7 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use crate::mcp::McpServerConfig;
+use super::mcp::McpServerConfig;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CodexConfig {

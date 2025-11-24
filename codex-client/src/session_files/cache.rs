@@ -117,12 +117,10 @@ fn write_project_cache_with_metadata(
 }
 
 /// Write updated cache to disk
-#[tauri::command]
 pub fn write_project_cache(project_path: String, sessions: Vec<Value>, favorites: Vec<String>) -> Result<(), String> {
     write_project_cache_with_metadata(&project_path, sessions, favorites, None)
 }
 
-#[tauri::command]
 pub fn update_project_favorites(project_path: String, favorites: Vec<String>) -> Result<(), String> {
     match read_project_cache(&project_path)? {
         Some(CachedProjectData {
@@ -139,7 +137,6 @@ pub fn update_project_favorites(project_path: String, favorites: Vec<String>) ->
     }
 }
 
-#[tauri::command]
 pub fn remove_project_session(project_path: String, conversation_id: String) -> Result<(), String> {
     match read_project_cache(&project_path)? {
         Some(CachedProjectData {
@@ -167,7 +164,6 @@ pub fn remove_project_session(project_path: String, conversation_id: String) -> 
 }
 
 /// Main tauri command: load or refresh sessions for given project
-#[tauri::command]
 pub async fn load_project_sessions(project_path: String) -> Result<Value, String> {
     match read_project_cache(&project_path)? {
         Some(cache_data) => {

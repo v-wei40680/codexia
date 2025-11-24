@@ -2,11 +2,10 @@ use serde::{de::Deserializer, Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::str::FromStr;
-use tauri::command;
 use toml_edit::{value, Document, Item, Table, Value};
 
-use crate::config::{get_config_path, CodexConfig};
-use crate::config::toml_helpers::{serialize_to_table, write_document_with_backup};
+use super::config::{get_config_path, CodexConfig};
+use super::config::toml_helpers::{serialize_to_table, write_document_with_backup};
 
 fn default_enabled() -> bool {
     true
@@ -137,7 +136,6 @@ impl<'de> Deserialize<'de> for McpServerConfig {
     }
 }
 
-#[command]
 pub async fn read_mcp_servers() -> Result<HashMap<String, McpServerConfig>, String> {
     let config_path = get_config_path()?;
 
@@ -154,7 +152,6 @@ pub async fn read_mcp_servers() -> Result<HashMap<String, McpServerConfig>, Stri
     Ok(config.mcp_servers)
 }
 
-#[command]
 pub async fn add_mcp_server(name: String, config: McpServerConfig) -> Result<(), String> {
     let config_path = get_config_path()?;
 
@@ -190,7 +187,6 @@ pub async fn add_mcp_server(name: String, config: McpServerConfig) -> Result<(),
     Ok(())
 }
 
-#[command]
 pub async fn delete_mcp_server(name: String) -> Result<(), String> {
     let config_path = get_config_path()?;
 
@@ -224,7 +220,6 @@ pub async fn delete_mcp_server(name: String) -> Result<(), String> {
     Ok(())
 }
 
-#[command]
 pub async fn set_mcp_server_enabled(name: String, enabled: bool) -> Result<(), String> {
     let config_path = get_config_path()?;
 

@@ -2,7 +2,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::str::FromStr;
-use tauri::command;
 use toml_edit::{Document, Item, Table};
 
 use super::{get_config_path, CodexConfig};
@@ -15,7 +14,6 @@ pub struct ModelProvider {
     pub env_key: Option<String>,
 }
 
-#[command]
 pub async fn read_model_providers() -> Result<HashMap<String, ModelProvider>, String> {
     let config_path = get_config_path()?;
 
@@ -32,7 +30,6 @@ pub async fn read_model_providers() -> Result<HashMap<String, ModelProvider>, St
     Ok(config.model_providers)
 }
 
-#[command]
 pub async fn add_or_update_model_provider(
     provider_name: String,
     provider: ModelProvider,
@@ -78,7 +75,6 @@ pub async fn add_or_update_model_provider(
     Ok(())
 }
 
-#[command]
 pub async fn delete_model_provider(provider_name: String) -> Result<(), String> {
     let config_path = get_config_path()?;
 

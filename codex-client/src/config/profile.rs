@@ -2,7 +2,6 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::str::FromStr;
-use tauri::command;
 use toml_edit::{Document, Item, Table};
 
 use super::{get_config_path, CodexConfig};
@@ -15,7 +14,6 @@ pub struct Profile {
     pub model: Option<String>,
 }
 
-#[command]
 pub async fn read_profiles() -> Result<HashMap<String, Profile>, String> {
     let config_path = get_config_path()?;
 
@@ -32,7 +30,6 @@ pub async fn read_profiles() -> Result<HashMap<String, Profile>, String> {
     Ok(config.profiles)
 }
 
-#[command]
 pub async fn get_provider_config(
     provider_name: String,
 ) -> Result<Option<(ModelProvider, Option<Profile>)>, String> {
@@ -56,13 +53,11 @@ pub async fn get_provider_config(
     }
 }
 
-#[command]
 pub async fn get_profile_config(profile_name: String) -> Result<Option<Profile>, String> {
     let profiles = read_profiles().await?;
     Ok(profiles.get(&profile_name).cloned())
 }
 
-#[command]
 pub async fn add_or_update_profile(profile_name: String, profile: Profile) -> Result<(), String> {
     let config_path = get_config_path()?;
 
@@ -97,7 +92,6 @@ pub async fn add_or_update_profile(profile_name: String, profile: Profile) -> Re
     Ok(())
 }
 
-#[command]
 pub async fn delete_profile(profile_name: String) -> Result<(), String> {
     let config_path = get_config_path()?;
 

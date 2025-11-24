@@ -2,7 +2,6 @@ use super::get::get_cache_path_for_project;
 use serde_json::Value;
 use std::fs::read_to_string;
 
-#[tauri::command]
 pub async fn delete_session_file(project_path: String, session_path: String) -> Result<(), String> {
     std::fs::remove_file(&session_path).map_err(|e| format!("Failed to delete session: {}", e))?;
 
@@ -25,7 +24,6 @@ pub async fn delete_session_file(project_path: String, session_path: String) -> 
     Ok(())
 }
 
-#[tauri::command]
 pub async fn delete_sessions_files(
     project_path: String,
     session_paths: Vec<String>,

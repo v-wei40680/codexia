@@ -7,7 +7,7 @@ use tokio::sync::{Mutex, RwLock};
 use log::info;
 use tauri::{AppHandle, State};
 
-use crate::codex::CodexAppServerClient;
+use codex_client::CodexAppServerClient;
 use codex_app_server_protocol::InitializeResponse;
 
 pub struct AppState {
