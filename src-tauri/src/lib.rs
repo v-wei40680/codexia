@@ -10,11 +10,6 @@ mod sleep;
 mod state;
 mod terminal;
 mod utils;
-
-use commands::{
-    check_codex_version, check_coder_version, create_new_window, disable_remote_ui, enable_remote_ui,
-    get_remote_ui_status,
-};
 use filesystem::{
     directory_ops::{canonicalize_path, get_default_directories, read_directory, search_files},
     file_analysis::calculate_file_tokens,
@@ -72,11 +67,11 @@ pub fn run() {
         .manage(RemoteAccessState::default())
         .manage(SleepState::default())
         .invoke_handler(tauri::generate_handler![
-            check_codex_version,
-            check_coder_version,
+            commands::check::check_codex_version,
+            commands::check::check_coder_version,
             state::get_client_name,
             state::set_client_name,
-            create_new_window,
+            commands::window::create_new_window,
             read_directory,
             get_default_directories,
             search_files,
@@ -112,9 +107,9 @@ pub fn run() {
             config::profile::delete_profile,
             config::provider::add_or_update_model_provider,
             config::provider::delete_model_provider,
-            enable_remote_ui,
-            disable_remote_ui,
-            get_remote_ui_status,
+            commands::remote::enable_remote_ui,
+            commands::remote::disable_remote_ui,
+            commands::remote::get_remote_ui_status,
             cmd::send_user_message,
             cmd::turn_start,
             cmd::new_conversation,
@@ -131,9 +126,9 @@ pub fn run() {
             cmd::remove_conversation_listener,
             cmd::get_account_rate_limits,
             cmd::initialize_client,
-            commands::delete_file,
-            commands::set_system_env,
-            commands::get_system_env,
+            commands::file::delete_file,
+            commands::env::set_system_env,
+            commands::env::get_system_env,
             scan_projects,
             load_project_sessions,
             delete_session_file,
