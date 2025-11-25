@@ -33,6 +33,9 @@ interface Project {
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
+  const [scannedProjects, setScannedProjects] = useState<Project[]>([]);
+  const [scanLoading, setScanLoading] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
   const [trustDialogOpen, setTrustDialogOpen] = useState(false);
   const [pendingProjectPath, setPendingProjectPath] = useState<string | null>(null);
   const [isVersionControlled, setIsVersionControlled] = useState(false);
@@ -40,8 +43,8 @@ export default function ProjectsPage() {
   const navigate = useNavigate();
   const { setCurrentFolder } = useFolderStore();
   const { setFileTree, setChatPane } = useLayoutStore();
-
   const { setCwd } = useCodexStore();
+
   useEffect(() => {
     loadProjects();
   }, []);
@@ -51,19 +54,32 @@ export default function ProjectsPage() {
       const projectList = await invoke<Project[]>("read_codex_config");
       setProjects(projectList);
     } catch (error) {
-      toast.error(`Failed to load projects:, ${error}`)
+      toast.error(`Failed to load projects: ${error}`);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const scanForUntrustedProjects = async () => {
+    setScanError(null);
+    setScanLoading(true);
+    try {
+      const scanned = await invoke<Project[]>("scan_projects");
+      setScannedProjects(scanned);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      setScanError(message);
+      toast.error(`Failed to scan projects: ${message}`);
+    } finally {
+      setScanLoading(false);
     }
   };
 
   const openProject = (projectPath: string) => {
     setCurrentFolder(projectPath);
     setCwd(projectPath);
-    // Enable both panels when opening a project
     setFileTree(true);
     setChatPane(true);
-    // Navigate to chat page
     navigate("/chat");
   };
 
@@ -80,20 +96,16 @@ export default function ProjectsPage() {
         multiple: false,
       });
       if (result) {
-        // Check if the selected folder is version controlled (Git)
         try {
           const vcs = await invoke<boolean>("is_version_controlled", { path: result });
           setPendingProjectPath(result);
           setIsVersionControlled(Boolean(vcs));
           if (vcs) {
-            // Open trust dialog if version controlled
             setTrustDialogOpen(true);
           } else {
-            // No VCS, proceed directly
             openProject(result);
           }
         } catch (e) {
-          // If detection fails, fall back to opening the project
           console.error("Failed to detect VCS:", e);
           openProject(result);
         }
@@ -102,6 +114,25 @@ export default function ProjectsPage() {
       console.error("Failed to select directory:", error);
     }
   };
+
+  const matchesSearchTerm = (project: Project) => {
+    const term = searchTerm.toLowerCase();
+    if (!term) {
+      return true;
+    }
+    const normalizedPath = project.path.toLowerCase();
+    if (normalizedPath.includes(term)) {
+      return true;
+    }
+    const folderName = project.path.split(/[/\\]/).pop()?.toLowerCase() ?? "";
+    return folderName.includes(term);
+  };
+
+  const filteredProjects = projects.filter(matchesSearchTerm);
+  const existingProjectPaths = new Set(projects.map((project) => project.path));
+  const filteredScannedProjects = scannedProjects
+    .filter((project) => !existingProjectPaths.has(project.path))
+    .filter(matchesSearchTerm);
 
   if (loading) {
     return (
@@ -113,49 +144,52 @@ export default function ProjectsPage() {
 
   return (
     <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div className="w-full">
-          <div className="flex items-center justify-between w-full">
+      <div className="space-y-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
             <h1 className="text-2xl font-bold">Projects</h1>
+            <p className="text-muted-foreground">Manage your Codex projects</p>
+          </div>
+          <div className="flex flex-wrap gap-2">
             <Button onClick={selectNewProject}>
               <Plus className="w-3 h-3" />
               Open Project
             </Button>
-          </div>
-          <p className="text-muted-foreground">Manage your Codex projects</p>
-          <div className="mt-4">
-            <Input
-              placeholder="Search projects..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              autoFocus
-            />
+            <Button
+              variant="outline"
+              onClick={scanForUntrustedProjects}
+              disabled={scanLoading}
+            >
+              {scanLoading ? "Scanning..." : "Scan Untrusted"}
+            </Button>
           </div>
         </div>
+        {scanError ? (
+          <p className="text-destructive text-xs">{`Failed to scan untrusted projects: ${scanError}`}</p>
+        ) : null}
+        <Input
+          placeholder="Search projects..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          autoFocus
+        />
       </div>
 
-      {projects.length === 0 ? (
+      {filteredProjects.length === 0 ? (
         <Card>
           <CardContent className="p-6 text-center">
             <FolderOpen className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
             <h3 className="text-lg font-semibold mb-2">No projects found</h3>
-            <p className="text-muted-foreground">
-              run codex at project to see them here.
-            </p>
+            <p className="text-muted-foreground">run codex at project to see them here.</p>
           </CardContent>
         </Card>
       ) : (
         <div className="space-y-3 grid grid-cols-1 md:grid-cols-2">
-          {projects
-            .filter((project) =>
-              project.path.toLowerCase().includes(searchTerm.toLowerCase())
-            )
-            .map((project, index) => {
-            const projectName =
-              project.path.split(/[/\\]/).pop() || project.path;
+          {filteredProjects.map((project, index) => {
+            const projectName = project.path.split(/[/\\]/).pop() || project.path;
             return (
               <Card
-                key={index}
+                key={`${project.path}-${index}`}
                 className="hover:shadow-md transition-shadow cursor-pointer"
                 onClick={() => openProject(project.path)}
               >
@@ -183,7 +217,44 @@ export default function ProjectsPage() {
         </div>
       )}
 
-      {/* Trust dialog shown only when a VCS folder is selected */}
+      {filteredScannedProjects.length > 0 && (
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Untrusted projects</h2>
+            <span className="text-sm text-muted-foreground">
+              {`Detected ${filteredScannedProjects.length} project${
+                filteredScannedProjects.length > 1 ? "s" : ""
+              }`}
+            </span>
+          </div>
+          <div className="space-y-3 grid grid-cols-1 md:grid-cols-2">
+            {filteredScannedProjects.map((project) => {
+              const projectName = project.path.split(/[/\\]/).pop() || project.path;
+              return (
+                <Card
+                  key={project.path}
+                  className="hover:shadow-md transition-shadow cursor-pointer"
+                  onClick={() => openProject(project.path)}
+                >
+                  <CardHeader>
+                    <CardTitle className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <FolderOpen className="w-5 h-5" />
+                        {projectName}
+                      </div>
+                      <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800">
+                        {project.trust_level === "trusted" ? "trusted" : "untrusted"}
+                      </span>
+                    </CardTitle>
+                    <CardDescription>{project.path}</CardDescription>
+                  </CardHeader>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       <Dialog open={trustDialogOpen} onOpenChange={setTrustDialogOpen}>
         <DialogContent showCloseButton={false}>
           <DialogHeader>
@@ -207,7 +278,6 @@ export default function ProjectsPage() {
                 setTrustDialogOpen(false);
                 setPendingProjectPath(null);
                 if (path) {
-                  // Proceed without changing trust
                   openProject(path);
                 }
               }}
