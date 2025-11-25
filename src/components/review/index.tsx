@@ -11,11 +11,7 @@ import { MarkdownRenderer } from "@/components/chat/MarkdownRenderer";
 import { RawMessage } from "./type";
 import { aggregateMessages } from "./aggregateMessages";
 import { PlanDisplay, SimplePlanStep } from "../chat/messages/PlanDisplay";
-import { useAuth } from "@/hooks/useAuth";
-import { useLayoutStore } from "@/stores";
-import { Button } from "../ui/button";
 import { ReviewFilters, createInitialFilterState } from "./ReviewFilters";
-import { DonateSection } from "../common/DonateSection";
 
 export function Review() {
   const { selectConversation } = useActiveConversationStore();
@@ -25,8 +21,6 @@ export function Review() {
   const [expandedExecCommands, setExpandedExecCommands] = useState<
     Record<string, boolean>
   >({});
-  const { setReview } = useLayoutStore();
-  const { user, loading } = useAuth();
   const [messageTypes, setMessageTypes] = useState(createInitialFilterState);
 
   useEffect(() => {
@@ -136,8 +130,6 @@ export function Review() {
     }));
   };
 
-  if (loading) return null;
-
   if (!currentPath) {
     return (
       <div className="flex h-full min-h-0 items-center justify-center p-4 text-sm text-muted-foreground">
@@ -146,115 +138,104 @@ export function Review() {
     );
   }
 
-  if (user || !import.meta.env.DEV) {
-    return (
-      <div className="flex flex-col p-4 gap-2 overflow-auto h-full">
-        <div className="flex flex-col gap-2 border-b pb-2">
-          <ReviewFilters
-            showFilter={showFilter}
-            messageTypes={messageTypes}
-            onToggleFilter={() => setShowFilter((prev) => !prev)}
-            onFilterChange={handleFilterChange}
-          />
-        </div>
-        {filteredMessages.map((msg, index) => {
-          switch (msg.type) {
-            case "agent_message":
-              return (
-                <div className="flex w-full" key={`agent-${index}`}>
-                  <MarkdownRenderer content={msg.message} />
-                </div>
-              );
-            case "user_message":
-              return (
-                <div key={`user-${index}`} className="flex w-full justify-end">
-                  <MarkdownRenderer
-                    className="px-2 border rounded"
-                    content={msg.message}
-                  />
-                </div>
-              );
+  return (
+    <div className="flex flex-col p-4 gap-2 overflow-auto h-full">
+      <div className="flex flex-col gap-2 border-b pb-2">
+        <ReviewFilters
+          showFilter={showFilter}
+          messageTypes={messageTypes}
+          onToggleFilter={() => setShowFilter((prev) => !prev)}
+          onFilterChange={handleFilterChange}
+        />
+      </div>
+      {filteredMessages.map((msg, index) => {
+        switch (msg.type) {
+          case "agent_message":
+            return (
+              <div className="flex w-full" key={`agent-${index}`}>
+                <MarkdownRenderer content={msg.message} />
+              </div>
+            );
+          case "user_message":
+            return (
+              <div key={`user-${index}`} className="flex w-full justify-end">
+                <MarkdownRenderer
+                  className="px-2 border rounded"
+                  content={msg.message}
+                />
+              </div>
+            );
 
-            case "agent_reasoning_raw_content":
-            case "agent_reasoning": {
-              if (!msg.text.includes("\n")) {
-                return (
-                  <span className="flex items-center gap-2" key={index}>
-                    <Dot size={8} />
-                    <MarkdownRenderer content={msg.text} />
-                  </span>
-                );
-              }
-              const firstNewlineIndex = msg.text.indexOf("\n");
-              const title = msg.text.substring(0, firstNewlineIndex);
-              const content = msg.text.substring(firstNewlineIndex + 1);
+          case "agent_reasoning_raw_content":
+          case "agent_reasoning": {
+            if (!msg.text.includes("\n")) {
               return (
-                <span className="flex items-center" key={index}>
+                <span className="flex items-center gap-2" key={index}>
                   <Dot size={8} />
-                  <AccordionMsg title={title} content={content} />
+                  <MarkdownRenderer content={msg.text} />
                 </span>
               );
             }
-            case "turn_aborted":
-              return (
-                <Badge key={index} className="bg-red-200 dark:bg-red-500">
-                  {msg.reason}
-                </Badge>
-              );
-            case "exec_command": {
-              const begin = msg.begin ?? null;
-              const end = msg.end ?? null;
-              const callId = begin?.call_id ?? end?.call_id ?? `exec-${index}`;
-              const isOpen = expandedExecCommands[callId] ?? false;
-              return (
-                <ReviewExecCommandItem
-                  key={`${callId}-${index}`}
-                  begin={begin}
-                  end={end}
-                  isOpen={isOpen}
-                  onToggle={() => toggleExecCommand(callId)}
-                />
-              );
-            }
-            case "update_plan":
-              let planArgs: { plan: SimplePlanStep[]; explanation: string } =
-                JSON.parse(msg.arguments);
-              return <PlanDisplay steps={planArgs.plan} />;
-            case "apply_patch":
-              let applyPatchArgs = JSON.parse(msg.arguments);
-              return (
-                <div key={index}>
-                  <TurnDiffView content={applyPatchArgs.input} />
-                </div>
-              );
-            case "custom_tool_call":
-              return (
-                <div key={index}>
-                  <TurnDiffView content={msg.input} />
-                </div>
-              );
-            case "custom_tool_call_output":
-              return (
-                <div key={index}>
-                  <ReviewPatchOutputIcon patch_output={msg.output} />
-                </div>
-              );
-            case "ghost_snapshot":
-              return null;
-            default:
-              return <code key={index}>{JSON.stringify(msg)}</code>;
+            const firstNewlineIndex = msg.text.indexOf("\n");
+            const title = msg.text.substring(0, firstNewlineIndex);
+            const content = msg.text.substring(firstNewlineIndex + 1);
+            return (
+              <span className="flex items-center" key={index}>
+                <Dot size={8} />
+                <AccordionMsg title={title} content={content} />
+              </span>
+            );
           }
-        })}
-      </div>
-    );
-  } else {
-    return (
-      <div className="flex flex-col gap-2 h-full min-h-0 items-center justify-center p-4 text-sm text-muted-foreground overflow-auto">
-        <Button className="w-full" onClick={() => setReview(false)}>
-          return to conversation
-        </Button>
-        <DonateSection />
-      </div>
-    );
-  }
+          case "turn_aborted":
+            return (
+              <Badge key={index} className="bg-red-200 dark:bg-red-500">
+                {msg.reason}
+              </Badge>
+            );
+          case "exec_command": {
+            const begin = msg.begin ?? null;
+            const end = msg.end ?? null;
+            const callId = begin?.call_id ?? end?.call_id ?? `exec-${index}`;
+            const isOpen = expandedExecCommands[callId] ?? false;
+            return (
+              <ReviewExecCommandItem
+                key={`${callId}-${index}`}
+                begin={begin}
+                end={end}
+                isOpen={isOpen}
+                onToggle={() => toggleExecCommand(callId)}
+              />
+            );
+          }
+          case "update_plan":
+            let planArgs: { plan: SimplePlanStep[]; explanation: string } =
+              JSON.parse(msg.arguments);
+            return <PlanDisplay steps={planArgs.plan} />;
+          case "apply_patch":
+            let applyPatchArgs = JSON.parse(msg.arguments);
+            return (
+              <div key={index}>
+                <TurnDiffView content={applyPatchArgs.input} />
+              </div>
+            );
+          case "custom_tool_call":
+            return (
+              <div key={index}>
+                <TurnDiffView content={msg.input} />
+              </div>
+            );
+          case "custom_tool_call_output":
+            return (
+              <div key={index}>
+                <ReviewPatchOutputIcon patch_output={msg.output} />
+              </div>
+            );
+          case "ghost_snapshot":
+            return null;
+          default:
+            return <code key={index}>{JSON.stringify(msg)}</code>;
+        }
+      })}
+    </div>
+  );
 }

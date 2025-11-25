@@ -18,6 +18,7 @@ export const zh = {
     changeLanguage: "切换语言",
     menu: "菜单",
     settings: "设置",
+    donate: "捐助",
     accentColor: "主题颜色",
   },
   donationPurpose:

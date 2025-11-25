@@ -6,11 +6,9 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  CardFooter,
 } from "../ui/card";
 import { Check, Copy } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router-dom";
 
 export function DonateSection() {
   const { t } = useTranslation();
@@ -25,10 +23,22 @@ export function DonateSection() {
     };
   }, []);
 
-  const payment = {
-    usdc: "0xBE18F2cf09eE294781B98DBB1653f64ed54a911C",
-    btc: "bc1qg6xyywh76wkz9glf7n5pnt458yczzgk9eykkt9",
-  };
+  const paymentMethods = [
+    {
+      label: "USDC (ERC20)",
+      key: "usdc",
+      address: "0xBE18F2cf09eE294781B98DBB1653f64ed54a911C",
+      image: "/usdc-qr.jpeg",
+      alt: "USDC QR Code",
+    },
+    {
+      label: "Bitcoin (BTC)",
+      key: "btc",
+      address: "bc1qg6xyywh76wkz9glf7n5pnt458yczzgk9eykkt9",
+      image: "/btc-qr.jpeg",
+      alt: "Bitcoin QR Code",
+    },
+  ];
 
   const handleCopy = (address: string) => {
     navigator.clipboard.writeText(address);
@@ -42,22 +52,7 @@ export function DonateSection() {
   };
 
   return (
-    <>
-      <Card className="w-full">
-        <CardHeader>
-          <CardTitle className="text-base">
-            Login to access full context session history
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          includes tool call, Plan Messages, diff, patch, Execution Commands
-        </CardContent>
-        <CardFooter>
-          <Link to="/login" className="w-full">
-            <Button className="w-full">Login</Button>
-          </Link>
-        </CardFooter>
-      </Card>
+    <div className="h-full">
       <Card className="w-full">
         <CardHeader>
           <CardTitle className="text-base">{t("donationPurpose")}</CardTitle>
@@ -79,51 +74,34 @@ export function DonateSection() {
         <CardHeader>
           <CardTitle className="text-base">Crypto Donation</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4 grid grid-cols-2 gap-2">
-          {/* USDC */}
-          <div className="space-y-2">
-            <div className="font-medium">USDC (ERC20)</div>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 break-all">{payment.usdc}</code>
-              <Button
-                variant="secondary"
-                className="flex items-center gap-2"
-                onClick={() =>
-                  handleCopy(payment.usdc)
-                }
-              >
-                {copiedAddress === payment.usdc ? (
-                  <Check size={16} />
-                ) : (
-                  <Copy size={16} />
-                )}
-              </Button>
+        <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          {paymentMethods.map((method) => (
+            <div className="space-y-2" key={method.key}>
+              <div className="font-medium">{method.label}</div>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 break-all">{method.address}</code>
+                <Button
+                  variant="secondary"
+                  className="flex items-center gap-2"
+                  onClick={() => handleCopy(method.address)}
+                >
+                  {copiedAddress === method.address ? (
+                    <Check size={16} />
+                  ) : (
+                    <Copy size={16} />
+                  )}
+                </Button>
+              </div>
+              <img
+                src={method.image}
+                alt={method.alt}
+                className="w-full h-auto max-h-96 rounded-lg object-contain"
+                loading="lazy"
+              />
             </div>
-            <img src="/usdc-qr.jpeg" alt="USDC QR Code" />
-          </div>
-          {/* Bitcoin */}
-          <div className="space-y-2">
-            <div className="font-medium">Bitcoin (BTC)</div>
-            <div className="flex items-center gap-2">
-              <code className="flex-1 break-all">{payment.btc}</code>
-              <Button
-                variant="secondary"
-                className="flex items-center gap-2"
-                onClick={() =>
-                  handleCopy(payment.btc)
-                }
-              >
-                {copiedAddress === payment.btc ? (
-                  <Check size={16} />
-                ) : (
-                  <Copy size={16} />
-                )}
-              </Button>
-            </div>
-            <img src="/btc-qr.jpeg" alt="Bitcoin QR Code" />
-          </div>
+          ))}
         </CardContent>
       </Card>
-    </>
+    </div>
   );
 }

@@ -18,6 +18,7 @@ export const ja = {
     changeLanguage: "言語を変更",
     menu: "メニュー",
     settings: "設定",
+    donate: "寄贈する",
     accentColor: "アクセントカラー",
   },
   donationPurpose:

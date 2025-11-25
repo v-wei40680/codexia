@@ -18,6 +18,7 @@ export const en = {
     changeLanguage: "Change language",
     menu: "Menu",
     settings: "Settings",
+    donate: "Donate",
     accentColor: "Accent Color",
   },
   donationPurpose: "Your donation will be used to support Codexia’s continued development, server costs,\

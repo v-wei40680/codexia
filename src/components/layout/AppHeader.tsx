@@ -10,6 +10,7 @@ import {
   ExternalLink,
   BotMessageSquare,
   FileText,
+  HeartHandshake,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -172,6 +173,11 @@ export function AppHeader() {
               </Button>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link to="/donate" className="flex items-center gap-1">
+                <HeartHandshake className="w-4 h-4" /> {t("header.donate")}
+              </Link>
+            </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link to="/settings" className="flex items-center gap-1">
