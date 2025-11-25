@@ -2,7 +2,10 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { ConfigService } from "@/services/configService";
 import { ModelProvider } from "@/types/config";
-import { initialProviders } from "./initialProviders";
+import {
+  initialProviders,
+  mandatoryProviderIds,
+} from "./initialProviders";
 
 export interface ProviderStateModelProvider {
   id: string;
@@ -181,15 +184,30 @@ export const useProviderStore = create<ProviderState & ProviderActions>()(
             state.providers.map((provider) => [provider.id, provider]),
           );
 
-          const openaiSource =
-            providerById.get("openai") ?? initialProviders[0];
-          const openaiProvider: ProviderStateModelProvider = {
-            ...openaiSource,
-            models: [...openaiSource.models],
+          const getMandatoryProvider = (
+            id: string,
+          ): ProviderStateModelProvider | null => {
+            const existing = providerById.get(id);
+            if (existing) {
+              return { ...existing, models: [...existing.models] };
+            }
+            const template = initialProviders.find((provider) => provider.id === id);
+            if (template) {
+              return { ...template, models: [...template.models] };
+            }
+            return null;
           };
 
+          const mandatoryProviders = mandatoryProviderIds
+            .map(getMandatoryProvider)
+            .filter(
+              (
+                provider,
+              ): provider is ProviderStateModelProvider => provider !== null,
+            );
+
           const customProviders = Object.entries(configProviders)
-            .filter(([id]) => id !== "openai")
+            .filter(([id]) => !mandatoryProviderIds.includes(id))
             .map(([id, provider]) => {
               const existing = providerById.get(id);
               return {
@@ -202,10 +220,14 @@ export const useProviderStore = create<ProviderState & ProviderActions>()(
               };
             });
 
-          const mergedProviders = [openaiProvider, ...customProviders];
+          const mergedProviders = [...mandatoryProviders, ...customProviders];
 
           let newSelectedProviderId = state.selectedProviderId;
-          if (!mergedProviders.some((provider) => provider.id === newSelectedProviderId)) {
+          if (
+            !mergedProviders.some(
+              (provider) => provider.id === newSelectedProviderId,
+            )
+          ) {
             newSelectedProviderId = "openai";
           }
 

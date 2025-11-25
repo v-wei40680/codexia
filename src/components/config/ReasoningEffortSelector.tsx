@@ -26,8 +26,12 @@ export const ReasoningEffortSelector: React.FC = () => {
 
   const allowedEfforts = useMemo(() => {
     const provider = selectedProviderId?.toLowerCase();
-    if (provider === 'openai' && selectedModel === 'gpt-5-codex') {
-      return EFFORT_OPTIONS.filter((effort) => effort.value !== 'minimal');
+    if (provider === 'openai' || provider === 'codexia') {
+      if (selectedModel?.endsWith("codex")) {
+        return EFFORT_OPTIONS.filter((effort) => effort.value !== 'minimal');
+      } else if (selectedModel?.endsWith("mini") || selectedModel?.endsWith("max")) {
+        return EFFORT_OPTIONS.filter((effort) => (effort.value !== 'minimal' && effort.value !== 'low'));
+      }
     }
     return EFFORT_OPTIONS;
   }, [selectedModel, selectedProviderId]);

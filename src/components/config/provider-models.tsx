@@ -25,6 +25,7 @@ import { useEffect, useState } from "react";
 import { AddModelForm, AddProviderForm } from "./model-provider-profile-form";
 import { PromptOptimizerSettings } from "@/components/settings/PromptOptimizerSettings";
 import { ConfigService } from "@/services/configService";
+import { Badge } from "../ui/badge";
 
 export function ProviderModels() {
   const {
@@ -113,15 +114,16 @@ export function ProviderModels() {
                               p.id === selectedProviderId ? "secondary" : "ghost"
                             }
                             size="sm"
-                            className="flex-1 min-w-0 justify-start overflow-hidden text-left"
+                            className="flex-1 min-w-0 justify-start overflow-hidden text-left gap-2"
                             onClick={() => {
                               setSelectedProviderId(p.id);
                               setShowAddModelForm(false);
                             }}
                           >
                             <span className="truncate">{p.name}</span>
+                            {p.name === 'Codexia' && <Badge>plus</Badge>}
                           </Button>
-                          {p.id !== "openai" && (
+                          {p.id !== "openai" && p.id !== "codexia" && (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
                                 <Button

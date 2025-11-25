@@ -4,9 +4,17 @@ const baseProviders: ProviderStateModelProvider[] = [
   {
     id: "openai",
     name: "OpenAI",
-    models: ["gpt-5", "gpt-5-codex"],
+    models: ["gpt-5.1-codex-mini", "gpt-5.1-codex-max", "gpt-5.1-codex", "gpt-5.1"],
     apiKey: "",
     envKey: "",
+    baseUrl: "",
+  },
+  {
+    id: "codexia",
+    name: "Codexia",
+    models: ["gpt-5.1-codex-mini", "gpt-5.1-codex-max", "gpt-5.1-codex", "gpt-5.1"],
+    apiKey: "",
+    envKey: "CODEXIA_API_KEY",
     baseUrl: "",
   },
   {
@@ -58,8 +66,10 @@ const cloneProvider = (
   models: [...provider.models],
 });
 
+export const mandatoryProviderIds = ["openai", "codexia"];
+
 export const initialProviders: ProviderStateModelProvider[] = baseProviders
-  .filter((provider) => provider.id === "openai")
+  .filter((provider) => mandatoryProviderIds.includes(provider.id))
   .map(cloneProvider);
 
 export const builtInProviderTemplates: ProviderStateModelProvider[] =
