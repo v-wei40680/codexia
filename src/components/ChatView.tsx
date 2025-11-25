@@ -102,6 +102,9 @@ export function ChatView() {
         </div>
       ) : (
         <>
+          <div className="sr-only" aria-live="polite">
+            The bottom-right filter button lets you toggle which event types appear.
+          </div>
           <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
             {currentEvents.length > 0 || isResumingConversation ? (
               <ChatScrollArea

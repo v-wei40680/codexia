@@ -18,6 +18,22 @@ import { useSessionStore } from "@/stores/useSessionStore";
 import { formatDurationMs } from "@/utils/formatDuration";
 import { McpToolCallItem } from "./McpToolCallItem";
 
+export const EVENT_FILTER_OPTIONS = [
+  { type: "agent_message", label: "Agent messages" },
+  { type: "agent_reasoning", label: "Agent reasoning" },
+  { type: "agent_reasoning_raw_content", label: "Reasoning" },
+  { type: "exec_command_begin", label: "Exec command" },
+  { type: "mcp_tool_call_begin", label: "Mcp tool call" },
+  { type: "patch_apply_begin", label: "Patch apply" },
+  { type: "exec_approval_request", label: "Exec approval requests" },
+  { type: "apply_patch_approval_request", label: "Patch approval requests" },
+  { type: "turn_diff", label: "Turn diffs" },
+  { type: "plan_update", label: "Plan" },
+  { type: "task_complete", label: "Task completions" },
+] as const;
+
+export type EventFilterType = (typeof EVENT_FILTER_OPTIONS)[number]["type"];
+
 export const EventItem = memo(function EventItem({
   event,
   conversationId,

@@ -1,11 +1,16 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { EventItem } from "@/components/events/EventItem";
+import {
+  EventItem,
+  EVENT_FILTER_OPTIONS,
+  type EventFilterType,
+} from "@/components/events/EventItem";
 import type { CodexEvent } from "@/types/chat";
 import { DELTA_EVENT_TYPES } from "@/types/chat";
 import { useChatScroll } from "@/hooks/useChatScroll";
 import { ScrollButtons } from "./actions/ScrollButtons";
 import { EventMsgType } from "./EventMsgType";
+import { EventFilterPopover } from "./EventFilterPopover";
 import { Loader2 } from "lucide-react";
 import BouncingDotsLoader from "./BouncingDotsLoader";
 
@@ -30,6 +35,16 @@ const getEventKey = (event: CodexEvent): string => {
   return `${event.id}-${id}-${msg.type}`;
 };
 
+const FILTERABLE_EVENT_TYPE_SET = new Set<EventFilterType>(
+  EVENT_FILTER_OPTIONS.map((option) => option.type),
+);
+
+const getDefaultEventFilters = () =>
+  new Set<EventFilterType>(EVENT_FILTER_OPTIONS.map((option) => option.type));
+
+const isFilterableEventType = (type: string): type is EventFilterType =>
+  FILTERABLE_EVENT_TYPE_SET.has(type as EventFilterType);
+
 interface ChatScrollAreaProps {
   events: CodexEvent[];
   activeConversationId?: string;
@@ -52,6 +67,19 @@ export function ChatScrollArea({
   } = useChatScroll({
     activeConversationId,
   });
+
+  const [activeFilters, setActiveFilters] = useState(getDefaultEventFilters);
+  const toggleEventFilter = (type: EventFilterType) => {
+    setActiveFilters((prev) => {
+      const next = new Set(prev);
+      if (next.has(type)) {
+        next.delete(type);
+      } else {
+        next.add(type);
+      }
+      return next;
+    });
+  };
 
   // Sort by numeric turn id (params.id is an increasing string).
   // Within the same turn id, keep original insertion order to avoid jitter.
@@ -93,15 +121,16 @@ export function ChatScrollArea({
       .map(({ e }) => e);
   }, [events]);
 
-  const renderEvents = useMemo(() => {
+  const visibleEvents = useMemo(() => {
     return sortedEvents.filter((e) => {
       const t = e.payload.params.msg.type;
       if (DELTA_EVENT_TYPES.has(t)) return false;
       if (t === "exec_command_output_delta") return false;
       if (t === "item_started" || t === "item_completed") return false;
+      if (isFilterableEventType(t) && !activeFilters.has(t)) return false;
       return true;
     });
-  }, [sortedEvents]);
+  }, [sortedEvents, activeFilters]);
 
   useEffect(() => {
     if (!isAutoScrollEnabled) return;
@@ -112,7 +141,7 @@ export function ChatScrollArea({
     <div className="relative flex-1 min-h-0">
       <ScrollArea className="h-full">
         <div ref={scrollContentRef} className="space-y-4 p-4">
-          {renderEvents.map((event, index) => {
+          {visibleEvents.map((event, index) => {
             const { conversationId, msg } = event.payload.params;
             const key = `${getEventKey(event)}-${index}`;
             return (
@@ -131,6 +160,10 @@ export function ChatScrollArea({
           )}
         </div>
       </ScrollArea>
+      <EventFilterPopover
+        activeFilters={activeFilters}
+        toggleEventFilter={toggleEventFilter}
+      />
       <ScrollButtons
         scrollToTop={scrollToTop}
         scrollToBottom={scrollToBottom}
