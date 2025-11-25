@@ -57,9 +57,13 @@ export function Introduce() {
                 to="/login"
                 className="flex hover:text-primary items-center justify-end"
               >
-                <Button>
-                  Codexia login
-                </Button>
+                <Button>Codexia login</Button>
+              </Link>
+              <Link
+                to="/donate"
+                className="flex hover:text-primary items-center justify-end"
+              >
+                <Button>{t("header.donate")}</Button>
               </Link>
             </span>
             <Link
