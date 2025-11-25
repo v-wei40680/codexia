@@ -1,5 +1,5 @@
-use codex_client::config::project as codex_project;
-use codex_client::config::project::Project;
+use crate::config::project as codex_project;
+use crate::config::project::Project;
 
 #[tauri::command]
 pub async fn read_codex_config() -> Result<Vec<Project>, String> {

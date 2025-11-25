@@ -1,6 +1,6 @@
 use serde_json::Value;
 
-use codex_client::session_files::cache as codex_cache;
+use crate::session_files::cache as codex_cache;
 
 #[tauri::command]
 pub fn write_project_cache(

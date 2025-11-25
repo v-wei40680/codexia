@@ -1,4 +1,4 @@
-use codex_client::services::{coder, codex};
+use crate::services::{coder, codex};
 
 #[tauri::command]
 pub async fn check_codex_version() -> Result<String, String> {

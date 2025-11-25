@@ -1,0 +1,114 @@
+
+use std::sync::Arc;
+use tokio::sync::{Mutex, RwLock};
+use log::info;
+use tauri::{AppHandle, State};
+
+use crate::client::CodexAppServerClient;
+use codex_app_server_protocol::InitializeResponse;
+
+pub struct AppState {
+    pub client: Arc<Mutex<Option<Arc<CodexAppServerClient>>>>,
+    pub initialize_lock: Arc<Mutex<()>>,
+    pub initialize_response: Arc<Mutex<Option<InitializeResponse>>>,
+    pub initialized_client_name: Arc<RwLock<Option<String>>>,
+    // Tracks the requested client name ("codex" or "coder"). Default is "codex".
+    pub selected_client_name: Arc<RwLock<String>>,
+    // Remembers which client name the active client was spawned with, to avoid unnecessary respawns.
+    pub active_client_name: Arc<RwLock<Option<String>>>,
+}
+
+impl AppState {
+    pub fn new() -> Self {
+        Self {
+            client: Arc::new(Mutex::new(None)),
+            initialize_lock: Arc::new(Mutex::new(())),
+            initialize_response: Arc::new(Mutex::new(None)),
+            initialized_client_name: Arc::new(RwLock::new(None)),
+            selected_client_name: Arc::new(RwLock::new("codex".to_string())),
+            active_client_name: Arc::new(RwLock::new(None)),
+        }
+    }
+}
+
+pub async fn get_client(
+    state: &State<'_, AppState>,
+    app_handle: &AppHandle,
+) -> Result<Arc<CodexAppServerClient>, String> {
+    // Determine which client is requested
+    let desired = { state.selected_client_name.read().await.clone() };
+
+    // If we already have a client spawned with the same name, return it
+    let already_active = { state.active_client_name.read().await.clone() };
+    if let (Some(existing), Some(active_name)) = (
+        { state.client.lock().await.clone() },
+        already_active,
+    ) {
+        if active_name == desired {
+            return Ok(existing);
+        }
+    }
+
+    // Otherwise, (re)spawn the client matching the desired name
+    info!("Starting {} app-server process", desired);
+    let client = CodexAppServerClient::spawn(app_handle.clone(), &desired).await?;
+    info!("{} app-server spawned", desired);
+
+    // Save client and its active name atomically
+    {
+        let mut guard = state.client.lock().await;
+        *guard = Some(client.clone());
+    }
+    {
+        let mut init_guard = state.initialize_response.lock().await;
+        *init_guard = None;
+    }
+    {
+        let mut initialized_name_guard = state.initialized_client_name.write().await;
+        *initialized_name_guard = None;
+    }
+    {
+        let mut name_guard = state.active_client_name.write().await;
+        *name_guard = Some(desired);
+    }
+    Ok(client)
+}
+// Tauri commands to get and set the desired client name
+
+#[tauri::command]
+pub async fn get_client_name(state: State<'_, AppState>) -> Result<String, String> {
+    Ok(state.selected_client_name.read().await.clone())
+}
+
+#[tauri::command]
+pub async fn set_client_name(state: State<'_, AppState>, name: String) -> Result<(), String> {
+    let normalized = name.trim().to_lowercase();
+    if normalized != "codex" && normalized != "coder" {
+        return Err("client_name must be 'codex' or 'coder'".to_string());
+    }
+
+    // Update selection
+    {
+        let mut guard = state.selected_client_name.write().await;
+        *guard = normalized;
+    }
+
+    // Drop current active client; it will be respawned on demand
+    {
+        let mut client_guard = state.client.lock().await;
+        *client_guard = None;
+    }
+    {
+        let mut init_guard = state.initialize_response.lock().await;
+        *init_guard = None;
+    }
+    {
+        let mut initialized_name_guard = state.initialized_client_name.write().await;
+        *initialized_name_guard = None;
+    }
+    {
+        let mut name_guard = state.active_client_name.write().await;
+        *name_guard = None;
+    }
+    Ok(())
+}

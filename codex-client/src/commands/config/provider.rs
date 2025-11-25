@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use codex_client::config::provider as codex_provider;
-use codex_client::config::provider::ModelProvider;
+use crate::config::provider as codex_provider;
+use crate::config::provider::ModelProvider;
 
 #[tauri::command]
 pub async fn read_model_providers() -> Result<HashMap<String, ModelProvider>, String> {

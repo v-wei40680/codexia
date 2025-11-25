@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
-use codex_client::mcp as codex_mcp;
-use codex_client::mcp::McpServerConfig;
+use crate::mcp as codex_mcp;
+use crate::mcp::McpServerConfig;
 
 #[tauri::command]
 pub async fn read_mcp_servers() -> Result<HashMap<String, McpServerConfig>, String> {

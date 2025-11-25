@@ -1,4 +1,4 @@
-use codex_client::session_files::delete as codex_delete;
+use crate::session_files::delete as codex_delete;
 
 #[tauri::command]
 pub async fn delete_session_file(

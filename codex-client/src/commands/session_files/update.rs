@@ -1,4 +1,4 @@
-use codex_client::session_files::update as codex_update;
+use crate::session_files::update as codex_update;
 
 #[tauri::command]
 pub async fn update_cache_title(

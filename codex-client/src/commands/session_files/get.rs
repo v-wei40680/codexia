@@ -1,4 +1,4 @@
-use codex_client::session_files::get as codex_get;
+use crate::session_files::get as codex_get;
 
 #[tauri::command]
 pub async fn get_session_files() -> Result<Vec<String>, String> {

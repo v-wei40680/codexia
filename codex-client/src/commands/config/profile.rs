@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
-use codex_client::config::profile as codex_profile;
-use codex_client::config::provider::ModelProvider;
-use codex_client::config::profile::Profile;
+use crate::config::profile as codex_profile;
+use crate::config::provider::ModelProvider;
+use crate::config::profile::Profile;
 
 #[tauri::command]
 pub async fn read_profiles() -> Result<HashMap<String, Profile>, String> {

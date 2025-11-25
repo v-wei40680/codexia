@@ -4,6 +4,7 @@ pub mod initialize;
 pub mod listeners;
 pub mod reviews;
 pub mod config;
+pub mod check;
 pub mod mcp;
 pub mod session_files;
 
@@ -13,5 +14,6 @@ pub use initialize::*;
 pub use listeners::*;
 pub use reviews::*;
 pub use config::*;
+pub use check::*;
 pub use mcp::*;
 pub use session_files::*;

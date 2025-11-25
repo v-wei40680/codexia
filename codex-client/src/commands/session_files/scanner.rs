@@ -1,6 +1,6 @@
 use serde_json::Value;
 
-use codex_client::session_files::scanner as codex_scanner;
+use crate::session_files::scanner as codex_scanner;
 
 #[tauri::command]
 pub async fn scan_projects() -> Result<Vec<Value>, String> {
