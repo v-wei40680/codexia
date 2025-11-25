@@ -1,5 +1,5 @@
 import React from "react";
-import { NoteEditor } from "./notes/NoteEditor";
+import { NoteEditor } from "./NoteEditor";
 
 
 export const NotesView: React.FC = () => {

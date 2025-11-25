@@ -16,9 +16,9 @@ import { useCodexStore } from "@/stores/useCodexStore";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
 import { useResumeConversation } from "@/hooks/useResumeConversation";
 import { renameConversation } from "@/utils/renameConversation";
-import RenameDialog from "@/components/RenameDialog";
+import RenameDialog from "@/components/chat/RenameDialog";
 import type { ConversationSummary } from "@/bindings/ConversationSummary";
-import { ConversationListItem } from "@/components/ConversationListItem";
+import { ConversationListItem } from "@/components/chat/ConversationListItem";
 
 interface ConversationListProps {
   mode: string;

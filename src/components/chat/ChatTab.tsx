@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { ConversationList } from "@/components/ConversationList";
+import { ConversationList } from "@/components/chat/ConversationList";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Tags } from "lucide-react";

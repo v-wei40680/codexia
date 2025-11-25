@@ -1,4 +1,4 @@
-import { NotesView } from "@/components/NotesView";
+import { NotesView } from "@/components/notes/NotesView";
 import { useLayoutStore } from "@/stores/settings/layoutStore";
 import { useFolderStore } from "@/stores/FolderStore";
 import { FileTree } from "@/components/filetree/FileTreeView";
@@ -16,8 +16,8 @@ import {
 import { NoteList } from "@/components/notes";
 import { WebPreview } from "@/components/WebPreview";
 import { SourceControl } from "@/components/SourceControl";
-import { ChatView } from "@/components/ChatView";
-import { ChatTab } from "@/components/ChatTab";
+import { ChatView } from "@/components/chat/ChatView";
+import { ChatTab } from "@/components/chat/ChatTab";
 import { Button } from "@/components/ui/button";
 
 export default function ChatPage() {
