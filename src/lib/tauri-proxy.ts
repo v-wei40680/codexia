@@ -72,9 +72,20 @@ function ensureBaseHandler(socket: WebSocket) {
   socket.addEventListener("message", (event: MessageEvent) => {
     try {
       const parsed = JSON.parse(event.data as string);
+
+      // Check if this is an event (has event field) or a response (has id field)
+      if (parsed && typeof parsed.event === "string") {
+        console.log(`[Remote Bridge] Received event: ${parsed.event}`, parsed);
+        // Events are handled by listen() subscriptions, not here
+        return;
+      }
+
+      console.log("[Remote Bridge] Received command response:", parsed);
+
       if (parsed && typeof parsed.id === "number" && parsed.payload !== undefined) {
         const deferred = pendingInvocations.get(parsed.id);
         if (!deferred) {
+          console.warn(`[Remote Bridge] No pending invocation found for ID: ${parsed.id}`);
           return;
         }
 
@@ -84,11 +95,12 @@ function ensureBaseHandler(socket: WebSocket) {
           const envelope = parseEnvelope(parsed.payload);
           deferred.resolve(envelope);
         } catch (error) {
+          console.error(`[Remote Bridge] Failed to parse envelope for ID: ${parsed.id}`, error);
           deferred.reject(error instanceof Error ? error : new Error(String(error)));
         }
       }
     } catch (error) {
-      console.error("Failed to handle remote message", error);
+      console.error("[Remote Bridge] Failed to handle remote message", error, event.data);
     }
   });
 
@@ -124,25 +136,31 @@ async function ensureWebsocket(): Promise<void> {
 
   websocketReady = new Promise<void>((resolve, reject) => {
     try {
-      const socket = new WebSocket(websocketUrl());
+      const url = websocketUrl();
+      console.log(`[Remote Bridge] Connecting to WebSocket: ${url}`);
+      const socket = new WebSocket(url);
       websocket = socket;
 
       socket.addEventListener("open", () => {
+        console.log("[Remote Bridge] WebSocket connected successfully");
         ensureBaseHandler(socket);
         resolve();
       });
 
-      socket.addEventListener("close", () => {
+      socket.addEventListener("close", (event) => {
+        console.warn(`[Remote Bridge] WebSocket closed - Code: ${event.code}, Reason: ${event.reason}`);
         resetWebsocketState();
       });
 
       socket.addEventListener("error", (event) => {
         const errorMessage = (event as ErrorEvent)?.message ?? "Remote bridge error";
+        console.error(`[Remote Bridge] WebSocket error: ${errorMessage}`, event);
         const error = new Error(errorMessage);
         resetWebsocketState(error);
         reject(error);
       });
     } catch (error) {
+      console.error("[Remote Bridge] Failed to create WebSocket", error);
       const err = error instanceof Error ? error : new Error(String(error));
       resetWebsocketState(err);
       reject(err);
@@ -172,6 +190,23 @@ function parseEnvelope(raw: unknown): RpcEnvelope {
   return { payload: raw };
 }
 
+// Timeout configuration for different command types
+const COMMAND_TIMEOUTS: Record<string, number> = {
+  // Long-running operations need extended timeouts
+  interrupt_conversation: 120_000, // 2 minutes
+  send_user_message: 300_000, // 5 minutes - AI responses can be slow
+  turn_start: 300_000, // 5 minutes
+  new_conversation: 120_000, // 2 minutes
+  resume_conversation: 120_000, // 2 minutes
+  initialize_client: 60_000, // 1 minute
+  // Default for other commands
+  default: 30_000, // 30 seconds
+};
+
+function getCommandTimeout(cmd: string): number {
+  return COMMAND_TIMEOUTS[cmd] ?? COMMAND_TIMEOUTS.default;
+}
+
 export async function invoke<T>(
   cmd: string,
   args?: InvokeArgs,
@@ -190,19 +225,24 @@ export async function invoke<T>(
 
   return new Promise<T>((resolve, reject) => {
     const id = ++messageCounter;
-    const timeoutMs = 30_000;
+    const timeoutMs = getCommandTimeout(cmd);
+
+    console.log(`[Remote Invoke] Command: ${cmd}, ID: ${id}, Timeout: ${timeoutMs}ms`, args);
 
     const timeout = setTimeout(() => {
       pendingInvocations.delete(id);
-      reject(new Error(`Remote invoke timeout for command '${cmd}'`));
+      console.error(`[Remote Invoke] Timeout for command: ${cmd}, ID: ${id}`);
+      reject(new Error(`Remote invoke timeout for command '${cmd}' (${timeoutMs}ms)`));
     }, timeoutMs);
 
     pendingInvocations.set(id, {
       resolve: (envelope) => {
+        console.log(`[Remote Invoke] Response for command: ${cmd}, ID: ${id}`, envelope);
         const status = envelope.status ?? "success";
         if (status === "success") {
           resolve(envelope.payload as T);
         } else {
+          console.error(`[Remote Invoke] Error for command: ${cmd}, ID: ${id}`, envelope.payload);
           reject(new Error(String(envelope.payload ?? `Remote error invoking '${cmd}'`)));
         }
       },
@@ -218,10 +258,12 @@ export async function invoke<T>(
     };
 
     try {
+      console.log(`[Remote Invoke] Sending message for command: ${cmd}, ID: ${id}`);
       websocket!.send(JSON.stringify(message));
     } catch (error) {
       clearTimeout(timeout);
       pendingInvocations.delete(id);
+      console.error(`[Remote Invoke] Send error for command: ${cmd}, ID: ${id}`, error);
       reject(error instanceof Error ? error : new Error(String(error)));
     }
   });
@@ -248,6 +290,11 @@ export async function listen<T>(
       const parsed = JSON.parse(incoming.data as string);
       if (!parsed || typeof parsed !== "object") {
         return;
+      }
+
+      // Log all events for debugging
+      if (parsed.event) {
+        console.log(`[Remote Event] Received event: ${parsed.event}`, parsed);
       }
 
       if (parsed.event !== event) {

@@ -2,11 +2,11 @@ use std::sync::Arc;
 
 use codex_app_server_protocol::JSONRPCMessage;
 use log::{debug, error, info, warn};
-use tauri::{AppHandle, Emitter};
 use tokio::io::{AsyncBufReadExt, BufReader};
 use tokio::process::{ChildStderr, ChildStdin, ChildStdout};
 use tokio::sync::Mutex;
 
+use crate::events::EventBus;
 use super::handlers::{handle_notification, handle_server_request};
 use super::transport::{notify_pending_error, notify_pending_response};
 use super::{PendingRequestMap, PendingServerRequestMap};
@@ -16,7 +16,7 @@ pub(super) fn spawn_stdout_reader(
     pending_requests: PendingRequestMap,
     pending_server_requests: PendingServerRequestMap,
     stdin: Arc<Mutex<ChildStdin>>,
-    app_handle: AppHandle,
+    event_bus: Arc<EventBus>,
 ) {
     tokio::spawn(async move {
         let mut reader = BufReader::new(stdout).lines();
@@ -43,18 +43,23 @@ pub(super) fn spawn_stdout_reader(
                         message: inner_error.message.clone(),
                         data: inner_error.data.clone(),
                     };
-                    if let Err(err) = app_handle.emit("codex:backend-error", payload) {
-                        error!("Failed to emit codex:backend-error: {err}");
-                    }
+                    let payload_json = match serde_json::to_value(payload) {
+                        Ok(json) => json,
+                        Err(err) => {
+                            error!("Failed to serialize backend error payload: {err}");
+                            serde_json::json!({})
+                        }
+                    };
+                    event_bus.emit("codex:backend-error", payload_json).await;
                     notify_pending_error(&pending_requests, error).await;
                 }
                 Ok(JSONRPCMessage::Notification(notification)) => {
                     debug!("JSON-RPC notification {}", notification.method);
-                    handle_notification(notification, &app_handle).await;
+                    handle_notification(notification, &event_bus).await;
                 }
                 Ok(JSONRPCMessage::Request(request)) => {
                     info!("JSON-RPC request {}", request.method);
-                    handle_server_request(request, &stdin, &app_handle, &pending_server_requests)
+                    handle_server_request(request, &stdin, &event_bus, &pending_server_requests)
                         .await;
                 }
                 Err(err) => {
@@ -66,7 +71,7 @@ pub(super) fn spawn_stdout_reader(
     });
 }
 
-pub(super) fn spawn_stderr_reader(stderr: ChildStderr, app_handle: AppHandle) {
+pub(super) fn spawn_stderr_reader(stderr: ChildStderr, event_bus: Arc<EventBus>) {
     tokio::spawn(async move {
         let mut reader = BufReader::new(stderr).lines();
         while let Ok(Some(line)) = reader.next_line().await {
@@ -76,6 +81,6 @@ pub(super) fn spawn_stderr_reader(stderr: ChildStderr, app_handle: AppHandle) {
             }
         }
         info!("codex app-server stderr closed; process exited");
-        let _ = app_handle.emit("codex:process-exited", ());
+        event_bus.emit("codex:process-exited", serde_json::json!({})).await;
     });
 }

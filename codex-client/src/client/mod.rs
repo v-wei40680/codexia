@@ -37,10 +37,10 @@ use codex_app_server_protocol::{
 use codex_protocol::protocol::ReviewDecision;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
-use tauri::AppHandle;
 use tokio::process::{Child, ChildStdin, Command};
 use tokio::sync::{oneshot, Mutex};
 
+use crate::events::EventBus;
 use crate::utils::codex_discovery::discover_codex_command;
 use crate::utils::coder_discovery::discover_coder_command;
 
@@ -85,7 +85,12 @@ pub struct BackendErrorPayload {
 }
 
 impl CodexAppServerClient {
-    pub async fn spawn(app_handle: AppHandle, client_name: &str) -> Result<Arc<Self>, String> {
+    /// Spawn a new codex/coder app-server process
+    ///
+    /// # Arguments
+    /// * `event_bus` - Event bus for emitting events
+    /// * `client_name` - Name of the client ("codex" or "coder")
+    pub async fn spawn(event_bus: Arc<EventBus>, client_name: &str) -> Result<Arc<Self>, String> {
         // Determine which binary to launch based on client_name
         let normalized = client_name.trim().to_lowercase();
         let (binary_path, label) = if normalized == "coder" {
@@ -144,10 +149,10 @@ impl CodexAppServerClient {
             pending_requests.clone(),
             pending_server_requests.clone(),
             stdin.clone(),
-            app_handle.clone(),
+            event_bus.clone(),
         );
         if let Some(stderr) = stderr {
-            spawn_stderr_reader(stderr, app_handle.clone());
+            spawn_stderr_reader(stderr, event_bus.clone());
         }
 
         Ok(client)

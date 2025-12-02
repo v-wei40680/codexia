@@ -1,24 +1,27 @@
-
 use std::sync::Arc;
 use tokio::sync::{Mutex, RwLock};
 use log::info;
-use tauri::{AppHandle, State};
 
 use crate::client::CodexAppServerClient;
+use crate::events::EventBus;
 use codex_app_server_protocol::InitializeResponse;
 
-pub struct AppState {
+/// Client state - manages the codex app-server client and configuration
+/// This replaces the Tauri-dependent AppState
+pub struct ClientState {
     pub client: Arc<Mutex<Option<Arc<CodexAppServerClient>>>>,
     pub initialize_lock: Arc<Mutex<()>>,
     pub initialize_response: Arc<Mutex<Option<InitializeResponse>>>,
     pub initialized_client_name: Arc<RwLock<Option<String>>>,
-    // Tracks the requested client name ("codex" or "coder"). Default is "codex".
+    /// Tracks the requested client name ("codex" or "coder"). Default is "codex".
     pub selected_client_name: Arc<RwLock<String>>,
-    // Remembers which client name the active client was spawned with, to avoid unnecessary respawns.
+    /// Remembers which client name the active client was spawned with, to avoid unnecessary respawns.
     pub active_client_name: Arc<RwLock<Option<String>>>,
+    /// Event bus for emitting events (replaces Tauri's event system)
+    pub event_bus: Arc<EventBus>,
 }
 
-impl AppState {
+impl ClientState {
     pub fn new() -> Self {
         Self {
             client: Arc::new(Mutex::new(None)),
@@ -27,14 +30,22 @@ impl AppState {
             initialized_client_name: Arc::new(RwLock::new(None)),
             selected_client_name: Arc::new(RwLock::new("codex".to_string())),
             active_client_name: Arc::new(RwLock::new(None)),
+            event_bus: Arc::new(EventBus::new()),
         }
     }
 }
 
-pub async fn get_client(
-    state: &State<'_, AppState>,
-    app_handle: &AppHandle,
-) -> Result<Arc<CodexAppServerClient>, String> {
+impl Default for ClientState {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+/// Get or create the codex app-server client
+///
+/// This function checks if a client is already running with the desired name.
+/// If not, it spawns a new client process.
+pub async fn get_client(state: &ClientState) -> Result<Arc<CodexAppServerClient>, String> {
     // Determine which client is requested
     let desired = { state.selected_client_name.read().await.clone() };
 
@@ -51,7 +62,7 @@ pub async fn get_client(
 
     // Otherwise, (re)spawn the client matching the desired name
     info!("Starting {} app-server process", desired);
-    let client = CodexAppServerClient::spawn(app_handle.clone(), &desired).await?;
+    let client = CodexAppServerClient::spawn(state.event_bus.clone(), &desired).await?;
     info!("{} app-server spawned", desired);
 
     // Save client and its active name atomically
@@ -73,15 +84,15 @@ pub async fn get_client(
     }
     Ok(client)
 }
-// Tauri commands to get and set the desired client name
-
-#[tauri::command]
-pub async fn get_client_name(state: State<'_, AppState>) -> Result<String, String> {
+/// Get the desired client name ("codex" or "coder")
+pub async fn get_client_name(state: &ClientState) -> Result<String, String> {
     Ok(state.selected_client_name.read().await.clone())
 }
 
-#[tauri::command]
-pub async fn set_client_name(state: State<'_, AppState>, name: String) -> Result<(), String> {
+/// Set the desired client name and reset the active client
+///
+/// The next call to get_client() will spawn the new client type
+pub async fn set_client_name(state: &ClientState, name: String) -> Result<(), String> {
     let normalized = name.trim().to_lowercase();
     if normalized != "codex" && normalized != "coder" {
         return Err("client_name must be 'codex' or 'coder'".to_string());

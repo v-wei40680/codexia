@@ -17,12 +17,12 @@ use codex_app_server_protocol::{
 use log::{debug, error, info, warn};
 use serde::Serialize;
 use serde_json::Value;
-use tauri::{AppHandle, Emitter};
 use tokio::process::ChildStdin;
 use tokio::sync::Mutex;
 
 use codex_protocol::ConversationId;
 
+use crate::events::EventBus;
 use super::transport::send_error;
 use super::{PendingRequestKind, PendingServerRequest, PendingServerRequestMap};
 
@@ -48,34 +48,49 @@ struct ApplyPatchApprovalNotification {
     params: ApplyPatchApprovalParams,
 }
 
-pub(super) async fn handle_notification(notification: JSONRPCNotification, app: &AppHandle) {
+pub(super) async fn handle_notification(notification: JSONRPCNotification, event_bus: &EventBus) {
     if notification.method.starts_with("codex/event/") {
         debug!("Forwarding event notification {}", notification.method);
         let payload = NotificationPayload {
             method: notification.method,
             params: notification.params,
         };
-        if let Err(err) = app.emit("codex:event", payload) {
-            error!("Failed to emit codex:event: {err}");
-        }
+        let payload_json = match serde_json::to_value(payload) {
+            Ok(json) => json,
+            Err(err) => {
+                error!("Failed to serialize codex:event payload: {err}");
+                return;
+            }
+        };
+        event_bus.emit("codex:event", payload_json).await;
         return;
     }
 
     match ServerNotification::try_from(notification.clone()) {
         Ok(ServerNotification::AuthStatusChange(params)) => {
             info!("Auth status change notification: mode={:?}", params);
-            if let Err(err) = app.emit("codex:auth-status", params) {
-                error!("Failed to emit codex:auth-status: {err}");
-            }
+            let params_json = match serde_json::to_value(params) {
+                Ok(json) => json,
+                Err(err) => {
+                    error!("Failed to serialize codex:auth-status payload: {err}");
+                    return;
+                }
+            };
+            event_bus.emit("codex:auth-status", params_json).await;
         }
         Ok(ServerNotification::LoginChatGptComplete(params)) => {
             info!(
                 "Login completed notification: success={} id={}",
                 params.success, params.login_id
             );
-            if let Err(err) = app.emit("codex:login-complete", params) {
-                error!("Failed to emit codex:login-complete: {err}");
-            }
+            let params_json = match serde_json::to_value(params) {
+                Ok(json) => json,
+                Err(err) => {
+                    error!("Failed to serialize codex:login-complete payload: {err}");
+                    return;
+                }
+            };
+            event_bus.emit("codex:login-complete", params_json).await;
         }
         Ok(_) => {
             debug!(
@@ -95,23 +110,23 @@ pub(super) async fn handle_notification(notification: JSONRPCNotification, app: 
 pub(super) async fn handle_server_request(
     request: JSONRPCRequest,
     stdin: &Arc<Mutex<ChildStdin>>,
-    app: &AppHandle,
+    event_bus: &EventBus,
     pending_server_requests: &PendingServerRequestMap,
 ) {
     match ServerRequest::try_from(request.clone()) {
         Ok(ServerRequest::ExecCommandApproval { request_id, params }) => {
-            process_exec_command_request(request_id, params, app, pending_server_requests).await;
+            process_exec_command_request(request_id, params, event_bus, pending_server_requests).await;
         }
         Ok(ServerRequest::CommandExecutionRequestApproval { request_id, params }) => {
             let converted = convert_command_execution_request(params);
-            process_exec_command_request(request_id, converted, app, pending_server_requests).await;
+            process_exec_command_request(request_id, converted, event_bus, pending_server_requests).await;
         }
         Ok(ServerRequest::ApplyPatchApproval { request_id, params }) => {
-            process_apply_patch_request(request_id, params, app, pending_server_requests).await;
+            process_apply_patch_request(request_id, params, event_bus, pending_server_requests).await;
         }
         Ok(ServerRequest::FileChangeRequestApproval { request_id, params }) => {
             let converted = convert_file_change_request(params);
-            process_apply_patch_request(request_id, converted, app, pending_server_requests).await;
+            process_apply_patch_request(request_id, converted, event_bus, pending_server_requests).await;
         }
         Err(err) => {
             error!("Unsupported server request: {err}");
@@ -187,7 +202,7 @@ fn convert_file_change_request(params: FileChangeRequestApprovalParams) -> Apply
 async fn process_exec_command_request(
     request_id: RequestId,
     params: ExecCommandApprovalParams,
-    app: &AppHandle,
+    event_bus: &EventBus,
     pending_server_requests: &PendingServerRequestMap,
 ) {
     info!(
@@ -217,15 +232,20 @@ async fn process_exec_command_request(
         request_token: token.clone(),
         params: params.clone(),
     };
-    if let Err(err) = app.emit("codex:exec-command-request", payload) {
-        error!("Failed to emit exec command request: {err}");
-    }
+    let payload_json = match serde_json::to_value(payload) {
+        Ok(json) => json,
+        Err(err) => {
+            error!("Failed to serialize exec command request payload: {err}");
+            return;
+        }
+    };
+    event_bus.emit("codex:exec-command-request", payload_json).await;
 }
 
 async fn process_apply_patch_request(
     request_id: RequestId,
     params: ApplyPatchApprovalParams,
-    app: &AppHandle,
+    event_bus: &EventBus,
     pending_server_requests: &PendingServerRequestMap,
 ) {
     info!(
@@ -256,7 +276,12 @@ async fn process_apply_patch_request(
         request_token: token.clone(),
         params: params.clone(),
     };
-    if let Err(err) = app.emit("codex:apply-patch-request", payload) {
-        error!("Failed to emit apply patch request: {err}");
-    }
+    let payload_json = match serde_json::to_value(payload) {
+        Ok(json) => json,
+        Err(err) => {
+            error!("Failed to serialize apply patch request payload: {err}");
+            return;
+        }
+    };
+    event_bus.emit("codex:apply-patch-request", payload_json).await;
 }
