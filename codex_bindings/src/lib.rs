@@ -11,10 +11,12 @@ use codex_protocol::protocol::EventMsg;
 use std::path::Path;
 use ts_rs::TS;
 
-pub fn export_ts_types() {
-    let out_dir = Path::new(".")
-        .join("src")
-        .join("bindings");
+pub fn export_ts_types(out: Option<impl AsRef<Path>>) {
+    let out_dir = out
+        .as_ref()
+        .map(|p| p.as_ref().to_path_buf())
+        .unwrap_or_else(|| Path::new(".").join("src").join("bindings"));
+
     std::fs::create_dir_all(&out_dir).unwrap();
 
     AuthMode::export_all_to(&out_dir).unwrap();

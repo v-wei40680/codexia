@@ -1,3 +1,5 @@
+use std::path::Path;
+
 mod commands;
 mod filesystem;
 mod services;
@@ -132,7 +134,14 @@ pub fn run() {
         ])
         .setup(|_app| {
             #[cfg(debug_assertions)]
-            codex_bindings::export_ts_types();
+            {
+                let out = Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("..")
+                    .join("src")
+                    .join("bindings");
+
+                codex_bindings::export_ts_types(Some(out));
+            }
 
             #[cfg(any(windows, target_os = "linux"))]
             {
