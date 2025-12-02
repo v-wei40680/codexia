@@ -123,7 +123,6 @@ pub fn run() {
             codex_client::commands::update_cache_title,
             commands::terminal::open_terminal_with_command,
             codex_client::commands::delete_sessions_files,
-            codex_client::commands::write_project_cache,
             codex_client::commands::update_project_favorites,
             codex_client::commands::remove_project_session,
             codex_client::commands::get_session_files,

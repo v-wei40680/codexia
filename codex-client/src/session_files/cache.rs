@@ -1,177 +1,266 @@
-use super::get::get_cache_path_for_project;
 use super::scanner::{scan_sessions_after, ScanResult};
 use chrono::{DateTime, Utc};
-use base64::engine::general_purpose;
-use base64::engine::Engine as _;
-use serde::{Deserialize, Serialize};
+use rusqlite::{params, Connection, OptionalExtension};
 use serde_json::{json, Value};
 use std::collections::HashSet;
-use std::fs::{read_to_string, File};
-use std::io::Write;
-use std::path::Path;
+use std::path::PathBuf;
 
-/// Structure stored in cache file
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct ProjectCache {
-    last_scanned: String,
-    sessions: Vec<Value>,
-    favorites: Vec<String>,
-    #[serde(default)]
-    scan_metadata: Option<ScanMetadata>,
+/// Get the path to the SQLite database
+fn get_db_path() -> Result<PathBuf, String> {
+    let home_dir = dirs::home_dir().ok_or("Could not get home directory")?;
+    let codexia_dir = home_dir.join(".codexia");
+    std::fs::create_dir_all(&codexia_dir)
+        .map_err(|e| format!("Failed to create .codexia directory: {}", e))?;
+    Ok(codexia_dir.join("cache.db"))
 }
 
-#[derive(Serialize, Deserialize, Clone, Default)]
-#[serde(rename_all = "camelCase")]
-struct ScanMetadata {
-    #[serde(default)]
-    cache_path_name: String,
-    scanned_count: usize,
-    added_count: usize,
-    #[serde(default)]
-    total: usize,
+/// Get a database connection and ensure tables exist
+fn get_connection() -> Result<Connection, String> {
+    let db_path = get_db_path()?;
+    let conn = Connection::open(db_path)
+        .map_err(|e| format!("Failed to open database: {}", e))?;
+
+    // Create tables if they don't exist
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS sessions (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_path TEXT NOT NULL,
+            conversation_id TEXT NOT NULL,
+            path TEXT NOT NULL,
+            preview TEXT,
+            timestamp TEXT,
+            source TEXT,
+            last_modified INTEGER,
+            UNIQUE(project_path, conversation_id)
+        )",
+        [],
+    )
+    .map_err(|e| format!("Failed to create sessions table: {}", e))?;
+
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS favorites (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            project_path TEXT NOT NULL,
+            conversation_id TEXT NOT NULL,
+            UNIQUE(project_path, conversation_id)
+        )",
+        [],
+    )
+    .map_err(|e| format!("Failed to create favorites table: {}", e))?;
+
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS scan_info (
+            project_path TEXT PRIMARY KEY,
+            last_scanned TEXT NOT NULL
+        )",
+        [],
+    )
+    .map_err(|e| format!("Failed to create scan_info table: {}", e))?;
+
+    // Create indexes for better performance
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_sessions_project ON sessions(project_path)",
+        [],
+    )
+    .map_err(|e| format!("Failed to create index: {}", e))?;
+
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_favorites_project ON favorites(project_path)",
+        [],
+    )
+    .map_err(|e| format!("Failed to create index: {}", e))?;
+
+    Ok(conn)
 }
 
-struct CachedProjectData {
-    last_scanned: DateTime<Utc>,
-    sessions: Vec<Value>,
-    favorites: Vec<String>,
-    scan_metadata: Option<ScanMetadata>,
-}
+/// Read cached sessions and favorites for a project
+fn read_project_cache(project_path: &str) -> Result<Option<(DateTime<Utc>, Vec<Value>, Vec<String>)>, String> {
+    let conn = get_connection()?;
 
-/// Read cache file for a project
-fn read_project_cache(project_path: &str) -> Result<Option<CachedProjectData>, String> {
-    let cache_path = get_cache_path_for_project(project_path)?;
-    if !cache_path.exists() {
-        return Ok(None);
-    }
+    // Get last scanned time
+    let last_scanned: Option<String> = conn
+        .query_row(
+            "SELECT last_scanned FROM scan_info WHERE project_path = ?1",
+            params![project_path],
+            |row| row.get(0),
+        )
+        .optional()
+        .map_err(|e| format!("Failed to query scan_info: {}", e))?;
 
-    let cache_str =
-        read_to_string(&cache_path).map_err(|e| format!("Failed to read cache: {}", e))?;
-
-    let cache: ProjectCache = match serde_json::from_str(&cache_str) {
-        Ok(v) => v,
-        Err(e) => {
-            eprintln!("Cache parse failed ({}), fallback to full scan.", e);
-            return Ok(None); // fallback gracefully
-        }
-    };
-
-    let last_scanned = DateTime::parse_from_rfc3339(&cache.last_scanned)
-        .ok()
-        .map(|dt| dt.with_timezone(&Utc));
-
-    match last_scanned {
-        Some(dt) => Ok(Some(CachedProjectData {
-            last_scanned: dt,
-            sessions: cache.sessions,
-            favorites: cache.favorites,
-            scan_metadata: cache.scan_metadata,
-        })),
-        None => Ok(None),
-    }
-}
-
-fn write_project_cache_with_metadata(
-    project_path: &str,
-    sessions: Vec<Value>,
-    favorites: Vec<String>,
-    scan_metadata: Option<ScanMetadata>,
-) -> Result<(), String> {
-    let cache_path = get_cache_path_for_project(project_path)?;
-    let decoded_cache_name = decode_cache_file_name(&cache_path)?;
-
-    let metadata_to_write = match scan_metadata {
-        Some(mut meta) => {
-            if meta.cache_path_name.is_empty() {
-                meta.cache_path_name = decoded_cache_name.clone();
-            }
-            Some(meta)
-        }
-        None => match read_project_cache(project_path)? {
-            Some(existing) => existing.scan_metadata.map(|mut meta| {
-                if meta.cache_path_name.is_empty() {
-                    meta.cache_path_name = decoded_cache_name.clone();
-                }
-                meta
-            }),
-            None => None,
+    let last_scanned = match last_scanned {
+        Some(s) => match DateTime::parse_from_rfc3339(&s) {
+            Ok(dt) => dt.with_timezone(&Utc),
+            Err(_) => return Ok(None),
         },
+        None => return Ok(None),
     };
 
-    let data = ProjectCache {
-        last_scanned: Utc::now().to_rfc3339(),
-        sessions,
-        favorites,
-        scan_metadata: metadata_to_write,
-    };
+    // Get sessions
+    let mut stmt = conn
+        .prepare("SELECT conversation_id, path, preview, timestamp, source FROM sessions WHERE project_path = ?1")
+        .map_err(|e| format!("Failed to prepare sessions query: {}", e))?;
 
-    let json_str =
-        serde_json::to_string_pretty(&data).map_err(|e| format!("Failed to serialize cache: {}", e))?;
-    let mut file =
-        File::create(&cache_path).map_err(|e| format!("Failed to create cache file: {}", e))?;
-    file.write_all(json_str.as_bytes())
-        .map_err(|e| format!("Failed to write cache file: {}", e))?;
+    let sessions: Result<Vec<Value>, String> = stmt
+        .query_map(params![project_path], |row| {
+            let conversation_id: String = row.get(0)?;
+            let path: String = row.get(1)?;
+            let preview: Option<String> = row.get(2)?;
+            let timestamp: Option<String> = row.get(3)?;
+            let source: Option<String> = row.get(4)?;
+
+            Ok(json!({
+                "conversationId": conversation_id,
+                "path": path,
+                "preview": preview,
+                "timestamp": timestamp,
+                "source": source.unwrap_or_default(),
+            }))
+        })
+        .map_err(|e| format!("Failed to query sessions: {}", e))?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| format!("Failed to collect sessions: {}", e));
+
+    let sessions = sessions?;
+
+    // Get favorites
+    let mut stmt = conn
+        .prepare("SELECT conversation_id FROM favorites WHERE project_path = ?1")
+        .map_err(|e| format!("Failed to prepare favorites query: {}", e))?;
+
+    let favorites: Result<Vec<String>, String> = stmt
+        .query_map(params![project_path], |row| row.get(0))
+        .map_err(|e| format!("Failed to query favorites: {}", e))?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| format!("Failed to collect favorites: {}", e));
+
+    let favorites = favorites?;
+
+    Ok(Some((last_scanned, sessions, favorites)))
+}
+
+/// Write sessions and favorites to the database
+fn write_project_cache(
+    project_path: &str,
+    sessions: &[Value],
+    favorites: &[String],
+) -> Result<(), String> {
+    let conn = get_connection()?;
+
+    // Update last_scanned
+    conn.execute(
+        "INSERT OR REPLACE INTO scan_info (project_path, last_scanned) VALUES (?1, ?2)",
+        params![project_path, Utc::now().to_rfc3339()],
+    )
+    .map_err(|e| format!("Failed to update scan_info: {}", e))?;
+
+    // Clear existing sessions for this project
+    conn.execute(
+        "DELETE FROM sessions WHERE project_path = ?1",
+        params![project_path],
+    )
+    .map_err(|e| format!("Failed to delete old sessions: {}", e))?;
+
+    // Insert sessions
+    for session in sessions {
+        let conversation_id = session["conversationId"].as_str().unwrap_or("");
+        let path = session["path"].as_str().unwrap_or("");
+        let preview = session["preview"].as_str();
+        let timestamp = session["timestamp"].as_str();
+        let source = session["source"].as_str();
+
+        conn.execute(
+            "INSERT OR REPLACE INTO sessions (project_path, conversation_id, path, preview, timestamp, source)
+             VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+            params![project_path, conversation_id, path, preview, timestamp, source],
+        )
+        .map_err(|e| format!("Failed to insert session: {}", e))?;
+    }
+
+    // Clear existing favorites for this project
+    conn.execute(
+        "DELETE FROM favorites WHERE project_path = ?1",
+        params![project_path],
+    )
+    .map_err(|e| format!("Failed to delete old favorites: {}", e))?;
+
+    // Insert favorites
+    for favorite in favorites {
+        conn.execute(
+            "INSERT OR IGNORE INTO favorites (project_path, conversation_id) VALUES (?1, ?2)",
+            params![project_path, favorite],
+        )
+        .map_err(|e| format!("Failed to insert favorite: {}", e))?;
+    }
 
     Ok(())
 }
 
-/// Write updated cache to disk
-pub fn write_project_cache(project_path: String, sessions: Vec<Value>, favorites: Vec<String>) -> Result<(), String> {
-    write_project_cache_with_metadata(&project_path, sessions, favorites, None)
-}
-
+/// Update only the favorites for a project
 pub fn update_project_favorites(project_path: String, favorites: Vec<String>) -> Result<(), String> {
-    match read_project_cache(&project_path)? {
-        Some(CachedProjectData {
-            sessions,
-            scan_metadata,
-            ..
-        }) => write_project_cache_with_metadata(
-            &project_path,
-            sessions,
-            favorites,
-            scan_metadata,
-        ),
-        None => write_project_cache_with_metadata(&project_path, Vec::new(), favorites, None),
+    let conn = get_connection()?;
+
+    // Clear existing favorites for this project
+    conn.execute(
+        "DELETE FROM favorites WHERE project_path = ?1",
+        params![&project_path],
+    )
+    .map_err(|e| format!("Failed to delete old favorites: {}", e))?;
+
+    // Insert new favorites
+    for favorite in favorites {
+        conn.execute(
+            "INSERT OR IGNORE INTO favorites (project_path, conversation_id) VALUES (?1, ?2)",
+            params![&project_path, &favorite],
+        )
+        .map_err(|e| format!("Failed to insert favorite: {}", e))?;
     }
+
+    Ok(())
 }
 
+/// Remove a session from the cache
 pub fn remove_project_session(project_path: String, conversation_id: String) -> Result<(), String> {
-    match read_project_cache(&project_path)? {
-        Some(CachedProjectData {
-            mut sessions,
-            mut favorites,
-            scan_metadata,
-            ..
-        }) => {
-            sessions.retain(|session| {
-                session
-                    .get("conversationId")
-                    .and_then(|value| value.as_str())
-                    != Some(conversation_id.as_str())
-            });
-            favorites.retain(|id| id != &conversation_id);
-            write_project_cache_with_metadata(
-                &project_path,
-                sessions,
-                favorites,
-                scan_metadata,
-            )
-        }
-        None => Ok(()),
-    }
+    let conn = get_connection()?;
+
+    conn.execute(
+        "DELETE FROM sessions WHERE project_path = ?1 AND conversation_id = ?2",
+        params![&project_path, &conversation_id],
+    )
+    .map_err(|e| format!("Failed to delete session: {}", e))?;
+
+    conn.execute(
+        "DELETE FROM favorites WHERE project_path = ?1 AND conversation_id = ?2",
+        params![&project_path, &conversation_id],
+    )
+    .map_err(|e| format!("Failed to delete favorite: {}", e))?;
+
+    Ok(())
+}
+
+/// Update the preview/title of a session
+pub fn update_session_preview(
+    project_path: &str,
+    session_path: &str,
+    preview: &str,
+) -> Result<(), String> {
+    let conn = get_connection()?;
+
+    let truncated_text: String = preview.chars().take(50).collect();
+
+    conn.execute(
+        "UPDATE sessions SET preview = ?1 WHERE project_path = ?2 AND path = ?3",
+        params![truncated_text, project_path, session_path],
+    )
+    .map_err(|e| format!("Failed to update session preview: {}", e))?;
+
+    Ok(())
 }
 
 /// Main tauri command: load or refresh sessions for given project
 pub async fn load_project_sessions(project_path: String) -> Result<Value, String> {
     match read_project_cache(&project_path)? {
-        Some(cache_data) => {
+        Some((last_scanned, mut cached_sessions, favorites)) => {
             // Incremental scan
-            let mut cached_sessions = cache_data.sessions;
-            let favorites = cache_data.favorites;
-            let last_scanned = cache_data.last_scanned;
-
             let ScanResult {
                 sessions: mut new_sessions,
             } = scan_sessions_after(&project_path, Some(last_scanned))?;
@@ -189,9 +278,7 @@ pub async fn load_project_sessions(project_path: String) -> Result<Value, String
                     .unwrap_or(true)
             });
 
-            let added_count = new_sessions.len();
             cached_sessions.append(&mut new_sessions);
-            let total = cached_sessions.len();
 
             // Sort newest first
             cached_sessions.sort_by(|a, b| {
@@ -206,65 +293,24 @@ pub async fn load_project_sessions(project_path: String) -> Result<Value, String
                 }
             });
 
-            let cache_path = get_cache_path_for_project(&project_path)?;
-            let cache_path_name = decode_cache_file_name(&cache_path)?;
-            let scan_metadata = ScanMetadata {
-                scanned_count: added_count,
-                added_count,
-                total,
-                cache_path_name,
-            };
+            write_project_cache(&project_path, &cached_sessions, &favorites)?;
 
-            let metadata_for_cache = scan_metadata.clone();
-            write_project_cache_with_metadata(
-                &project_path,
-                cached_sessions.clone(),
-                favorites.clone(),
-                Some(metadata_for_cache),
-            )?;
             Ok(json!({
                 "sessions": cached_sessions,
                 "favorites": favorites,
-                "scanMetadata": scan_metadata,
             }))
         }
         None => {
             // No cache or broken cache → full scan
             let ScanResult { sessions } = scan_sessions_after(&project_path, None)?;
             let favorites: Vec<String> = Vec::new();
-            let cache_path = get_cache_path_for_project(&project_path)?;
-            let cache_path_name = decode_cache_file_name(&cache_path)?;
-            let scan_metadata = ScanMetadata {
-                scanned_count: sessions.len(),
-                added_count: sessions.len(),
-                total: sessions.len(),
-                cache_path_name,
-            };
 
-            let metadata_for_cache = scan_metadata.clone();
-            write_project_cache_with_metadata(
-                &project_path,
-                sessions.clone(),
-                favorites.clone(),
-                Some(metadata_for_cache),
-            )?;
+            write_project_cache(&project_path, &sessions, &favorites)?;
+
             Ok(json!({
                 "sessions": sessions,
                 "favorites": favorites,
-                "scanMetadata": scan_metadata,
             }))
         }
     }
-}
-
-fn decode_cache_file_name(cache_path: &Path) -> Result<String, String> {
-    let encoded_stem = cache_path
-        .file_stem()
-        .and_then(|s| s.to_str())
-        .ok_or_else(|| "Failed to read cache file name".to_string())?;
-    let decoded_bytes = general_purpose::STANDARD
-        .decode(encoded_stem)
-        .map_err(|e| format!("Failed to decode cache file name: {}", e))?;
-    String::from_utf8(decoded_bytes)
-        .map_err(|e| format!("Cache file name is not valid UTF-8: {}", e))
 }
