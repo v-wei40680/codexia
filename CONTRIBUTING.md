@@ -34,7 +34,7 @@ bun tauri dev
 
 Build the frontend only:
 ```bash
-codex generate-ts --out src/bindings  # if you didn't run `bun tauri dev`
+bun run export:bindings  # if you didn't run `bun tauri dev`
 bun run build
 ```
 
@@ -81,4 +81,3 @@ cp docs/pre-commit .git/hooks/pre-commit
 
 - Tauri v2: https://v2.tauri.app/start/
 - LLM Notes (Tauri): https://tauri.app/llms.txt
-

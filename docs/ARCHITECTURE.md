@@ -30,13 +30,14 @@ important files connect Codexia and Codex CLI via `app-server` json RPC
  
 ```
 src/hooks/useCodex/useConversationEvents.ts
-src-tauri/src/codex/client
+codex-client
 ```
 
 ## Project Structure
 
 ```
 codexia/
+├── codex-client/           # Codex process management
 ├── src/                    # React frontend source
 │   ├── components/         # UI components
 │   ├── hooks/              # Custom React hooks
@@ -46,7 +47,6 @@ codexia/
 ├── src-tauri/              # Rust backend source
 │   ├── src/
 │   │   ├── lib.rs          # Main Tauri application
-│   │   └── codex # Codex process management
 │   └── Cargo.toml          # Rust dependencies
 ├── public/                 # Static assets
 └── package.json            # Node.js dependencies
@@ -59,4 +59,3 @@ codexia/
 - Process Communication: JSON-RPC over stdin/stdout
 - State Management: Zustand with persistence middleware
 - UI Framework: shadcn/ui built on Radix UI and Tailwind CSS
-
