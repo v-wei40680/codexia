@@ -36,18 +36,10 @@ pub fn setup_event_bridge<R: Runtime>(app: AppHandle<R>, client_state: Arc<Clien
             event_bus
                 .subscribe(
                     event_name,
-                    Arc::new(move |event, data| {
-                        log::info!("[EventBridge] Received event from EventBus: {}", event);
+                    Arc::new(move |_event, data| {
                         let window = window.clone();
                         let data = data.clone();
                         tauri::async_runtime::spawn(async move {
-                            // EmitterExt handles both remote and native modes:
-                            // - If remote is active: emits via WebSocket
-                            // - Always emits via Tauri (for native GUI)
-                            log::info!(
-                                "[EventBridge] Emitting with EmitterExt (handles both modes): {}",
-                                event_name
-                            );
                             if let Err(err) =
                                 EmitterExt::emit(&window, event_name, data.clone()).await
                             {
