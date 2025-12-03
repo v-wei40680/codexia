@@ -72,6 +72,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
 
   // Ref for the textarea to allow programmatic focus and external access
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const [isComposing, setIsComposing] = React.useState(false);
 
   // Focus textarea when a focus is requested (signal increments) and sync external ref
   useEffect(() => {
@@ -119,7 +120,7 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       return;
     }
 
-    if (e.key === 'Enter') {
+    if (e.key === 'Enter' && !isComposing) {
       if (e.shiftKey) {
         // allow newline
         return;
@@ -154,6 +155,8 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           value={inputValue}
           onChange={(e) => onInputChange(e.target.value)}
           onKeyDown={handleKeyPress}
+          onCompositionStart={() => setIsComposing(true)}
+          onCompositionEnd={() => setIsComposing(false)}
           placeholder={placeholderOverride || `Ask Codex to do anything`}
           className={`min-h-20 max-h-96 pr-32 bg-muted/50 resize-none overflow-y-auto pb-8 ${
             mediaAttachments.length > 0 ? 'pt-8' : ''
