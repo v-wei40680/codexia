@@ -24,6 +24,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "sonner";
+import { open } from "@tauri-apps/plugin-dialog";
 
 interface Project {
   path: string;
@@ -90,7 +91,6 @@ export default function ProjectsPage() {
         return;
       }
 
-      const { open } = await import("@tauri-apps/plugin-dialog");
       const result = await open({
         directory: true,
         multiple: false,

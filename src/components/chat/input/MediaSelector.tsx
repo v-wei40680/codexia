@@ -10,6 +10,7 @@ import {
 import { useChatInputStore } from '@/stores/chatInputStore';
 import { isMediaFile, createMediaAttachment } from '@/utils/mediaUtils';
 import { isRemoteRuntime } from "@/lib/tauri-proxy";
+import { open } from "@tauri-apps/plugin-dialog";
 
 export const MediaSelector: React.FC = () => {
   const { addMediaAttachment } = useChatInputStore();
@@ -21,7 +22,6 @@ export const MediaSelector: React.FC = () => {
         return;
       }
 
-      const { open } = await import('@tauri-apps/plugin-dialog');
       const selected: string | string[] | null = await open({
         multiple: true,
         filters: [

@@ -1,5 +1,3 @@
-use std::path::Path;
-
 mod codex_commands;
 mod commands;
 mod filesystem;
