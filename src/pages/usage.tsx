@@ -12,7 +12,51 @@ import {
   TokenBreakdownCard,
   MostUsedModelsCard,
 } from "@/components/usage";
+import { LoadingState, ErrorState, EmptyState } from "@/components/usage/common";
 import { formatCurrency, formatNumber, formatTokens } from "@/utils/formater";
+
+const TAB_TRIGGER_CLASS =
+  "data-[state=active]:bg-slate-800 data-[state=active]:text-slate-100 text-slate-400";
+
+const SUMMARY_CARDS = [
+  {
+    title: "Total Cost",
+    key: "totalCost",
+    format: formatCurrency,
+    description: "Estimated spending",
+    accent: "text-emerald-400",
+  },
+  {
+    title: "Total Sessions",
+    key: "totalSessions",
+    format: formatNumber,
+    description: "Conversations completed",
+    accent: "text-cyan-400",
+  },
+  {
+    title: "Total Tokens",
+    key: "totalTokens",
+    format: formatTokens,
+    description: "Input + Output tokens",
+    accent: "text-purple-400",
+  },
+  {
+    title: "Avg Cost/Session",
+    key: "avgCostPerSession",
+    format: formatCurrency,
+    description: "Per conversation",
+    accent: "text-orange-400",
+  },
+] as const;
+
+const TABS = [
+  { value: "overview", label: "Overview" },
+  { value: "models", label: "By Model" },
+  { value: "projects", label: "By Project" },
+  { value: "timeline", label: "Timeline" },
+  { value: "tokens", label: "Token Breakdown" },
+] as const;
+
 export default function UsagePage() {
   const [usageData, setUsageData] = useState<UsageSummary | null>(null);
   const [loading, setLoading] = useState(true);
@@ -43,41 +87,12 @@ export default function UsagePage() {
     loadUsageData();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading usage data...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">{error}</p>
-          <Button onClick={loadUsageData}>Try Again</Button>
-        </div>
-      </div>
-    );
-  }
-
-  if (!usageData) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="text-center">
-          <p className="text-gray-600 mb-4">No usage data available</p>
-          <Button onClick={loadUsageData}>Refresh</Button>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <LoadingState />;
+  if (error) return <ErrorState error={error} onRetry={loadUsageData} />;
+  if (!usageData) return <EmptyState onRefresh={loadUsageData} />;
 
   return (
-    <div className="p-6 space-y-6 bg-slate-900 min-h-screen">
+    <div className="p-6 bg-slate-900 h-full overflow-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -93,65 +108,31 @@ export default function UsagePage() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-        <SummaryCard
-          title="Total Cost"
-          value={formatCurrency(usageData.totalCost)}
-          description="Estimated spending"
-          accent="text-emerald-400"
-        />
-        <SummaryCard
-          title="Total Sessions"
-          value={formatNumber(usageData.totalSessions)}
-          description="Conversations completed"
-          accent="text-cyan-400"
-        />
-        <SummaryCard
-          title="Total Tokens"
-          value={formatTokens(usageData.totalTokens)}
-          description="Input + Output tokens"
-          accent="text-purple-400"
-        />
-        <SummaryCard
-          title="Avg Cost/Session"
-          value={formatCurrency(usageData.avgCostPerSession)}
-          description="Per conversation"
-          accent="text-orange-400"
-        />
+        {SUMMARY_CARDS.map((card) => (
+          <SummaryCard
+            key={card.key}
+            title={card.title}
+            value={card.format(
+              usageData[card.key as keyof UsageSummary] as number,
+            )}
+            description={card.description}
+            accent={card.accent}
+          />
+        ))}
       </div>
 
       {/* Detailed Views */}
       <Tabs defaultValue="overview" className="space-y-4">
         <TabsList className="bg-slate-950/50 border-slate-800">
-          <TabsTrigger
-            value="overview"
-            className="data-[state=active]:bg-slate-800 data-[state=active]:text-slate-100 text-slate-400"
-          >
-            Overview
-          </TabsTrigger>
-          <TabsTrigger
-            value="models"
-            className="data-[state=active]:bg-slate-800 data-[state=active]:text-slate-100 text-slate-400"
-          >
-            By Model
-          </TabsTrigger>
-          <TabsTrigger
-            value="projects"
-            className="data-[state=active]:bg-slate-800 data-[state=active]:text-slate-100 text-slate-400"
-          >
-            By Project
-          </TabsTrigger>
-          <TabsTrigger
-            value="timeline"
-            className="data-[state=active]:bg-slate-800 data-[state=active]:text-slate-100 text-slate-400"
-          >
-            Timeline
-          </TabsTrigger>
-          <TabsTrigger
-            value="tokens"
-            className="data-[state=active]:bg-slate-800 data-[state=active]:text-slate-100 text-slate-400"
-          >
-            Token Breakdown
-          </TabsTrigger>
+          {TABS.map((tab) => (
+            <TabsTrigger
+              key={tab.value}
+              value={tab.value}
+              className={TAB_TRIGGER_CLASS}
+            >
+              {tab.label}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         <TabsContent value="overview" className="space-y-4">
@@ -166,7 +147,6 @@ export default function UsagePage() {
               formatTokens={formatTokens}
             />
           </div>
-
           <TopProjectsCard
             usageData={usageData}
             formatCurrency={formatCurrency}
