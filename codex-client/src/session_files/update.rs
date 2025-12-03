@@ -1,4 +1,4 @@
-use super::cache::update_session_preview;
+use super::db::update_session_preview;
 
 pub async fn update_cache_title(
     project_path: String,
