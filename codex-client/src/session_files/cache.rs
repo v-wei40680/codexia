@@ -1,10 +1,7 @@
-use super::db::{read_project_cache, write_project_cache};
+use crate::db::{read_project_cache, write_project_cache};
 use super::scanner::{scan_sessions_after, ScanResult};
 use serde_json::{json, Value};
 use std::collections::HashSet;
-
-// Re-export database functions for backward compatibility
-pub use super::db::{remove_project_session, update_project_favorites};
 
 /// Main tauri command: load or refresh sessions for given project
 pub async fn load_project_sessions(project_path: String) -> Result<Value, String> {

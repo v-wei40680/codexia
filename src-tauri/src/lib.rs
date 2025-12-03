@@ -125,6 +125,15 @@ pub fn run() {
             prevent_sleep,
             allow_sleep,
             codex_commands::read_token_usage,
+            // Note commands
+            codex_commands::create_note,
+            codex_commands::get_notes,
+            codex_commands::get_note_by_id,
+            codex_commands::update_note,
+            codex_commands::delete_note,
+            codex_commands::toggle_note_favorite,
+            codex_commands::mark_notes_synced,
+            codex_commands::get_unsynced_notes,
         ])
         .setup(|app| {
             // Setup event bridge between codex-client and Tauri

@@ -3,7 +3,7 @@ import { useLayoutStore } from "@/stores/settings/layoutStore";
 import { useFolderStore } from "@/stores/FolderStore";
 import { FileTree } from "@/components/filetree/FileTreeView";
 import { FileViewer } from "@/components/filetree/FileViewer";
-import { useNoteStore } from "@/stores/NoteStore";
+import { useNoteStore } from "@/stores/useNoteStore";
 import { DiffViewer } from "@/components/filetree/DiffViewer";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {

@@ -1,5 +1,6 @@
 pub mod client;
 pub mod config;
+pub mod db;
 pub mod events;
 pub mod services;
 pub mod session_files;
@@ -18,6 +19,9 @@ pub use config::project::ProjectConfig;
 pub use config::provider::ModelProvider as ProviderConfig;
 pub use config::profile::Profile as ProfileConfig;
 pub use mcp::McpServerConfig;
+
+// Re-export database types for easy access
+pub use db::notes::Note;
 
 // Re-export protocol types for Tauri adapters
 pub use codex_app_server_protocol;

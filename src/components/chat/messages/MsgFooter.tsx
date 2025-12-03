@@ -7,7 +7,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useNoteStore } from "@/stores/NoteStore";
+import { useNoteStore } from "@/stores/useNoteStore";
 import { BookOpen, Check, Copy, Plus, Undo2 } from "lucide-react";
 import { useCallback, useMemo, useState } from "react";
 import { cn } from "@/lib/utils";

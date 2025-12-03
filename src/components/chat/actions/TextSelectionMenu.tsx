@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { FileText, Copy } from 'lucide-react';
 import { useTextSelection } from '@/hooks/useTextSelection';
-import { useNoteStore } from '@/stores/NoteStore';
+import { useNoteStore } from '@/stores/useNoteStore';
 import {
   Popover,
   PopoverContent,

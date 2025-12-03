@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { useNoteStore } from "@/stores/NoteStore";
+import { useNoteStore } from "@/stores/useNoteStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { MoreHorizontal, Trash2, Search, Star, StarOff } from "lucide-react";

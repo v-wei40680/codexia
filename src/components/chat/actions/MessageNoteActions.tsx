@@ -12,7 +12,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { useNoteStore } from '@/stores/NoteStore';
+import { useNoteStore } from '@/stores/useNoteStore';
 
 interface MessageNoteActionsProps {
   messageId: string;

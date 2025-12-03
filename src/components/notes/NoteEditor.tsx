@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useNoteStore } from "@/stores/NoteStore";
+import { useNoteStore } from "@/stores/useNoteStore";
 import { useThemeStore } from "@/stores/settings/ThemeStore";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -68,13 +68,13 @@ export function NoteEditor() {
     setIsEditing(false);
   }, [currentNote]);
 
-  const handleSave = useCallback(() => {
+  const handleSave = useCallback(async () => {
     if (hasChanges) {
       if (currentNote) {
-        updateNote(currentNote.id, { title, content });
+        await updateNote(currentNote.id, { title, content });
       } else {
         // Create a new note if none exists
-        const newNote = createNote(title || undefined, content);
+        const newNote = await createNote(title || undefined, content);
         setCurrentNote(newNote.id);
       }
       setHasChanges(false);
@@ -160,8 +160,8 @@ export function NoteEditor() {
       {/* Note Header */}
       <div className="flex items-center gap-3 px-2 border-b bg-white dark:bg-gray-800 dark:border-gray-700">
         <Button
-          onClick={() => {
-            const newNote = createNote();
+          onClick={async () => {
+            const newNote = await createNote();
             setCurrentNote(newNote.id);
           }}
           size="icon"
