@@ -67,6 +67,11 @@ file-tree integration, prompt notepad, git worktree, diff view, build-in pdf csv
 - Project-aware assistance
 - Multiple AI providers (OpenAI, Ollama, Anthropic, Gemini, openrouter, xAI, Custom)
 
+### sqlite in `~/.codexia/cache.db`
+- note
+- sesssion list - scan new session to store in sqlite
+- token usage
+
 ## 🚀 Installation
 
 ### Prerequisites
@@ -89,15 +94,8 @@ brew install --cask codexia
 ### Remote control
 
 ```
-Menu → Settings → Remote access → Static bundle path - start
+Menu → Remote access -> start
 ```
-
-1. build static asset
-```sh
-bun run export:bindings
-bun run build
-```
-2. start remote server
 
 ### Others
 - Google or ask AI
