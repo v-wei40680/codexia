@@ -143,6 +143,7 @@ pub fn run() {
 
             #[cfg(debug_assertions)]
             {
+                use std::path::Path;
                 let out = Path::new(env!("CARGO_MANIFEST_DIR"))
                     .join("..")
                     .join("src")
