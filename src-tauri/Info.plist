@@ -23,6 +23,7 @@
       <string>Editor</string>
       <key>CFBundleTypeExtensions</key>
       <array>
+        <string>db</string>
         <string>toml</string>
         <string>json</string>
         <string>jsonl</string>
