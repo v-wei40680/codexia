@@ -89,13 +89,11 @@ function EnvironmentVariablesSettings() {
   );
 }
 
-
-
 export default function SettingsPage() {
   const { activeSection, setActiveSection } = useSettingsStore();
 
   return (
-    <div className="flex h-screen">
+    <div className="flex h-full">
       <SettingsSidebar
         activeSection={activeSection}
         onSectionChange={setActiveSection}

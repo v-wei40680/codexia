@@ -11,6 +11,7 @@ import {
   BotMessageSquare,
   FileText,
   HeartHandshake,
+  Airplay,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -21,7 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useLayoutStore } from "@/stores/settings/layoutStore";
 import { invoke } from "@/lib/tauri-proxy";
 import { useThemeStore } from "@/stores/settings/ThemeStore";
@@ -33,13 +34,16 @@ import { ClientPicker } from "../common/ClientPicker";
 import { UserDropdown } from "../common/UserDropdown";
 import { useCodexStore } from "@/stores/useCodexStore";
 import { Badge } from "../ui/badge";
+import { useSettingsStore } from "@/stores";
 
 export function AppHeader() {
   const { showFileTree, toggleFileTree, toggleChatPane } = useLayoutStore();
   const { theme, toggleTheme } = useThemeStore();
+  const { setActiveSection } = useSettingsStore();
   const location = useLocation();
+  const navigate = useNavigate();
   const { t } = useTranslation();
-  const { cwd } = useCodexStore()
+  const { cwd } = useCodexStore();
 
   const handleNewWindow = async () => {
     try {
@@ -145,6 +149,20 @@ export function AppHeader() {
               >
                 <FileText className="w-4 h-4" /> AGENTS
               </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  navigate("/settings");
+                  setActiveSection("remoteAccess");
+                }}
+                className="h-6 w-6 justify-start"
+                title={t("header.remoteControl")}
+              >
+                <Airplay />
+                {t("header.remoteControl")}
+              </Button>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem>

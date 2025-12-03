@@ -18,6 +18,7 @@ export const en = {
     changeLanguage: "Change language",
     menu: "Menu",
     settings: "Settings",
+    remoteControl: "Remote control",
     donate: "Donate",
     accentColor: "Accent Color",
   },

@@ -72,7 +72,20 @@ export function RemoteAccessSettings(): JSX.Element {
   return (
     <div className="space-y-6 py-6">
       <div>
-        <h2 className="text-2xl font-semibold mb-2">Remote Access</h2>
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-2xl font-semibold">Remote Access</h2>
+          <Switch
+            checked={status?.running ?? false}
+            onCheckedChange={(checked) => {
+              if (checked) {
+                handleStart();
+              } else {
+                handleStop();
+              }
+            }}
+            disabled={loading}
+          />
+        </div>
         <p className="text-muted-foreground">
           Expose Codexia over the network for remote browsers, tablets, or phones. The backend is
           served through Tauri Remote UI.
