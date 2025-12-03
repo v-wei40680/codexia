@@ -120,14 +120,16 @@ export const ChatInput: React.FC<ChatInputProps> = ({
       return;
     }
 
-    if (e.key === 'Enter' && !isComposing) {
-      if (e.shiftKey) {
-        // allow newline
+    if (e.key === 'Enter') {
+      // If IME is active, do NOT send
+      if (isComposing || (e.nativeEvent as any).isComposing) {
         return;
-      } else {
-        e.preventDefault();
-        handleSendMessage();
       }
+      if (e.shiftKey) {
+        return; // newline
+      }
+      e.preventDefault();
+      handleSendMessage();
     }
   };
 
@@ -156,7 +158,13 @@ export const ChatInput: React.FC<ChatInputProps> = ({
           onChange={(e) => onInputChange(e.target.value)}
           onKeyDown={handleKeyPress}
           onCompositionStart={() => setIsComposing(true)}
-          onCompositionEnd={() => setIsComposing(false)}
+          onCompositionEnd={() => {
+            // Keep composing state briefly to avoid macOS IME Enter misfire
+            setIsComposing(true);
+            setTimeout(() => {
+              setIsComposing(false);
+            }, 50);
+          }}
           placeholder={placeholderOverride || `Ask Codex to do anything`}
           className={`min-h-20 max-h-96 pr-32 bg-muted/50 resize-none overflow-y-auto pb-8 ${
             mediaAttachments.length > 0 ? 'pt-8' : ''
