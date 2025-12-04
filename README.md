@@ -82,15 +82,6 @@ file-tree integration, prompt notepad, git worktree, diff view, build-in pdf csv
 
 - [modern-github-release](https://milisp.github.io/modern-github-release/#/repo/milisp/codexia)
 
-> [!Note]
-> Paid users can access new features more than a week before free users
-
-#### Pricing for MacOS Signed dmg or you can build from source code for free
-- Linux local use will always free
-- [Codexia Annual — $199/year](https://buy.polar.sh/polar_cl_fk3dVs5fzRFlMWaC8TiAC5NcgzkDeAlWraXj94f9RBB)
-- [Codexia Monthly — $20/month](https://buy.polar.sh/polar_cl_NbEutU2hPXC3qnBLVs81cDyYsLQupsVwOW9Ff2o8SoU)
-- Want discount? - Join our discord, once more than 100 users, I will send discount code.
-
 ### macOS homebrew
 
 ```sh
