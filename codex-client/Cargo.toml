@@ -1,28 +1,25 @@
 [package]
 name = "codex-client"
-version = "0.2.0"
-edition = "2021"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
 
 [dependencies]
 # Removed tauri dependency - codex-client is now independent
-tokio = { version = "1", features = ["full"] }
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-log = "0.4"
-walkdir = "2.3"
-chrono = { version = "0.4", features = ["serde"] }
-dirs = "6.0"
-toml = "0.9.5"
-toml_edit = "0.20"
-base64 = "0.22.1"
-regex = "1"
-rusqlite = { version = "0.31.0", features = ["bundled"] }
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+log.workspace = true
+walkdir.workspace = true
+chrono.workspace = true
+dirs.workspace = true
+toml.workspace = true
+toml_edit.workspace = true
+base64.workspace = true
+regex.workspace = true
+rusqlite.workspace = true
+async-trait.workspace = true
+anyhow.workspace = true
 
-# async trait support
-async-trait = "0.1"
-
-# anyhow for error handling
-anyhow = "1.0"
-
-codex-app-server-protocol = { git = "https://github.com/openai/codex.git", package = "codex-app-server-protocol", rev = "dbec741e" }
-codex-protocol = { git = "https://github.com/openai/codex.git", package = "codex-protocol", rev = "dbec741e" }
+codex-app-server-protocol.workspace = true
+codex-protocol.workspace = true

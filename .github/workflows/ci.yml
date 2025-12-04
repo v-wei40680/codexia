@@ -8,6 +8,9 @@ on:
       - ".github/workflows/ci.yml"
       - "src/**"
       - "src-tauri/**"
+      - "codex-client/**"
+      - "codex_bindings/**"
+      - "Cargo.toml"
       - "package.json"
   pull_request:
     branches:
@@ -15,6 +18,9 @@ on:
     paths:
       - "src/**"
       - "src-tauri/**"
+      - "codex-client/**"
+      - "codex_bindings/**"
+      - "Cargo.toml"
       - "package.json"
 
 env:
@@ -46,7 +52,7 @@ jobs:
       - name: Setup Rust cache
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: src-tauri
+          workspaces: "."
 
       - name: Setup Node.js
         uses: actions/setup-node@v4

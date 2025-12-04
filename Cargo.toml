@@ -1,0 +1,69 @@
+[workspace]
+members = [
+    "src-tauri",
+    "codex-client",
+    "codex_bindings",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.16.0"
+edition = "2021"
+authors = ["milisp"]
+
+# Workspace-wide dependencies
+[workspace.dependencies]
+# Codex protocol dependencies
+codex-protocol = { git = "https://github.com/openai/codex.git", package = "codex-protocol", rev = "dbec741e" }
+codex-app-server-protocol = { git = "https://github.com/openai/codex.git", package = "codex-app-server-protocol", rev = "dbec741e" }
+
+# Common dependencies
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+anyhow = "1.0"
+log = "0.4"
+dirs = "6.0"
+toml = "0.9.5"
+toml_edit = "0.20"
+base64 = "0.22.1"
+regex = "1.12.2"
+chrono = { version = "0.4", features = ["serde"] }
+walkdir = "2.3"
+
+# Async
+async-trait = "0.1"
+
+# Database
+rusqlite = { version = "0.31.0", features = ["bundled"] }
+
+# Tauri dependencies
+tauri = { version = "2", features = ["protocol-asset"] }
+tauri-build = { version = "2", features = [] }
+tauri-plugin-shell = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-log = "2"
+tauri-plugin-screenshots = "2.2.0"
+tauri-plugin-deep-link = "2"
+tauri-plugin-process = "2"
+tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
+tauri-plugin-updater = "2"
+
+# Other
+ts-rs = "11.0"
+uuid = { version = "1.0", features = ["v4"] }
+which = "6.0"
+pdf-extract = "0.7.12"
+csv = "1.3"
+calamine = "0.25"
+notify = "6"
+nosleep = "0.2.1"
+
+# Git dependencies
+tauri-remote-ui = { git = "https://github.com/DraviaVemal/tauri-remote-ui" }
+fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs" }
+
+# Workspace internal dependencies
+codex_bindings = { path = "codex_bindings" }
+codex-client = { path = "codex-client" }

@@ -1,9 +1,9 @@
 [package]
 name = "codexia"
-version = "0.16.0"
+version.workspace = true
 description = "A powerful IDE/GUI and Toolkit for Codex CLI"
-authors = ["milisp"]
-edition = "2021"
+authors.workspace = true
+edition.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -15,43 +15,43 @@ name = "codexia_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
-tauri-build = { version = "2", features = [] }
+tauri-build.workspace = true
 
 [dependencies]
-tauri = { version = "2", features = ["protocol-asset"] }
-tauri-plugin-shell = "2"
-tauri-plugin-dialog = "2"
-tauri-plugin-fs = "2"
-tauri-plugin-log = "2"
-tauri-plugin-screenshots = "2.2.0"
-tauri-plugin-deep-link = "2"
-tauri-plugin-process = "2"
-tauri-remote-ui = { git = "https://github.com/DraviaVemal/tauri-remote-ui" }
+tauri.workspace = true
+tauri-plugin-shell.workspace = true
+tauri-plugin-dialog.workspace = true
+tauri-plugin-fs.workspace = true
+tauri-plugin-log.workspace = true
+tauri-plugin-screenshots.workspace = true
+tauri-plugin-deep-link.workspace = true
+tauri-plugin-process.workspace = true
+tauri-remote-ui.workspace = true
 
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
-tokio = { version = "1", features = ["full"] }
-uuid = { version = "1.0", features = ["v4"] }
-anyhow = "1.0"
-log = "0.4"
-which = "6.0"
-pdf-extract = "0.7.12"
-csv = "1.3"
-calamine = "0.25"
-dirs = "6.0.0"
-toml = "0.9.5"
-toml_edit = "0.20"
-walkdir = "2.3"
-chrono = { version = "0.4", features = ["serde"] }
-notify = "6"
-base64 = "0.22.1"
-nosleep = "0.2.1"
-regex = "1.12.2"
+serde.workspace = true
+serde_json.workspace = true
+tokio.workspace = true
+uuid.workspace = true
+anyhow.workspace = true
+log.workspace = true
+which.workspace = true
+pdf-extract.workspace = true
+csv.workspace = true
+calamine.workspace = true
+dirs.workspace = true
+toml.workspace = true
+toml_edit.workspace = true
+walkdir.workspace = true
+chrono.workspace = true
+notify.workspace = true
+base64.workspace = true
+nosleep.workspace = true
+regex.workspace = true
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
-tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
-tauri-plugin-updater = "2"
+tauri-plugin-single-instance.workspace = true
+tauri-plugin-updater.workspace = true
 
-codex_bindings = { path = "../codex_bindings" }
-fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs" }
-codex-client = { path = "../codex-client" }
+codex_bindings.workspace = true
+fix-path-env.workspace = true
+codex-client.workspace = true
