@@ -9,7 +9,7 @@ on:
       - "src/**"
       - "src-tauri/**"
       - "codex-client/**"
-      - "codex_bindings/**"
+      - "codex-bindings/**"
       - "Cargo.toml"
       - "package.json"
   pull_request:
@@ -19,7 +19,7 @@ on:
       - "src/**"
       - "src-tauri/**"
       - "codex-client/**"
-      - "codex_bindings/**"
+      - "codex-bindings/**"
       - "Cargo.toml"
       - "package.json"
 

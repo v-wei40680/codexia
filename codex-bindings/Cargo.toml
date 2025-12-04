@@ -1,5 +1,5 @@
 [package]
-name = "codex_bindings"
+name = "codex-bindings"
 version.workspace = true
 edition.workspace = true
 authors.workspace = true

@@ -763,6 +763,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "codex-bindings"
+version = "0.16.0"
+dependencies = [
+ "codex-app-server-protocol",
+ "codex-protocol",
+ "ts-rs",
+]
+
+[[package]]
 name = "codex-client"
 version = "0.16.0"
 dependencies = [
@@ -847,15 +856,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "codex_bindings"
-version = "0.16.0"
-dependencies = [
- "codex-app-server-protocol",
- "codex-protocol",
- "ts-rs",
-]
-
-[[package]]
 name = "codexia"
 version = "0.16.0"
 dependencies = [
@@ -863,8 +863,8 @@ dependencies = [
  "base64 0.22.1",
  "calamine",
  "chrono",
+ "codex-bindings",
  "codex-client",
- "codex_bindings",
  "csv",
  "dirs",
  "fix-path-env",

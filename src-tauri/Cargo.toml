@@ -52,6 +52,6 @@ regex.workspace = true
 tauri-plugin-single-instance.workspace = true
 tauri-plugin-updater.workspace = true
 
-codex_bindings.workspace = true
+codex-bindings.workspace = true
 fix-path-env.workspace = true
 codex-client.workspace = true

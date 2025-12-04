@@ -2,7 +2,7 @@
 members = [
     "src-tauri",
     "codex-client",
-    "codex_bindings",
+    "codex-bindings",
 ]
 resolver = "2"
 
@@ -65,5 +65,5 @@ tauri-remote-ui = { git = "https://github.com/DraviaVemal/tauri-remote-ui" }
 fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs" }
 
 # Workspace internal dependencies
-codex_bindings = { path = "codex_bindings" }
+codex-bindings = { path = "codex-bindings" }
 codex-client = { path = "codex-client" }
