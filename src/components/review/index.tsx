@@ -1,6 +1,6 @@
 import { readTextFileLines } from "@tauri-apps/plugin-fs";
 import { useEffect, useState, useMemo } from "react";
-import { Dot } from "lucide-react";
+import { Dot, Funnel } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { TurnDiffView } from "@/components/events/TurnDiffView";
 import { AccordionMsg } from "@/components/events/AccordionMsg";
@@ -8,10 +8,13 @@ import ReviewExecCommandItem from "@/components/review/ReviewExecCommandItem";
 import { ReviewPatchOutputIcon } from "@/components/review/ReviewPatchOutputIcon";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
 import { MarkdownRenderer } from "@/components/chat/MarkdownRenderer";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import { RawMessage } from "./type";
 import { aggregateMessages } from "./aggregateMessages";
 import { PlanDisplay, SimplePlanStep } from "../chat/messages/PlanDisplay";
 import { ReviewFilters, createInitialFilterState } from "./ReviewFilters";
+import { Button } from "../ui/button";
 
 export function Review() {
   const { selectConversation } = useActiveConversationStore();
@@ -140,14 +143,22 @@ export function Review() {
 
   return (
     <div className="flex flex-col p-4 gap-2 overflow-auto h-full">
-      <div className="flex flex-col gap-2 border-b pb-2">
-        <ReviewFilters
-          showFilter={showFilter}
-          messageTypes={messageTypes}
-          onToggleFilter={() => setShowFilter((prev) => !prev)}
-          onFilterChange={handleFilterChange}
-        />
-      </div>
+      {showFilter && (
+        <div className="fixed bottom-6 right-0 p-4 z-10">
+          <ReviewFilters
+            className="mt-2 p-4 bg-background border rounded-md shadow-lg"
+            messageTypes={messageTypes}
+            onFilterChange={handleFilterChange}
+          />
+        </div>
+      )}
+      <Button
+        size="icon"
+        onClick={() => setShowFilter((prev) => !prev)}
+        className="fixed bottom-0 right-4 z-20"
+      >
+        <Funnel className="h-4 w-4" />
+      </Button>
       {filteredMessages.map((msg, index) => {
         switch (msg.type) {
           case "agent_message":
@@ -158,11 +169,13 @@ export function Review() {
             );
           case "user_message":
             return (
-              <div key={`user-${index}`} className="flex w-full justify-end">
-                <MarkdownRenderer
-                  className="px-2 border rounded"
-                  content={msg.message}
-                />
+              <div className="p-3 rounded-lg max-w-[90%] self-end shadow-md">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  key={`user-${index}`}
+                >
+                  {msg.message}
+                </ReactMarkdown>
               </div>
             );
 
