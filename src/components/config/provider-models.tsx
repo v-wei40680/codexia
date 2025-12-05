@@ -85,27 +85,27 @@ export function ProviderModels() {
     >
       <PopoverTrigger asChild>
         <Button variant="outline" size="sm" className="gap-2">
-          <span className="font-medium">{selectedModel ?? "Select Model"}</span>
+          <span className="font-medium text-xs sm:text-sm truncate max-w-[150px] sm:max-w-none">{selectedModel ?? "Select Model"}</span>
           <ChevronDown className="h-4 w-4 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[520px] max-h-[520px] p-0" align="end">
+      <PopoverContent className="w-[95vw] sm:w-[520px] max-h-[80vh] sm:max-h-[520px] p-0" align="end">
         <Tabs defaultValue="model-settings">
           <TabsList className="grid grid-cols-3 w-full">
-            <TabsTrigger value="model-settings">Model Settings</TabsTrigger>
-            <TabsTrigger value="add-profile">Add profile</TabsTrigger>
-            <TabsTrigger value="prompt-optimizer">Prompt Optimizer</TabsTrigger>
+            <TabsTrigger value="model-settings" className="text-xs sm:text-sm">Model Settings</TabsTrigger>
+            <TabsTrigger value="add-profile" className="text-xs sm:text-sm">Add profile</TabsTrigger>
+            <TabsTrigger value="prompt-optimizer" className="text-xs sm:text-sm">Prompt Optimizer</TabsTrigger>
           </TabsList>
           <TabsContent value="model-settings">
-            <div className="p-3 space-y-3">
-              <div className="grid grid-cols-[180px_1fr] gap-3">
+            <div className="p-2 sm:p-3 space-y-2 sm:space-y-3">
+              <div className="grid grid-cols-1 sm:grid-cols-[180px_1fr] gap-2 sm:gap-3">
                 <div className="rounded-md border p-2 space-y-2">
                   <div className="flex items-center justify-between">
                     <Label className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                       Providers
                     </Label>
                   </div>
-                  <ScrollArea className="h-[360px] pr-1">
+                  <ScrollArea className="h-[180px] sm:h-[360px] pr-1">
                     <div className="grid gap-1">
                       {providers.map((p) => (
                         <div key={p.id} className="flex items-center gap-1">
@@ -114,14 +114,14 @@ export function ProviderModels() {
                               p.id === selectedProviderId ? "secondary" : "ghost"
                             }
                             size="sm"
-                            className="flex-1 min-w-0 justify-start overflow-hidden text-left gap-2"
+                            className="flex-1 min-w-0 justify-start overflow-hidden text-left gap-2 text-xs sm:text-sm"
                             onClick={() => {
                               setSelectedProviderId(p.id);
                               setShowAddModelForm(false);
                             }}
                           >
                             <span className="truncate">{p.name}</span>
-                            {p.name === 'Codexia' && <Badge>plus</Badge>}
+                            {p.name === 'Codexia' && <Badge className="text-[10px] sm:text-xs">plus</Badge>}
                           </Button>
                           {p.id !== "openai" && p.id !== "codexia" && (
                             <AlertDialog>
@@ -182,12 +182,13 @@ export function ProviderModels() {
                     </Label>
                     {selectedProviderId && (
                       <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7"
+                        variant="outline"
+                        size="sm"
+                        className="h-8 gap-1 sm:h-7"
                         onClick={() => setShowAddModelForm(!showAddModelForm)}
                       >
                         <PlusCircle className="h-4 w-4" />
+                        <span className="text-xs sm:hidden">Add</span>
                       </Button>
                     )}
                   </div>
@@ -198,7 +199,7 @@ export function ProviderModels() {
                     />
                   ) : (
                     selectedProvider && (
-                      <ScrollArea className="max-h-[360px] pr-1">
+                      <ScrollArea className="h-[180px] sm:max-h-[360px] pr-1">
                         <div className="grid gap-1">
                           {selectedProvider.models.map((m) => (
                             <div className="flex items-center gap-1" key={m}>
@@ -207,7 +208,7 @@ export function ProviderModels() {
                                 m === selectedModel ? "secondary" : "ghost"
                               }
                               size="sm"
-                              className="flex-1 min-w-0 justify-start font-mono text-xs overflow-hidden"
+                              className="flex-1 min-w-0 justify-start font-mono text-[10px] sm:text-xs overflow-hidden"
                               onClick={() => {
                                 setSelectedModel(m);
                                 setIsPopoverOpen(false);

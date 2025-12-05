@@ -1,6 +1,6 @@
 import { v4 } from "uuid";
 import { create } from "zustand";
-import { invoke } from "@tauri-apps/api/core";
+import { invoke } from "@/lib/tauri-proxy";
 
 // Database Note type (matches Rust)
 interface DbNote {

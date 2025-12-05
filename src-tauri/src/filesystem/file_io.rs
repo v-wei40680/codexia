@@ -1,4 +1,5 @@
 use std::fs;
+use std::io::{BufRead, BufReader};
 use std::path::Path;
 
 #[tauri::command]
@@ -58,5 +59,39 @@ pub async fn write_file(file_path: String, content: String) -> Result<(), String
     match fs::write(&expanded_path, content) {
         Ok(()) => Ok(()),
         Err(e) => Err(format!("Failed to write file: {}", e)),
+    }
+}
+
+#[tauri::command]
+pub async fn read_text_file_lines(file_path: String) -> Result<Vec<String>, String> {
+    let expanded_path = if file_path.starts_with("~/") {
+        let home = dirs::home_dir().ok_or_else(|| "Cannot find home directory".to_string())?;
+        home.join(&file_path[2..])
+    } else {
+        Path::new(&file_path).to_path_buf()
+    };
+
+    if !expanded_path.exists() || expanded_path.is_dir() {
+        return Err("File does not exist or is a directory".to_string());
+    }
+
+    // Check file size to prevent reading very large files
+    if let Ok(metadata) = fs::metadata(&expanded_path) {
+        if metadata.len() > 5 * 1024 * 1024 {
+            // 1MB limit
+            return Err("File is too large to read".to_string());
+        }
+    }
+
+    match fs::File::open(&expanded_path) {
+        Ok(file) => {
+            let reader = BufReader::new(file);
+            let lines: Result<Vec<String>, _> = reader.lines().collect();
+            match lines {
+                Ok(lines) => Ok(lines),
+                Err(e) => Err(format!("Failed to read lines: {}", e)),
+            }
+        }
+        Err(e) => Err(format!("Failed to open file: {}", e)),
     }
 }

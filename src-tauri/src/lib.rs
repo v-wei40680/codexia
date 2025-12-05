@@ -10,7 +10,7 @@ use codex_commands::CodexState;
 use filesystem::{
     directory_ops::{canonicalize_path, get_default_directories, read_directory, search_files},
     file_analysis::calculate_file_tokens,
-    file_io::{read_file, write_file},
+    file_io::{read_file, read_text_file_lines, write_file},
     file_parsers::{csv::read_csv_content, pdf::read_pdf_content, xlsx::read_xlsx_content},
     git_diff::get_git_file_diff,
     git_status::get_git_status,
@@ -42,7 +42,6 @@ pub fn run() {
                 .level(log::LevelFilter::Info)
                 .build(),
         )
-        .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_screenshots::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
@@ -63,6 +62,7 @@ pub fn run() {
             canonicalize_path,
             calculate_file_tokens,
             read_file,
+            read_text_file_lines,
             write_file,
             read_pdf_content,
             read_csv_content,

@@ -32,7 +32,7 @@ export function ChatCompose({
   }, [setReview, showReview]);
 
   return (
-    <div className="border-t bg-background px-2">
+    <div className="border-t bg-background">
       <ChatInput
         inputValue={inputValue}
         onInputChange={onInputChange}
@@ -48,7 +48,7 @@ export function ChatCompose({
           <ReasoningEffortSelector />
           <TokenCountInfo usage={tokenUsage} />
         </span>
-        <span className="flex items-center gap-2">
+        <span className="flex items-center">
           <Button
             onClick={handleToggleReviewMode}
             className={showReview ? "bg-accent" : ""}

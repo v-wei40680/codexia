@@ -10,6 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "react-i18next";
 import { Link, useNavigate } from "react-router-dom";
 import supabase from "@/lib/supabase";
+import { User } from "lucide-react";
 
 export function UserDropdown() {
   const { user } = useAuth();
@@ -62,7 +63,7 @@ export function UserDropdown() {
           to="/login"
           className="flex hover:text-primary items-center gap-1 px-2"
         >
-          {t("header.login")}
+          <User />
         </Link>
       )}
     </div>

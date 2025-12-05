@@ -94,7 +94,7 @@ export function ChatView() {
   );
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full w-full">
       <ChatToolbar />
       {showReview ? (
         <div className="flex-1 h-full min-h-0 overflow-hidden">
@@ -105,7 +105,7 @@ export function ChatView() {
           <div className="sr-only" aria-live="polite">
             The bottom-right filter button lets you toggle which event types appear.
           </div>
-          <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden">
+          <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden px-0 sm:px-0">
             {currentEvents.length > 0 || isResumingConversation ? (
               <ChatScrollArea
                 events={currentEvents}

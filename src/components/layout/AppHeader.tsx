@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useLayoutStore } from "@/stores/settings/layoutStore";
 import { invoke } from "@/lib/tauri-proxy";
 import { useThemeStore } from "@/stores/settings/ThemeStore";
@@ -40,7 +40,6 @@ export function AppHeader() {
   const { showFileTree, toggleFileTree, toggleChatPane } = useLayoutStore();
   const { theme, toggleTheme } = useThemeStore();
   const { setActiveSection } = useSettingsStore();
-  const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { cwd } = useCodexStore();
@@ -60,35 +59,37 @@ export function AppHeader() {
     >
       {/* Left Section */}
       <div className="flex items-center gap-2">
-        <ClientPicker />
+        {showFileTree && (
+          <>
+            <ClientPicker />
 
-        <Link
-          to="/chat"
-          className="flex hover:text-primary items-center gap-1"
-          title={t("header.chat")}
-        >
-          <BotMessageSquare /> {t("header.chat")}
-        </Link>
+            <Link
+              to="/chat"
+              className="flex hover:text-primary items-center gap-1"
+              title={t("header.chat")}
+            >
+              <BotMessageSquare /> {t("header.chat")}
+            </Link>
 
-        <Link
-          to="/"
-          className="flex hover:text-primary items-center gap-1"
-          title={t("header.projects")}
-        >
-          <PartyPopper className="w-4 h-4" /> {t("header.projects")}
-        </Link>
-
-        {location.pathname === "/chat" && (
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleFileTree}
-            className={`h-6 w-6 ${showFileTree ? "bg-primary/20" : ""}`}
-            title={t("header.toggleChatPane")}
-          >
-            <PanelLeft />
-          </Button>
+            <Link
+              to="/"
+              className="flex hover:text-primary items-center gap-1"
+              title={t("header.projects")}
+            >
+              <PartyPopper /> {t("header.projects")}
+            </Link>
+          </>
         )}
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleFileTree}
+          className={`${showFileTree ? "bg-primary/20" : ""}`}
+          title={t("header.toggleChatPane")}
+        >
+          <PanelLeft />
+        </Button>
       </div>
 
       <Badge>{cwd}</Badge>
@@ -103,6 +104,7 @@ export function AppHeader() {
           <DropdownMenuTrigger asChild>
             <Button
               variant="ghost"
+              size="icon"
               className="h-6 w-6"
               title={t("header.menu")}
             >

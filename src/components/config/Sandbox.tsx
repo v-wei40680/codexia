@@ -36,8 +36,8 @@ export const Sandbox: React.FC = () => {
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent align="start" className="w-[520px] p-4">
-        <div className="grid grid-cols-[120px_1fr_1fr] gap-4">
+      <PopoverContent align="start" className="w-96 p-4">
+        <div className="grid grid-cols-3 gap-4">
           {/* Mode Section */}
           <div className="space-y-2">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -60,7 +60,7 @@ export const Sandbox: React.FC = () => {
           </div>
 
           {/* Sandbox Info (read-only visualization) */}
-          <div className="space-y-2">
+          <div className="space-y-2 sm:hidden">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
               Sandbox
             </p>

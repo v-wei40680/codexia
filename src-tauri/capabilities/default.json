@@ -22,19 +22,6 @@
     "updater:allow-download-and-install",
     "process:default",
     "shell:default",
-    "fs:default",
-    {
-      "identifier": "fs:allow-app-read",
-      "allow": [{ "path": "$HOME/.codex/*" },{ "path": "$HOME/.codex/sessions/**/*" }]
-    },
-    {
-      "identifier": "fs:allow-exists",
-      "allow": [{ "path": "$HOME/.codexia/**/*" }]
-    },
-    {
-      "identifier": "fs:allow-read-text-file-lines",
-      "allow": [{ "path": "$HOME/.codexia/**/*" },{ "path": "$HOME/.codex/sessions/**/*" }]
-    },
     "screenshots:default",
     "log:default",
     "deep-link:default",

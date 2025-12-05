@@ -1,4 +1,4 @@
-import { readTextFileLines } from "@tauri-apps/plugin-fs";
+import { invoke } from "@/lib/tauri-proxy";
 import { useEffect, useState, useMemo } from "react";
 import { Dot, Funnel } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -38,7 +38,7 @@ export function Review() {
 
     const readConversation = async () => {
       try {
-        const lines = await readTextFileLines(currentPath);
+        const lines = await invoke<string[]>("read_text_file_lines", {filePath: currentPath});
         let messages: RawMessage[] = [];
         let payload: Record<string, any> = {};
         for await (const line of lines) {
