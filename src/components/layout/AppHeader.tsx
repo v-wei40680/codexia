@@ -24,7 +24,7 @@ import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { useLayoutStore } from "@/stores/settings/layoutStore";
-import { invoke } from "@/lib/tauri-proxy";
+import { invoke, isRemoteRuntime} from "@/lib/tauri-proxy";
 import { useThemeStore } from "@/stores/settings/ThemeStore";
 import { useTranslation } from "react-i18next";
 import { AccentColorSelector } from "../common/AccentColorSelector";
@@ -43,6 +43,7 @@ export function AppHeader() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { cwd } = useCodexStore();
+  const currentPlatform = navigator.userAgent.includes("Mac") ? "macos" : "other";
 
   const handleNewWindow = async () => {
     try {
@@ -55,7 +56,7 @@ export function AppHeader() {
   return (
     <div
       data-tauri-drag-region
-      className="flex justify-between items-center pr-4 border-b bg-background/80 backdrop-blur-sm shadow-sm"
+      className={`flex justify-between items-center border-b bg-background/80 backdrop-blur-sm shadow-sm ${isRemoteRuntime() ? "" : (currentPlatform === "macos" ? "pl-20 pr-4" : "pr-32")}`}
     >
       {/* Left Section */}
       <div className="flex items-center gap-2">
