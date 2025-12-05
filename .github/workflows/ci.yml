@@ -7,27 +7,33 @@ on:
     paths:
       - ".github/workflows/ci.yml"
       - "src/**"
-      - "src-tauri/**"
+      - "src-tauri/src/**"
+      - "src-tauri/capabilities/**"
+      - "src-tauri/icons/**"
+      - "src-tauri/Cargo.toml"
+      - "src-tauri/Cargo.lock"
+      - "src-tauri/tauri.conf.json"
+      - "src-tauri/build.rs"
       - "codex-client/**"
       - "codex-bindings/**"
       - "Cargo.toml"
       - "package.json"
-    paths-ignore:
-      - "src-tauri/Info.plist"
-      - "src-tauri/entitlements.plist"
   pull_request:
     branches:
       - main
     paths:
       - "src/**"
-      - "src-tauri/**"
+      - "src-tauri/src/**"
+      - "src-tauri/capabilities/**"
+      - "src-tauri/icons/**"
+      - "src-tauri/Cargo.toml"
+      - "src-tauri/Cargo.lock"
+      - "src-tauri/tauri.conf.json"
+      - "src-tauri/build.rs"
       - "codex-client/**"
       - "codex-bindings/**"
       - "Cargo.toml"
       - "package.json"
-    paths-ignore:
-      - "src-tauri/Info.plist"
-      - "src-tauri/entitlements.plist"
 
 env:
   VITE_REDIRECT_URL: ${{ secrets.VITE_REDIRECT_URL }}
