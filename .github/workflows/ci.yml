@@ -8,6 +8,8 @@ on:
       - ".github/workflows/ci.yml"
       - "src/**"
       - "src-tauri/**"
+      - "!src-tauri/Info.plist"
+      - "!src-tauri/entitlements.plist"
       - "codex-client/**"
       - "codex-bindings/**"
       - "Cargo.toml"
@@ -18,6 +20,8 @@ on:
     paths:
       - "src/**"
       - "src-tauri/**"
+      - "!src-tauri/Info.plist"
+      - "!src-tauri/entitlements.plist"
       - "codex-client/**"
       - "codex-bindings/**"
       - "Cargo.toml"
