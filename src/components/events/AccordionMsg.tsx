@@ -4,7 +4,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
-import { MarkdownRenderer } from "../chat/MarkdownRenderer";
+import { SimpleMarkdown } from "../common/SimpleMarkdown";
 
 interface AccordionMsgProps {
   title: string;
@@ -16,10 +16,10 @@ export function AccordionMsg({ title, content }: AccordionMsgProps) {
     <Accordion type="single" collapsible>
       <AccordionItem value="item-1">
         <AccordionTrigger className="p-0">
-          <MarkdownRenderer content={title} />
+          <SimpleMarkdown content={title} />
         </AccordionTrigger>
         <AccordionContent>
-          <MarkdownRenderer content={content} />
+          <SimpleMarkdown content={content} />
         </AccordionContent>
       </AccordionItem>
     </Accordion>

@@ -7,14 +7,12 @@ import { AccordionMsg } from "@/components/events/AccordionMsg";
 import ReviewExecCommandItem from "@/components/review/ReviewExecCommandItem";
 import { ReviewPatchOutputIcon } from "@/components/review/ReviewPatchOutputIcon";
 import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
-import { MarkdownRenderer } from "@/components/chat/MarkdownRenderer";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
 import { RawMessage } from "./type";
 import { aggregateMessages } from "./aggregateMessages";
 import { PlanDisplay, SimplePlanStep } from "../chat/messages/PlanDisplay";
 import { ReviewFilters, createInitialFilterState } from "./ReviewFilters";
 import { Button } from "../ui/button";
+import { SimpleMarkdown } from "../common/SimpleMarkdown";
 
 export function Review() {
   const { selectConversation } = useActiveConversationStore();
@@ -164,18 +162,25 @@ export function Review() {
           case "agent_message":
             return (
               <div className="flex w-full" key={`agent-${index}`}>
-                <MarkdownRenderer content={msg.message} />
+                <SimpleMarkdown content={msg.message} />
               </div>
             );
           case "user_message":
             return (
-              <div className="p-3 rounded-lg max-w-[90%] self-end shadow-md">
-                <ReactMarkdown
-                  remarkPlugins={[remarkGfm]}
-                  key={`user-${index}`}
-                >
-                  {msg.message}
-                </ReactMarkdown>
+              <div key={`user-${index}`} className="p-3 rounded-lg max-w-[90%] self-end shadow-md">
+                {msg.images && msg.images.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {msg.images.map((image: string, index: number) => (
+                      <img
+                        key={index}
+                        src={image}
+                        alt={`Uploaded ${index + 1}`}
+                        className="max-w-full max-h-48 rounded object-contain"
+                      />
+                    ))}
+                  </div>
+                )}
+                <SimpleMarkdown content={msg.message} />
               </div>
             );
 
@@ -185,7 +190,7 @@ export function Review() {
               return (
                 <span className="flex items-center gap-2" key={index}>
                   <Dot size={8} />
-                  <MarkdownRenderer content={msg.text} />
+                  <SimpleMarkdown content={msg.text} />
                 </span>
               );
             }

@@ -17,11 +17,12 @@ import { invoke } from "@/lib/tauri-proxy";
 
 interface UserMessageProps {
   message: string;
+  images: Array<string> | null;
   conversationId: string | null;
   canUndo: boolean;
 }
 
-export function UserMessage({ message, conversationId, canUndo }: UserMessageProps) {
+export function UserMessage({ message, images, conversationId, canUndo }: UserMessageProps) {
   const { diffsByConversationId } = useTurnDiffStore();
   const popLatest = useTurnDiffStore((state) => state.popLatestDiff);
   const { cwd } = useCodexStore();
@@ -71,6 +72,18 @@ export function UserMessage({ message, conversationId, canUndo }: UserMessagePro
       <div className="space-y-1">
         <div className="peer">
           <EventBubble align="end" variant="user">
+            {images && images.length > 0 && (
+              <div className="flex flex-wrap gap-2 mb-2">
+                {images.map((image, index) => (
+                  <img
+                    key={index}
+                    src={image}
+                    alt={`Uploaded ${index + 1}`}
+                    className="max-w-full max-h-48 rounded object-contain"
+                  />
+                ))}
+              </div>
+            )}
             <p className="whitespace-pre-wrap leading-relaxed">{message}</p>
           </EventBubble>
         </div>

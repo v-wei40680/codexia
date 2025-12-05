@@ -1,5 +1,4 @@
 import { memo } from "react";
-import { MarkdownRenderer } from "@/components/chat/MarkdownRenderer";
 import { Badge } from "@/components/ui/badge";
 import { PlanDisplay } from "../chat/messages/PlanDisplay";
 import { TurnDiffView } from "./TurnDiffView";
@@ -17,6 +16,7 @@ import { UserMessage } from "./UserMessage";
 import { useSessionStore } from "@/stores/useSessionStore";
 import { formatDurationMs } from "@/utils/formatDuration";
 import { McpToolCallItem } from "./McpToolCallItem";
+import { SimpleMarkdown } from "../common/SimpleMarkdown";
 
 export const EVENT_FILTER_OPTIONS = [
   { type: "agent_message", label: "Agent messages" },
@@ -55,9 +55,11 @@ export const EventItem = memo(function EventItem({
   switch (msg.type) {
     case "user_message": {
       const messageText = msg.message;
+      const images = msg.images;
       return (
         <UserMessage
           message={messageText}
+          images={images}
           conversationId={conversationId}
           canUndo={canUndo}
         />
@@ -68,7 +70,7 @@ export const EventItem = memo(function EventItem({
       return (
         <div>
           <div className="flex peer items-start">
-            <MarkdownRenderer content={messageText} />
+            <SimpleMarkdown content={messageText} />
           </div>
           <div className="opacity-0 transition-opacity duration-200 peer-hover:opacity-100 hover:opacity-100">
             <MsgFooter
@@ -94,7 +96,7 @@ export const EventItem = memo(function EventItem({
                 return <AccordionMsg title={title} content={content} />;
               })()
             ) : (
-              <MarkdownRenderer content={msg.text} />
+              <SimpleMarkdown content={msg.text} />
             )}
           </span>
           {durationLabel && (
