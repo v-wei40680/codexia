@@ -160,7 +160,7 @@ export default function ProjectsPage() {
               onClick={scanForUntrustedProjects}
               disabled={scanLoading}
             >
-              {scanLoading ? "Scanning..." : "Scan Untrusted"}
+              {scanLoading ? "Scanning..." : "Scan out of ~/.codex/config.toml"}
             </Button>
           </div>
         </div>
