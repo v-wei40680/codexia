@@ -12,6 +12,7 @@ import {
   FileText,
   HeartHandshake,
   Airplay,
+  EllipsisVertical,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -20,7 +21,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate } from "react-router-dom";
 import { useLayoutStore } from "@/stores/settings/layoutStore";
@@ -113,7 +113,7 @@ export function AppHeader() {
               className="h-6 w-6"
               title={t("header.menu")}
             >
-              <Menu />
+              <EllipsisVertical />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="min-w-64">
