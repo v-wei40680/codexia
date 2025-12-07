@@ -25,7 +25,6 @@ import { TabManager } from "@/components/cc/TabManager";
 import { TabContent } from "@/components/cc/TabContent";
 import { useTabState } from "@/hooks/useTabState";
 import { useAppLifecycle, useTrackEvent } from "@/hooks";
-import { StartupIntro } from "@/components/cc/StartupIntro";
 
 type View = 
   | "welcome" 
@@ -491,47 +490,11 @@ function AppContent() {
  * Main App component - Wraps the app with providers
  */
 function App() {
-  const [showIntro, setShowIntro] = useState(() => {
-    // Read cached preference synchronously to avoid any initial flash
-    try {
-      const cached = typeof window !== 'undefined'
-        ? window.localStorage.getItem('app_setting:startup_intro_enabled')
-        : null;
-      if (cached === 'true') return true;
-      if (cached === 'false') return false;
-    } catch (_ignore) {}
-    return true; // default if no cache
-  });
-
-  useEffect(() => {
-    let timer: number | undefined;
-    (async () => {
-      try {
-        const pref = await api.getSetting('startup_intro_enabled');
-        const enabled = pref === null ? true : pref === 'true';
-        if (enabled) {
-          // keep intro visible and hide after duration
-          timer = window.setTimeout(() => setShowIntro(false), 2000);
-        } else {
-          // user disabled intro: hide immediately to avoid any overlay delay
-          setShowIntro(false);
-        }
-      } catch (err) {
-        // On failure, show intro once to keep UX consistent
-        timer = window.setTimeout(() => setShowIntro(false), 2000);
-      }
-    })();
-    return () => {
-      if (timer) window.clearTimeout(timer);
-    };
-  }, []);
-
   return (
     <ThemeProvider>
       <OutputCacheProvider>
         <TabProvider>
           <AppContent />
-          <StartupIntro visible={showIntro} />
         </TabProvider>
       </OutputCacheProvider>
     </ThemeProvider>
