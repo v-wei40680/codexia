@@ -11,9 +11,9 @@ import { invoke } from "@/lib/tauri-proxy";
 import {
   useConversationListStore,
   loadProjectSessions,
-} from "@/stores/useConversationListStore";
-import { useCodexStore } from "@/stores/useCodexStore";
-import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
+} from "@/stores/codex";
+import { useCodexStore } from "@/stores/codex";
+import { useActiveConversationStore } from "@/stores/codex";
 import { useResumeConversation } from "@/hooks/useResumeConversation";
 import { renameConversation } from "@/utils/renameConversation";
 import RenameDialog from "@/components/chat/RenameDialog";

@@ -30,9 +30,8 @@ import { useTranslation } from "react-i18next";
 import { AccentColorSelector } from "../common/AccentColorSelector";
 import { LanguageSelector } from "../common/LanguageSelector";
 import { PublishCloudDialog } from "../dialogs/PublishCloudDialog";
-import { ClientPicker } from "../common/ClientPicker";
 import { UserDropdown } from "../common/UserDropdown";
-import { useCodexStore } from "@/stores/useCodexStore";
+import { useCodexStore } from "@/stores/codex";
 import { Badge } from "../ui/badge";
 import { useSettingsStore } from "@/stores";
 
@@ -62,22 +61,27 @@ export function AppHeader() {
       <div className="flex items-center gap-2">
         {showFileTree && (
           <>
-            <ClientPicker />
-
-            <Link
-              to="/chat"
-              className="flex hover:text-primary items-center gap-1"
-              title={t("header.chat")}
-            >
-              <BotMessageSquare /> {t("header.chat")}
-            </Link>
-
             <Link
               to="/"
               className="flex hover:text-primary items-center gap-1"
               title={t("header.projects")}
             >
               <PartyPopper /> {t("header.projects")}
+            </Link>
+            <Link
+              to="/chat"
+              className="flex hover:text-primary items-center gap-1"
+              title="Codex"
+            >
+              <img src="/codex.svg" className="w-4 h-4" /> Codex
+            </Link>
+
+            <Link
+              to="/cc"
+              className="flex hover:text-primary items-center gap-1"
+              title="claude code"
+            >
+              <BotMessageSquare /> cc
             </Link>
           </>
         )}

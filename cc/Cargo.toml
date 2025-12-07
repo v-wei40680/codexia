@@ -1,0 +1,28 @@
+[package]
+name = "cc"
+version.workspace = true
+edition.workspace = true
+authors.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+chrono.workspace = true
+tokio.workspace = true
+log.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+rusqlite.workspace = true
+axum.workspace = true
+serde_yaml.workspace = true
+dirs.workspace = true
+futures-util.workspace = true
+tower-http.workspace = true
+uuid.workspace = true
+which.workspace = true
+tauri.workspace = true
+reqwest = { version = "0.11", features = ["json"] }
+sha2 = "0.10"
+zstd = "0.13"
+base64.workspace = true
+walkdir.workspace = true
+regex.workspace = true

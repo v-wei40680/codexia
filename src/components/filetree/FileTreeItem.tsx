@@ -22,7 +22,7 @@ import {
 } from "lucide-react";
 import { getFileIcon } from "./FileIcons";
 import { SubFolderContent } from "./SubFolderContent";
-import { useChatInputStore } from "@/stores/chatInputStore";
+import { useChatInputStore } from "@/stores/codex";
 import { useFolderStore } from "@/stores/FolderStore";
 
 interface FileEntry {

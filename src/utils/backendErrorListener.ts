@@ -1,6 +1,6 @@
 import { listen } from "@/lib/tauri-proxy";
 import { useEffect } from "react";
-import { useSessionStore } from "@/stores/useSessionStore";
+import { useSessionStore } from "@/stores/codex";
 import { toast } from "sonner";
 
 export interface BackendErrorPayload {

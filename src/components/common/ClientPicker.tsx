@@ -2,7 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { invoke } from "@/lib/tauri-proxy";
 import { useTranslation } from "react-i18next";
-import { useCodexStore } from "@/stores/useCodexStore";
+import { useCodexStore } from "@/stores/codex";
 import {
   DropdownMenu,
   DropdownMenuContent,

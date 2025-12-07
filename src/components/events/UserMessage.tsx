@@ -11,8 +11,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useTurnDiffStore } from "@/stores/useTurnDiffStore";
-import { useCodexStore } from "@/stores/useCodexStore";
+import { useTurnDiffStore } from "@/stores/codex";
+import { useCodexStore } from "@/stores/codex";
 import { invoke } from "@/lib/tauri-proxy";
 
 interface UserMessageProps {

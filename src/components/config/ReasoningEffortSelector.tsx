@@ -1,11 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Button } from '../ui/button';
 import { Brain, ChevronDown } from 'lucide-react';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '../ui/popover';
+import { Popover } from '../ui/popover';
 import { useProviderStore } from '@/stores';
 
 const EFFORT_OPTIONS = [
@@ -50,8 +46,10 @@ export const ReasoningEffortSelector: React.FC = () => {
   }, [allowedEfforts, reasoningEffort, setReasoningEffort]);
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
+    <Popover
+      open={isOpen}
+      onOpenChange={setIsOpen}
+      trigger={
         <Button
           variant="ghost"
         >
@@ -59,8 +57,8 @@ export const ReasoningEffortSelector: React.FC = () => {
           <span className="capitalize">{reasoningEffort}</span>
           <ChevronDown className="w-3 h-3" />
         </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-36 p-2" align="start">
+      }
+      content={
         <div className="space-y-1">
           <div>
             Reasoning Effort
@@ -80,7 +78,9 @@ export const ReasoningEffortSelector: React.FC = () => {
             </Button>
           ))}
         </div>
-      </PopoverContent>
-    </Popover>
+      }
+      align="start"
+      className="w-36 p-2"
+    />
   );
 };

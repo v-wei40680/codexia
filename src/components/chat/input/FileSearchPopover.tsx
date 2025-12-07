@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Popover } from '@/components/ui/popover';
 import { Command, CommandInput, CommandList, CommandItem } from '@/components/ui/command';
 import { invoke } from '@/lib/tauri-proxy';
-import { useChatInputStore, type FileReference } from '@/stores/chatInputStore';
-import { useCodexStore } from '@/stores/useCodexStore';
+import { useChatInputStore, type FileReference } from '@/stores/codex';
+import { useCodexStore } from '@/stores/codex';
 import { useSettingsStore } from '@/stores/settings/SettingsStore';
 
 interface FileSearchPopoverProps {
@@ -137,12 +137,13 @@ export const FileSearchPopover: React.FC<FileSearchPopoverProps> = ({
   };
 
   return (
-    <Popover open={showFileSearchPopover} onOpenChange={setShowFileSearchPopover}>
-      <PopoverTrigger asChild>
-        {/* This is an invisible trigger, the popover is controlled by state */}
+    <Popover
+      open={showFileSearchPopover}
+      onOpenChange={setShowFileSearchPopover}
+      trigger={
         <span className="absolute top-0 left-0 w-0 h-0" />
-      </PopoverTrigger>
-      <PopoverContent className="w-full p-0" align="start">
+      }
+      content={
         <Command onKeyDown={handleKeyDown}>
           <CommandInput
             placeholder="Search files..."
@@ -179,7 +180,9 @@ export const FileSearchPopover: React.FC<FileSearchPopoverProps> = ({
             )}
           </CommandList>
         </Command>
-      </PopoverContent>
-    </Popover>
+      }
+      align="start"
+      className="w-full p-0"
+    />
   );
 };

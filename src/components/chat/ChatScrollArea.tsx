@@ -7,7 +7,7 @@ import {
 } from "@/components/events/EventItem";
 import type { CodexEvent } from "@/types/chat";
 import { DELTA_EVENT_TYPES } from "@/types/chat";
-import { useChatScroll } from "@/hooks/useChatScroll";
+import { useChatScroll } from "@/hooks/codex";
 import { ScrollButtons } from "./actions/ScrollButtons";
 import { EventMsgType } from "./EventMsgType";
 import { EventFilterPopover } from "./EventFilterPopover";

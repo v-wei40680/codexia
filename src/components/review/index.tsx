@@ -6,7 +6,7 @@ import { TurnDiffView } from "@/components/events/TurnDiffView";
 import { AccordionMsg } from "@/components/events/AccordionMsg";
 import ReviewExecCommandItem from "@/components/review/ReviewExecCommandItem";
 import { ReviewPatchOutputIcon } from "@/components/review/ReviewPatchOutputIcon";
-import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
+import { useActiveConversationStore } from "@/stores/codex";
 import { RawMessage } from "./type";
 import { aggregateMessages } from "./aggregateMessages";
 import { PlanDisplay, SimplePlanStep } from "../chat/messages/PlanDisplay";

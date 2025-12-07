@@ -4,12 +4,13 @@ import { BookOpen, Globe, PenSquare, Terminal } from "lucide-react";
 import { useLayoutStore } from "@/stores/settings/layoutStore";
 import { useFolderStore } from "@/stores/FolderStore";
 import { detectWebFramework } from "@/utils/webFrameworkDetection";
-import { useChatInputStore } from "@/stores/chatInputStore";
-import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
+import { useChatInputStore } from "@/stores/codex";
+import { useActiveConversationStore } from "@/stores/codex";
 import { runCommand } from "@/utils/runCommand";
-import { useCodexStore } from "@/stores/useCodexStore";
+import { useCodexStore } from "@/stores/codex";
 import { invoke } from "@/lib/tauri-proxy";
 import { InitializeResponse } from "@/bindings/InitializeResponse";
+import { ClientPicker } from "../common/ClientPicker";
 
 const DEFAULT_DEV_URL = "http://localhost:3000";
 
@@ -105,7 +106,8 @@ export const ChatToolbar: React.FC = () => {
         >
           <Terminal />
         </Button>
-      </span>
+        <ClientPicker />
+        </span>
       <span className="flex gap-2">
         <Button
           variant="ghost"

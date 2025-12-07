@@ -13,9 +13,11 @@ import ReviewPage from "./pages/review";
 import McpPage from "./pages/mcp";
 import AgentPage from "@/pages/agents";
 import DonatePage from "@/pages/donate";
+import ClaudeCodePage from "@/pages/cc";
 import { useDeepLink } from "./hooks/useDeepLink";
 import { useLayoutStore } from "./stores/settings/layoutStore";
 import { useAuth } from "./hooks/useAuth";
+import { initializeActiveConversationSubscription } from "@/stores/codex/useActiveConversationStore";
 
 function Root() {
   if (!import.meta.env.DEV) {
@@ -25,6 +27,9 @@ function Root() {
   const { lastRoute } = useLayoutStore();
 
   useEffect(() => {
+    // Initialize store subscriptions
+    initializeActiveConversationSubscription();
+
     if (lastRoute && lastRoute !== "/") {
       window.location.hash = lastRoute;
     }
@@ -79,6 +84,10 @@ export const router = createHashRouter([
       {
         path: "agents.md",
         element: <AgentPage />,
+      },
+      {
+        path: "cc",
+        element: <ClaudeCodePage />,
       },
       {
         path: "Donate",

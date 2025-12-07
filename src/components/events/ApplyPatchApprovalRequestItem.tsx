@@ -1,7 +1,7 @@
 import { memo, useState } from 'react';
 import { invoke } from '@/lib/tauri-proxy';
 import { Button } from '@/components/ui/button';
-import { toast } from '@/components/ui/use-toast';
+import { useToast } from '@/components/ui/use-toast';
 import { useApprovalStore } from '@/stores';
 import type { CodexEvent } from '@/types/chat';
 import { FileChange } from '@/bindings/FileChange';
@@ -18,6 +18,7 @@ export const ApplyPatchApprovalRequestItem = memo(function ApplyPatchApprovalReq
 }) {
   const { msg } = event.payload.params;
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
   const patchApprovalRequest = useApprovalStore((state) => {
     if (msg.type !== 'apply_patch_approval_request') {
       return null;

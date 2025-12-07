@@ -38,7 +38,7 @@ async-trait = "0.1"
 rusqlite = { version = "0.31.0", features = ["bundled"] }
 
 # Tauri dependencies
-tauri = { version = "2", features = ["protocol-asset"] }
+tauri = { version = "2", features = ["protocol-asset", "macos-private-api"] }
 tauri-build = { version = "2", features = [] }
 tauri-plugin-shell = "2"
 tauri-plugin-dialog = "2"
@@ -48,6 +48,13 @@ tauri-plugin-deep-link = "2"
 tauri-plugin-process = "2"
 tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
 tauri-plugin-updater = "2"
+
+# Opcode dependencies
+axum = { version = "0.8", features = ["ws"] }
+tower = "0.5"
+tower-http = { version = "0.6", features = ["fs", "cors"] }
+futures-util = "0.3"
+serde_yaml = "0.9.34"
 
 # Other
 ts-rs = "11.0"
@@ -66,3 +73,4 @@ fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs" }
 # Workspace internal dependencies
 codex-bindings = { path = "codex-bindings" }
 codex-client = { path = "codex-client" }
+cc = { path = "cc" }

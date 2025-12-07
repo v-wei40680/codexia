@@ -3,11 +3,7 @@ import { Button } from '@/components/ui/button';
 import { FileText, Copy } from 'lucide-react';
 import { useTextSelection } from '@/hooks/useTextSelection';
 import { useNoteStore } from '@/stores/useNoteStore';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover } from '@/components/ui/popover';
 
 interface TextSelectionMenuProps {}
 
@@ -124,9 +120,9 @@ export const TextSelectionMenu: React.FC<TextSelectionMenuProps> = () => {
         </Button>
         
         <div className="w-px h-4 bg-gray-300 dark:bg-gray-600" />
-        
-        <Popover open={isOpen} onOpenChange={setIsOpen}>
-          <PopoverTrigger asChild>
+
+        <Popover
+          trigger={
             <Button
               variant="ghost"
               size="sm"
@@ -135,12 +131,11 @@ export const TextSelectionMenu: React.FC<TextSelectionMenuProps> = () => {
               <FileText className="w-3 h-3 mr-1" />
               Add to Note
             </Button>
-          </PopoverTrigger>
-          
-          <PopoverContent className="w-64 p-2" align="center">
+          }
+          content={
             <div className="space-y-2">
               <div className="text-sm font-medium px-2">Add selected text to note</div>
-              
+
               {/* Add to current note if one is active */}
               {activeNote && (
                 <Button
@@ -153,7 +148,7 @@ export const TextSelectionMenu: React.FC<TextSelectionMenuProps> = () => {
                   Add to "{activeNote.title}"
                 </Button>
               )}
-              
+
               {/* Create new note */}
               <Button
                 variant="ghost"
@@ -164,7 +159,7 @@ export const TextSelectionMenu: React.FC<TextSelectionMenuProps> = () => {
                 <FileText className="h-4 w-4 mr-2" />
                 Create new note
               </Button>
-              
+
               {/* Add to existing note (show recent notes) */}
               {notes.length > 0 && (
                 <div className="border-t pt-2">
@@ -189,8 +184,12 @@ export const TextSelectionMenu: React.FC<TextSelectionMenuProps> = () => {
                 </div>
               )}
             </div>
-          </PopoverContent>
-        </Popover>
+          }
+          open={isOpen}
+          onOpenChange={setIsOpen}
+          align="center"
+          className="w-64 p-2"
+        />
       </div>
       
       {/* Arrow pointing down to selection */}

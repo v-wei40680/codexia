@@ -7,7 +7,7 @@ import { CodeEditor } from "./CodeEditor";
 import { DiffViewer } from "./DiffViewer";
 import { useThemeStore } from "@/stores/settings/ThemeStore";
 import { useLayoutStore } from "@/stores/settings/layoutStore";
-import { useChatInputStore } from "@/stores/chatInputStore";
+import { useChatInputStore } from "@/stores/codex";
 import { getErrorMessage } from "@/utils/errorUtils";
 
 interface FileViewerProps {

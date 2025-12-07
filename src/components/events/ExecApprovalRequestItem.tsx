@@ -1,7 +1,7 @@
 import { memo, useState } from "react";
 import { invoke } from "@/lib/tauri-proxy";
 import { Button } from "@/components/ui/button";
-import { toast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { useApprovalStore } from "@/stores";
 import type { CodexEvent } from "@/types/chat";
 import { EventBubble } from "./EventBubble";
@@ -21,6 +21,7 @@ export const ExecApprovalRequestItem = memo(function ExecApprovalRequestItem({
   }
   console.log(msg);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { toast } = useToast();
 
   const execApprovalRequest = useApprovalStore((state) => {
     if (msg.type !== "exec_approval_request") {

@@ -1,11 +1,7 @@
 import React, { useState } from "react";
 import { Bot, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover } from "@/components/ui/popover";
 import {
   Tooltip,
   TooltipProvider,
@@ -27,16 +23,17 @@ export const Sandbox: React.FC = () => {
     mode.toUpperCase();
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
+    <Popover
+      open={open}
+      onOpenChange={setOpen}
+      trigger={
         <Button variant="ghost" className="gap-1">
           <Bot className="h-4 w-4" />
           <span className="text-sm font-medium">{currentSelectorLabel}</span>
           <ChevronDown className="h-3 w-3" />
         </Button>
-      </PopoverTrigger>
-
-      <PopoverContent align="start" className="w-96 p-4">
+      }
+      content={
         <div className="grid grid-cols-3 gap-4">
           {/* Mode Section */}
           <div className="space-y-2">
@@ -109,7 +106,9 @@ export const Sandbox: React.FC = () => {
             </div>
           </div>
         </div>
-      </PopoverContent>
-    </Popover>
+      }
+      align="start"
+      className="w-96 p-4"
+    />
   );
 };

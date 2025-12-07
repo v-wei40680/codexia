@@ -7,7 +7,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '../ui/tooltip';
-import { useChatInputStore } from '../../stores/chatInputStore';
+import { useChatInputStore } from '../../stores/codex';
 
 interface NoteToChatProps {
   content: string;

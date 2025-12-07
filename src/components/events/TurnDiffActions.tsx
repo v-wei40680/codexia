@@ -3,9 +3,9 @@ import { invoke } from "@/lib/tauri-proxy";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { Files } from "lucide-react";
-import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
-import { useCodexStore } from "@/stores/useCodexStore";
-import { useTurnDiffStore } from "@/stores/useTurnDiffStore";
+import { useActiveConversationStore } from "@/stores/codex";
+import { useCodexStore } from "@/stores/codex";
+import { useTurnDiffStore } from "@/stores/codex";
 
 interface DeleteWorktreeResult {
   removed: boolean;

@@ -1,13 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Camera, Monitor, Square } from 'lucide-react';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { 
-  getScreenshotableWindows, 
+import {
+  getScreenshotableWindows,
   getScreenshotableMonitors,
   getWindowScreenshot,
   getMonitorScreenshot,
@@ -125,8 +121,10 @@ export const ScreenshotPopover: React.FC<ScreenshotPopoverProps> = ({
   };
 
   return (
-    <Popover open={isOpen} onOpenChange={setIsOpen}>
-      <PopoverTrigger asChild>
+    <Popover
+      open={isOpen}
+      onOpenChange={setIsOpen}
+      trigger={
         <Button
           variant="ghost"
           size="icon"
@@ -135,8 +133,8 @@ export const ScreenshotPopover: React.FC<ScreenshotPopoverProps> = ({
         >
           <Camera className="h-4 w-4" />
         </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-64 p-2">
+      }
+      content={
         <div className="space-y-2">
           {isLoading ? (
             <div className="text-sm text-muted-foreground px-2 py-1">
@@ -202,7 +200,8 @@ export const ScreenshotPopover: React.FC<ScreenshotPopoverProps> = ({
             </>
           )}
         </div>
-      </PopoverContent>
-    </Popover>
+      }
+      className="w-64 p-2"
+    />
   );
 };

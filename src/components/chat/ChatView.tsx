@@ -1,22 +1,22 @@
 import { useCallback, useState } from "react";
-import { useConversation, useSendMessage } from "@/hooks/useCodex";
+import { useConversation, useSendMessage } from "@/hooks/codex";
 import { ChatCompose } from "./input/ChatCompose";
-import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
-import { useCodexApprovalRequests } from "@/hooks/useCodexApprovalRequests";
-import { useConversationEvents } from "@/hooks/useCodex/useConversationEvents";
+import { useActiveConversationStore } from "@/stores/codex";
+import { useCodexApprovalRequests } from "@/hooks/codex";
+import { useConversationEvents } from "@/hooks/codex";
 import { ChatToolbar } from "../layout/ChatToolBar";
-import { useChatInputStore } from "@/stores/chatInputStore";
+import { useChatInputStore } from "@/stores/codex";
 import { type CodexEvent } from "@/types/chat";
 import { Introduce } from "../common/Introduce";
-import { useEventStore } from "@/stores/useEventStore";
+import { useEventStore } from "@/stores/codex";
 import { ChatScrollArea } from "./ChatScrollArea";
-import { useTokenCountStore } from "@/stores/useTokenCountStore";
-import { useTokenCount } from "@/hooks/useCodex/useTokenCount";
+import { useTokenCountStore } from "@/stores/codex";
+import { useTokenCount } from "@/hooks/codex";
 import { TurnDiffPanel } from "../events/TurnDiffPanel";
 import { TurnDiffActions } from "../events/TurnDiffActions";
-import { useTurnDiffStore } from "@/stores/useTurnDiffStore";
+import { useTurnDiffStore } from "@/stores/codex";
 import { useExecCommandStore, useLayoutStore } from "@/stores";
-import { useResumeConversationStore } from "@/stores/useResumeConversationStore";
+import { useResumeConversationStore } from "@/stores/codex";
 import { Review } from "@/components/review";
 
 export function ChatView() {
@@ -103,7 +103,8 @@ export function ChatView() {
       ) : (
         <>
           <div className="sr-only" aria-live="polite">
-            The bottom-right filter button lets you toggle which event types appear.
+            The bottom-right filter button lets you toggle which event types
+            appear.
           </div>
           <div className="flex h-full min-h-0 flex-1 flex-col overflow-hidden px-0 sm:px-0">
             {currentEvents.length > 0 || isResumingConversation ? (

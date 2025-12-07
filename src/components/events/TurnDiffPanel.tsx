@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { TurnDiffView } from "./TurnDiffView";
-import { useTurnDiffStore } from "@/stores/useTurnDiffStore";
+import { useTurnDiffStore } from "@/stores/codex";
 
 interface TurnDiffPanelProps {
   open: boolean;

@@ -6,8 +6,8 @@ import { Tags } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ConversationCategoryDialog } from "@/components/chat/ConversationCategoryDialog";
 import { BulkDeleteButtons } from "@/components/chat/actions/BulkDeleteButtons";
-import { useConversationListStore } from "@/stores/useConversationListStore";
-import { useCodexStore } from "@/stores/useCodexStore";
+import { useConversationListStore } from "@/stores/codex";
+import { useCodexStore } from "@/stores/codex";
 
 interface Tab {
   value: string;

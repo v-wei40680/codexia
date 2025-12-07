@@ -2,7 +2,7 @@
 import { useState } from "react";
 import { Files } from "lucide-react";
 import { FileTreeItem } from "@/components/filetree/FileTreeItem";
-import { useChatInputStore } from "@/stores/chatInputStore";
+import { useChatInputStore } from "@/stores/codex";
 import { useLayoutStore } from "@/stores/settings/layoutStore";
 
 export function AttachedFilesTab() {

@@ -24,9 +24,18 @@ use sleep::{allow_sleep, prevent_sleep, SleepState};
 use tauri::{AppHandle, Manager};
 use tauri_remote_ui::EmitterExt;
 
+// Import CC types for database and process management
+use cc::commands::agents::{init_database, AgentDb};
+use cc::checkpoint::state::CheckpointState;
+use cc::process::ProcessRegistryState;
+use cc::commands::claude::ClaudeProcessState;
+use std::sync::Mutex;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let mut builder = tauri::Builder::default().plugin(tauri_plugin_log::Builder::new().build());
+    let mut builder = tauri::Builder::default()
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_log::Builder::new().build());
     #[cfg(desktop)]
     {
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
@@ -51,6 +60,7 @@ pub fn run() {
         .manage(WatchState::new())
         .manage(SleepState::default())
         .invoke_handler(tauri::generate_handler![
+            // Codexia native commands
             codex_commands::check::check_codex_version,
             codex_commands::check::check_coder_version,
             codex_commands::check::get_client_name,
@@ -132,8 +142,120 @@ pub fn run() {
             codex_commands::toggle_note_favorite,
             codex_commands::mark_notes_synced,
             codex_commands::get_unsynced_notes,
+            // CC (opcode) commands
+            cc::commands::claude::list_projects,
+            cc::commands::claude::create_project,
+            cc::commands::claude::get_project_sessions,
+            cc::commands::claude::get_home_directory,
+            cc::commands::claude::get_claude_settings,
+            cc::commands::claude::open_new_session,
+            cc::commands::claude::get_system_prompt,
+            cc::commands::claude::check_claude_version,
+            cc::commands::claude::save_system_prompt,
+            cc::commands::claude::save_claude_settings,
+            cc::commands::claude::find_claude_md_files,
+            cc::commands::claude::read_claude_md_file,
+            cc::commands::claude::save_claude_md_file,
+            cc::commands::claude::load_session_history,
+            cc::commands::claude::execute_claude_code,
+            cc::commands::claude::continue_claude_code,
+            cc::commands::claude::resume_claude_code,
+            cc::commands::claude::cancel_claude_execution,
+            cc::commands::claude::list_running_claude_sessions,
+            cc::commands::claude::get_claude_session_output,
+            cc::commands::claude::list_directory_contents,
+            cc::commands::claude::search_files,
+            cc::commands::claude::get_recently_modified_files,
+            cc::commands::claude::get_hooks_config,
+            cc::commands::claude::update_hooks_config,
+            cc::commands::claude::validate_hook_command,
+            cc::commands::claude::create_checkpoint,
+            cc::commands::claude::restore_checkpoint,
+            cc::commands::claude::list_checkpoints,
+            cc::commands::claude::fork_from_checkpoint,
+            cc::commands::claude::get_session_timeline,
+            cc::commands::claude::update_checkpoint_settings,
+            cc::commands::claude::get_checkpoint_diff,
+            cc::commands::claude::track_checkpoint_message,
+            cc::commands::claude::track_session_messages,
+            cc::commands::claude::check_auto_checkpoint,
+            cc::commands::claude::cleanup_old_checkpoints,
+            cc::commands::claude::get_checkpoint_settings,
+            cc::commands::claude::clear_checkpoint_manager,
+            cc::commands::claude::get_checkpoint_state_stats,
+            cc::commands::agents::list_agents,
+            cc::commands::agents::create_agent,
+            cc::commands::agents::update_agent,
+            cc::commands::agents::delete_agent,
+            cc::commands::agents::get_agent,
+            cc::commands::agents::execute_agent,
+            cc::commands::agents::list_agent_runs,
+            cc::commands::agents::get_agent_run,
+            cc::commands::agents::list_agent_runs_with_metrics,
+            cc::commands::agents::get_agent_run_with_real_time_metrics,
+            cc::commands::agents::list_running_sessions,
+            cc::commands::agents::kill_agent_session,
+            cc::commands::agents::get_session_status,
+            cc::commands::agents::cleanup_finished_processes,
+            cc::commands::agents::get_session_output,
+            cc::commands::agents::get_live_session_output,
+            cc::commands::agents::stream_session_output,
+            cc::commands::agents::load_agent_session_history,
+            cc::commands::agents::get_claude_binary_path,
+            cc::commands::agents::set_claude_binary_path,
+            cc::commands::agents::list_claude_installations,
+            cc::commands::agents::export_agent,
+            cc::commands::agents::export_agent_to_file,
+            cc::commands::agents::import_agent,
+            cc::commands::agents::import_agent_from_file,
+            cc::commands::agents::fetch_github_agents,
+            cc::commands::agents::fetch_github_agent_content,
+            cc::commands::agents::import_agent_from_github,
+            cc::commands::usage::get_usage_stats,
+            cc::commands::usage::get_usage_by_date_range,
+            cc::commands::usage::get_usage_details,
+            cc::commands::usage::get_session_stats,
+            cc::commands::mcp::mcp_add,
+            cc::commands::mcp::mcp_list,
+            cc::commands::mcp::mcp_get,
+            cc::commands::mcp::mcp_remove,
+            cc::commands::mcp::mcp_add_json,
+            cc::commands::mcp::mcp_add_from_claude_desktop,
+            cc::commands::mcp::mcp_serve,
+            cc::commands::mcp::mcp_test_connection,
+            cc::commands::mcp::mcp_reset_project_choices,
+            cc::commands::mcp::mcp_get_server_status,
+            cc::commands::mcp::mcp_read_project_config,
+            cc::commands::mcp::mcp_save_project_config,
+            cc::commands::storage::storage_list_tables,
+            cc::commands::storage::storage_read_table,
+            cc::commands::storage::storage_update_row,
+            cc::commands::storage::storage_delete_row,
+            cc::commands::storage::storage_insert_row,
+            cc::commands::storage::storage_execute_sql,
+            cc::commands::storage::storage_reset_database,
+            cc::commands::slash_commands::slash_commands_list,
+            cc::commands::slash_commands::slash_command_get,
+            cc::commands::slash_commands::slash_command_save,
+            cc::commands::slash_commands::slash_command_delete,
+            cc::commands::proxy::get_proxy_settings,
+            cc::commands::proxy::save_proxy_settings,
         ])
         .setup(|app| {
+            // Initialize CC agents database for storage commands
+            let conn = init_database(&app.handle())
+                .expect("Failed to initialize agents database");
+            app.manage(AgentDb(Mutex::new(conn)));
+
+            // Initialize checkpoint state for checkpoint commands
+            app.manage(CheckpointState::new());
+
+            // Initialize process registry for agent process management
+            app.manage(ProcessRegistryState::default());
+
+            // Initialize Claude process state
+            app.manage(ClaudeProcessState::default());
+
             // Setup event bridge between codex-client and Tauri
             let codex_state = app.state::<CodexState>();
             codex_commands::setup_event_bridge(

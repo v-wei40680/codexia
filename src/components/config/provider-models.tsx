@@ -2,11 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Popover } from "@/components/ui/popover";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -82,14 +78,13 @@ export function ProviderModels() {
         setIsPopoverOpen(open);
         setShowAddModelForm(false);
       }}
-    >
-      <PopoverTrigger asChild>
+      trigger={
         <Button variant="outline" size="sm" className="gap-2">
           <span className="font-medium text-xs sm:text-sm truncate max-w-[150px] sm:max-w-none">{selectedModel ?? "Select Model"}</span>
           <ChevronDown className="h-4 w-4 opacity-50" />
         </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-[95vw] sm:w-[520px] max-h-[80vh] sm:max-h-[520px] p-0" align="end">
+      }
+      content={
         <Tabs defaultValue="model-settings">
           <TabsList className="grid grid-cols-3 w-full">
             <TabsTrigger value="model-settings" className="text-xs sm:text-sm">Model Settings</TabsTrigger>
@@ -269,7 +264,9 @@ export function ProviderModels() {
             <PromptOptimizerSettings />
           </TabsContent>
         </Tabs>
-      </PopoverContent>
-    </Popover>
+      }
+      align="end"
+      className="w-[95vw] sm:w-[520px] max-h-[80vh] sm:max-h-[520px] p-0"
+    />
   );
 }

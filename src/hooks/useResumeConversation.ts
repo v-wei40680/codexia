@@ -1,10 +1,10 @@
 import { useCallback } from "react";
-import { useActiveConversationStore } from "@/stores/useActiveConversationStore";
-import { useConversation } from "@/hooks/useCodex";
-import { useBuildNewConversationParams } from "@/hooks/useBuildNewConversationParams";
-import { useEventStore } from "@/stores/useEventStore";
+import { useActiveConversationStore } from "@/stores/codex";
+import { useConversation } from "@/hooks/codex";
+import { useBuildNewConversationParams } from "@/hooks/codex";
+import { useEventStore } from "@/stores/codex";
 import { extractInitialMessages, type CodexEvent } from "@/types/chat";
-import { useResumeConversationStore } from "@/stores/useResumeConversationStore";
+import { useResumeConversationStore } from "@/stores/codex";
 import type { ConversationSummary } from "@/bindings/ConversationSummary";
 
 const pendingResumes = new Set<string>();

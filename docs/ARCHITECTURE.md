@@ -29,7 +29,7 @@ Codexia is a cross‑platform desktop app built with Tauri v2 (Rust backend) and
 important files connect Codexia and Codex CLI via `app-server` json RPC
  
 ```
-src/hooks/useCodex/useConversationEvents.ts
+src/hooks/codex/useConversationEvents.ts
 codex-client
 ```
 

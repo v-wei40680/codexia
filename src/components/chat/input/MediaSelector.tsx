@@ -7,7 +7,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import { useChatInputStore } from '@/stores/chatInputStore';
+import { useChatInputStore } from '@/stores/codex';
 import { isMediaFile, createMediaAttachment } from '@/utils/mediaUtils';
 import { isRemoteRuntime } from "@/lib/tauri-proxy";
 import { open } from "@tauri-apps/plugin-dialog";

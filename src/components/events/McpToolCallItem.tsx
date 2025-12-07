@@ -4,7 +4,7 @@ import { CheckCircle2 } from "lucide-react";
 import { DiffViewer } from "../filetree/DiffViewer";
 import { CodexEvent } from "@/types/chat";
 import { Badge } from "../ui/badge";
-import { useEventStore } from "@/stores/useEventStore";
+import { useEventStore } from "@/stores/codex";
 
 export function McpToolCallItem({ event }: { event: CodexEvent }) {
   const { msg, conversationId } = event.payload.params;

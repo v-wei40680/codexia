@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { invoke } from "@/lib/tauri-proxy";
 import { ConversationSummary } from "@/bindings/ConversationSummary";
-import { useConversationListStore } from "@/stores/useConversationListStore";
+import { useConversationListStore } from "@/stores/codex";
 
 interface BulkDeleteButtonsProps {
   showBulkDeleteButtons: boolean;

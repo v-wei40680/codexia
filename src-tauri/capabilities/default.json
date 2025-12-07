@@ -25,6 +25,14 @@
     "screenshots:default",
     "log:default",
     "deep-link:default",
-    "log:default"
+    "fs:default",
+    "fs:allow-read-dir",
+    "fs:allow-read-file",
+    "fs:allow-write-file",
+    "fs:allow-mkdir",
+    "fs:allow-copy-file",
+    "fs:allow-remove",
+    "fs:allow-rename",
+    "fs:allow-exists"
   ]
 }

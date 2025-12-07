@@ -7,11 +7,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from '@/components/ui/popover';
+import { Popover } from '@/components/ui/popover';
 import { useNoteStore } from '@/stores/useNoteStore';
 
 interface MessageNoteActionsProps {
@@ -67,8 +63,8 @@ export const MessageNoteActions: React.FC<MessageNoteActionsProps> = ({
 
   return (
     <TooltipProvider>
-      <Popover open={isOpen} onOpenChange={setIsOpen}>
-        <PopoverTrigger asChild>
+      <Popover
+        trigger={
           <Button
             variant="ghost"
             size="sm"
@@ -83,12 +79,11 @@ export const MessageNoteActions: React.FC<MessageNoteActionsProps> = ({
               </TooltipContent>
             </Tooltip>
           </Button>
-        </PopoverTrigger>
-        
-        <PopoverContent className="w-64 p-2" align="end">
+        }
+        content={
           <div className="space-y-2">
             <div className="text-sm font-medium px-2">Add to notepad</div>
-            
+
             {/* Add to current note if one is active */}
             {activeNote && (
               <Button
@@ -101,7 +96,7 @@ export const MessageNoteActions: React.FC<MessageNoteActionsProps> = ({
                 Add to "{activeNote.title}"
               </Button>
             )}
-            
+
             {/* Create new note */}
             <Button
               variant="ghost"
@@ -112,7 +107,7 @@ export const MessageNoteActions: React.FC<MessageNoteActionsProps> = ({
               <Plus className="h-4 w-4 mr-2" />
               Create new note
             </Button>
-            
+
             {/* Add to existing note (show recent notes) */}
             {notes.length > 0 && activeNote && (
               <div className="border-t pt-2">
@@ -137,8 +132,12 @@ export const MessageNoteActions: React.FC<MessageNoteActionsProps> = ({
               </div>
             )}
           </div>
-        </PopoverContent>
-      </Popover>
+        }
+        open={isOpen}
+        onOpenChange={setIsOpen}
+        align="end"
+        className="w-64 p-2"
+      />
     </TooltipProvider>
   );
 };
