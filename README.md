@@ -1,8 +1,8 @@
 # Codexia
 
-A missing GUI and Toolkit for Codex CLI
+A powerful GUI and Toolkit for Codex CLI + Claude code
 
-file-tree integration, prompt notepad, git worktree, diff view, build-in pdf csv/xlsx viewer, and more.
+one click @file from FileTree, prompt notepad, git worktree, diff view, build-in pdf csv/xlsx viewer, and more.
 
 [![Subreddit subscribers](https://img.shields.io/reddit/subreddit-subscribers/codexia?style=flat&logo=reddit&label=codexia)](https://www.reddit.com/r/codexia/)
 [![Discord](https://img.shields.io/badge/Discord-Join-5865F2?style=flat&logo=discord&logoColor=white)](https://discord.gg/zAjtD4kf5K)
@@ -13,6 +13,11 @@ file-tree integration, prompt notepad, git worktree, diff view, build-in pdf csv
 ![Reasoning](public/codexia-reason.png)
 
 ▶️ [Automation demo on Twitter](https://x.com/lisp_mi/status/1966147638266589376)
+
+## 📋 Table of Contents
+- [✨ Features](#-features)
+- [✨ Claude code features](#claude-code-features)
+- [📖 Usage](#-usage)
 
 ## ✨ Features
 
@@ -72,6 +77,9 @@ file-tree integration, prompt notepad, git worktree, diff view, build-in pdf csv
 - sesssion list - scan new session to store in sqlite
 - token usage
 
+## Claude code features
+- see [opcode](//github.com/winfunc/opcode)
+
 ## 🚀 Installation
 
 ### Prerequisites
@@ -99,17 +107,6 @@ Menu → Remote access -> start
 
 ### Others
 - Google or ask AI
-
-## FAQ
-
-- MacOS damaged warning
-[🎥Youtube](https://www.youtube.com/watch?v=MEHFd0PCQh4)
-The app not signed (before codexia v0.15.0), You can open it by running the terminal command:
-
-```sh
-xattr -cr /Applications/codexia.app
-open -a /Applications/codexia.app  # or click the Codexia app
-```
 
 ## 💬 Discussions
 
@@ -140,6 +137,9 @@ We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) f
 ## 🙏 Acknowledgments
 
 - [Plux](https://github.com/milisp/plux) one click @files from FileTree & notepad
+- Built with [Tauri](https://tauri.app/) - The secure framework for building desktop apps
+- [Claude](https://claude.ai) by Anthropic
+- [Codex](https://github.com/openai/codex) by OpenAI
 
 ---
 
