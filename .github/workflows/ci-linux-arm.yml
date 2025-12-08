@@ -54,4 +54,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Codexia-linux-arm
-          path: src-tauri/target/release/bundle/**/*.deb
+          path: target/release/bundle/**/*.deb

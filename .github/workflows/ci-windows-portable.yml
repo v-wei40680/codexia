@@ -48,4 +48,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Codexia_windows_x64_portable
-          path: src-tauri/target/release/codexia.exe
+          path: target/release/codexia.exe

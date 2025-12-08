@@ -55,7 +55,7 @@ jobs:
       - name: Detect .deb filename
         id: set_deb
         run: |
-          DEB_PATH=$(find src-tauri/target/release/bundle -name "*.deb" -type f | head -n 1)
+          DEB_PATH=$(find target/release/bundle -name "*.deb" -type f | head -n 1)
           echo "deb_path=$DEB_PATH" >> $GITHUB_OUTPUT
           echo "deb_file=$(basename $DEB_PATH)" >> $GITHUB_OUTPUT
 
@@ -63,7 +63,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: Codexia-linux-arm
-          path: src-tauri/target/release/bundle/**/*.deb
+          path: target/release/bundle/**/*.deb
 
       - name: Create Release and Upload Asset via gh
         run: |
