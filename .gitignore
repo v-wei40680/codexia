@@ -28,8 +28,8 @@ target
 src/bindings
 
 # Local agent notes
-AGENTS.md
-CLAUDE.md
+# AGENTS.md
+# CLAUDE.md
 .claude/
 .gemini/
 
