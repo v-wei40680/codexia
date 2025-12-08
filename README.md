@@ -17,7 +17,8 @@ one click @file from FileTree, prompt notepad, git worktree, diff view, build-in
 ## 📋 Table of Contents
 - [✨ Features](#-features)
 - [✨ Claude code features](#claude-code-features)
-- [📖 Usage](#-usage)
+- [🚀 Installation](#-installation)
+- [📖 Quick start](#-quick-start)
 
 ## ✨ Features
 
@@ -88,6 +89,7 @@ one click @file from FileTree, prompt notepad, git worktree, diff view, build-in
 
 ### Download
 
+- [release](https://github.com/milisp/codexia/releases)
 - [modern-github-release](https://milisp.github.io/modern-github-release/#/repo/milisp/codexia)
 
 ### macOS homebrew
@@ -97,7 +99,7 @@ brew tap milisp/codexia
 brew install --cask codexia
 ```
 
-## 📖 Usage
+## 📖 Quick start
 
 ### Remote control
 
