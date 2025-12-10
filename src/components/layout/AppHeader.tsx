@@ -39,7 +39,7 @@ export function AppHeader() {
       </div>
 
       {/* Center Section */}
-      <Badge>{cwd}</Badge>
+      <Badge>{cwd.split(/[\\/]/).pop()}</Badge>
 
       {/* Right Section - Right Panel Toggles, Settings and Menu */}
       <div className="flex gap-2 items-center">
@@ -55,17 +55,15 @@ export function AppHeader() {
             <PanelRightOpen className="w-4 h-4" />
           )}
         </Button>
-        {rightView && (
-          <Button
-            variant={rightView === "notepad" ? "default" : "outline"}
-            size="icon"
-            onClick={() =>
-              setRightView(rightView === "notepad" ? null : "notepad")
-            }
-          >
-            <Notebook className="w-4 h-4" />
-          </Button>
-        )}
+        <Button
+          variant={rightView === "notepad" ? "default" : "outline"}
+          size="icon"
+          onClick={() =>
+            setRightView(rightView === "notepad" ? null : "notepad")
+          }
+        >
+          <Notebook className="w-4 h-4" />
+        </Button>
         <PublishCloudDialog />
         <UserDropdown />
         <AppMenu />
