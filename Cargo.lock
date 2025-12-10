@@ -689,7 +689,7 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "0.17.1"
+version = "0.17.2"
 dependencies = [
  "anyhow",
  "axum",
@@ -851,7 +851,7 @@ dependencies = [
 
 [[package]]
 name = "codex-bindings"
-version = "0.17.1"
+version = "0.17.2"
 dependencies = [
  "codex-app-server-protocol",
  "codex-protocol",
@@ -860,7 +860,7 @@ dependencies = [
 
 [[package]]
 name = "codex-client"
-version = "0.17.1"
+version = "0.17.2"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -944,12 +944,12 @@ dependencies = [
 
 [[package]]
 name = "codexia"
-version = "0.17.1"
+version = "0.17.2"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
  "calamine",
- "cc 0.17.1",
+ "cc 0.17.2",
  "chrono",
  "codex-bindings",
  "codex-client",
