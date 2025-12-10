@@ -5,15 +5,12 @@ import { initializeActiveConversationSubscription } from "@/stores/codex/useActi
 import "./App.css";
 
 export default function App() {
+  // Initialize deep linking - must be called at top level, not conditionally
+  useDeepLink();
 
   useEffect(() => {
     // Initialize store subscriptions
     initializeActiveConversationSubscription();
-
-    // Initialize deep linking (non-dev mode)
-    if (!import.meta.env.DEV) {
-      useDeepLink();
-    }
   }, []);
 
   return <Layout />;
