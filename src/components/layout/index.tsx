@@ -3,6 +3,11 @@ import { AppSidebar } from "./AppSidebar";
 import { Toaster } from "sonner";
 import { useNavigationStore } from "@/stores/navigationStore";
 import { PanelGroup, Panel, PanelResizeHandle } from "react-resizable-panels";
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable"
 import { FileExplorerPanel, ProjectPanel } from "@/components/panels";
 import ChatPage from "@/pages/chat";
 import { McpPanel } from "../panels/McpPanel";
@@ -15,6 +20,8 @@ import ClaudeCodeApp from "@/pages/cc";
 import { WebPreview } from "../WebPreview";
 import { useLayoutStore } from "@/stores";
 import { DiffViewer } from "../filetree/DiffViewer";
+import { NoteList } from "../notes";
+import { NotesView } from "../notes/NotesView";
 
 export function Layout() {
   const { mainView, rightView, setRightView } = useNavigationStore();
@@ -85,12 +92,15 @@ export function Layout() {
               <Panel defaultSize={mainView ? 30 : 100} minSize={20}>
                 <div className="h-full overflow-auto">
                   {rightView === "notepad" ? (
-                    <div className="p-4">
-                      <h2 className="font-semibold mb-4">Notepad</h2>
-                      <div className="text-sm text-muted-foreground">
-                        Notepad content
-                      </div>
-                    </div>
+                    <ResizablePanelGroup direction="horizontal" className="h-full">
+                      <ResizablePanel defaultSize={30} minSize={0}>
+                        <NoteList />
+                      </ResizablePanel>
+                      <ResizableHandle withHandle />
+                      <ResizablePanel defaultSize={70} minSize={50}>
+                        <NotesView />
+                      </ResizablePanel>
+                    </ResizablePanelGroup>
                   ) : rightView === "webPreview" ? (
                     <WebPreview
                       url={webPreviewUrl || ""}
