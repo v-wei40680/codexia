@@ -11,6 +11,7 @@ import { useCodexStore } from "@/stores/codex";
 import { invoke } from "@/lib/tauri-proxy";
 import { InitializeResponse } from "@/bindings/InitializeResponse";
 import { ClientPicker } from "../common/ClientPicker";
+import { useNavigationStore } from "@/stores/navigationStore";
 
 const DEFAULT_DEV_URL = "http://localhost:3000";
 
@@ -20,19 +21,22 @@ export const ChatToolbar: React.FC = () => {
     useLayoutStore();
   const { currentFolder } = useFolderStore();
   const { clearAll, requestFocus } = useChatInputStore();
-  const { setActiveConversationId, activeConversationId } = useActiveConversationStore();
+  const { setActiveConversationId, activeConversationId } =
+    useActiveConversationStore();
   const initializeRequestedRef = React.useRef(false);
+  const { setRightView } = useNavigationStore();
 
   const handleNewConversation = React.useCallback(() => {
     setActiveConversationId(null);
     clearAll();
     requestFocus();
-    setReview(false)
+    setReview(false);
   }, [setActiveConversationId, clearAll, requestFocus]);
 
   const handleToggleWebPreview = React.useCallback(async () => {
     if (showWebPreview) {
       setWebPreviewUrl(null);
+      setRightView(null);
       return;
     }
 
@@ -41,6 +45,7 @@ export const ChatToolbar: React.FC = () => {
     if (currentFolder) {
       try {
         const frameworkInfo = await detectWebFramework(currentFolder);
+        console.log("web preview frameworkInfo", frameworkInfo);
         if (frameworkInfo) {
           devUrl = frameworkInfo.devUrl;
         }
@@ -50,6 +55,7 @@ export const ChatToolbar: React.FC = () => {
     }
 
     setWebPreviewUrl(devUrl);
+    setRightView("webPreview");
   }, [showWebPreview, setWebPreviewUrl, currentFolder]);
 
   const handleRunCommand = React.useCallback(() => {
@@ -93,10 +99,14 @@ export const ChatToolbar: React.FC = () => {
   return (
     <div className="flex justify-between gap-2 px-2 w-full">
       <span className="flex gap-2">
-        <Button size="icon" onClick={handleNewConversation} title="New Conversation (Cmd/Ctrl+N)">
+        <Button
+          size="icon"
+          onClick={handleNewConversation}
+          title="New Conversation (Cmd/Ctrl+N)"
+        >
           <PenSquare />
         </Button>
-        
+
         <Button
           size="icon"
           variant="secondary"
@@ -107,7 +117,7 @@ export const ChatToolbar: React.FC = () => {
           <Terminal />
         </Button>
         <ClientPicker />
-        </span>
+      </span>
       <span className="flex gap-2">
         <Button
           variant="ghost"

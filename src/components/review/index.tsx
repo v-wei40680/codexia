@@ -12,7 +12,7 @@ import { aggregateMessages } from "./aggregateMessages";
 import { PlanDisplay, SimplePlanStep } from "../chat/messages/PlanDisplay";
 import { ReviewFilters, createInitialFilterState } from "./ReviewFilters";
 import { Button } from "../ui/button";
-import { SimpleMarkdown } from "../common/SimpleMarkdown";
+import { MarkdownRenderer } from "../chat/MarkdownRenderer";
 
 export function Review() {
   const { selectConversation } = useActiveConversationStore();
@@ -162,7 +162,7 @@ export function Review() {
           case "agent_message":
             return (
               <div className="flex w-full" key={`agent-${index}`}>
-                <SimpleMarkdown content={msg.message} />
+                <MarkdownRenderer content={msg.message} />
               </div>
             );
           case "user_message":
@@ -180,7 +180,7 @@ export function Review() {
                     ))}
                   </div>
                 )}
-                <SimpleMarkdown content={msg.message} />
+                <MarkdownRenderer content={msg.message} />
               </div>
             );
 
@@ -190,7 +190,7 @@ export function Review() {
               return (
                 <span className="flex items-center gap-2" key={index}>
                   <Dot size={8} />
-                  <SimpleMarkdown content={msg.text} />
+                  <MarkdownRenderer content={msg.text} />
                 </span>
               );
             }

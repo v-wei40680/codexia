@@ -8,14 +8,12 @@ import {
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "react-i18next";
-import { Link, useNavigate } from "react-router-dom";
 import supabase from "@/lib/supabase";
 import { User } from "lucide-react";
 
 export function UserDropdown() {
   const { user } = useAuth();
   const { t } = useTranslation();
-  const navigate = useNavigate();
 
   const handleLogout = async () => {
     try {
@@ -25,7 +23,14 @@ export function UserDropdown() {
     } catch (e) {
       console.error("Error signing out:", e);
     } finally {
-      navigate("/login", { replace: true });
+      // Reload page to reset app state
+      window.location.reload();
+    }
+  };
+
+  const handleViewPublicPage = () => {
+    if (user?.id) {
+      window.open(`/u/${user.id}`, "_blank");
     }
   };
 
@@ -49,7 +54,7 @@ export function UserDropdown() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={() => navigate(`/u/${user.id}`)}>
+            <DropdownMenuItem onClick={handleViewPublicPage}>
               {t("header.viewPublicPage")}
             </DropdownMenuItem>
             <DropdownMenuSeparator />
@@ -59,12 +64,9 @@ export function UserDropdown() {
           </DropdownMenuContent>
         </DropdownMenu>
       ) : (
-        <Link
-          to="/login"
-          className="flex hover:text-primary items-center gap-1 px-2"
-        >
+        <Button variant="ghost" className="h-6 w-6 p-0">
           <User />
-        </Link>
+        </Button>
       )}
     </div>
   );

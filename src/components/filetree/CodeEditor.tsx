@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Save, Search, ChevronUp, ChevronDown, X, Send, FileText } from "lucide-react";
 import AceEditor from "react-ace";
 import { useEditorStore } from "@/stores/EditorStore";
-import { useThemeStore } from "@/stores/settings/ThemeStore";
+import { useThemeContext } from "@/contexts/ThemeContext";
 // Import Ace Editor modes
 import "ace-builds/src-noconflict/mode-javascript";
 import "ace-builds/src-noconflict/mode-typescript";
@@ -66,7 +66,7 @@ export function CodeEditor({
   const editorContainerRef = useRef<HTMLDivElement>(null);
   
   // Zustand stores
-  const { theme } = useThemeStore();
+  const { theme } = useThemeContext();
   const {
     showLineNumbers,
     fontSize,

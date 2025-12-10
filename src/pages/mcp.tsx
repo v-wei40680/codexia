@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { invoke } from '@/lib/tauri-proxy';
 import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Save, X } from 'lucide-react';
 import { McpServerConfig } from '@/types';
 import { toast } from 'sonner';
@@ -14,6 +15,7 @@ import {
 
 export default function McpPage() {
   const [servers, setServers] = useState<Record<string, McpServerConfig>>({});
+  const [activeTab, setActiveTab] = useState('quick');
   const [newServerName, setNewServerName] = useState('');
   const [newServerProtocol, setNewServerProtocol] = useState<'stdio' | 'http' | 'sse'>('stdio');
   const [commandConfig, setCommandConfig] = useState({
@@ -74,10 +76,11 @@ export default function McpPage() {
       }
 
       await invoke('add_mcp_server', { name: newServerName, config });
-      
+
       setNewServerName('');
       setCommandConfig({ command: '', args: '', env: '' });
       setHttpConfig({ url: '' });
+      setActiveTab('servers');
       loadServers();
     } catch (error) {
       console.error('Failed to add MCP server:', error);
@@ -156,16 +159,27 @@ export default function McpPage() {
   return (
     <div className="container mx-auto py-4">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">MCP Server Management</h1>
+        <h1 className="text-2xl font-bold">Codex MCP Server Management</h1>
         <McpLinkerButton />
       </div>
-      
+
       <div className="space-y-6">
-        <DefaultMcpServers servers={servers} onServerAdded={loadServers} />
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Configured Servers</h3>
-            <div className="space-y-2 max-h-96 overflow-y-auto">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="quick">Quick</TabsTrigger>
+            <TabsTrigger value="configured">Configured</TabsTrigger>
+            <TabsTrigger value="add">
+              <Plus className="h-4 w-4 mr-2" />
+              Add
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="quick" className="mt-6">
+            <DefaultMcpServers servers={servers} onServerAdded={loadServers} />
+          </TabsContent>
+
+          <TabsContent value="configured" className="mt-6">
+            <div className="space-y-2">
               {Object.entries(servers).map(([name, config]) => (
                 <div key={name}>
                   {editingServer === name ? (
@@ -218,11 +232,10 @@ export default function McpPage() {
                 </div>
               )}
             </div>
-          </div>
+          </TabsContent>
 
-          <div>
-            <h3 className="text-lg font-semibold mb-4">Add New Server</h3>
-            <div className="space-y-4">
+          <TabsContent value="add" className="mt-6">
+            <div className="max-w-md space-y-4">
               <McpServerForm
                 serverName={newServerName}
                 onServerNameChange={setNewServerName}
@@ -239,8 +252,8 @@ export default function McpPage() {
                 Add Server
               </Button>
             </div>
-          </div>
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );

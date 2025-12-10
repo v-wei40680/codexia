@@ -5,61 +5,32 @@ interface SettingsSidebarProps {
   onSectionChange: (section: string) => void;
 }
 
+const SECTIONS = [
+  { id: "login", label: "Codex login" },
+  { id: "rateLimit", label: "Codex rate limit" },
+  { id: "promptOptimizer", label: "Prompt Optimizer" },
+  { id: "exclude", label: "Exclude Folders" },
+  { id: "remoteAccess", label: "Remote Access" },
+  { id: "gitWorktree", label: "Git Worktree" },
+  { id: "appearance", label: "Appearance"}
+];
+
 export default function SettingsSidebar({
   activeSection,
   onSectionChange,
 }: SettingsSidebarProps) {
   return (
     <div className="w-64 border-r bg-muted/30 px-4 space-y-2">
-      <Button
-        variant={activeSection === "login" ? "default" : "ghost"}
-        className="w-full justify-start"
-        onClick={() => onSectionChange("login")}
-      >
-        Codex login
-      </Button>
-      <Button
-        variant={activeSection === "rateLimit" ? "default" : "ghost"}
-        className="w-full justify-start"
-        onClick={() => onSectionChange("rateLimit")}
-      >
-        Codex rate limit
-      </Button>
-      <Button
-        variant={activeSection === "promptOptimizer" ? "default" : "ghost"}
-        className="w-full justify-start"
-        onClick={() => onSectionChange("promptOptimizer")}
-      >
-        Prompt Optimizer
-      </Button>
-      <Button
-        variant={activeSection === "exclude" ? "default" : "ghost"}
-        className="w-full justify-start"
-        onClick={() => onSectionChange("exclude")}
-      >
-        Exclude Folders
-      </Button>
-      <Button
-        variant={activeSection === "remoteAccess" ? "default" : "ghost"}
-        className="w-full justify-start"
-        onClick={() => onSectionChange("remoteAccess")}
-      >
-        Remote Access
-      </Button>
-      <Button
-        variant={activeSection === "gitWorktree" ? "default" : "ghost"}
-        className="w-full justify-start"
-        onClick={() => onSectionChange("gitWorktree")}
-      >
-        Git Worktree
-      </Button>
-      <Button
-        variant={activeSection === "environmentVariables" ? "default" : "ghost"}
-        className="w-full justify-start"
-        onClick={() => onSectionChange("environmentVariables")}
-      >
-        Environment Variables
-      </Button>
+      {SECTIONS.map((section) => (
+        <Button
+          key={section.id}
+          variant={activeSection === section.id ? "default" : "ghost"}
+          className="w-full justify-start"
+          onClick={() => onSectionChange(section.id)}
+        >
+          {section.label}
+        </Button>
+      ))}
     </div>
   );
 }

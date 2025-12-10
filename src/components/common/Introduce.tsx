@@ -8,7 +8,6 @@ import { Button } from "../ui/button";
 import { open } from "@tauri-apps/plugin-shell";
 import { ExternalLink, Github, Twitter } from "lucide-react";
 import { SimpleGitWorktreeSettings } from "../settings/GitWorktreeSettings";
-import { Link } from "react-router-dom";
 import { Switch } from "../ui/switch";
 import { useSettingsStore } from "@/stores/settings";
 import { useTranslation } from "react-i18next";
@@ -54,25 +53,7 @@ export function Introduce() {
                 <ExternalLink className="h-4 w-4" />
                 <span className="ml-2">{t("header.openNewWindow")}</span>
               </Button>
-              <Link
-                to="/login"
-                className="flex hover:text-primary items-center justify-center sm:justify-end"
-              >
-                <Button size="sm" className="w-full sm:w-auto">Codexia login</Button>
-              </Link>
-              <Link
-                to="/donate"
-                className="flex hover:text-primary items-center justify-center sm:justify-end"
-              >
-                <Button size="sm" className="w-full sm:w-auto">{t("header.donate")}</Button>
-              </Link>
             </span>
-            <Link
-              to="/settings"
-              className="flex hover:text-primary items-center justify-center sm:justify-end text-sm"
-            >
-              More Settings
-            </Link>
           </div>
           <SimpleGitWorktreeSettings />
           <div className="flex items-start justify-between gap-2 sm:gap-4 rounded-md border p-3 sm:p-4">

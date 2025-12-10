@@ -114,7 +114,7 @@ export const ChatTab = () => {
   };
 
   return (
-    <div className="flex h-full flex-col">
+    <div className="flex h-full flex-col max-w-64">
       <div className="border-b bg-muted/40">
         <div className="flex items-center gap-2">
           <div className="relative flex-1">
@@ -142,7 +142,7 @@ export const ChatTab = () => {
         </div>
       </div>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-        <TabsList className="grid grid-cols-2 w-63">
+        <TabsList className="grid grid-cols-2 w-full">
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="favorites">Favorites</TabsTrigger>
         </TabsList>

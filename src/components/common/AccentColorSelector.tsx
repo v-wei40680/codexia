@@ -6,7 +6,7 @@ import {
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useThemeStore, type Accent } from "@/stores/settings/ThemeStore";
+import { useThemeContext, type Accent } from "@/contexts/ThemeContext";
 import { Palette } from "lucide-react";
 import { Button } from "../ui/button";
 
@@ -24,7 +24,7 @@ const ACCENT_OPTIONS: Array<{
 ];
 
 export function AccentColorSelector() {
-  const { accent, setAccent } = useThemeStore();
+  const { accent, setAccent } = useThemeContext();
 
   return (
     <DropdownMenu>

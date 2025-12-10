@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { invoke } from "@/lib/tauri-proxy";
 import { useFolderStore } from "@/stores/FolderStore";
 import { getErrorMessage } from "@/utils/errorUtils";
-import { useThemeStore } from "@/stores";
+import { useThemeContext } from "@/contexts/ThemeContext";
 
 const AGENTS_FILE_NAME = "AGENTS.md";
 
@@ -18,7 +18,7 @@ export default function AgentPage() {
   const [saving, setSaving] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const { theme } = useThemeStore();
+  const { theme } = useThemeContext();
 
   const filePath = useMemo(() => {
     if (currentFolder) {

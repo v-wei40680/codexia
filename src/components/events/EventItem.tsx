@@ -16,7 +16,7 @@ import { UserMessage } from "./UserMessage";
 import { useSessionStore } from "@/stores/codex";
 import { formatDurationMs } from "@/utils/formatDuration";
 import { McpToolCallItem } from "./McpToolCallItem";
-import { SimpleMarkdown } from "../common/SimpleMarkdown";
+import { MarkdownRenderer } from "../chat/MarkdownRenderer";
 
 export const EVENT_FILTER_OPTIONS = [
   { type: "agent_message", label: "Agent messages" },
@@ -70,7 +70,7 @@ export const EventItem = memo(function EventItem({
       return (
         <div>
           <div className="flex peer items-start">
-            <SimpleMarkdown content={messageText} />
+            <MarkdownRenderer content={messageText} />
           </div>
           <div className="opacity-0 transition-opacity duration-200 peer-hover:opacity-100 hover:opacity-100">
             <MsgFooter
@@ -96,7 +96,7 @@ export const EventItem = memo(function EventItem({
                 return <AccordionMsg title={title} content={content} />;
               })()
             ) : (
-              <SimpleMarkdown content={msg.text} />
+              <MarkdownRenderer content={msg.text} />
             )}
           </span>
           {durationLabel && (
@@ -129,7 +129,7 @@ export const EventItem = memo(function EventItem({
     case "patch_apply_begin":
       return <PatchApplyBeginItem event={event} />;
     case "mcp_tool_call_begin":
-      return <McpToolCallItem event={event} />
+      return <McpToolCallItem event={event} />;
     case "patch_apply_end":
     case "exec_command_end":
     case "mcp_tool_call_end":
@@ -144,7 +144,8 @@ export const EventItem = memo(function EventItem({
       return null;
     case "task_complete": {
       const taskDuration =
-        busyState?.lastDurationMs !== null && busyState?.lastDurationMs !== undefined
+        busyState?.lastDurationMs !== null &&
+        busyState?.lastDurationMs !== undefined
           ? formatDurationMs(busyState.lastDurationMs)
           : null;
       return (
@@ -157,7 +158,11 @@ export const EventItem = memo(function EventItem({
     case "stream_error":
       return <Badge variant="destructive">{msg.message}</Badge>;
     case "warning":
-      return <p className="bg-yellow-200 dark:bg-yellow-700 rounded p-1">{msg.message}</p>;
+      return (
+        <p className="bg-yellow-200 dark:bg-yellow-700 rounded p-1">
+          {msg.message}
+        </p>
+      );
     default:
       return (
         <AccordionMsg title={msg.type} content={JSON.stringify(msg, null, 2)} />

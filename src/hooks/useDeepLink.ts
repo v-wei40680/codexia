@@ -2,14 +2,12 @@ import supabase from "@/lib/supabase";
 import { ensureProfileRecord, mapProfileRow } from "@/lib/profile";
 import { listen, type UnlistenFn, isRemoteRuntime } from "@/lib/tauri-proxy";
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 
 const processedUrls = new Set<string>();
 
 // useDeepLink hook: handles deep link auth
 export const useDeepLink = () => {
-  const navigate = useNavigate();
   const [isHandlingDeepLink, setIsHandlingDeepLink] = useState(false);
 
   useEffect(() => {
@@ -45,11 +43,13 @@ export const useDeepLink = () => {
               }
 
               toast.success("User authenticated successfully");
-              navigate("/", { replace: true });
+              // Reload page to reset app state
+              window.location.href = "/";
               return;
             } catch {
               toast.success("User authenticated successfully");
-              navigate("/", { replace: true });
+              // Reload page to reset app state
+              window.location.href = "/";
               return;
             }
           }
@@ -57,7 +57,8 @@ export const useDeepLink = () => {
       } catch (err) {
         processedUrls.delete(url);
         toast.error("Authentication failed. Please sign in again.");
-        navigate("/login", { replace: true });
+        // Reload page to reset app state
+        window.location.href = "/login";
       } finally {
         setIsHandlingDeepLink(false);
       }
@@ -123,7 +124,7 @@ export const useDeepLink = () => {
       dispose?.();
       processedUrls.clear();
     };
-  }, [navigate]);
+  }, []);
 
   return isHandlingDeepLink;
 };

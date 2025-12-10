@@ -1,15 +1,20 @@
 import { useEffect } from "react";
-import { useLayoutStore } from "./stores/settings/layoutStore";
+import { Layout } from "@/components/layout";
+import { useDeepLink } from "./hooks/useDeepLink";
+import { initializeActiveConversationSubscription } from "@/stores/codex/useActiveConversationStore";
 import "./App.css";
 
 export default function App() {
-  const { lastRoute } = useLayoutStore();
 
   useEffect(() => {
-    if (lastRoute && lastRoute !== "/") {
-      window.location.hash = lastRoute;
+    // Initialize store subscriptions
+    initializeActiveConversationSubscription();
+
+    // Initialize deep linking (non-dev mode)
+    if (!import.meta.env.DEV) {
+      useDeepLink();
     }
   }, []);
 
-  return null;
+  return <Layout />;
 }

@@ -11,7 +11,7 @@ export async function detectWebFramework(projectPath: string): Promise<WebFramew
   try {
     // Read package.json to detect framework
     const packageJsonPath = `${projectPath}/package.json`;
-    const packageJsonContent = await invoke<string>('read_file', { path: packageJsonPath });
+    const packageJsonContent = await invoke<string>('read_file', { filePath: packageJsonPath });
     const packageJson = JSON.parse(packageJsonContent);
     
     const dependencies = {

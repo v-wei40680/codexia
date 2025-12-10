@@ -1,13 +1,10 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
 import { useCodexStore } from "@/stores/codex";
+import { useNavigationStore } from "@/stores/navigationStore";
 import { invoke } from "@/lib/tauri-proxy";
 import {
   Card,
   CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
 } from "@/components/ui/card";
 import { FolderOpen, Plus } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -23,36 +20,43 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { open } from "@tauri-apps/plugin-dialog";
+import { Badge} from "@/components/ui/badge"
+import { api } from "@/lib/api";
+import type { Project as APIProject } from "@/lib/api";
 
-interface Project {
+interface FileSystemProject {
   path: string;
   trust_level: string;
 }
 
 export default function ProjectsPage() {
-  const [projects, setProjects] = useState<Project[]>([]);
+  const [projects, setProjects] = useState<FileSystemProject[]>([]);
   const [loading, setLoading] = useState(true);
-  const [scannedProjects, setScannedProjects] = useState<Project[]>([]);
+  const [scannedProjects, setScannedProjects] = useState<FileSystemProject[]>([]);
   const [scanLoading, setScanLoading] = useState(false);
   const [scanError, setScanError] = useState<string | null>(null);
   const [trustDialogOpen, setTrustDialogOpen] = useState(false);
   const [pendingProjectPath, setPendingProjectPath] = useState<string | null>(null);
   const [isVersionControlled, setIsVersionControlled] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState("trusted");
+  const [ccProjects, setCCProjects] = useState<APIProject[]>([]);
   const { setCurrentFolder } = useFolderStore();
   const { setFileTree, setChatPane } = useLayoutStore();
   const { setCwd } = useCodexStore();
+  const { setMainView, setSelectedProject } = useNavigationStore();
 
   useEffect(() => {
     loadProjects();
+    loadCCProjects();
   }, []);
 
   const loadProjects = async () => {
     try {
-      const projectList = await invoke<Project[]>("read_codex_config");
+      const projectList = await invoke<FileSystemProject[]>("read_codex_config");
       setProjects(projectList);
     } catch (error) {
       toast.error(`Failed to load projects: ${error}`);
@@ -61,11 +65,20 @@ export default function ProjectsPage() {
     }
   };
 
+  const loadCCProjects = async () => {
+    try {
+      const projectList = await api.listProjects();
+      setCCProjects(projectList);
+    } catch (error) {
+      console.error("Failed to load CC projects:", error);
+    }
+  };
+
   const scanForUntrustedProjects = async () => {
     setScanError(null);
     setScanLoading(true);
     try {
-      const scanned = await invoke<Project[]>("scan_projects");
+      const scanned = await invoke<FileSystemProject[]>("scan_projects");
       setScannedProjects(scanned);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
@@ -78,10 +91,17 @@ export default function ProjectsPage() {
 
   const openProject = (projectPath: string) => {
     setCurrentFolder(projectPath);
+
+    // Find matching CC project and set it
+    const matchingProject = ccProjects.find(p => p.path === projectPath);
+    if (matchingProject) {
+      setSelectedProject(matchingProject);
+    }
+
     setCwd(projectPath);
     setFileTree(true);
     setChatPane(true);
-    navigate("/chat");
+    setMainView("codex");
   };
 
   const selectNewProject = async () => {
@@ -115,7 +135,7 @@ export default function ProjectsPage() {
     }
   };
 
-  const matchesSearchTerm = (project: Project) => {
+  const matchesSearchTerm = (project: FileSystemProject) => {
     const term = searchTerm.toLowerCase();
     if (!term) {
       return true;
@@ -142,118 +162,123 @@ export default function ProjectsPage() {
     );
   }
 
-  return (
-    <div className="p-6 space-y-6">
-      <div className="space-y-4">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Projects</h1>
-            <p className="text-muted-foreground">Manage your Codex projects</p>
+  const renderProjectCard = (project: FileSystemProject, isTrusted: boolean) => {
+    const projectName = project.path.split(/[/\\]/).pop() || project.path;
+    const badgeLabel = isTrusted ? project.trust_level : "untrusted";
+    const badgeColor = isTrusted ? "bg-green-500" : "bg-yellow-100 text-yellow-800";
+
+    return (
+      <div
+        key={project.path}
+        className="p-4 hover:shadow-md transition-shadow cursor-pointer rounded-lg"
+        onClick={() => openProject(project.path)}
+      >
+        <div className="flex items-center justify-between gap-3 min-w-0 mb-1">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <FolderOpen className="w-5 h-5 flex-shrink-0" />
+            <span className="truncate font-medium">{projectName}</span>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button onClick={selectNewProject}>
-              <Plus className="w-3 h-3" />
-              Open Project
-            </Button>
-            <Button
-              variant="outline"
-              onClick={scanForUntrustedProjects}
-              disabled={scanLoading}
-            >
-              {scanLoading ? "Scanning..." : "Scan out of ~/.codex/config.toml"}
-            </Button>
-          </div>
+          <Badge className={`${badgeColor} flex-shrink-0`}>
+            {badgeLabel}
+          </Badge>
         </div>
-        {scanError ? (
-          <p className="text-destructive text-xs">{`Failed to scan untrusted projects: ${scanError}`}</p>
-        ) : null}
-        <Input
-          placeholder="Search projects..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          autoFocus
-        />
+        <div className="text-xs text-muted-foreground truncate">{project.path}</div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="flex flex-col h-full w-full overflow-hidden">
+      {/* Header with controls */}
+      <div className="flex-shrink-0 border-b bg-background px-4 py-3 sm:px-6 sm:py-4">
+        <div className="space-y-3">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-col gap-2 sm:flex-row sm:gap-2">
+              <Button onClick={selectNewProject} size="sm" className="w-full sm:w-auto">
+                <Plus className="w-3 h-3" />
+                Open Project
+              </Button>
+              <Button
+                variant="outline"
+                onClick={scanForUntrustedProjects}
+                disabled={scanLoading}
+                size="sm"
+                className="w-full sm:w-auto text-xs"
+              >
+                {scanLoading ? "Scanning..." : "Scan out of ~/.codex/config.toml"}
+              </Button>
+            </div>
+          </div>
+          {scanError ? (
+            <p className="text-destructive text-xs">{`Failed to scan untrusted projects: ${scanError}`}</p>
+          ) : null}
+          <Input
+            placeholder="Search projects..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            autoFocus
+            className="text-sm"
+          />
+        </div>
       </div>
 
-      {filteredProjects.length === 0 ? (
-        <Card>
-          <CardContent className="p-6 text-center">
-            <FolderOpen className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-            <h3 className="text-lg font-semibold mb-2">No projects found</h3>
-            <p className="text-muted-foreground">run codex at project to see them here.</p>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="space-y-3 grid grid-cols-1 md:grid-cols-2">
-          {filteredProjects.map((project, index) => {
-            const projectName = project.path.split(/[/\\]/).pop() || project.path;
-            return (
-              <Card
-                key={`${project.path}-${index}`}
-                className="hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => openProject(project.path)}
-              >
-                <CardHeader>
-                  <CardTitle className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FolderOpen className="w-5 h-5" />
-                      {projectName}
-                    </div>
-                    <span
-                      className={`text-xs px-2 py-1 rounded-full ${
-                        project.trust_level === "trusted"
-                          ? "bg-green-100 text-green-800"
-                          : "bg-yellow-100 text-yellow-800"
-                      }`}
-                    >
-                      {project.trust_level}
-                    </span>
-                  </CardTitle>
-                  <CardDescription>{project.path}</CardDescription>
-                </CardHeader>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+      {/* Main Content */}
+      <div className="flex-1 overflow-hidden">
+        {filteredProjects.length === 0 && filteredScannedProjects.length === 0 ? (
+          <div className="h-full overflow-auto p-4 sm:p-6">
+            <Card>
+              <CardContent className="p-6 text-center">
+                <FolderOpen className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                <h3 className="text-lg font-semibold mb-2">No projects found</h3>
+                <p className="text-muted-foreground">run codex at project to see them here.</p>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full overflow-hidden">
+            {/* Tabs List */}
+            <div className="flex-shrink-0 border-b bg-background px-4 sm:px-6">
+              <TabsList className="w-full justify-start rounded-none border-0 bg-transparent p-0 h-auto gap-0">
+                {filteredProjects.length > 0 && (
+                  <TabsTrigger
+                    value="trusted"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-3 sm:px-4 py-3 text-sm font-medium"
+                  >
+                    Trusted ({filteredProjects.length})
+                  </TabsTrigger>
+                )}
+                {filteredScannedProjects.length > 0 && (
+                  <TabsTrigger
+                    value="untrusted"
+                    className="rounded-none border-b-2 border-transparent data-[state=active]:border-primary px-3 sm:px-4 py-3 text-sm font-medium"
+                  >
+                    Untrusted ({filteredScannedProjects.length})
+                  </TabsTrigger>
+                )}
+              </TabsList>
+            </div>
 
-      {filteredScannedProjects.length > 0 && (
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Untrusted projects</h2>
-            <span className="text-sm text-muted-foreground">
-              {`Detected ${filteredScannedProjects.length} project${
-                filteredScannedProjects.length > 1 ? "s" : ""
-              }`}
-            </span>
-          </div>
-          <div className="space-y-3 grid grid-cols-1 md:grid-cols-2">
-            {filteredScannedProjects.map((project) => {
-              const projectName = project.path.split(/[/\\]/).pop() || project.path;
-              return (
-                <Card
-                  key={project.path}
-                  className="hover:shadow-md transition-shadow cursor-pointer"
-                  onClick={() => openProject(project.path)}
-                >
-                  <CardHeader>
-                    <CardTitle className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <FolderOpen className="w-5 h-5" />
-                        {projectName}
-                      </div>
-                      <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-800">
-                        {project.trust_level === "trusted" ? "trusted" : "untrusted"}
-                      </span>
-                    </CardTitle>
-                    <CardDescription>{project.path}</CardDescription>
-                  </CardHeader>
-                </Card>
-              );
-            })}
-          </div>
-        </div>
-      )}
+            {/* Tabs Content */}
+            <div className="flex-1 overflow-hidden">
+              {filteredProjects.length > 0 && (
+                <TabsContent value="trusted" className="h-full overflow-auto m-0">
+                  <div className="space-y-2 p-4 sm:p-6 pb-6">
+                    {filteredProjects.map((project) => renderProjectCard(project, true))}
+                  </div>
+                </TabsContent>
+              )}
+
+              {filteredScannedProjects.length > 0 && (
+                <TabsContent value="untrusted" className="h-full overflow-auto m-0">
+                  <div className="space-y-2 p-4 sm:p-6 pb-6">
+                    {filteredScannedProjects.map((project) => renderProjectCard(project, false))}
+                  </div>
+                </TabsContent>
+              )}
+            </div>
+          </Tabs>
+        )}
+      </div>
 
       <Dialog open={trustDialogOpen} onOpenChange={setTrustDialogOpen}>
         <DialogContent showCloseButton={false}>

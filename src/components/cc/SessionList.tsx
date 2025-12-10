@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Pagination } from "@/components/ui/pagination";
 import { ClaudeMemoriesDropdown } from "./ClaudeMemoriesDropdown";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { useNavigationStore } from "@/stores/navigationStore";
 import { cn } from "@/lib/utils";
 import { truncateText, getFirstLine } from "@/lib/date-utils";
 import type { Session, ClaudeMdFile } from "@/lib/api";
@@ -40,7 +41,7 @@ const ITEMS_PER_PAGE = 12;
 
 /**
  * SessionList component - Displays paginated sessions for a specific project
- * 
+ *
  * @example
  * <SessionList
  *   sessions={sessions}
@@ -57,6 +58,7 @@ export const SessionList: React.FC<SessionListProps> = ({
   className,
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
+  const { setSelectedSession } = useNavigationStore();
   
   // Calculate pagination
   const totalPages = Math.ceil(sessions.length / ITEMS_PER_PAGE);
@@ -87,7 +89,7 @@ export const SessionList: React.FC<SessionListProps> = ({
       )}
 
       <AnimatePresence mode="popLayout">
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1">
           {currentSessions.map((session, index) => (
             <motion.div
               key={session.id}
@@ -106,9 +108,11 @@ export const SessionList: React.FC<SessionListProps> = ({
                   session.todo_data && "bg-primary/5"
                 )}
                 onClick={() => {
+                  // Set selected session in navigation store
+                  setSelectedSession(session);
                   // Emit a special event for Claude Code session navigation
-                  const event = new CustomEvent('claude-session-selected', { 
-                    detail: { session, projectPath } 
+                  const event = new CustomEvent('claude-session-selected', {
+                    detail: { session, projectPath }
                   });
                   window.dispatchEvent(event);
                   onSessionClick?.(session);

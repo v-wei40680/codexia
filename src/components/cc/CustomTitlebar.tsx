@@ -1,24 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Settings, Minus, Square, X, Bot, BarChart3, FileText, Network, Info, MoreVertical } from 'lucide-react';
+import { Settings, Minus, Square, X, Bot, FileText, Info, MoreVertical } from 'lucide-react';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { TooltipProvider, TooltipSimple } from '@/components/ui/tooltip-modern';
 
 interface CustomTitlebarProps {
   onSettingsClick?: () => void;
   onAgentsClick?: () => void;
-  onUsageClick?: () => void;
   onClaudeClick?: () => void;
-  onMCPClick?: () => void;
   onInfoClick?: () => void;
 }
 
 export const CustomTitlebar: React.FC<CustomTitlebarProps> = ({
   onSettingsClick,
   onAgentsClick,
-  onUsageClick,
   onClaudeClick,
-  onMCPClick,
   onInfoClick
 }) => {
   const [isHovered, setIsHovered] = useState(false);
@@ -151,19 +147,6 @@ export const CustomTitlebar: React.FC<CustomTitlebarProps> = ({
               </motion.button>
             </TooltipSimple>
           )}
-          
-          {onUsageClick && (
-            <TooltipSimple content="Usage Dashboard" side="bottom">
-              <motion.button
-                onClick={onUsageClick}
-                whileTap={{ scale: 0.97 }}
-                transition={{ duration: 0.15 }}
-                className="p-2 rounded-md hover:bg-accent hover:text-accent-foreground transition-colors tauri-no-drag"
-              >
-                <BarChart3 size={16} />
-              </motion.button>
-            </TooltipSimple>
-          )}
         </div>
 
         {/* Visual separator */}
@@ -212,20 +195,7 @@ export const CustomTitlebar: React.FC<CustomTitlebarProps> = ({
                       <span>CLAUDE.md</span>
                     </button>
                   )}
-                  
-                  {onMCPClick && (
-                    <button
-                      onClick={() => {
-                        onMCPClick();
-                        setIsDropdownOpen(false);
-                      }}
-                      className="w-full px-4 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground transition-colors flex items-center gap-3"
-                    >
-                      <Network size={14} />
-                      <span>MCP Servers</span>
-                    </button>
-                  )}
-                  
+
                   {onInfoClick && (
                     <button
                       onClick={() => {

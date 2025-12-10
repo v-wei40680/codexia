@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useNoteStore } from "@/stores/useNoteStore";
-import { useThemeStore } from "@/stores/settings/ThemeStore";
+import { useThemeContext } from "@/contexts/ThemeContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Save, Eye, Code, PencilIcon } from "lucide-react";
@@ -46,7 +46,7 @@ export function NoteEditor() {
     updateNote,
   } = useNoteStore();
   
-  const theme = useThemeStore((state) => state.theme);
+  const { theme } = useThemeContext();
 
   const currentNote = getCurrentNote();
   const [title, setTitle] = useState("");
