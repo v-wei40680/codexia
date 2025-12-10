@@ -85,6 +85,7 @@ one click @file from FileTree, prompt notepad, git worktree, diff view, build-in
 
 ### Prerequisites
 - **Codex CLI**: Install from [github Codex](https://github.com/openai/codex)
+- **Claude Code CLI**: Install from [Claude's official site](https://claude.ai/code)
 - **Git**: recommend option install
 
 ### Download
@@ -100,6 +101,23 @@ brew install --cask codexia
 ```
 
 ## 📖 Quick start
+
+- Launch Codexia app
+- UI show Project with codex projects and Claude code projects
+
+### Codex
+- Option step (config model, sandbox, approval)
+- select a project then start task
+
+### CC
+- select a project to show history sessions
+- click session to show history
+
+#### new cc session (agent)
+- click bot icon (#2) from left sidebar - You will see opcode app ui
+- click bot icon at right top (opcode app ui) - show agents
+- Create Agent -> fill the form - save agent - run agent
+- other steps see [opcode](//github.com/winfunc/opcode)
 
 ### Remote control
 
