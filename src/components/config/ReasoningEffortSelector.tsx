@@ -79,6 +79,7 @@ export const ReasoningEffortSelector: React.FC = () => {
           ))}
         </div>
       }
+      side="top"
       align="start"
       className="w-36 p-2"
     />

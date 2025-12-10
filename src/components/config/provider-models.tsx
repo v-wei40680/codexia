@@ -265,7 +265,8 @@ export function ProviderModels() {
           </TabsContent>
         </Tabs>
       }
-      align="end"
+      side="top"
+      align="start"
       className="w-[95vw] sm:w-[520px] max-h-[80vh] sm:max-h-[520px] p-0"
     />
   );

@@ -107,6 +107,7 @@ export const Sandbox: React.FC = () => {
           </div>
         </div>
       }
+      side="top"
       align="start"
       className="w-96 p-4"
     />
