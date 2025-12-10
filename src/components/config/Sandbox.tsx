@@ -57,7 +57,7 @@ export const Sandbox: React.FC = () => {
           </div>
 
           {/* Sandbox Info (read-only visualization) */}
-          <div className="space-y-2 sm:hidden">
+          <div className="space-y-2">
             <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
               Sandbox
             </p>
