@@ -24,8 +24,12 @@ import { NoteList } from "../notes";
 import { NotesView } from "../notes/NotesView";
 
 export function Layout() {
-  const { mainView, rightView, setRightView } = useNavigationStore();
+  const { mainView, rightView, setRightView, setMainView } = useNavigationStore();
   const { webPreviewUrl, setWebPreviewUrl, diffFile } = useLayoutStore();
+
+  const handleTabChange = (view: string) => {
+    setMainView(view as any);
+  };
 
   return (
     <main className="h-screen flex flex-col">
@@ -37,7 +41,7 @@ export function Layout() {
       {/* Main Content with Sidebar */}
       <div className="flex-1 min-h-0 flex relative">
         {/* Sidebar */}
-        <AppSidebar />
+        <AppSidebar onTabChange={handleTabChange} />
 
         {/* Left/Right Split Layout */}
         <div className="flex-1 min-h-0 flex">
