@@ -94,12 +94,12 @@ export function Layout() {
 
             {/* Right Panel - Editor or Notepad */}
             {rightView && (
-              <Panel defaultSize={mainView ? 30 : 100} minSize={20} className="overflow-hidden">
+              <Panel defaultSize={mainView ? 70 : 100} minSize={20} className="overflow-hidden">
                 {rightView === "notepad" ? (
                   <ResizablePanelGroup direction="horizontal" className="h-full w-full overflow-hidden">
                     {showNoteList && (
                       <>
-                        <ResizablePanel defaultSize={25} minSize={15} maxSize={40} className="min-w-0 overflow-hidden">
+                        <ResizablePanel id="notepad-list" order={1} defaultSize={30} minSize={0} className="min-w-0 overflow-hidden">
                           <div className="h-full w-full overflow-auto">
                             <NoteList />
                           </div>
@@ -107,7 +107,7 @@ export function Layout() {
                         <ResizableHandle withHandle />
                       </>
                     )}
-                    <ResizablePanel defaultSize={showNoteList ? 75 : 100} minSize={50} className="min-w-0 overflow-hidden">
+                    <ResizablePanel id="notepad-editor" order={showNoteList ? 2 : 1} defaultSize={showNoteList ? 70 : 100} minSize={50} className="min-w-0 overflow-hidden">
                       <NoteEditor />
                     </ResizablePanel>
                   </ResizablePanelGroup>
