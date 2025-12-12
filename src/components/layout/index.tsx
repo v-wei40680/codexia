@@ -20,12 +20,13 @@ import ClaudeCodeApp from "@/pages/cc";
 import { WebPreview } from "../WebPreview";
 import { useLayoutStore } from "@/stores";
 import { DiffViewer } from "../filetree/DiffViewer";
-import { NoteList } from "../notes";
-import { NotesView } from "../notes/NotesView";
+import { NoteList, NoteEditor } from "../notes";
+import { useNoteStore } from "@/stores/useNoteStore";
 
 export function Layout() {
   const { mainView, rightView, setRightView, setMainView } = useNavigationStore();
   const { webPreviewUrl, setWebPreviewUrl, diffFile } = useLayoutStore();
+  const { showNoteList } = useNoteStore();
 
   const handleTabChange = (view: string) => {
     setMainView(view as any);
@@ -93,19 +94,25 @@ export function Layout() {
 
             {/* Right Panel - Editor or Notepad */}
             {rightView && (
-              <Panel defaultSize={mainView ? 30 : 100} minSize={20}>
-                <div className="h-full overflow-auto">
-                  {rightView === "notepad" ? (
-                    <ResizablePanelGroup direction="horizontal" className="h-full">
-                      <ResizablePanel defaultSize={30} minSize={0}>
-                        <NoteList />
-                      </ResizablePanel>
-                      <ResizableHandle withHandle />
-                      <ResizablePanel defaultSize={70} minSize={50}>
-                        <NotesView />
-                      </ResizablePanel>
-                    </ResizablePanelGroup>
-                  ) : rightView === "webPreview" ? (
+              <Panel defaultSize={mainView ? 30 : 100} minSize={20} className="overflow-hidden">
+                {rightView === "notepad" ? (
+                  <ResizablePanelGroup direction="horizontal" className="h-full w-full overflow-hidden">
+                    {showNoteList && (
+                      <>
+                        <ResizablePanel defaultSize={25} minSize={15} maxSize={40} className="min-w-0 overflow-hidden">
+                          <div className="h-full w-full overflow-auto">
+                            <NoteList />
+                          </div>
+                        </ResizablePanel>
+                        <ResizableHandle withHandle />
+                      </>
+                    )}
+                    <ResizablePanel defaultSize={showNoteList ? 75 : 100} minSize={50} className="min-w-0 overflow-hidden">
+                      <NoteEditor />
+                    </ResizablePanel>
+                  </ResizablePanelGroup>
+                ) : rightView === "webPreview" ? (
+                  <div className="h-full overflow-auto">
                     <WebPreview
                       url={webPreviewUrl || ""}
                       onClose={() => {
@@ -114,8 +121,8 @@ export function Layout() {
                       }}
                       onUrlChange={(url) => setWebPreviewUrl(url)}
                     />
-                  ) : null}
-                </div>
+                  </div>
+                ) : null}
               </Panel>
             )}
           </PanelGroup>

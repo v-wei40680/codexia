@@ -31,6 +31,7 @@ interface NoteStore {
   currentNoteId: string | null;
   isLoading: boolean;
   migrated: boolean;
+  showNoteList: boolean;
 
   // Actions
   loadNotes: () => Promise<void>;
@@ -44,6 +45,7 @@ interface NoteStore {
   addContentToNote: (id: string, content: string, source?: string) => Promise<void>;
   createNoteFromContent: (content: string, source?: string) => Promise<Note>;
   toggleFavorite: (id: string) => Promise<void>;
+  toggleNoteListVisibility: () => void;
 
   // Getters
   getCurrentNote: () => Note | null;
@@ -125,6 +127,7 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
   currentNoteId: null,
   isLoading: false,
   migrated: false,
+  showNoteList: true,
 
   loadNotes: async () => {
     try {
@@ -276,6 +279,12 @@ export const useNoteStore = create<NoteStore>((set, get) => ({
       console.error("[NoteStore] Failed to toggle favorite:", err);
       throw err;
     }
+  },
+
+  toggleNoteListVisibility: () => {
+    set((state) => ({
+      showNoteList: !state.showNoteList,
+    }));
   },
 }));
 

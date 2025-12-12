@@ -3,7 +3,7 @@ import { useNoteStore } from "@/stores/useNoteStore";
 import { useThemeContext } from "@/contexts/ThemeContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Save, Eye, Code, PencilIcon } from "lucide-react";
+import { Save, Eye, Code, PencilIcon, PanelLeft } from "lucide-react";
 import AceEditor from "react-ace";
 import { NoteToChat } from "./NoteToChat";
 
@@ -44,6 +44,7 @@ export function NoteEditor() {
     createNote,
     getCurrentNote, setCurrentNote,
     updateNote,
+    toggleNoteListVisibility,
   } = useNoteStore();
   
   const { theme } = useThemeContext();
@@ -159,6 +160,15 @@ export function NoteEditor() {
     <div className="flex flex-col h-full">
       {/* Note Header */}
       <div className="flex items-center gap-3 px-2 border-b bg-white dark:bg-gray-800 dark:border-gray-700">
+        <Button
+          onClick={toggleNoteListVisibility}
+          size="icon"
+          variant="ghost"
+          className="h-7 w-7 p-0"
+          title="Toggle Note List"
+        >
+          <PanelLeft className="h-4 w-4" />
+        </Button>
         <Button
           onClick={async () => {
             const newNote = await createNote();
