@@ -689,7 +689,7 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "0.17.2"
+version = "0.18.0"
 dependencies = [
  "anyhow",
  "axum",
@@ -834,7 +834,7 @@ dependencies = [
 [[package]]
 name = "codex-app-server-protocol"
 version = "0.0.0"
-source = "git+https://github.com/openai/codex.git?rev=dbec741e#dbec741ef0e91b437f26050dca45564b945be5d0"
+source = "git+https://github.com/openai/codex.git?rev=163a7e31#163a7e317e562aacb7b02fadc288b10fca4e4abd"
 dependencies = [
  "anyhow",
  "clap",
@@ -851,7 +851,7 @@ dependencies = [
 
 [[package]]
 name = "codex-bindings"
-version = "0.17.2"
+version = "0.18.0"
 dependencies = [
  "codex-app-server-protocol",
  "codex-protocol",
@@ -860,7 +860,7 @@ dependencies = [
 
 [[package]]
 name = "codex-client"
-version = "0.17.2"
+version = "0.18.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -883,7 +883,7 @@ dependencies = [
 [[package]]
 name = "codex-git"
 version = "0.0.0"
-source = "git+https://github.com/openai/codex.git?rev=dbec741e#dbec741ef0e91b437f26050dca45564b945be5d0"
+source = "git+https://github.com/openai/codex.git?rev=163a7e31#163a7e317e562aacb7b02fadc288b10fca4e4abd"
 dependencies = [
  "once_cell",
  "regex",
@@ -898,9 +898,8 @@ dependencies = [
 [[package]]
 name = "codex-protocol"
 version = "0.0.0"
-source = "git+https://github.com/openai/codex.git?rev=dbec741e#dbec741ef0e91b437f26050dca45564b945be5d0"
+source = "git+https://github.com/openai/codex.git?rev=163a7e31#163a7e317e562aacb7b02fadc288b10fca4e4abd"
 dependencies = [
- "base64 0.22.1",
  "codex-git",
  "codex-utils-image",
  "icu_decimal",
@@ -923,7 +922,7 @@ dependencies = [
 [[package]]
 name = "codex-utils-cache"
 version = "0.0.0"
-source = "git+https://github.com/openai/codex.git?rev=dbec741e#dbec741ef0e91b437f26050dca45564b945be5d0"
+source = "git+https://github.com/openai/codex.git?rev=163a7e31#163a7e317e562aacb7b02fadc288b10fca4e4abd"
 dependencies = [
  "lru",
  "sha1",
@@ -933,7 +932,7 @@ dependencies = [
 [[package]]
 name = "codex-utils-image"
 version = "0.0.0"
-source = "git+https://github.com/openai/codex.git?rev=dbec741e#dbec741ef0e91b437f26050dca45564b945be5d0"
+source = "git+https://github.com/openai/codex.git?rev=163a7e31#163a7e317e562aacb7b02fadc288b10fca4e4abd"
 dependencies = [
  "base64 0.22.1",
  "codex-utils-cache",
@@ -944,12 +943,12 @@ dependencies = [
 
 [[package]]
 name = "codexia"
-version = "0.17.2"
+version = "0.18.0"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
  "calamine",
- "cc 0.17.2",
+ "cc 0.18.0",
  "chrono",
  "codex-bindings",
  "codex-client",
@@ -3155,7 +3154,7 @@ checksum = "47e1ffaa40ddd1f3ed91f717a33c8c0ee23fff369e3aa8772b9605cc1d22f4c3"
 [[package]]
 name = "mcp-types"
 version = "0.0.0"
-source = "git+https://github.com/openai/codex.git?rev=dbec741e#dbec741ef0e91b437f26050dca45564b945be5d0"
+source = "git+https://github.com/openai/codex.git?rev=163a7e31#163a7e317e562aacb7b02fadc288b10fca4e4abd"
 dependencies = [
  "schemars 0.8.22",
  "serde",

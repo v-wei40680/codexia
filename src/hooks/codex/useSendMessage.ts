@@ -70,15 +70,12 @@ const buildSandboxPolicy = (
 const normalizeApprovalPolicy = (policy: string): V2AskForApproval => {
   switch (policy) {
     case "untrusted":
-      return "unlessTrusted";
     case "on-failure":
-      return "onFailure";
     case "on-request":
-      return "onRequest";
     case "never":
-      return "never";
+      return policy as V2AskForApproval;
     default:
-      return "onRequest";
+      return "on-request";
   }
 };
 

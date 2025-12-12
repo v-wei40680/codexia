@@ -168,7 +168,6 @@ fn convert_command_execution_request(
         thread_id,
         item_id,
         reason,
-        risk,
         ..
     } = params;
     ExecCommandApprovalParams {
@@ -177,7 +176,6 @@ fn convert_command_execution_request(
         command: Vec::new(),
         cwd: PathBuf::new(),
         reason,
-        risk: risk.map(|r| r.into_core()),
         parsed_cmd: Vec::new(),
     }
 }
