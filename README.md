@@ -1,14 +1,15 @@
 # Codexia
 
-A powerful GUI and Toolkit for Codex CLI + Claude code
-
-one click @file from FileTree, prompt notepad, git worktree, diff view, build-in pdf csv/xlsx viewer, and more.
-
 [![Subreddit subscribers](https://img.shields.io/reddit/subreddit-subscribers/codexia?style=flat&logo=reddit&label=codexia)](https://www.reddit.com/r/codexia/)
 [![Discord](https://img.shields.io/badge/Discord-Join-5865F2?style=flat&logo=discord&logoColor=white)](https://discord.gg/zAjtD4kf5K)
+[![Follow lisp_mi on Twitter](https://img.shields.ioc/badge/𝕏-@lisp__mi-1c9bf0)](http://x.com/intent/follow?screen_name=lisp_mi)
+
+A powerful GUI and Toolkit for Codex CLI + Claude code
+
+one click @file from FileTree, prompt notepad, git worktree, diff view, build-in one click pdf csv/xlsx viewer, and more.
 
 > [!TIP]
-> ⭐ **Star this repo**, follow **[milisp](https://github.com/milisp)** on GitHub, and follow **[@lisp_mi](https://x.com/lisp_mi)** on X for updates.
+> ⭐ **Star this repo**, follow **[milisp](https://github.com/milisp)** on GitHub, and follow **[@lisp_mi](https://x.com/lisp_mi)** on Twitter for updates.
 
 ![Reasoning](public/codexia-reason.png)
 
@@ -37,6 +38,8 @@ one click @file from FileTree, prompt notepad, git worktree, diff view, build-in
 
 ### Built-in multi file viewer format support
 
+One Click pdf/xlsx/csv from filetree  to preview
+
 - PDF text selection
 - CSV/XLSX preview & selection
 
@@ -49,6 +52,8 @@ one click @file from FileTree, prompt notepad, git worktree, diff view, build-in
 - **Visual Charts**: Beautiful charts showing usage trends and patterns
 
 ### 🔌 **MCP Server Management**
+- simple mcp management
+- One click add from mcp marketplace or sync mcp server via [mcp-linker](https://mcp-linker.store)
 
 ### 📝 **AGENTS.md**
 - **Built-in Editor**: Edit AGENTS.md file directly within the app
@@ -109,7 +114,7 @@ brew install --cask codexia
 - Option step (config model, sandbox, approval)
 - select a project then start task
 
-### CC
+### Claude code
 - select a project to show history sessions
 - click session to show history
 
