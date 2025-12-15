@@ -1,9 +1,7 @@
 name: Publish linux arm
 
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_dispatch:
 
 env:
   VITE_REDIRECT_URL: ${{ secrets.VITE_REDIRECT_URL }}
