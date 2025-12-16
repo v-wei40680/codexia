@@ -108,7 +108,7 @@ impl<T> ApiResponse<T> {
 
 /// Serve the React frontend
 async fn serve_frontend() -> Html<&'static str> {
-    Html(include_str!("../../dist/index.html"))
+    Html(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/../dist/index.html")))
 }
 
 /// API endpoint to get projects (equivalent to Tauri command)
