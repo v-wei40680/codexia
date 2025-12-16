@@ -5,7 +5,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import supabase, { isSupabaseConfigured } from "@/lib/supabase";
 import { ensureProfileRecord, mapProfileRow, type ProfileRecord } from "@/lib/profile";
 import { Badge, Github } from "lucide-react";
-import { Navigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useSettingsStore } from "@/stores/settings/SettingsStore";
 import { useEffect, useState } from "react";
@@ -18,21 +17,16 @@ export default function AuthPage() {
   const { user, loading } = useAuth();
   const {lastOAuthProvider, setLastOAuthProvider} = useAuthStore();
   const { windowTitle } = useSettingsStore();
-  const [redirect, setRedirect] = useState<string | null>(null);
   const [email, setEmail] = useState(() => localStorage.getItem("email") || "");
   const [password, setPassword] = useState("");
   const [loadingForm, setLoadingForm] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const remoteMode = isRemoteRuntime();
 
-
   useEffect(() => {
-    const decideRedirect = async () => {
+    const ensureProfile = async () => {
       if (loading || !user) return;
-      if (!isSupabaseConfigured || !supabase) {
-        setRedirect("/");
-        return;
-      }
+      if (!isSupabaseConfigured || !supabase) return;
       try {
         const client = supabase!;
         const { data, error } = await client
@@ -45,25 +39,24 @@ export default function AuthPage() {
         if (!profile) {
           await ensureProfileRecord(user);
         }
-        // Always send the user home; specific routes remain gated by useProfileStatus.
-        setRedirect("/");
       } catch (_e) {
-        setRedirect("/");
+        console.error("Failed to ensure profile:", _e);
       }
     };
-    decideRedirect();
+    ensureProfile();
   }, [loading, user]);
 
-  if (redirect) {
-    return <Navigate to={redirect} replace />;
+  // If user is logged in, layout will handle displaying the main app
+  if (user) {
+    return null;
   }
 
   const handleOAuthLogin = async (provider: "github" | "google") => {
-    console.log("provider", provider)
     if (!isSupabaseConfigured || !supabase) return;
     try {
       setLastOAuthProvider(provider);
       const client = supabase!;
+
       const { data } = await client.auth.signInWithOAuth({
         provider,
         options: {

@@ -16,17 +16,37 @@ export const useDeepLink = () => {
       if (!url || processedUrls.has(url)) {
         return;
       }
-      try {
-        processedUrls.add(url);
 
+      // Mark as processed BEFORE any async operations to prevent race conditions
+      processedUrls.add(url);
+
+      try {
         setIsHandlingDeepLink(true);
         const urlObj = new URL(url);
         const searchParams = new URLSearchParams(urlObj.search.substring(1));
-
         const code = searchParams.get("code");
+
         if (code && supabase) {
+          // Check if already authenticated (skip if already logged in)
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session) {
+            return;
+          }
+
+          // Check if code verifier exists
+          const codeVerifier = localStorage.getItem("supabase.auth.token-code-verifier");
+          if (!codeVerifier) {
+            console.error("Code verifier not found in localStorage");
+            toast.error("Authentication state missing. Please try again.");
+            return;
+          }
+
           const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-          if (error) throw error;
+
+          if (error) {
+            console.error("Exchange code error:", error);
+            throw error;
+          }
 
           if (data.session) {
             try {
@@ -44,21 +64,20 @@ export const useDeepLink = () => {
 
               toast.success("User authenticated successfully");
               // Reload page to reset app state
-              window.location.href = "/";
+              window.location.reload();
               return;
             } catch {
               toast.success("User authenticated successfully");
               // Reload page to reset app state
-              window.location.href = "/";
+              window.location.reload();
               return;
             }
           }
         }
       } catch (err) {
-        processedUrls.delete(url);
+        // DON'T remove from processedUrls - we don't want to retry
+        console.error("Deep link authentication error:", err);
         toast.error("Authentication failed. Please sign in again.");
-        // Reload page to reset app state
-        window.location.href = "/login";
       } finally {
         setIsHandlingDeepLink(false);
       }
@@ -96,13 +115,17 @@ export const useDeepLink = () => {
         console.error("Failed to register deep link handler", err);
       }
 
+      // Only listen to backend events in remote runtime mode
+      // In native mode, the plugin handles everything
       let eventUnlisten: UnlistenFn | null = null;
-      try {
-        eventUnlisten = await listen<string>("deep-link-received", (event) => {
-          void handleUrl(event.payload);
-        });
-      } catch (err) {
-        console.error("Failed to register native deep link listener", err);
+      if (isRemoteRuntime()) {
+        try {
+          eventUnlisten = await listen<string>("deep-link-received", (event) => {
+            void handleUrl(event.payload);
+          });
+        } catch (err) {
+          console.error("Failed to register native deep link listener", err);
+        }
       }
 
       if (!pluginUnlisten && !eventUnlisten) {

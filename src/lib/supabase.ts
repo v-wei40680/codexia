@@ -11,8 +11,11 @@ const supabase: SupabaseClient | null = isSupabaseConfigured
   ? createClient(supabaseUrl as string, supabaseKey as string, {
       auth: {
         flowType: 'pkce',
-        detectSessionInUrl: true,
+        detectSessionInUrl: false, // Disable auto-detection, we'll handle deep links manually
         autoRefreshToken: true,
+        persistSession: true,
+        storage: window.localStorage,
+        storageKey: 'supabase.auth.token',
       },
     })
   : null

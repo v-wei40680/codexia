@@ -2,7 +2,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
@@ -28,12 +27,6 @@ export function UserDropdown() {
     }
   };
 
-  const handleViewPublicPage = () => {
-    if (user?.id) {
-      window.open(`/u/${user.id}`, "_blank");
-    }
-  };
-
   return (
     <div>
       {user ? (
@@ -54,10 +47,6 @@ export function UserDropdown() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuItem onClick={handleViewPublicPage}>
-              {t("header.viewPublicPage")}
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleLogout}>
               {t("header.signOut")}
             </DropdownMenuItem>
