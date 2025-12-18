@@ -1,3 +1,4 @@
+import { useState, useEffect } from "react";
 import {
   Bot,
   CreativeCommons,
@@ -24,12 +25,27 @@ export function AppSidebar({ onTabChange }: AppSidebarProps) {
   const { mainView, setMainView, sidebarVisible } = useNavigationStore();
   const { openFile } = useLayoutStore();
   const { currentFolder } = useFolderStore();
+  const [localTab, setLocalTab] = useState<string>(mainView || "codex");
+
+  // Sync localTab with mainView when it changes externally (but not for sidebar-only tabs)
+  useEffect(() => {
+    if (mainView) {
+      setLocalTab(mainView);
+    }
+  }, [mainView]);
 
   if (!sidebarVisible) {
     return null;
   }
 
   const handleTabChange = (value: string) => {
+    setLocalTab(value);
+
+    // Don't change mainView for fileTree and git - keep them local to sidebar
+    if (value === "fileTree" || value === "git") {
+      return;
+    }
+
     if (onTabChange) {
       onTabChange(value);
     } else {
@@ -40,7 +56,7 @@ export function AppSidebar({ onTabChange }: AppSidebarProps) {
   return (
     <div className="w-64 bg-background border-r flex flex-col shrink-0 h-full min-h-0">
       <Tabs
-        value={mainView || "codex"}
+        value={localTab}
         onValueChange={handleTabChange}
         className="w-full flex flex-col flex-1 min-h-0"
       >
@@ -79,7 +95,7 @@ export function AppSidebar({ onTabChange }: AppSidebarProps) {
         <TabsContent value="codex" className="flex-1 min-h-0 m-0">
           <ChatTab />
         </TabsContent>
-        <TabsContent value="cc" className="flex-1 min-h-0 m-0">
+        <TabsContent value="cc" className="flex-1 min-h-0 m-0 overflow-auto">
           <CCSessionList />
         </TabsContent>
         <TabsContent value="fileTree" className="flex-1 min-h-0 m-0 overflow-auto">

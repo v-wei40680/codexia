@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { AppHeader } from "./AppHeader";
 import { AppSidebar } from "./AppSidebar";
 import { Toaster } from "sonner";
@@ -7,7 +8,7 @@ import {
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
-} from "@/components/ui/resizable"
+} from "@/components/ui/resizable";
 import { FileExplorerPanel, ProjectPanel } from "@/components/panels";
 import ChatPage from "@/pages/chat";
 import { McpPanel } from "../panels/McpPanel";
@@ -23,17 +24,33 @@ import { DiffViewer } from "../filetree/DiffViewer";
 import { NoteList, NoteEditor } from "../notes";
 import { useNoteStore } from "@/stores/useNoteStore";
 import { useAuth } from "@/hooks/useAuth";
-import LoginPage from "@/pages/login"
+import LoginPage from "@/pages/login";
 
 export function Layout() {
   const { user } = useAuth();
-  const { mainView, rightView, setRightView, setMainView } = useNavigationStore();
-  const { webPreviewUrl, setWebPreviewUrl, diffFile } = useLayoutStore();
+  const { mainView, rightView, setRightView, setMainView } =
+    useNavigationStore();
+  const { webPreviewUrl, setWebPreviewUrl, diffFile, selectedFile } =
+    useLayoutStore();
   const { showNoteList } = useNoteStore();
 
   const handleTabChange = (view: string) => {
     setMainView(view as any);
   };
+
+  // Automatically set rightView to "editor" when a file is selected
+  useEffect(() => {
+    if (selectedFile) {
+      setRightView("editor");
+    }
+  }, [selectedFile, setRightView]);
+
+  // Automatically set rightView to "diff" when a diff file is selected
+  useEffect(() => {
+    if (diffFile) {
+      setRightView("gitDiff");
+    }
+  }, [diffFile, setRightView]);
 
   const isAuthenticated = import.meta.env.DEV || user;
 
@@ -65,25 +82,6 @@ export function Layout() {
                     {mainView === "project" && <ProjectPanel />}
                     {mainView === "mcp" && <McpPanel />}
                     {mainView === "usage" && <UsagePanel />}
-                    {mainView === "fileTree" && <FileExplorerPanel />}
-                    {mainView === "git" && (
-                      <div className="flex-1 min-w-0 border-r overflow-hidden">
-                        {diffFile && (
-                          <div className="h-full flex flex-col">
-                            <div className="p-2 border-b bg-muted/50 flex items-center justify-between">
-                              <span className="text-sm font-medium">
-                                {diffFile.fileName}
-                              </span>
-                            </div>
-                            <DiffViewer
-                              original={diffFile.original}
-                              current={diffFile.current}
-                              fileName={diffFile.fileName}
-                            />
-                          </div>
-                        )}
-                      </div>
-                    )}
                     {mainView === "settings" && <SettingsPanel />}
                     {mainView === "agents-editor" && <AgentPage />}
                     {mainView === "claude-md-editor" && <AgentPage />}
@@ -99,12 +97,25 @@ export function Layout() {
 
               {/* Right Panel - Editor or Notepad */}
               {rightView && (
-                <Panel defaultSize={mainView ? 70 : 100} minSize={20} className="overflow-hidden">
+                <Panel
+                  defaultSize={mainView ? 70 : 100}
+                  minSize={20}
+                  className="overflow-hidden"
+                >
                   {rightView === "notepad" ? (
-                    <ResizablePanelGroup direction="horizontal" className="h-full w-full overflow-hidden">
+                    <ResizablePanelGroup
+                      direction="horizontal"
+                      className="h-full w-full overflow-hidden"
+                    >
                       {showNoteList && (
                         <>
-                          <ResizablePanel id="notepad-list" order={1} defaultSize={30} minSize={0} className="min-w-0 overflow-hidden">
+                          <ResizablePanel
+                            id="notepad-list"
+                            order={1}
+                            defaultSize={30}
+                            minSize={0}
+                            className="min-w-0 overflow-hidden"
+                          >
                             <div className="h-full w-full overflow-auto">
                               <NoteList />
                             </div>
@@ -112,7 +123,13 @@ export function Layout() {
                           <ResizableHandle withHandle />
                         </>
                       )}
-                      <ResizablePanel id="notepad-editor" order={showNoteList ? 2 : 1} defaultSize={showNoteList ? 70 : 100} minSize={50} className="min-w-0 overflow-hidden">
+                      <ResizablePanel
+                        id="notepad-editor"
+                        order={showNoteList ? 2 : 1}
+                        defaultSize={showNoteList ? 70 : 100}
+                        minSize={50}
+                        className="min-w-0 overflow-hidden"
+                      >
                         <NoteEditor />
                       </ResizablePanel>
                     </ResizablePanelGroup>
@@ -127,14 +144,38 @@ export function Layout() {
                         onUrlChange={(url) => setWebPreviewUrl(url)}
                       />
                     </div>
+                  ) : rightView === "editor" ? (
+                    <div className="h-full overflow-auto">
+                      <FileExplorerPanel />
+                    </div>
+                  ) : rightView === "gitDiff" ? (
+                    <div className="h-full flex flex-col overflow-hidden">
+                      {diffFile && (
+                        <>
+                          <div className="p-2 border-b bg-muted/50 flex items-center justify-between shrink-0">
+                            <span className="text-sm font-medium">
+                              {diffFile.fileName}
+                            </span>
+                          </div>
+                          <div className="flex-1 min-h-0 overflow-auto">
+                            <DiffViewer
+                              original={diffFile.original}
+                              current={diffFile.current}
+                              fileName={diffFile.fileName}
+                            />
+                          </div>
+                        </>
+                      )}
+                    </div>
                   ) : null}
                 </Panel>
               )}
             </PanelGroup>
           </div>
         </div>
-        ) : <LoginPage />
-      }
+      ) : (
+        <LoginPage />
+      )}
 
       <Toaster />
     </main>

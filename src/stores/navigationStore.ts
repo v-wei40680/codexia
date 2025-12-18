@@ -5,7 +5,6 @@ import type { Session, Project } from "@/lib/api";
 type MainViewType =
   | "codex"
   | "cc"
-  | "fileTree"
   | "project"
   | "mcp"
   | "usage"
@@ -13,10 +12,9 @@ type MainViewType =
   | "claude-md-editor"
   | "cc-app"
   | "notepad"
-  | "git"
   | "settings"
   | null;
-type RightViewType = "notepad" | "webPreview" | null;
+type RightViewType = "notepad" | "webPreview" | "editor" | "gitDiff" | null;
 
 interface NavigationState {
   // Left panel view (Codex, CC, FileTree, or none)
