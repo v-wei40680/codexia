@@ -17,6 +17,7 @@ import { SessionViewer } from "../cc/SessionViewer";
 import { ProjectViewErrorBoundary } from "../cc/ProjectViewErrorBoundary";
 import { SettingsPanel } from "../panels/SettingsPanel";
 import AgentPage from "@/pages/agents";
+import ClaudeMdPage from "@/pages/claude-md";
 import ClaudeCodeApp from "@/pages/cc";
 import { WebPreview } from "../WebPreview";
 import { useLayoutStore } from "@/stores";
@@ -84,7 +85,7 @@ export function Layout() {
                     {mainView === "usage" && <UsagePanel />}
                     {mainView === "settings" && <SettingsPanel />}
                     {mainView === "agents-editor" && <AgentPage />}
-                    {mainView === "claude-md-editor" && <AgentPage />}
+                    {mainView === "claude-md-editor" && <ClaudeMdPage />}
                     {mainView === "cc-app" && <ClaudeCodeApp />}
                   </div>
                 </Panel>
