@@ -92,7 +92,7 @@ export function AppSidebar({ onTabChange }: AppSidebarProps) {
         <div className="w-full h-px bg-border" />
 
         {/* Content area */}
-        <TabsContent value="codex" className="flex-1 min-h-0 m-0">
+        <TabsContent value="codex" className="flex-1 min-h-0 m-0 overflow-auto">
           <ChatTab />
         </TabsContent>
         <TabsContent value="cc" className="flex-1 min-h-0 m-0 overflow-auto">
