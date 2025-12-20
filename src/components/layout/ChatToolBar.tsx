@@ -106,7 +106,16 @@ export const ChatToolbar: React.FC = () => {
         >
           <PenSquare />
         </Button>
-
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleToggleReviewMode}
+          className={showReview ? "bg-accent" : ""}
+          title="Toggle Review Mode"
+          aria-pressed={showReview}
+        >
+          <BookOpen />
+        </Button>
         <Button
           size="icon"
           variant="secondary"
@@ -119,17 +128,6 @@ export const ChatToolbar: React.FC = () => {
         <ClientPicker />
       </span>
       <span className="flex gap-2">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={handleToggleReviewMode}
-          className={showReview ? "bg-accent" : ""}
-          title="Toggle Review Mode"
-          aria-pressed={showReview}
-        >
-          <BookOpen />
-        </Button>
-
         <Button
           variant="ghost"
           size="icon"
