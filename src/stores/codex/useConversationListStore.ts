@@ -236,39 +236,62 @@ export const useConversationListStore = create<
 );
 
 // Helper to load project sessions from backend and update the store
-export async function loadProjectSessions(cwd: string, loadAll: boolean = false) {
-  let result: { sessions?: any[]; favorites?: string[] } | null = null;
+export async function loadProjectSessions(
+  cwd: string,
+  limit: number = 20,
+  offset: number = 0,
+  searchQuery: string = "",
+) {
+  let result: {
+    sessions?: any[];
+    favorites?: string[];
+    total?: number;
+    hasMore?: boolean;
+  } | null = null;
   try {
-    result = (await invoke("load_project_sessions", { projectPath: cwd })) as {
+    result = (await invoke("load_project_sessions", {
+      projectPath: cwd,
+      limit,
+      offset,
+      searchQuery: searchQuery || undefined,
+    })) as {
       sessions?: any[];
       favorites?: string[];
+      total?: number;
+      hasMore?: boolean;
     };
   } catch (_) {
-    result = { sessions: [], favorites: [] };
+    result = { sessions: [], favorites: [], total: 0, hasMore: false };
   }
 
   const sessions = result?.sessions ?? [];
   const favorites = result?.favorites ?? [];
-  const visibleSessions = loadAll ? sessions : sessions.slice(0, 10);
+  const hasMore = result?.hasMore ?? false;
 
-  useConversationListStore.getState().reset();
+  if (offset === 0) {
+    useConversationListStore.getState().reset();
+  }
 
   useConversationListStore.setState((state) => ({
     favoriteConversationIdsByCwd: {
       ...state.favoriteConversationIdsByCwd,
       [cwd]: favorites,
     },
-    loadedAllByCwd: {
-      ...state.loadedAllByCwd,
-      [cwd]: loadAll,
-    },
     hasMoreByCwd: {
       ...state.hasMoreByCwd,
-      [cwd]: sessions.length > visibleSessions.length,
+      [cwd]: hasMore,
     },
   }));
 
-  for (const summary of visibleSessions) {
+  for (const summary of sessions) {
     await useConversationListStore.getState().addConversation(cwd, summary);
   }
+}
+
+// Helper to load more sessions
+export async function loadMoreSessions(cwd: string, searchQuery: string = "") {
+  const state = useConversationListStore.getState();
+  const currentConversations = state.conversationsByCwd[cwd] ?? [];
+  const offset = currentConversations.length;
+  await loadProjectSessions(cwd, 20, offset, searchQuery);
 }

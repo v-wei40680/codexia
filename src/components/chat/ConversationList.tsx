@@ -11,6 +11,7 @@ import { invoke } from "@/lib/tauri-proxy";
 import {
   useConversationListStore,
   loadProjectSessions,
+  loadMoreSessions,
 } from "@/stores/codex";
 import { useCodexStore } from "@/stores/codex";
 import { useActiveConversationStore } from "@/stores/codex";
@@ -47,7 +48,6 @@ export function ConversationList({
     toggleFavorite,
     updateConversationPreview,
     removeConversation,
-    loadedAllByCwd,
     hasMoreByCwd,
   } = useConversationListStore();
   const { activeConversationId } = useActiveConversationStore();
@@ -57,7 +57,7 @@ export function ConversationList({
     string | null
   >(null);
   const [isLoadingSessions, setIsLoadingSessions] = useState(false);
-  const [isLoadingAllSessions, setIsLoadingAllSessions] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   useEffect(() => {
     if (!cwd) {
@@ -67,7 +67,7 @@ export function ConversationList({
 
     let isMounted = true;
     setIsLoadingSessions(true);
-    loadProjectSessions(cwd)
+    loadProjectSessions(cwd, 20, 0, searchQuery)
       .catch(() => {
         /* swallow */
       })
@@ -80,7 +80,7 @@ export function ConversationList({
     return () => {
       isMounted = false;
     };
-  }, [cwd]);
+  }, [cwd, searchQuery]);
 
   // No inline focus; handled by RenameDialog
 
@@ -96,7 +96,7 @@ export function ConversationList({
       const bTime = b.timestamp ? new Date(b.timestamp).getTime() : 0;
       return bTime - aTime;
     });
-    const query = searchQuery.trim().toLowerCase();
+    // Search is now handled by backend, only filter by mode and category
     return sorted.filter((conv) => {
       if (mode === "favorites" && !favoriteIds.has(conv.conversationId)) {
         return false;
@@ -110,18 +110,13 @@ export function ConversationList({
         return false;
       }
 
-      if (!query) {
-        return true;
-      }
-
-      return conv.preview.toLowerCase().includes(query);
+      return true;
     });
   }, [
     conversationsByCwd,
     cwd,
     mode,
     favoriteIds,
-    searchQuery,
     selectedCategoryId,
     conversationCategoryMap,
   ]);
@@ -138,21 +133,20 @@ export function ConversationList({
     return "No conversations yet.";
   }, [mode, searchQuery]);
 
-  const loadedAll = loadedAllByCwd[cwd || ""] ?? false;
   const hasMore = hasMoreByCwd[cwd || ""] ?? false;
 
-  const handleLoadAll = () => {
-    if (!cwd || isLoadingAllSessions) {
+  const handleLoadMore = () => {
+    if (!cwd || isLoadingMore) {
       return;
     }
 
-    setIsLoadingAllSessions(true);
-    loadProjectSessions(cwd, true)
+    setIsLoadingMore(true);
+    loadMoreSessions(cwd, searchQuery)
       .catch(() => {
         /* swallow */
       })
       .finally(() => {
-        setIsLoadingAllSessions(false);
+        setIsLoadingMore(false);
       });
   };
 
@@ -246,22 +240,22 @@ export function ConversationList({
           }
         }}
       />
-      {!loadedAll && hasMore ? (
+      {hasMore ? (
         <div className="p-2 border-t">
           <Button
             variant="ghost"
             size="sm"
             className="w-full"
-            onClick={handleLoadAll}
-            disabled={isLoadingAllSessions}
+            onClick={handleLoadMore}
+            disabled={isLoadingMore}
           >
-            {isLoadingAllSessions ? (
+            {isLoadingMore ? (
               <span className="flex w-full justify-center gap-2">
                 <Loader2 className="h-4 w-4 animate-spin" />
-                Loading all
+                Loading more
               </span>
             ) : (
-              "Load all"
+              "Load more"
             )}
           </Button>
         </div>

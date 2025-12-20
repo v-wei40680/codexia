@@ -19,6 +19,9 @@ pub fn remove_project_session(
 #[tauri::command]
 pub async fn load_project_sessions(
     project_path: String,
+    limit: Option<usize>,
+    offset: Option<usize>,
+    search_query: Option<String>,
 ) -> Result<Value, String> {
-    codex_client::session_files::load_project_sessions(project_path).await
+    codex_client::session_files::load_project_sessions(project_path, limit, offset, search_query).await
 }

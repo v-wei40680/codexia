@@ -2,7 +2,7 @@ export { useActiveConversationStore } from "./useActiveConversationStore";
 export { useChatInputStore, type FileReference } from "./useChatInputStore";
 export { useCodexStore } from "./useCodexStore";
 export { useConversationListenerStore, waitForConversationListenerReady } from "./useConversationListenerStore";
-export { useConversationListStore, loadProjectSessions } from "./useConversationListStore";
+export { useConversationListStore, loadProjectSessions, loadMoreSessions } from "./useConversationListStore";
 export { useConversationMetadataStore } from "./useConversationMetadataStore";
 export { useEventStore } from "./useEventStore";
 export { useResumeConversationStore } from "./useResumeConversationStore";

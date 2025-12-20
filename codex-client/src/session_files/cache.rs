@@ -4,7 +4,16 @@ use serde_json::{json, Value};
 use std::collections::HashSet;
 
 /// Main tauri command: load or refresh sessions for given project
-pub async fn load_project_sessions(project_path: String) -> Result<Value, String> {
+pub async fn load_project_sessions(
+    project_path: String,
+    limit: Option<usize>,
+    offset: Option<usize>,
+    search_query: Option<String>,
+) -> Result<Value, String> {
+    let limit = limit.unwrap_or(20);
+    let offset = offset.unwrap_or(0);
+    let search_query = search_query.unwrap_or_default().trim().to_lowercase();
+
     match read_project_cache(&project_path)? {
         Some((last_scanned, mut cached_sessions, favorites)) => {
             // Incremental scan
@@ -42,9 +51,34 @@ pub async fn load_project_sessions(project_path: String) -> Result<Value, String
 
             write_project_cache(&project_path, &cached_sessions, &favorites)?;
 
+            // Apply search filter
+            let filtered_sessions: Vec<Value> = if search_query.is_empty() {
+                cached_sessions
+            } else {
+                cached_sessions
+                    .into_iter()
+                    .filter(|session| {
+                        session["preview"]
+                            .as_str()
+                            .unwrap_or("")
+                            .to_lowercase()
+                            .contains(&search_query)
+                    })
+                    .collect()
+            };
+
+            let total = filtered_sessions.len();
+            let paginated_sessions: Vec<Value> = filtered_sessions
+                .into_iter()
+                .skip(offset)
+                .take(limit)
+                .collect();
+
             Ok(json!({
-                "sessions": cached_sessions,
+                "sessions": paginated_sessions,
                 "favorites": favorites,
+                "total": total,
+                "hasMore": offset + paginated_sessions.len() < total,
             }))
         }
         None => {
@@ -54,9 +88,34 @@ pub async fn load_project_sessions(project_path: String) -> Result<Value, String
 
             write_project_cache(&project_path, &sessions, &favorites)?;
 
+            // Apply search filter
+            let filtered_sessions: Vec<Value> = if search_query.is_empty() {
+                sessions
+            } else {
+                sessions
+                    .into_iter()
+                    .filter(|session| {
+                        session["preview"]
+                            .as_str()
+                            .unwrap_or("")
+                            .to_lowercase()
+                            .contains(&search_query)
+                    })
+                    .collect()
+            };
+
+            let total = filtered_sessions.len();
+            let paginated_sessions: Vec<Value> = filtered_sessions
+                .into_iter()
+                .skip(offset)
+                .take(limit)
+                .collect();
+
             Ok(json!({
-                "sessions": sessions,
+                "sessions": paginated_sessions,
                 "favorites": favorites,
+                "total": total,
+                "hasMore": offset + paginated_sessions.len() < total,
             }))
         }
     }
