@@ -8,6 +8,7 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
+    "tauri:build:no-cc": "VITE_ENABLE_CC=false bun tauri build -- --no-default-features",
     "export:bindings": "cargo run -p codex-bindings --bin codex_export_bindings"
   },
   "dependencies": {
