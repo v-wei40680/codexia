@@ -1,6 +1,6 @@
 import React from "react";
 import { Button } from "../ui/button";
-import { BookOpen, Globe, PenSquare, Terminal } from "lucide-react";
+import { Globe, History, PenSquare, Terminal } from "lucide-react";
 import { useLayoutStore } from "@/stores/settings/layoutStore";
 import { useFolderStore } from "@/stores/FolderStore";
 import { detectWebFramework } from "@/utils/webFrameworkDetection";
@@ -114,7 +114,7 @@ export const ChatToolbar: React.FC = () => {
           title="Toggle Review Mode"
           aria-pressed={showReview}
         >
-          <BookOpen />
+          <History />
         </Button>
         <Button
           size="icon"
