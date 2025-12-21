@@ -1,5 +1,6 @@
 pub mod claude_binary;
 pub mod claude_discovery;
+pub mod command_utils;
 pub mod commands;
 pub mod checkpoint;
 pub mod process;

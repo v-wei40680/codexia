@@ -1,5 +1,5 @@
 use crate::utils::codex_discovery::discover_codex_command;
-use std::process::Command;
+use crate::utils::command::create_command;
 
 pub async fn check_codex_version() -> Result<String, String> {
     let path = match discover_codex_command() {
@@ -8,7 +8,7 @@ pub async fn check_codex_version() -> Result<String, String> {
     };
     println!("Discovered codex path: {}", path);
 
-    let output = Command::new(&path)
+    let output = create_command(&path)
         .arg("-V")
         .output()
         .map_err(|e| format!("Failed to execute codex binary: {}", e))?;

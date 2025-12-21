@@ -37,12 +37,13 @@ use codex_app_server_protocol::{
 use codex_protocol::protocol::ReviewDecision;
 use serde::de::DeserializeOwned;
 use serde_json::Value;
-use tokio::process::{Child, ChildStdin, Command};
+use tokio::process::{Child, ChildStdin};
 use tokio::sync::{oneshot, Mutex};
 
 use crate::events::EventBus;
 use crate::utils::codex_discovery::discover_codex_command;
 use crate::utils::coder_discovery::discover_coder_command;
+use crate::utils::command::create_tokio_command;
 
 mod handlers;
 mod readers;
@@ -110,7 +111,7 @@ impl CodexAppServerClient {
         };
         println!("binary_path {:?}", binary_path);
 
-        let mut command = Command::new(binary_path);
+        let mut command = create_tokio_command(binary_path.to_str().unwrap_or(""));
         command
             .arg("app-server")
             .stdin(Stdio::piped())

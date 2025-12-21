@@ -450,7 +450,7 @@ async fn execute_claude_command(
     state: AppState,
 ) -> Result<(), String> {
     use tokio::io::{AsyncBufReadExt, BufReader};
-    use tokio::process::Command;
+    use crate::command_utils::create_tokio_command;
 
     println!("[TRACE] execute_claude_command called:");
     println!("[TRACE]   project_path: {}", project_path);
@@ -482,7 +482,7 @@ async fn execute_claude_command(
 
     // Create Claude command
     println!("[TRACE] Creating Claude command...");
-    let mut cmd = Command::new(&claude_path);
+    let mut cmd = create_tokio_command(&claude_path);
     let args = [
         "-p",
         &prompt,
@@ -576,7 +576,7 @@ async fn continue_claude_command(
     state: AppState,
 ) -> Result<(), String> {
     use tokio::io::{AsyncBufReadExt, BufReader};
-    use tokio::process::Command;
+    use crate::command_utils::create_tokio_command;
 
     send_to_session(
         &state,
@@ -594,7 +594,7 @@ async fn continue_claude_command(
         find_claude_binary_web().map_err(|e| format!("Claude binary not found: {}", e))?;
 
     // Create continue command
-    let mut cmd = Command::new(&claude_path);
+    let mut cmd = create_tokio_command(&claude_path);
     cmd.args([
         "-c", // Continue flag
         "-p",
@@ -654,9 +654,9 @@ async fn resume_claude_command(
     state: AppState,
 ) -> Result<(), String> {
     use tokio::io::{AsyncBufReadExt, BufReader};
-    use tokio::process::Command;
+    use crate::command_utils::create_tokio_command;
 
-    println!("[resume_claude_command] Starting with project_path: {}, claude_session_id: {}, prompt: {}, model: {}", 
+    println!("[resume_claude_command] Starting with project_path: {}, claude_session_id: {}, prompt: {}, model: {}",
              project_path, claude_session_id, prompt, model);
 
     send_to_session(
@@ -681,7 +681,7 @@ async fn resume_claude_command(
 
     // Create resume command
     println!("[resume_claude_command] Creating command...");
-    let mut cmd = Command::new(&claude_path);
+    let mut cmd = create_tokio_command(&claude_path);
     let args = [
         "--resume",
         &claude_session_id,

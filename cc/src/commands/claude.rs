@@ -7,9 +7,10 @@ use std::process::Stdio;
 use std::sync::Arc;
 use std::time::{SystemTime, UNIX_EPOCH};
 use tauri::{AppHandle, Emitter, Manager};
-use tokio::process::{Child, Command};
+use tokio::process::Child;
 use tokio::sync::Mutex;
 use crate::claude_discovery;
+use crate::command_utils::{create_command, create_tokio_command};
 
 /// Global state to track current Claude process
 pub struct ClaudeProcessState {
@@ -234,12 +235,12 @@ fn extract_first_user_message(jsonl_path: &PathBuf) -> (Option<String>, Option<S
 
 /// Helper function to create a tokio Command with proper environment variables
 /// This ensures commands like Claude can find Node.js and other dependencies
-fn create_command_with_env(program: &str) -> Command {
+fn create_command_with_env(program: &str) -> tokio::process::Command {
     // Convert std::process::Command to tokio::process::Command
     let _std_cmd = crate::claude_binary::create_command_with_env(program);
 
     // Create a new tokio Command from the program path
-    let mut tokio_cmd = Command::new(program);
+    let mut tokio_cmd = create_tokio_command(program);
 
     // Copy over all environment variables
     for (key, value) in std::env::vars() {
@@ -293,7 +294,7 @@ fn create_command_with_env(program: &str) -> Command {
 }
 
 /// Creates a system binary command with the given arguments
-fn create_system_command(claude_path: &str, args: Vec<String>, project_path: &str) -> Command {
+fn create_system_command(claude_path: &str, args: Vec<String>, project_path: &str) -> tokio::process::Command {
     let mut cmd = create_command_with_env(claude_path);
 
     // Add all arguments
@@ -603,7 +604,7 @@ pub async fn open_new_session(app: AppHandle, path: Option<String>) -> Result<St
 
     #[cfg(debug_assertions)]
     {
-        let mut cmd = std::process::Command::new(claude_path);
+        let mut cmd = create_command(&claude_path);
 
         // If a path is provided, use it; otherwise use current directory
         if let Some(project_path) = path {
@@ -681,7 +682,7 @@ pub async fn check_claude_version(app: AppHandle) -> Result<ClaudeVersionStatus,
 
     #[cfg(debug_assertions)]
     {
-        let output = std::process::Command::new(claude_path)
+        let output = create_command(&claude_path)
             .arg("--version")
             .output();
 
@@ -1095,11 +1096,11 @@ pub async fn cancel_claude_execution(
                     if let Some(pid) = pid {
                         log::info!("Attempting system kill as last resort for PID: {}", pid);
                         let kill_result = if cfg!(target_os = "windows") {
-                            std::process::Command::new("taskkill")
+                            create_command("taskkill")
                                 .args(["/F", "/PID", &pid.to_string()])
                                 .output()
                         } else {
-                            std::process::Command::new("kill")
+                            create_command("kill")
                                 .args(["-KILL", &pid.to_string()])
                                 .output()
                         };
@@ -1176,7 +1177,7 @@ pub async fn get_claude_session_output(
 /// Helper function to spawn Claude process and handle streaming
 async fn spawn_claude_process(
     app: AppHandle,
-    mut cmd: Command,
+    mut cmd: tokio::process::Command,
     prompt: String,
     model: String,
     project_path: String,
@@ -2167,7 +2168,7 @@ pub async fn validate_hook_command(command: String) -> Result<serde_json::Value,
     log::info!("Validating hook command syntax");
 
     // Validate syntax without executing
-    let mut cmd = std::process::Command::new("bash");
+    let mut cmd = create_command("bash");
     cmd.arg("-n") // Syntax check only
         .arg("-c")
         .arg(&command);

@@ -84,7 +84,7 @@ impl Transport for StdioTransport {
 mod tests {
     use super::*;
     use codex_app_server_protocol::jsonrpc_lite::{JSONRPCRequest, RequestId};
-    use tokio::process::Command;
+    use crate::utils::command::create_tokio_command;
 
     #[tokio::test]
     #[ignore] // Requires codex app-server to be available
@@ -92,7 +92,7 @@ mod tests {
         // This test would require spawning an actual codex app-server process
         // For now, we'll keep it as an integration test
 
-        let mut child = Command::new("echo")
+        let mut child = create_tokio_command("echo")
             .arg("{\"jsonrpc\":\"2.0\",\"id\":1,\"result\":{}}")
             .stdin(std::process::Stdio::piped())
             .stdout(std::process::Stdio::piped())

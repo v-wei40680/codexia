@@ -1,5 +1,5 @@
 use crate::utils::coder_discovery::discover_coder_command;
-use std::process::Command;
+use crate::utils::command::create_command;
 
 pub async fn check_coder_version() -> Result<String, String> {
     let path = match discover_coder_command() {
@@ -8,7 +8,7 @@ pub async fn check_coder_version() -> Result<String, String> {
     };
     println!("Discovered coder path: {}", path);
 
-    let output = Command::new(&path)
+    let output = create_command(&path)
         .arg("-V")
         .output()
         .map_err(|e| format!("Failed to execute coder binary: {}", e))?;
