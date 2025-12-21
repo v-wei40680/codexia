@@ -1,5 +1,8 @@
 use std::path::PathBuf;
 
+#[cfg(windows)]
+use super::wsl;
+
 fn get_platform_binary_name() -> &'static str {
     let os = std::env::consts::OS;
     let arch = std::env::consts::ARCH;
@@ -190,6 +193,99 @@ pub fn discover_codex_command() -> Option<PathBuf> {
         }
     }
 
+    // On Windows, also check WSL distributions
+    #[cfg(windows)]
+    {
+        if let Ok(distros) = wsl::list_distros() {
+            for distro in distros {
+                // Try to find codex in WSL PATH
+                if let Ok(output) = wsl::exec_in_wsl(&distro.name, "which codex") {
+                    if !output.is_empty() {
+                        log::debug!("Found codex in WSL {} at {}", distro.name, output);
+                        // Return a special marker that indicates WSL path
+                        // Format: wsl://<distro>/<wsl_path>
+                        return Some(PathBuf::from(format!(
+                            "wsl://{}/{}",
+                            distro.name,
+                            output.trim()
+                        )));
+                    }
+                }
+
+                // Also check common WSL installation locations
+                let wsl_paths = [
+                    "/usr/local/bin/codex",
+                    "/usr/bin/codex",
+                    "$HOME/.cargo/bin/codex",
+                    "$HOME/.bun/bin/codex",
+                ];
+
+                for wsl_path in &wsl_paths {
+                    let check_cmd = format!("test -f {} && echo {}", wsl_path, wsl_path);
+                    if let Ok(output) = wsl::exec_in_wsl(&distro.name, &check_cmd) {
+                        if !output.is_empty() {
+                            log::debug!(
+                                "Found codex in WSL {} at {}",
+                                distro.name,
+                                output.trim()
+                            );
+                            return Some(PathBuf::from(format!(
+                                "wsl://{}/{}",
+                                distro.name,
+                                output.trim()
+                            )));
+                        }
+                    }
+                }
+            }
+        }
+    }
+
     log::warn!("No codex binary found in common locations or PATH");
     None
+}
+
+/// Get all potential codex root directories including WSL on Windows
+pub fn get_codex_root_candidates() -> Vec<PathBuf> {
+    let mut roots = Vec::new();
+
+    // Add standard locations
+    if let Ok(home) = std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")) {
+        roots.push(PathBuf::from(&home).join(".codex"));
+        roots.push(PathBuf::from(&home).join("code"));
+        roots.push(PathBuf::from(&home));
+    }
+
+    // On Windows, also add WSL locations
+    #[cfg(windows)]
+    {
+        roots.extend(wsl::get_wsl_codex_roots());
+    }
+
+    roots
+}
+
+/// Get all potential session storage directories including WSL
+pub fn get_session_root_candidates() -> Vec<PathBuf> {
+    let mut roots = Vec::new();
+
+    // Add standard .codex/sessions location
+    if let Ok(home) = std::env::var("HOME").or_else(|_| std::env::var("USERPROFILE")) {
+        roots.push(PathBuf::from(&home).join(".codex").join("sessions"));
+    }
+
+    // On Windows, also check WSL distributions
+    #[cfg(windows)]
+    {
+        if let Ok(distros) = wsl::list_distros() {
+            for distro in distros {
+                if let Ok(home) = wsl::get_distro_home(&distro.name) {
+                    let sessions_path = format!("{}/.codex/sessions", home);
+                    roots.push(PathBuf::from(wsl::wsl_to_unc(&sessions_path, &distro.name)));
+                }
+            }
+        }
+    }
+
+    roots
 }
