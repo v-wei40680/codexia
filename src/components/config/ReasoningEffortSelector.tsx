@@ -9,6 +9,7 @@ const EFFORT_OPTIONS = [
   { value: 'low', label: 'Low' },
   { value: 'medium', label: 'Medium' },
   { value: 'high', label: 'High' },
+  { value: 'xhigh', label: 'Extra High' },
 ] as const;
 
 export const ReasoningEffortSelector: React.FC = () => {

@@ -16,7 +16,7 @@ export interface ProviderStateModelProvider {
   baseUrl?: string;
 }
 
-type ReasoningEffort = "minimal" | "low" | "medium" | "high";
+type ReasoningEffort = "minimal" | "low" | "medium" | "high" | "xhigh";
 
 type ProviderState = {
   providers: ProviderStateModelProvider[];
