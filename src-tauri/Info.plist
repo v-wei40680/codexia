@@ -7,33 +7,13 @@
   <key>LSMinimumSystemVersion</key>
   <string>10.15</string>
   <key>CFBundleShortVersionString</key>
-  <string>0.18.0</string>
+  <string>0.19.0</string>
   <key>CFBundleName</key>
   <string>Codexia</string>
   <key>CFBundleDisplayName</key>
   <string>Codexia</string>
   <key>CFBundleIdentifier</key>
   <string>dev.milisp.codexia</string>
-  <key>CFBundleDocumentTypes</key>
-  <array>
-    <dict>
-      <key>CFBundleTypeName</key>
-      <string>Codexia Agent</string>
-      <key>CFBundleTypeRole</key>
-      <string>Editor</string>
-      <key>CFBundleTypeExtensions</key>
-      <array>
-        <string>db</string>
-        <string>toml</string>
-        <string>json</string>
-        <string>jsonl</string>
-      </array>
-      <key>CFBundleTypeIconFile</key>
-      <string>icon.icns</string>
-      <key>LSHandlerRank</key>
-      <string>Owner</string>
-    </dict>
-  </array>
   <key>NSAppleEventsUsageDescription</key>
   <string>Codexia needs to send Apple Events to other applications.</string>
   <key>NSAppleScriptEnabled</key>
