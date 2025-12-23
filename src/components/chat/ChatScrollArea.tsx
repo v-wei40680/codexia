@@ -13,6 +13,7 @@ import { EventMsgType } from "./EventMsgType";
 import { EventFilterPopover } from "./EventFilterPopover";
 import { Loader2 } from "lucide-react";
 import BouncingDotsLoader from "./BouncingDotsLoader";
+import { useTrackEvent } from "@/hooks";
 
 // Build a stable key for React list rendering. Avoid index-based keys.
 const getEventKey = (event: CodexEvent): string => {
@@ -68,15 +69,23 @@ export function ChatScrollArea({
     activeConversationId,
   });
 
+  const trackEvent = useTrackEvent();
   const [activeFilters, setActiveFilters] = useState(getDefaultEventFilters);
   const toggleEventFilter = (type: EventFilterType) => {
     setActiveFilters((prev) => {
       const next = new Set(prev);
+      const isEnabling = !prev.has(type);
       if (next.has(type)) {
         next.delete(type);
       } else {
         next.add(type);
       }
+
+      trackEvent.featureUsed("chat_view", "event_filter_toggle", {
+        filter_type: type,
+        enabled: isEnabling,
+      });
+
       return next;
     });
   };

@@ -8,6 +8,7 @@ import { invoke } from "@/lib/tauri-proxy";
 import { useFolderStore } from "@/stores/FolderStore";
 import { getErrorMessage } from "@/utils/errorUtils";
 import { useThemeContext } from "@/contexts/ThemeContext";
+import { usePageView, useTrackEvent } from "@/hooks";
 
 const CLAUDE_MD_FILE_NAME = "CLAUDE.md";
 
@@ -19,6 +20,9 @@ export default function ClaudeMdPage() {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { theme } = useThemeContext();
+
+  const trackEvent = useTrackEvent();
+  usePageView("claude_md_editor");
 
   const filePath = useMemo(() => {
     if (currentFolder) {
@@ -43,6 +47,7 @@ export default function ClaudeMdPage() {
       } catch (err) {
         if (active) {
           setError(getErrorMessage(err));
+          trackEvent.errorOccurred("claude_md_file_read_failed", undefined, "claude_md_editor");
         }
       } finally {
         if (active) {
@@ -60,11 +65,13 @@ export default function ClaudeMdPage() {
     setSaving(true);
     setError(null);
     setStatusMessage(null);
+    trackEvent.fileSaved("CLAUDE.md");
     try {
       await invoke("write_file", { filePath, content });
       setStatusMessage("Changes saved.");
     } catch (err) {
       setError(getErrorMessage(err));
+      trackEvent.errorOccurred("claude_md_file_save_failed", undefined, "claude_md_editor");
     } finally {
       setSaving(false);
     }

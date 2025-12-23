@@ -13,6 +13,7 @@ import { PlanDisplay, SimplePlanStep } from "../chat/messages/PlanDisplay";
 import { ReviewFilters, createInitialFilterState } from "./ReviewFilters";
 import { Button } from "../ui/button";
 import { MarkdownRenderer } from "../chat/MarkdownRenderer";
+import { usePageView, useTrackEvent } from "@/hooks";
 
 export function Review() {
   const { selectConversation } = useActiveConversationStore();
@@ -23,6 +24,9 @@ export function Review() {
     Record<string, boolean>
   >({});
   const [messageTypes, setMessageTypes] = useState(createInitialFilterState);
+
+  const trackEvent = useTrackEvent();
+  usePageView("review_history");
 
   useEffect(() => {
     let isMounted = true;
@@ -118,10 +122,14 @@ export function Review() {
   );
 
   const toggleExecCommand = (id: string) => {
+    const isExpanding = !expandedExecCommands[id];
     setExpandedExecCommands((prev) => ({
       ...prev,
       [id]: !prev[id],
     }));
+    trackEvent.featureUsed("review_history", "exec_command_toggle", {
+      expanded: isExpanding,
+    });
   };
 
   const handleFilterChange = (type: string, checked: boolean) => {
@@ -129,6 +137,10 @@ export function Review() {
       ...prev,
       [type]: checked,
     }));
+    trackEvent.featureUsed("review_history", "filter_toggle", {
+      filter_type: type,
+      enabled: checked,
+    });
   };
 
   if (!currentPath) {
@@ -152,7 +164,13 @@ export function Review() {
       )}
       <Button
         size="icon"
-        onClick={() => setShowFilter((prev) => !prev)}
+        onClick={() => {
+          const newValue = !showFilter;
+          setShowFilter(newValue);
+          trackEvent.featureUsed("review_history", "filter_panel_toggle", {
+            visible: newValue,
+          });
+        }}
         className="fixed bottom-0 right-4 z-20"
       >
         <Funnel className="h-4 w-4" />

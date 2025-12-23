@@ -27,7 +27,7 @@ class AnalyticsService {
     
     // Default configuration - pulled from Vite environment variables
     this.config = {
-      apiKey: 'phc_6seRe1SJkFckJU2qQWeeIy62kaSoaUbCsdVCm1TQZg8',
+      apiKey: 'phc_j6Ie9PJv2Rl9ETbABJcw5jmOHQ10GONGHnhFILOidUs',
       apiHost: 'https://us.i.posthog.com',
       persistence: 'localStorage',
       autocapture: false, // We'll manually track events

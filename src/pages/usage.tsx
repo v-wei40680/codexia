@@ -14,6 +14,7 @@ import {
 } from "@/components/usage";
 import { LoadingState, ErrorState, EmptyState } from "@/components/usage/common";
 import { formatCurrency, formatNumber, formatTokens } from "@/utils/formater";
+import { usePageView, useTrackEvent } from "@/hooks";
 
 const TAB_TRIGGER_CLASS =
   "data-[state=active]:bg-slate-800 data-[state=active]:text-slate-100 text-slate-400";
@@ -62,6 +63,10 @@ export default function UsagePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [activeTab, setActiveTab] = useState("overview");
+
+  const trackEvent = useTrackEvent();
+  usePageView("usage_dashboard");
 
   const loadUsageData = async () => {
     try {
@@ -72,6 +77,7 @@ export default function UsagePage() {
     } catch (err) {
       console.error("Failed to load usage data:", err);
       setError("Failed to load usage data. Please try again.");
+      trackEvent.errorOccurred("usage_load_failed", undefined, "usage_dashboard");
     } finally {
       setLoading(false);
     }
@@ -79,8 +85,14 @@ export default function UsagePage() {
 
   const handleRefresh = async () => {
     setRefreshing(true);
+    trackEvent.featureUsed("usage_dashboard", "refresh");
     await loadUsageData();
     setRefreshing(false);
+  };
+
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    trackEvent.featureUsed("usage_dashboard", "tab_switch", { tab: value });
   };
 
   useEffect(() => {
@@ -122,7 +134,7 @@ export default function UsagePage() {
       </div>
 
       {/* Detailed Views */}
-      <Tabs defaultValue="overview" className="space-y-4">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
         <TabsList className="bg-slate-950/50 border-slate-800">
           {TABS.map((tab) => (
             <TabsTrigger

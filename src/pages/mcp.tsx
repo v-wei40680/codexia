@@ -12,6 +12,7 @@ import {
   McpServerCard,
   getServerProtocol,
 } from '@/components/mcp';
+import { usePageView, useTrackEvent } from '@/hooks';
 
 export default function McpPage() {
   const [servers, setServers] = useState<Record<string, McpServerConfig>>({});
@@ -34,6 +35,9 @@ export default function McpPage() {
     http: { url: string };
   } | null>(null);
 
+  const trackEvent = useTrackEvent();
+  usePageView("mcp_manager");
+
   const loadServers = async () => {
     try {
       const mcpServers = await invoke<Record<string, McpServerConfig>>('read_mcp_servers');
@@ -52,19 +56,20 @@ export default function McpPage() {
 
     try {
       let config: McpServerConfig;
-      
+
       if (newServerProtocol === 'stdio') {
         config = {
           type: 'stdio',
           command: commandConfig.command,
           args: commandConfig.args.split(' ').filter(arg => arg.trim()),
         };
-        
+
         if (commandConfig.env && commandConfig.env.trim()) {
           try {
             config.env = JSON.parse(commandConfig.env);
           } catch (e) {
             toast.error('Invalid JSON format for environment variables');
+            trackEvent.errorOccurred("mcp_invalid_env", undefined, "mcp_manager");
             return;
           }
         }
@@ -77,14 +82,24 @@ export default function McpPage() {
 
       await invoke('add_mcp_server', { name: newServerName, config });
 
+      trackEvent.mcpServerAdded({
+        server_type: newServerProtocol,
+        configuration_method: 'manual',
+      });
+
       setNewServerName('');
       setCommandConfig({ command: '', args: '', env: '' });
       setHttpConfig({ url: '' });
-      setActiveTab('servers');
+      setActiveTab('configured');
       loadServers();
     } catch (error) {
       console.error('Failed to add MCP server:', error);
       toast.error('Failed to add MCP server: ' + error);
+      trackEvent.mcpConnectionError({
+        server_name: newServerName,
+        error_type: "add_failed",
+        retry_attempt: 0,
+      });
     }
   };
 
@@ -114,19 +129,20 @@ export default function McpPage() {
 
     try {
       let config: McpServerConfig;
-      
+
       if (editConfig.protocol === 'stdio') {
         config = {
           type: 'stdio',
           command: editConfig.command.command,
           args: editConfig.command.args.split(' ').filter(arg => arg.trim()),
         };
-        
+
         if (editConfig.command.env && editConfig.command.env.trim()) {
           try {
             config.env = JSON.parse(editConfig.command.env);
           } catch (e) {
             toast.error('Invalid JSON format for environment variables');
+            trackEvent.errorOccurred("mcp_invalid_env", undefined, "mcp_manager");
             return;
           }
         }
@@ -139,13 +155,19 @@ export default function McpPage() {
 
       await invoke('delete_mcp_server', { name: editingServer });
       await invoke('add_mcp_server', { name: editConfig.name, config });
-      
+
+      trackEvent.featureUsed("mcp_manager", "server_edited", {
+        server_name: editConfig.name,
+        server_type: editConfig.protocol,
+      });
+
       setEditingServer(null);
       setEditConfig(null);
       loadServers();
     } catch (error) {
       console.error('Failed to update MCP server:', error);
       toast.error('Failed to update MCP server: ' + error);
+      trackEvent.errorOccurred("mcp_edit_failed", undefined, "mcp_manager");
     }
   };
 
@@ -154,7 +176,10 @@ export default function McpPage() {
     setEditConfig(null);
   };
 
-
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
+    trackEvent.featureUsed("mcp_manager", "tab_switch", { tab: value });
+  };
 
   return (
     <div className="container mx-auto py-4">
@@ -164,7 +189,7 @@ export default function McpPage() {
       </div>
 
       <div className="space-y-6">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="quick">Quick</TabsTrigger>
             <TabsTrigger value="configured">Configured</TabsTrigger>

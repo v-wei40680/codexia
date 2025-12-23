@@ -12,7 +12,8 @@ const SECTIONS = [
   { id: "exclude", label: "Exclude Folders" },
   { id: "remoteAccess", label: "Remote Access" },
   { id: "gitWorktree", label: "Git Worktree" },
-  { id: "appearance", label: "Appearance"}
+  { id: "appearance", label: "Appearance"},
+  { id: "analytics", label: "Analytics" }
 ];
 
 export default function SettingsSidebar({

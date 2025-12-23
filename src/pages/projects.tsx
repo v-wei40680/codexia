@@ -26,6 +26,7 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { Badge} from "@/components/ui/badge"
 import { api } from "@/lib/api";
 import type { Project as APIProject } from "@/lib/api";
+import { usePageView, useTrackEvent } from "@/hooks";
 
 interface FileSystemProject {
   path: string;
@@ -48,6 +49,9 @@ export default function ProjectsPage() {
   const { setFileTree, setChatPane } = useLayoutStore();
   const { setCwd } = useCodexStore();
   const { setMainView, setSelectedProject } = useNavigationStore();
+
+  const trackEvent = useTrackEvent();
+  usePageView("projects_list");
 
   useEffect(() => {
     loadProjects();
@@ -77,13 +81,18 @@ export default function ProjectsPage() {
   const scanForUntrustedProjects = async () => {
     setScanError(null);
     setScanLoading(true);
+    trackEvent.featureUsed("projects_list", "scan_untrusted");
     try {
       const scanned = await invoke<FileSystemProject[]>("scan_projects");
       setScannedProjects(scanned);
+      trackEvent.featureUsed("projects_list", "scan_completed", {
+        found_count: scanned.length
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       setScanError(message);
       toast.error(`Failed to scan projects: ${message}`);
+      trackEvent.errorOccurred("project_scan_failed", undefined, "projects_list");
     } finally {
       setScanLoading(false);
     }
@@ -102,6 +111,10 @@ export default function ProjectsPage() {
     setFileTree(true);
     setChatPane(true);
     setMainView("codex");
+
+    trackEvent.featureUsed("projects_list", "project_opened", {
+      has_cc_project: !!matchingProject,
+    });
   };
 
   const selectNewProject = async () => {
@@ -235,7 +248,10 @@ export default function ProjectsPage() {
             </Card>
           </div>
         ) : (
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full overflow-hidden">
+          <Tabs value={activeTab} onValueChange={(value) => {
+            setActiveTab(value);
+            trackEvent.featureUsed("projects_list", "tab_switch", { tab: value });
+          }} className="flex flex-col h-full overflow-hidden">
             {/* Tabs List */}
             <div className="flex-shrink-0 border-b bg-background px-4 sm:px-6">
               <TabsList className="w-full justify-start rounded-none border-0 bg-transparent p-0 h-auto gap-0">
@@ -299,6 +315,7 @@ export default function ProjectsPage() {
             <Button
               variant="secondary"
               onClick={() => {
+                trackEvent.featureUsed("projects_list", "trust_declined");
                 const path = pendingProjectPath;
                 setTrustDialogOpen(false);
                 setPendingProjectPath(null);
@@ -312,6 +329,7 @@ export default function ProjectsPage() {
             <Button
               onClick={async () => {
                 if (!pendingProjectPath) return;
+                trackEvent.featureUsed("projects_list", "trust_granted");
                 try {
                   await invoke("set_project_trust", {
                     path: pendingProjectPath,
@@ -319,6 +337,7 @@ export default function ProjectsPage() {
                   });
                 } catch (e) {
                   console.error("Failed to update project trust:", e);
+                  trackEvent.errorOccurred("project_trust_failed", undefined, "projects_list");
                 } finally {
                   const path = pendingProjectPath;
                   setTrustDialogOpen(false);
