@@ -1,0 +1,222 @@
+use crate::app_types::{AppType, format_skill_error};
+use crate::app_state::AppState;
+use crate::services::skill::SkillState;
+use crate::services::{Skill, SkillRepo, SkillService};
+use chrono::Utc;
+use tauri::State;
+
+/// Parse app parameter to AppType
+fn parse_app_type(app: &str) -> Result<AppType, String> {
+    match app.to_lowercase().as_str() {
+        "claude" => Ok(AppType::Claude),
+        "codex" => Ok(AppType::Codex),
+        "gemini" => Ok(AppType::Gemini),
+        _ => Err(format!("Unsupported app type: {app}")),
+    }
+}
+
+/// Generate skill key with app_type prefix
+fn get_skill_key(app_type: &AppType, directory: &str) -> String {
+    let prefix = match app_type {
+        AppType::Claude => "claude",
+        AppType::Codex => "codex",
+        AppType::Gemini => "gemini",
+    };
+    format!("{prefix}:{directory}")
+}
+
+#[tauri::command]
+pub async fn get_skills(
+    app_state: State<'_, AppState>,
+) -> Result<Vec<Skill>, String> {
+    get_skills_for_app("claude".to_string(), app_state).await
+}
+
+#[tauri::command]
+pub async fn get_skills_for_app(
+    app: String,
+    app_state: State<'_, AppState>,
+) -> Result<Vec<Skill>, String> {
+    let app_type = parse_app_type(&app)?;
+    let service = SkillService::new_for_app(app_type.clone()).map_err(|e| e.to_string())?;
+
+    let repos = app_state.db.get_skill_repos().map_err(|e| e.to_string())?;
+
+    let skills = service
+        .list_skills(repos)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    // 自动同步本地已安装的 skills 到数据库
+    // 这样用户在首次运行时，已有的 skills 会被自动记录
+    let existing_states = app_state.db.get_skills().unwrap_or_default();
+
+    for skill in &skills {
+        if skill.installed {
+            let key = get_skill_key(&app_type, &skill.directory);
+            if !existing_states.contains_key(&key) {
+                // 本地有该 skill，但数据库中没有记录，自动添加
+                if let Err(e) = app_state.db.update_skill_state(
+                    &key,
+                    &SkillState {
+                        installed: true,
+                        installed_at: Utc::now(),
+                    },
+                ) {
+                    log::warn!("同步本地 skill {key} 状态到数据库失败: {e}");
+                }
+            }
+        }
+    }
+
+    Ok(skills)
+}
+
+#[tauri::command]
+pub async fn install_skill(
+    directory: String,
+    app_state: State<'_, AppState>,
+) -> Result<bool, String> {
+    install_skill_for_app("claude".to_string(), directory, app_state).await
+}
+
+#[tauri::command]
+pub async fn install_skill_for_app(
+    app: String,
+    directory: String,
+    app_state: State<'_, AppState>,
+) -> Result<bool, String> {
+    let app_type = parse_app_type(&app)?;
+    let service = SkillService::new_for_app(app_type.clone()).map_err(|e| e.to_string())?;
+
+    // 先在不持有写锁的情况下收集仓库与技能信息
+    let repos = app_state.db.get_skill_repos().map_err(|e| e.to_string())?;
+
+    let skills = service
+        .list_skills(repos)
+        .await
+        .map_err(|e| e.to_string())?;
+
+    let skill = skills
+        .iter()
+        .find(|s| s.directory.eq_ignore_ascii_case(&directory))
+        .ok_or_else(|| {
+            format_skill_error(
+                "SKILL_NOT_FOUND",
+                &[("directory", &directory)],
+                Some("checkRepoUrl"),
+            )
+        })?;
+
+    if !skill.installed {
+        let repo = SkillRepo {
+            owner: skill.repo_owner.clone().ok_or_else(|| {
+                format_skill_error(
+                    "MISSING_REPO_INFO",
+                    &[("directory", &directory), ("field", "owner")],
+                    None,
+                )
+            })?,
+            name: skill.repo_name.clone().ok_or_else(|| {
+                format_skill_error(
+                    "MISSING_REPO_INFO",
+                    &[("directory", &directory), ("field", "name")],
+                    None,
+                )
+            })?,
+            branch: skill
+                .repo_branch
+                .clone()
+                .unwrap_or_else(|| "main".to_string()),
+            enabled: true,
+        };
+
+        service
+            .install_skill(directory.clone(), repo)
+            .await
+            .map_err(|e| e.to_string())?;
+    }
+
+    let key = get_skill_key(&app_type, &directory);
+    app_state
+        .db
+        .update_skill_state(
+            &key,
+            &SkillState {
+                installed: true,
+                installed_at: Utc::now(),
+            },
+        )
+        .map_err(|e| e.to_string())?;
+
+    Ok(true)
+}
+
+#[tauri::command]
+pub fn uninstall_skill(
+    directory: String,
+    app_state: State<'_, AppState>,
+) -> Result<bool, String> {
+    uninstall_skill_for_app("claude".to_string(), directory, app_state)
+}
+
+#[tauri::command]
+pub fn uninstall_skill_for_app(
+    app: String,
+    directory: String,
+    app_state: State<'_, AppState>,
+) -> Result<bool, String> {
+    let app_type = parse_app_type(&app)?;
+    let service = SkillService::new_for_app(app_type.clone()).map_err(|e| e.to_string())?;
+
+    service
+        .uninstall_skill(directory.clone())
+        .map_err(|e| e.to_string())?;
+
+    // Remove from database by setting installed = false
+    let key = get_skill_key(&app_type, &directory);
+    app_state
+        .db
+        .update_skill_state(
+            &key,
+            &SkillState {
+                installed: false,
+                installed_at: Utc::now(),
+            },
+        )
+        .map_err(|e| e.to_string())?;
+
+    Ok(true)
+}
+
+#[tauri::command]
+pub fn get_skill_repos(
+    app_state: State<'_, AppState>,
+) -> Result<Vec<SkillRepo>, String> {
+    app_state.db.get_skill_repos().map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn add_skill_repo(
+    repo: SkillRepo,
+    app_state: State<'_, AppState>,
+) -> Result<bool, String> {
+    app_state
+        .db
+        .save_skill_repo(&repo)
+        .map_err(|e| e.to_string())?;
+    Ok(true)
+}
+
+#[tauri::command]
+pub fn remove_skill_repo(
+    owner: String,
+    name: String,
+    app_state: State<'_, AppState>,
+) -> Result<bool, String> {
+    app_state
+        .db
+        .delete_skill_repo(&owner, &name)
+        .map_err(|e| e.to_string())?;
+    Ok(true)
+}

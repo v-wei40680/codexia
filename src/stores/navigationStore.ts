@@ -14,6 +14,7 @@ type MainViewType =
   | "notepad"
   | "settings"
   | "login"
+  | "skills"
   | null;
 type RightViewType = "notepad" | "webPreview" | "editor" | "gitDiff" | null;
 

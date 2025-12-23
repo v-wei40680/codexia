@@ -3,3 +3,4 @@ pub mod file;
 pub mod remote;
 pub mod window;
 pub mod terminal;
+pub mod skill;

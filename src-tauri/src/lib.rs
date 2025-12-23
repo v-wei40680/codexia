@@ -1,5 +1,10 @@
+mod app_state;
+mod app_types;
 mod codex_commands;
 mod commands;
+mod config;
+mod database;
+mod error;
 mod filesystem;
 mod services;
 mod sleep;
@@ -342,8 +347,30 @@ pub fn run() {
             cc::commands::proxy::get_proxy_settings,
             #[cfg(feature = "cc-support")]
             cc::commands::proxy::save_proxy_settings,
+            // Skills commands
+            commands::skill::get_skills,
+            commands::skill::get_skills_for_app,
+            commands::skill::install_skill,
+            commands::skill::install_skill_for_app,
+            commands::skill::uninstall_skill,
+            commands::skill::uninstall_skill_for_app,
+            commands::skill::get_skill_repos,
+            commands::skill::add_skill_repo,
+            commands::skill::remove_skill_repo,
         ])
         .setup(|app| {
+            // Initialize Skills database
+            let db = database::Database::init()
+                .expect("Failed to initialize skills database");
+            let db_arc = std::sync::Arc::new(db);
+
+            // Initialize default skill repositories
+            if let Err(e) = db_arc.init_default_skill_repos() {
+                log::warn!("Failed to initialize default skill repos: {}", e);
+            }
+
+            app.manage(app_state::AppState::new(db_arc));
+
             #[cfg(feature = "cc-support")]
             {
                 // Initialize CC agents database for storage commands

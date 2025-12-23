@@ -56,6 +56,14 @@ base64.workspace = true
 nosleep.workspace = true
 regex.workspace = true
 tauri-plugin-fs = "2"
+rusqlite.workspace = true
+reqwest = { version = "0.12", features = ["json"] }
+futures = "0.3"
+zip = "2.1"
+tempfile = "3.10"
+serde_yaml = "0.9"
+indexmap = { version = "2.0", features = ["serde"] }
+thiserror = "2.0"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-single-instance.workspace = true

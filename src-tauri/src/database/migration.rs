@@ -1,0 +1,1 @@
+// Database migration functionality (placeholder)

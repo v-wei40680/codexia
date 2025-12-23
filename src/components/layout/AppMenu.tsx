@@ -5,6 +5,7 @@ import {
   Usb,
   BarChart3,
   FilePen,
+  Wrench,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -30,6 +31,7 @@ export function AppMenu() {
   };
 
   const viewMenuItems = [
+    { id: "skills", icon: Wrench, label: "header.skills" },
     { id: "mcp", icon: Usb, label: "header.mcp" },
     { id: "usage", icon: BarChart3, label: "header.usage" },
     { id: "settings", icon: Settings, label: "header.settings" },

@@ -25,6 +25,7 @@ import { DiffViewer } from "../filetree/DiffViewer";
 import { NoteList, NoteEditor } from "../notes";
 import { useNoteStore } from "@/stores/useNoteStore";
 import LoginPage from "@/pages/login";
+import { SkillsPage } from "../skills/SkillsPage";
 
 export function Layout() {
   const { mainView, rightView, setRightView, setMainView } =
@@ -83,6 +84,7 @@ export function Layout() {
                     {mainView === "mcp" && <McpPanel />}
                     {mainView === "usage" && <UsagePanel />}
                     {mainView === "settings" && <SettingsPanel />}
+                    {mainView === "skills" && <SkillsPage />}
                     {mainView === "agents-editor" && <AgentPage />}
                     {mainView === "claude-md-editor" && <ClaudeMdPage />}
                     {mainView === "cc-app" && <ClaudeCodeApp />}
