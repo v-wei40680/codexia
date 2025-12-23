@@ -22,5 +22,4 @@
 - `src/components/` - React components
 - `src/pages/` - Page components
 - `src/hooks/` - Custom hooks and stores
-- `src/components/common/RouteTracker.tsx` - App routing configuration
 - use `@/hooks` `@/types` etc.
