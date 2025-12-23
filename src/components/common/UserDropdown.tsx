@@ -9,10 +9,12 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTranslation } from "react-i18next";
 import supabase from "@/lib/supabase";
 import { User } from "lucide-react";
+import { useNavigationStore } from "@/stores/navigationStore";
 
 export function UserDropdown() {
   const { user } = useAuth();
   const { t } = useTranslation();
+  const { setMainView } = useNavigationStore();
 
   const handleLogout = async () => {
     try {
@@ -53,7 +55,11 @@ export function UserDropdown() {
           </DropdownMenuContent>
         </DropdownMenu>
       ) : (
-        <Button variant="ghost" className="h-6 w-6 p-0">
+        <Button
+          variant="ghost"
+          className="h-6 w-6 p-0"
+          onClick={() => setMainView("login")}
+        >
           <User />
         </Button>
       )}

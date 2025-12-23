@@ -24,11 +24,9 @@ import { useLayoutStore } from "@/stores";
 import { DiffViewer } from "../filetree/DiffViewer";
 import { NoteList, NoteEditor } from "../notes";
 import { useNoteStore } from "@/stores/useNoteStore";
-import { useAuth } from "@/hooks/useAuth";
 import LoginPage from "@/pages/login";
 
 export function Layout() {
-  const { user } = useAuth();
   const { mainView, rightView, setRightView, setMainView } =
     useNavigationStore();
   const { webPreviewUrl, setWebPreviewUrl, diffFile, selectedFile } =
@@ -53,7 +51,8 @@ export function Layout() {
     }
   }, [diffFile, setRightView]);
 
-  const isAuthenticated = import.meta.env.DEV || user;
+  // Allow access without authentication
+  const isAuthenticated = true;
 
   return (
     <main className="h-screen flex flex-col">
@@ -87,6 +86,7 @@ export function Layout() {
                     {mainView === "agents-editor" && <AgentPage />}
                     {mainView === "claude-md-editor" && <ClaudeMdPage />}
                     {mainView === "cc-app" && <ClaudeCodeApp />}
+                    {mainView === "login" && <LoginPage />}
                   </div>
                 </Panel>
               )}

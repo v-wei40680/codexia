@@ -13,6 +13,7 @@ type MainViewType =
   | "cc-app"
   | "notepad"
   | "settings"
+  | "login"
   | null;
 type RightViewType = "notepad" | "webPreview" | "editor" | "gitDiff" | null;
 
