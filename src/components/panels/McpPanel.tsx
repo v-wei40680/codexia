@@ -1,5 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import McpPage from "@/pages/mcp";
+import McpView from "@/views/McpView";
 import { MCPManager } from "@/components/cc/MCPManager";
 
 export function McpPanel() {
@@ -12,7 +12,7 @@ export function McpPanel() {
         </TabsList>
 
         <TabsContent value="codex" className="flex-1 overflow-hidden">
-          <McpPage />
+          <McpView />
         </TabsContent>
 
         <TabsContent value="cc" className="flex-1 overflow-hidden">

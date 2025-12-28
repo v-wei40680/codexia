@@ -1,5 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import UsagePage from "@/pages/usage";
+import UsageView from "@/views/UsageView";
 import { UsageDashboard } from "../cc";
 
 export function UsagePanel() {
@@ -12,7 +12,7 @@ export function UsagePanel() {
         </TabsList>
 
         <TabsContent value="codex" className="flex-1 overflow-hidden">
-          <UsagePage />
+          <UsageView />
         </TabsContent>
 
         <TabsContent value="cc" className="flex-1 overflow-hidden">

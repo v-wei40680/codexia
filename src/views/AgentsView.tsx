@@ -12,7 +12,7 @@ import { usePageView, useTrackEvent } from "@/hooks";
 
 const AGENTS_FILE_NAME = "AGENTS.md";
 
-export default function AgentPage() {
+export default function AgentsView() {
   const { currentFolder } = useFolderStore();
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);

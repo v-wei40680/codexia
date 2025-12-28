@@ -18,17 +18,17 @@ export const createInitialFilterState = () =>
     return acc;
   }, {});
 
-type ReviewFiltersProps = {
+type HistoryFiltersProps = {
   messageTypes: Record<string, boolean>;
   onFilterChange: (type: string, checked: boolean) => void;
   className?: string;
 };
 
-export function ReviewFilters({
+export function HistoryFilters({
   messageTypes,
   onFilterChange,
   className,
-}: ReviewFiltersProps) {
+}: HistoryFiltersProps) {
   return (
     <div className={className}>
       <div className="flex flex-col gap-2">

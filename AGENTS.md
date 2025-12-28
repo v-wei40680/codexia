@@ -21,7 +21,7 @@
 
 ## Project Structure
 - `src/components/` - React components
-- `src/pages/` - Page components
+- `src/views/` - View components
 - `src/hooks/` - Custom hooks and stores
 - use `@/hooks` `@/types` etc.
 

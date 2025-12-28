@@ -10,21 +10,21 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { FileExplorerPanel, ProjectPanel } from "@/components/panels";
-import ChatPage from "@/pages/chat";
-import { McpPanel } from "../panels/McpPanel";
-import { UsagePanel } from "../panels/UsagePanel";
+import ChatPage from "@/views/ChatView";
 import { SessionViewer } from "../cc/SessionViewer";
 import { ProjectViewErrorBoundary } from "../cc/ProjectViewErrorBoundary";
-import { SettingsPanel } from "../panels/SettingsPanel";
-import AgentPage from "@/pages/agents";
-import ClaudeMdPage from "@/pages/claude-md";
-import ClaudeCodeApp from "@/pages/cc";
+import AgentPage from "@/views/AgentsView";
+import ClaudeMdPage from "@/views/ClaudeMdView";
+import ClaudeCodeApp from "@/views/CcView";
 import { WebPreview } from "../WebPreview";
 import { useLayoutStore } from "@/stores";
 import { DiffViewer } from "../filetree/DiffViewer";
 import { NoteList, NoteEditor } from "../notes";
 import { useNoteStore } from "@/stores/useNoteStore";
-import LoginPage from "@/pages/login";
+import LoginPage from "@/views/LoginView";
+import { McpPanel } from "../panels/McpPanel";
+import { UsagePanel } from "../panels/UsagePanel";
+import { SettingsPanel } from "../panels/SettingsPanel";
 import { SkillsPage } from "../skills/SkillsPage";
 
 export function Layout() {
@@ -74,21 +74,22 @@ export function Layout() {
               {mainView && (
                 <Panel defaultSize={30} minSize={15}>
                   <div className="h-full overflow-auto">
+                    {mainView === "project" && <ProjectPanel />}
                     {mainView === "codex" && <ChatPage />}
                     {mainView === "cc" && (
                       <ProjectViewErrorBoundary>
                         <SessionViewer />
                       </ProjectViewErrorBoundary>
                     )}
-                    {mainView === "project" && <ProjectPanel />}
-                    {mainView === "mcp" && <McpPanel />}
-                    {mainView === "usage" && <UsagePanel />}
-                    {mainView === "settings" && <SettingsPanel />}
-                    {mainView === "skills" && <SkillsPage />}
                     {mainView === "agents-editor" && <AgentPage />}
                     {mainView === "claude-md-editor" && <ClaudeMdPage />}
                     {mainView === "cc-app" && <ClaudeCodeApp />}
                     {mainView === "login" && <LoginPage />}
+                    {mainView === "prompt" && <NoteList />}
+                    {mainView === "mcp" && <McpPanel />}
+                    {mainView === "skills" && <SkillsPage />}
+                    {mainView === "usage" && <UsagePanel />}
+                    {mainView === "settings" && <SettingsPanel />}
                   </div>
                 </Panel>
               )}

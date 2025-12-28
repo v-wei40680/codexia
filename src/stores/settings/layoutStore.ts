@@ -4,7 +4,6 @@ import { persist } from 'zustand/middleware';
 interface LayoutState {
   // Panel visibility
   showFilePanel: boolean;
-  showSessionList: boolean;
   showChatPane: boolean;
   showFileTree: boolean;
   showNotesList: boolean;
@@ -33,18 +32,13 @@ interface LayoutState {
   // Left panel tab selection
   selectedLeftPanelTab: string;
   
-  // Last route
-  lastRoute: string;
-  
   // Actions
   setFilePanel: (visible: boolean) => void;
-  setSessionList: (visible: boolean) => void;
   setNotesList: (visible: boolean) => void;
   setChatPane: (visible: boolean) => void;
   setFileTree: (visible: boolean) => void;
   setWebPreview: (visible: boolean) => void;
   setReview: (visible: boolean) => void;
-  toggleSessionList: () => void;
   toggleNotesList: () => void;
   toggleChatPane: () => void;
   toggleFileTree: () => void;
@@ -57,7 +51,6 @@ interface LayoutState {
   setActiveTab: (tab: string) => void;
   setConversationListTab: (tab: string) => void;
   setSelectedLeftPanelTab: (tab: string) => void;
-  setLastRoute: (route: string) => void;
 }
 
 export const useLayoutStore = create<LayoutState>()(
@@ -65,7 +58,6 @@ export const useLayoutStore = create<LayoutState>()(
     (set, get) => ({
       // Initial state
       showFilePanel: false,
-      showSessionList: true,
       showChatPane: true,
       showFileTree: true,
       showNotesList: true,
@@ -77,20 +69,14 @@ export const useLayoutStore = create<LayoutState>()(
       activeTab: 'chat',
       conversationListTab: 'sessions',
       selectedLeftPanelTab: 'files',
-      lastRoute: '/',
       
       // Actions
       setFilePanel: (visible) => set({ showFilePanel: visible }),
-      setSessionList: (visible) => set({ showSessionList: visible }),
       setNotesList: (visible) => set({ showNotesList: visible }),
       setChatPane: (visible) => set({ showChatPane: visible }),
       setFileTree: (visible) => set({ showFileTree: visible }),
       setWebPreview: (visible) => set({ showWebPreview: visible }),
       setReview: (visible) => set({ showReview: visible }),
-      
-      toggleSessionList: () => set((state) => ({
-        showSessionList: !state.showSessionList
-      })),
       
       toggleNotesList: () => set((state) => ({
         showNotesList: !state.showNotesList
@@ -143,19 +129,16 @@ export const useLayoutStore = create<LayoutState>()(
       
       setSelectedLeftPanelTab: (tab) => set({ selectedLeftPanelTab: tab }),
       
-      setLastRoute: (route) => set({ lastRoute: route }),
     }),
     {
       name: 'layout-store',
       partialize: (state) => ({
-        showSessionList: state.showSessionList,
         showChatPane: state.showChatPane,
         showFileTree: state.showFileTree,
         showNotesList: state.showNotesList,
         activeTab: state.activeTab,
         conversationListTab: state.conversationListTab,
         selectedLeftPanelTab: state.selectedLeftPanelTab,
-        lastRoute: state.lastRoute,
       }),
     }
   )

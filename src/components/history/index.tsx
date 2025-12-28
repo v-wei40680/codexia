@@ -4,18 +4,18 @@ import { Dot, Funnel } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { TurnDiffView } from "@/components/events/TurnDiffView";
 import { AccordionMsg } from "@/components/events/AccordionMsg";
-import ReviewExecCommandItem from "@/components/review/ReviewExecCommandItem";
-import { ReviewPatchOutputIcon } from "@/components/review/ReviewPatchOutputIcon";
+import HistoryExecCommandItem from "@/components/history/HistoryExecCommandItem";
+import { HistoryPatchOutputIcon } from "@/components/history/HistoryPatchOutputIcon";
 import { useActiveConversationStore } from "@/stores/codex";
 import { RawMessage } from "./type";
 import { aggregateMessages } from "./aggregateMessages";
 import { PlanDisplay, SimplePlanStep } from "../chat/messages/PlanDisplay";
-import { ReviewFilters, createInitialFilterState } from "./ReviewFilters";
+import { HistoryFilters, createInitialFilterState } from "./HistoryFilters";
 import { Button } from "../ui/button";
 import { MarkdownRenderer } from "../chat/MarkdownRenderer";
 import { usePageView, useTrackEvent } from "@/hooks";
 
-export function Review() {
+export function History() {
   const { selectConversation } = useActiveConversationStore();
   const currentPath = selectConversation?.path ?? "";
   const [msgs, setMsgs] = useState<RawMessage[]>([]);
@@ -26,7 +26,7 @@ export function Review() {
   const [messageTypes, setMessageTypes] = useState(createInitialFilterState);
 
   const trackEvent = useTrackEvent();
-  usePageView("review_history");
+  usePageView("codex_history");
 
   useEffect(() => {
     let isMounted = true;
@@ -98,7 +98,7 @@ export function Review() {
         if (!isMounted) return;
         setMsgs(aggregateMessages(messages));
       } catch (error) {
-        console.error("Failed to read review conversation:", error);
+        console.error("Failed to read history conversation:", error);
         if (isMounted) {
           setMsgs([]);
         }
@@ -127,7 +127,7 @@ export function Review() {
       ...prev,
       [id]: !prev[id],
     }));
-    trackEvent.featureUsed("review_history", "exec_command_toggle", {
+    trackEvent.featureUsed("codex_history", "exec_command_toggle", {
       expanded: isExpanding,
     });
   };
@@ -137,7 +137,7 @@ export function Review() {
       ...prev,
       [type]: checked,
     }));
-    trackEvent.featureUsed("review_history", "filter_toggle", {
+    trackEvent.featureUsed("codex_history", "filter_toggle", {
       filter_type: type,
       enabled: checked,
     });
@@ -146,7 +146,7 @@ export function Review() {
   if (!currentPath) {
     return (
       <div className="flex h-full min-h-0 items-center justify-center p-4 text-sm text-muted-foreground">
-        Select a conversation to view its review history.
+        Select a conversation to view its history.
       </div>
     );
   }
@@ -155,7 +155,7 @@ export function Review() {
     <div className="flex flex-col p-4 gap-2 overflow-auto h-full">
       {showFilter && (
         <div className="fixed bottom-6 right-0 p-4 z-10">
-          <ReviewFilters
+          <HistoryFilters
             className="mt-2 p-4 bg-background border rounded-md shadow-lg"
             messageTypes={messageTypes}
             onFilterChange={handleFilterChange}
@@ -167,7 +167,7 @@ export function Review() {
         onClick={() => {
           const newValue = !showFilter;
           setShowFilter(newValue);
-          trackEvent.featureUsed("review_history", "filter_panel_toggle", {
+          trackEvent.featureUsed("codex_history", "filter_panel_toggle", {
             visible: newValue,
           });
         }}
@@ -234,7 +234,7 @@ export function Review() {
             const callId = begin?.call_id ?? end?.call_id ?? `exec-${index}`;
             const isOpen = expandedExecCommands[callId] ?? false;
             return (
-              <ReviewExecCommandItem
+              <HistoryExecCommandItem
                 key={`${callId}-${index}`}
                 begin={begin}
                 end={end}
@@ -263,7 +263,7 @@ export function Review() {
           case "custom_tool_call_output":
             return (
               <div key={index}>
-                <ReviewPatchOutputIcon patch_output={msg.output} />
+                <HistoryPatchOutputIcon patch_output={msg.output} />
               </div>
             );
           case "ghost_snapshot":

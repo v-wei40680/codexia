@@ -135,6 +135,8 @@ pub fn run() {
             commands::env::set_system_env,
             commands::env::get_system_env,
             codex_commands::scan_projects,
+            codex_commands::scanned_projects::get_scanned_projects,
+            codex_commands::scanned_projects::scan_and_cache_projects,
             codex_commands::load_project_sessions,
             codex_commands::update_cache_title,
             commands::terminal::open_terminal_with_command,

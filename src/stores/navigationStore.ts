@@ -3,25 +3,45 @@ import { persist } from "zustand/middleware";
 import type { Session, Project } from "@/lib/api";
 
 type MainViewType =
+  | "project"
   | "codex"
   | "cc"
-  | "project"
-  | "mcp"
-  | "usage"
   | "agents-editor"
   | "claude-md-editor"
   | "cc-app"
   | "notepad"
-  | "settings"
+  | "prompt"
   | "login"
+  | "mcp"
   | "skills"
+  | "settings"
+  | "usage"
   | null;
+type SidebarTabType =
+  | "codex"
+  | "cc"
+  | "cc-app"
+  | "prompt"
+  | "mcp"
+  | "skills"
+  | "usage"
+  | "settings"
+  | null;
+type SubTabType = "main" | "fileTree" | "git";
 type RightViewType = "notepad" | "webPreview" | "editor" | "gitDiff" | null;
 
 interface NavigationState {
-  // Left panel view (Codex, CC, FileTree, or none)
+  // Main panel view (Projects, Codex, CC, etc.)
   mainView: MainViewType;
   setMainView: (view: MainViewType) => void;
+
+  // Sidebar tab (what shows in the left sidebar content area)
+  sidebarTab: SidebarTabType;
+  setSidebarTab: (tab: SidebarTabType) => void;
+
+  // Sub-tab for codex and cc views (main, fileTree, git)
+  subTab: SubTabType;
+  setSubTab: (tab: SubTabType) => void;
 
   // Right panel view (FileExplorer, Notepad)
   rightView: RightViewType;
@@ -45,6 +65,8 @@ export const useNavigationStore = create<NavigationState>()(
     (set) => ({
       // Initial state
       mainView: "project",
+      sidebarTab: null,
+      subTab: "main",
       rightView: null,
       selectedProject: null,
       selectedSession: null,
@@ -54,6 +76,16 @@ export const useNavigationStore = create<NavigationState>()(
       setMainView: (view: MainViewType) =>
         set({
           mainView: view,
+        }),
+
+      setSidebarTab: (tab: SidebarTabType) =>
+        set({
+          sidebarTab: tab,
+        }),
+
+      setSubTab: (tab: SubTabType) =>
+        set({
+          subTab: tab,
         }),
 
       setRightView: (view: RightViewType) =>
@@ -80,6 +112,8 @@ export const useNavigationStore = create<NavigationState>()(
       name: "navigation-store",
       partialize: (state) => ({
         mainView: state.mainView,
+        sidebarTab: state.sidebarTab,
+        subTab: state.subTab,
         rightView: state.rightView,
         sidebarVisible: state.sidebarVisible,
       }),

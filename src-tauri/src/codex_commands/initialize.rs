@@ -10,6 +10,12 @@ pub async fn initialize_client(
     {
         let response_guard = state.client_state.initialize_response.lock().await;
         if let Some(cached_response) = response_guard.as_ref() {
+            // Trigger background scan if already initialized
+            tokio::spawn(async {
+                if let Err(e) = codex_client::session_files::scan_and_cache_projects().await {
+                    eprintln!("Background scan failed: {}", e);
+                }
+            });
             return Ok(cached_response.clone());
         }
     }
@@ -22,6 +28,13 @@ pub async fn initialize_client(
         let mut response_guard = state.client_state.initialize_response.lock().await;
         *response_guard = Some(response.clone());
     }
+
+    // Trigger background scan after initialization
+    tokio::spawn(async {
+        if let Err(e) = codex_client::session_files::scan_and_cache_projects().await {
+            eprintln!("Background scan failed: {}", e);
+        }
+    });
 
     Ok(response)
 }

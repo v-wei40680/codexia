@@ -17,7 +17,7 @@ import { TurnDiffActions } from "../events/TurnDiffActions";
 import { useTurnDiffStore } from "@/stores/codex";
 import { useExecCommandStore, useLayoutStore } from "@/stores";
 import { useResumeConversationStore } from "@/stores/codex";
-import { Review } from "@/components/review";
+import { History } from "@/components/history";
 
 export function ChatView() {
   useCodexApprovalRequests();
@@ -98,7 +98,7 @@ export function ChatView() {
       <ChatToolbar />
       {showReview ? (
         <div className="flex-1 h-full min-h-0 overflow-hidden">
-          <Review />
+          <History />
         </div>
       ) : (
         <>

@@ -13,6 +13,7 @@ pub mod initialize;
 pub mod listeners;
 pub mod mcp;
 pub mod reviews;
+pub mod scanned_projects;
 pub mod session_files;
 
 pub use state::CodexState;

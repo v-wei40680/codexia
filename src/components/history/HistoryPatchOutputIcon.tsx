@@ -1,6 +1,6 @@
 import { Check, X } from "lucide-react";
 
-interface ReviewPatchOutputItemProps {
+interface HistoryPatchOutputItemProps {
   patch_output: string;
 }
 
@@ -24,9 +24,9 @@ const getPatchOutputText = (patch_output: string) => {
   return patch_output;
 };
 
-export function ReviewPatchOutputIcon({
+export function HistoryPatchOutputIcon({
   patch_output,
-}: ReviewPatchOutputItemProps) {
+}: HistoryPatchOutputItemProps) {
   const output = getPatchOutputText(patch_output);
   return (
     <>

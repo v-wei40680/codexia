@@ -1,6 +1,6 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings } from "@/components/cc/Settings";
-import SettingsPage from "@/pages/settings";
+import SettingsView from "@/views/SettingsView";
 
 export function SettingsPanel() {
   return (
@@ -12,7 +12,7 @@ export function SettingsPanel() {
         </TabsList>
 
         <TabsContent value="codex" className="flex-1 overflow-hidden">
-          <SettingsPage />
+          <SettingsView />
         </TabsContent>
 
         <TabsContent value="cc" className="flex-1 overflow-hidden">

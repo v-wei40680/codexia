@@ -8,7 +8,7 @@ import {
 
 type ExecCommandMessage = Record<string, any>;
 
-interface ReviewExecCommandItemProps {
+interface HistoryExecCommandItemProps {
   begin?: ExecCommandMessage | null;
   end?: ExecCommandMessage | null;
   isOpen: boolean;
@@ -157,12 +157,12 @@ const getCommandHeading = (begin?: ExecCommandMessage | null) => {
   return begin?.name || "Command";
 };
 
-export default function ReviewExecCommandItem({
+export default function HistoryExecCommandItem({
   begin,
   end,
   isOpen,
   onToggle,
-}: ReviewExecCommandItemProps) {
+}: HistoryExecCommandItemProps) {
   const parsedBeginArguments = parseBeginArguments(begin);
   const commandParts = parseShellCommandParts(parsedBeginArguments);
   const commandTitle = buildCommandTitle(begin, commandParts);

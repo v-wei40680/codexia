@@ -1,14 +1,18 @@
-import { useState, useEffect } from "react";
 import {
-  Bot,
   CreativeCommons,
-  Files,
   FolderOpen,
-  GitBranch,
   LoaderPinwheel,
+  Plug,
+  BarChart,
+  Settings,
+  Wrench,
+  MessageSquare,
+  Files,
+  GitBranch,
+  Bot,
+  Terminal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useNavigationStore } from "@/stores/navigationStore";
 import { ChatTab } from "../chat/ChatTab";
 import { CCSessionList } from "../cc/CCSessionList";
@@ -17,104 +21,219 @@ import { useLayoutStore } from "@/stores";
 import { useFolderStore } from "@/stores/FolderStore";
 import { SourceControl } from "../SourceControl";
 
+type IconKey =
+  | "project"
+  | "codex"
+  | "cc"
+  | "cc-app"
+  | "mcp"
+  | "prompt"
+  | "skills"
+  | "usage"
+  | "settings";
+
+const ICON_CONFIG: Record<
+  IconKey,
+  {
+    mainView: any;
+    sidebarTab?: any;
+    subTab?: any;
+  }
+> = {
+  project: { mainView: "project" },
+  codex: { mainView: "codex", sidebarTab: "codex", subTab: "main" },
+  cc: { mainView: "cc", sidebarTab: "cc", subTab: "main" },
+  "cc-app": { mainView: "cc-app", subTab: "main" },
+  mcp: { mainView: "mcp", subTab: "main" },
+  prompt: { mainView: "prompt", subTab: "main" },
+  skills: { mainView: "skills", subTab: "main" },
+  usage: { mainView: "usage", subTab: "main" },
+  settings: { mainView: "settings", subTab: "main" },
+};
+
 interface AppSidebarProps {
   onTabChange?: (view: string) => void;
 }
 
 export function AppSidebar({ onTabChange }: AppSidebarProps) {
-  const { mainView, setMainView, sidebarVisible } = useNavigationStore();
+  const { mainView, setMainView, sidebarTab, setSidebarTab, subTab, setSubTab, sidebarVisible } =
+    useNavigationStore();
   const { openFile } = useLayoutStore();
   const { currentFolder } = useFolderStore();
-  const [localTab, setLocalTab] = useState<string>(mainView || "codex");
-
-  // Sync localTab with mainView when it changes externally (but not for sidebar-only tabs)
-  useEffect(() => {
-    if (mainView) {
-      setLocalTab(mainView);
-    }
-  }, [mainView]);
 
   if (!sidebarVisible) {
     return null;
   }
 
-  const handleTabChange = (value: string) => {
-    setLocalTab(value);
+  const handleIconClick = (icon: IconKey) => {
+    const config = ICON_CONFIG[icon];
 
-    // Don't change mainView for fileTree and git - keep them local to sidebar
-    if (value === "fileTree" || value === "git") {
-      return;
-    }
+    setMainView(config.mainView);
+    setSidebarTab(config.sidebarTab ?? null);
+    setSubTab(config.subTab ?? "main");
 
-    if (onTabChange) {
-      onTabChange(value);
-    } else {
-      setMainView(value as any);
-    }
+    onTabChange?.(icon);
   };
 
   return (
-    <div className="w-64 bg-background border-r flex flex-col shrink-0 h-full min-h-0">
-      <Tabs
-        value={localTab}
-        onValueChange={handleTabChange}
-        className="w-full flex flex-col flex-1 min-h-0"
-      >
-        <TabsList className="w-full grid grid-cols-5">
-          <TabsTrigger value="codex" title="Open Codex">
-            <LoaderPinwheel className="w-4 h-4" />
-          </TabsTrigger>
-          <TabsTrigger value="cc-app" title="Open CC APP">
-            <Bot className="w-4 h-4" />
-          </TabsTrigger>
-          <TabsTrigger value="cc" title="Open CC">
-            <CreativeCommons className="w-4 h-4" />
-          </TabsTrigger>
-          <TabsTrigger value="fileTree" title="Open FileTree">
-            <Files className="w-4 h-4" />
-          </TabsTrigger>
-          <TabsTrigger value="git" title="Open git">
-            <GitBranch className="w-4 h-4" />
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Projects Button */}
+    <div className="flex h-full min-h-0 shrink-0">
+      {/* Icon Bar - VS Code Activity Bar */}
+      <div className="w-12 bg-background border-r flex flex-col items-center py-2 gap-1">
         <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => handleTabChange("project")}
-          className={`w-full ${mainView === "project" ? "bg-primary/20" : ""}`}
-          title="Open Projects"
+          variant={mainView === "project" ? "secondary" : "ghost"}
+          size="icon"
+          onClick={() => handleIconClick("project")}
+          title="Projects"
+          className="w-10 h-10"
         >
-          <FolderOpen /> Projects
+          <FolderOpen className="w-5 h-5" />
         </Button>
+        <Button
+          variant={mainView === "codex" && sidebarTab === "codex" ? "secondary" : "ghost"}
+          size="icon"
+          onClick={() => handleIconClick("codex")}
+          title="Codex"
+          className="w-10 h-10"
+        >
+          <LoaderPinwheel className="w-5 h-5" />
+        </Button>
+        <Button
+          variant={mainView === "cc" && sidebarTab === "cc" ? "secondary" : "ghost"}
+          size="icon"
+          onClick={() => handleIconClick("cc")}
+          title="CC"
+          className="w-10 h-10"
+        >
+          <CreativeCommons className="w-5 h-5" />
+        </Button>
+        <Button
+          variant={mainView === "cc-app" ? "secondary" : "ghost"}
+          size="icon"
+          onClick={() => handleIconClick("cc-app")}
+          title="CC app"
+          className="w-10 h-10"
+        >
+          <Bot className="w-5 h-5" />
+        </Button>
+        <div className="w-8 h-px bg-border my-1" />
+        <Button
+          variant={mainView === "prompt" ? "secondary" : "ghost"}
+          size="icon"
+          onClick={() => handleIconClick("prompt")}
+          title="prompt"
+          className="w-10 h-10"
+        >
+          <Terminal className="w-5 h-5" />
+        </Button>
+        <Button
+          variant={mainView === "mcp" ? "secondary" : "ghost"}
+          size="icon"
+          onClick={() => handleIconClick("mcp")}
+          title="MCP"
+          className="w-10 h-10"
+        >
+          <Plug className="w-5 h-5" />
+        </Button>
+        <Button
+          variant={mainView === "skills" ? "secondary" : "ghost"}
+          size="icon"
+          onClick={() => handleIconClick("skills")}
+          title="Skills"
+          className="w-10 h-10"
+        >
+          <Wrench className="w-5 h-5" />
+        </Button>
+        <div className="flex-1" />
+        <Button
+          variant={mainView === "usage" ? "secondary" : "ghost"}
+          size="icon"
+          onClick={() => handleIconClick("usage")}
+          title="Usage"
+          className="w-10 h-10"
+        >
+          <BarChart className="w-5 h-5" />
+        </Button>
+        <Button
+          variant={mainView === "settings" ? "secondary" : "ghost"}
+          size="icon"
+          onClick={() => handleIconClick("settings")}
+          title="Settings"
+          className="w-10 h-10"
+        >
+          <Settings className="w-5 h-5" />
+        </Button>
+      </div>
 
-        <div className="w-full h-px bg-border" />
+      {/* Content Area - VS Code Sidebar */}
+      {(sidebarTab === "codex" || sidebarTab === "cc") && (
+        <div className="w-64 bg-background border-r flex flex-col h-full min-h-0">
+          {/* Sub-tabs */}
+          <div className="flex border-b shrink-0">
+            <button
+              onClick={() => setSubTab("main")}
+              className={`flex-1 px-3 py-2 flex items-center justify-center transition-colors ${
+                subTab === "main"
+                  ? "bg-background text-foreground border-b-2 border-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              title={sidebarTab === "codex" ? "codex Sessions" : "cc Sessions"}
+            >
+              <MessageSquare className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setSubTab("fileTree")}
+              className={`flex-1 px-3 py-2 flex items-center justify-center transition-colors ${
+                subTab === "fileTree"
+                  ? "bg-background text-foreground border-b-2 border-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              title="Files"
+            >
+              <Files className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => setSubTab("git")}
+              className={`flex-1 px-3 py-2 flex items-center justify-center transition-colors ${
+                subTab === "git"
+                  ? "bg-background text-foreground border-b-2 border-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+              title="Git"
+            >
+              <GitBranch className="w-4 h-4" />
+            </button>
+          </div>
 
-        {/* Content area */}
-        <TabsContent value="codex" className="flex-1 min-h-0 m-0 overflow-auto">
-          <ChatTab />
-        </TabsContent>
-        <TabsContent value="cc" className="flex-1 min-h-0 m-0 overflow-auto">
-          <CCSessionList />
-        </TabsContent>
-        <TabsContent value="fileTree" className="flex-1 min-h-0 m-0 overflow-auto">
-          <FileTree
-            currentFolder={currentFolder || undefined}
-            onFileClick={(path) => {
-              openFile(path);
-            }}
-          />
-        </TabsContent>
-        <TabsContent value="git" className="flex-1 min-h-0 m-0 overflow-auto">
-          <SourceControl />
-        </TabsContent>
-        <TabsContent value="cc-app" className="flex-1 min-h-0 m-0" />
-      </Tabs>
-
-      {mainView === "project" && (
-        <div className="flex-1 min-h-0 overflow-auto w-full mt-2">
-          {/* Projects content will be handled by layout/index.tsx */}
+          {/* Content based on subTab */}
+          {subTab === "main" && (
+            <>
+              {sidebarTab === "codex" && (
+                <div className="flex-1 min-h-0 overflow-auto">
+                  <ChatTab />
+                </div>
+              )}
+              {sidebarTab === "cc" && (
+                <div className="flex-1 min-h-0 overflow-auto">
+                  <CCSessionList />
+                </div>
+              )}
+            </>
+          )}
+          {subTab === "fileTree" && (
+            <div className="flex-1 min-h-0 overflow-auto">
+              <FileTree
+                currentFolder={currentFolder || undefined}
+                onFileClick={(path) => {
+                  openFile(path);
+                }}
+              />
+            </div>
+          )}
+          {subTab === "git" && (
+            <div className="flex-1 min-h-0 overflow-auto">
+              <SourceControl />
+            </div>
+          )}
         </div>
       )}
     </div>
