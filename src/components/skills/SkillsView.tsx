@@ -26,17 +26,17 @@ import {
   type AppType,
 } from "@/lib/skillsApi";
 
-interface SkillsPageProps {
+interface SkillsViewProps {
   onClose?: () => void;
   initialApp?: AppType;
 }
 
-export interface SkillsPageHandle {
+export interface SkillsViewHandle {
   refresh: () => void;
   openRepoManager: () => void;
 }
 
-export const SkillsPage = forwardRef<SkillsPageHandle, SkillsPageProps>(
+export const SkillsView = forwardRef<SkillsViewHandle, SkillsViewProps>(
   ({ onClose: _onClose, initialApp = "claude" }, ref) => {
     const { t } = useTranslation();
     const [skills, setSkills] = useState<Skill[]>([]);
@@ -351,4 +351,4 @@ export const SkillsPage = forwardRef<SkillsPageHandle, SkillsPageProps>(
   },
 );
 
-SkillsPage.displayName = "SkillsPage";
+SkillsView.displayName = "SkillsView";

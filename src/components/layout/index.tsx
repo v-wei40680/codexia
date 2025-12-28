@@ -10,22 +10,22 @@ import {
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
 import { FileExplorerPanel, ProjectPanel } from "@/components/panels";
-import ChatPage from "@/views/ChatView";
+import ChatView from "@/views/ChatView";
 import { SessionViewer } from "../cc/SessionViewer";
 import { ProjectViewErrorBoundary } from "../cc/ProjectViewErrorBoundary";
-import AgentPage from "@/views/AgentsView";
-import ClaudeMdPage from "@/views/ClaudeMdView";
+import AgentsView from "@/views/AgentsView";
+import ClaudeMdView from "@/views/ClaudeMdView";
 import ClaudeCodeApp from "@/views/CcView";
 import { WebPreview } from "../WebPreview";
 import { useLayoutStore } from "@/stores";
 import { DiffViewer } from "../filetree/DiffViewer";
 import { NoteList, NoteEditor } from "../notes";
 import { useNoteStore } from "@/stores/useNoteStore";
-import LoginPage from "@/views/LoginView";
+import LoginView from "@/views/LoginView";
 import { McpPanel } from "../panels/McpPanel";
 import { UsagePanel } from "../panels/UsagePanel";
 import { SettingsPanel } from "../panels/SettingsPanel";
-import { SkillsPage } from "../skills/SkillsPage";
+import { SkillsView } from "../skills/SkillsView";
 
 export function Layout() {
   const { mainView, rightView, setRightView, setMainView } =
@@ -75,19 +75,19 @@ export function Layout() {
                 <Panel defaultSize={30} minSize={15}>
                   <div className="h-full overflow-auto">
                     {mainView === "project" && <ProjectPanel />}
-                    {mainView === "codex" && <ChatPage />}
+                    {mainView === "codex" && <ChatView />}
                     {mainView === "cc" && (
                       <ProjectViewErrorBoundary>
                         <SessionViewer />
                       </ProjectViewErrorBoundary>
                     )}
-                    {mainView === "agents-editor" && <AgentPage />}
-                    {mainView === "claude-md-editor" && <ClaudeMdPage />}
+                    {mainView === "agents-editor" && <AgentsView />}
+                    {mainView === "claude-md-editor" && <ClaudeMdView />}
                     {mainView === "cc-app" && <ClaudeCodeApp />}
-                    {mainView === "login" && <LoginPage />}
+                    {mainView === "login" && <LoginView />}
                     {mainView === "prompt" && <NoteList />}
                     {mainView === "mcp" && <McpPanel />}
-                    {mainView === "skills" && <SkillsPage />}
+                    {mainView === "skills" && <SkillsView />}
                     {mainView === "usage" && <UsagePanel />}
                     {mainView === "settings" && <SettingsPanel />}
                   </div>
@@ -178,7 +178,7 @@ export function Layout() {
           </div>
         </div>
       ) : (
-        <LoginPage />
+        <LoginView />
       )}
 
       <Toaster />
