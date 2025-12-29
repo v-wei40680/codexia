@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { LoaderPinwheel, FolderOpen, Plus } from "lucide-react";
+import { Loader2, FolderOpen, Plus, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
@@ -14,13 +14,11 @@ import { toast } from "sonner";
 
 interface FileSystemProject {
   path: string;
-  trust_level: string;
 }
 
 interface UnifiedProject {
   path: string;
   hasCodex: boolean;
-  trustLevel?: string;
 }
 
 export function ProjectPanel() {
@@ -49,7 +47,7 @@ export function ProjectPanel() {
         const existingPaths = new Set(codexList.map(p => p.path));
         const scannedCodexProjects = scannedList
           .filter(p => !existingPaths.has(p.path))
-          .map(p => ({ path: p.path, trust_level: "untrusted" }));
+          .map(p => ({ path: p.path }));
 
         if (scannedCodexProjects.length > 0) {
           setCodexProjects([...codexList, ...scannedCodexProjects]);
@@ -69,7 +67,6 @@ export function ProjectPanel() {
     const unifiedProjects = codexProjects.map((project) => ({
       path: project.path,
       hasCodex: true,
-      trustLevel: project.trust_level,
     }));
 
     setUnifiedProjects(unifiedProjects);
@@ -135,7 +132,10 @@ export function ProjectPanel() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-full">
-        <div>Loading projects...</div>
+        <div className="flex flex-col items-center gap-3">
+          <Loader2 className="w-6 h-6 animate-spin" />
+          <div className="text-sm text-muted-foreground">Loading projects...</div>
+        </div>
       </div>
     );
   }
@@ -146,31 +146,28 @@ export function ProjectPanel() {
     return (
       <div
         key={project.path}
-        className="p-4 hover:bg-accent/50 transition-colors cursor-pointer rounded-lg"
+        onClick={(e) => handleCodexClick(project, e)}
+        className={`p-4 rounded-lg transition-colors ${
+          project.hasCodex
+            ? "hover:bg-accent/50 cursor-pointer"
+            : "opacity-60 cursor-not-allowed"
+        }`}
+        title={
+          project.hasCodex
+            ? "Click to open in Codex"
+            : "Not a Codex project"
+        }
       >
         <div className="flex items-center justify-between gap-3 min-w-0 mb-1">
           <div className="flex items-center gap-2 min-w-0 flex-1">
             <FolderOpen className="w-5 h-5 flex-shrink-0" />
             <span className="truncate font-medium">{projectName}</span>
           </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <Button
-              variant={project.hasCodex ? "ghost" : "ghost"}
-              size="icon"
-              className={`w-8 h-8 ${
-                project.hasCodex
-                  ? "hover:bg-primary/10 text-foreground"
-                  : "opacity-30 cursor-not-allowed"
-              }`}
-              onClick={(e) => handleCodexClick(project, e)}
-              disabled={!project.hasCodex}
-              title={project.hasCodex ? "Open in Codex" : "Not a Codex project"}
-            >
-              <LoaderPinwheel className="w-4 h-4" />
-            </Button>
-          </div>
+          <ChevronRight className={`w-4 h-4 flex-shrink-0 ${
+            project.hasCodex ? "text-foreground" : "text-muted-foreground"
+          }`} />
         </div>
-        <div className="text-xs text-muted-foreground truncate pl-7">{project.path}</div>
+        <div className="text-sm text-muted-foreground pl-7 break-words">{project.path}</div>
       </div>
     );
   };
@@ -190,7 +187,6 @@ export function ProjectPanel() {
             placeholder="Search projects..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            autoFocus
             className="text-sm"
           />
         </div>
