@@ -23,7 +23,7 @@ export function AppHeader() {
   return (
     <div
       data-tauri-drag-region
-      className={`flex justify-between items-center border-b bg-background/80 backdrop-blur-sm shadow-sm ${isRemoteRuntime() ? "" : currentPlatform === "macos" ? "pl-20 pr-4" : "pr-32"}`}
+      className={`flex justify-between items-center border-b bg-background/80 backdrop-blur-sm shadow-sm ${isRemoteRuntime() ? "" : currentPlatform === "macos" ? "pl-20 pr-4" : ""}`}
     >
       {/* Left Section - Sidebar Toggle */}
       <div className="flex items-center gap-2">
