@@ -1,6 +1,4 @@
 import {
-  CreativeCommons,
-  FolderOpen,
   LoaderPinwheel,
   Plug,
   BarChart,
@@ -9,23 +7,20 @@ import {
   MessageSquare,
   Files,
   GitBranch,
-  Bot,
-  Terminal,
+  Home,
+  PenLine,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigationStore } from "@/stores/navigationStore";
 import { ChatTab } from "../chat/ChatTab";
-import { CCSessionList } from "../cc/CCSessionList";
 import { FileTree } from "../filetree/FileTreeView";
 import { useLayoutStore } from "@/stores";
 import { useFolderStore } from "@/stores/FolderStore";
 import { SourceControl } from "../SourceControl";
 
 type IconKey =
-  | "project"
+  | "home"
   | "codex"
-  | "cc"
-  | "cc-app"
   | "mcp"
   | "prompt"
   | "skills"
@@ -40,10 +35,8 @@ const ICON_CONFIG: Record<
     subTab?: any;
   }
 > = {
-  project: { mainView: "project" },
+  home: { mainView: "home" },
   codex: { mainView: "codex", sidebarTab: "codex", subTab: "main" },
-  cc: { mainView: "cc", sidebarTab: "cc", subTab: "main" },
-  "cc-app": { mainView: "cc-app", subTab: "main" },
   mcp: { mainView: "mcp", subTab: "main" },
   prompt: { mainView: "prompt", subTab: "main" },
   skills: { mainView: "skills", subTab: "main" },
@@ -56,8 +49,15 @@ interface AppSidebarProps {
 }
 
 export function AppSidebar({ onTabChange }: AppSidebarProps) {
-  const { mainView, setMainView, sidebarTab, setSidebarTab, subTab, setSubTab, sidebarVisible } =
-    useNavigationStore();
+  const {
+    mainView,
+    setMainView,
+    sidebarTab,
+    setSidebarTab,
+    subTab,
+    setSubTab,
+    sidebarVisible,
+  } = useNavigationStore();
   const { openFile } = useLayoutStore();
   const { currentFolder } = useFolderStore();
 
@@ -80,40 +80,26 @@ export function AppSidebar({ onTabChange }: AppSidebarProps) {
       {/* Icon Bar - VS Code Activity Bar */}
       <div className="w-12 bg-background border-r flex flex-col items-center py-2 gap-1">
         <Button
-          variant={mainView === "project" ? "secondary" : "ghost"}
+          variant={mainView === "home" ? "secondary" : "ghost"}
           size="icon"
-          onClick={() => handleIconClick("project")}
-          title="Projects"
+          onClick={() => handleIconClick("home")}
+          title="home"
           className="w-10 h-10"
         >
-          <FolderOpen className="w-5 h-5" />
+          <Home className="w-5 h-5" />
         </Button>
         <Button
-          variant={mainView === "codex" && sidebarTab === "codex" ? "secondary" : "ghost"}
+          variant={
+            mainView === "codex" && sidebarTab === "codex"
+              ? "secondary"
+              : "ghost"
+          }
           size="icon"
           onClick={() => handleIconClick("codex")}
           title="Codex"
           className="w-10 h-10"
         >
           <LoaderPinwheel className="w-5 h-5" />
-        </Button>
-        <Button
-          variant={mainView === "cc" && sidebarTab === "cc" ? "secondary" : "ghost"}
-          size="icon"
-          onClick={() => handleIconClick("cc")}
-          title="CC"
-          className="w-10 h-10"
-        >
-          <CreativeCommons className="w-5 h-5" />
-        </Button>
-        <Button
-          variant={mainView === "cc-app" ? "secondary" : "ghost"}
-          size="icon"
-          onClick={() => handleIconClick("cc-app")}
-          title="CC app"
-          className="w-10 h-10"
-        >
-          <Bot className="w-5 h-5" />
         </Button>
         <div className="w-8 h-px bg-border my-1" />
         <Button
@@ -123,7 +109,7 @@ export function AppSidebar({ onTabChange }: AppSidebarProps) {
           title="prompt"
           className="w-10 h-10"
         >
-          <Terminal className="w-5 h-5" />
+          <PenLine className="w-5 h-5" />
         </Button>
         <Button
           variant={mainView === "mcp" ? "secondary" : "ghost"}
@@ -210,11 +196,6 @@ export function AppSidebar({ onTabChange }: AppSidebarProps) {
               {sidebarTab === "codex" && (
                 <div className="flex-1 min-h-0 overflow-auto">
                   <ChatTab />
-                </div>
-              )}
-              {sidebarTab === "cc" && (
-                <div className="flex-1 min-h-0 overflow-auto">
-                  <CCSessionList />
                 </div>
               )}
             </>

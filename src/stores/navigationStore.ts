@@ -1,9 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import type { Session, Project } from "@/lib/api";
 
 type MainViewType =
-  | "project"
+  | "home"
   | "codex"
   | "cc"
   | "agents-editor"
@@ -47,14 +46,6 @@ interface NavigationState {
   rightView: RightViewType;
   setRightView: (view: RightViewType) => void;
 
-  // Selected project for CC view
-  selectedProject: Project | null;
-  setSelectedProject: (project: Project | null) => void;
-
-  // Selected session to display
-  selectedSession: Session | null;
-  setSelectedSession: (session: Session | null) => void;
-
   // Sidebar visibility
   sidebarVisible: boolean;
   setSidebarVisible: (visible: boolean) => void;
@@ -64,7 +55,7 @@ export const useNavigationStore = create<NavigationState>()(
   persist(
     (set) => ({
       // Initial state
-      mainView: "project",
+      mainView: "home",
       sidebarTab: null,
       subTab: "main",
       rightView: null,
@@ -91,16 +82,6 @@ export const useNavigationStore = create<NavigationState>()(
       setRightView: (view: RightViewType) =>
         set({
           rightView: view,
-        }),
-
-      setSelectedProject: (project: Project | null) =>
-        set({
-          selectedProject: project,
-        }),
-
-      setSelectedSession: (session: Session | null) =>
-        set({
-          selectedSession: session,
         }),
 
       setSidebarVisible: (visible: boolean) =>

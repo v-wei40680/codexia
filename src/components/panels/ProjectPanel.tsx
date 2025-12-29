@@ -1,10 +1,8 @@
 import { useState, useEffect } from "react";
-import { LoaderPinwheel, CreativeCommons, FolderOpen, Plus } from "lucide-react";
+import { LoaderPinwheel, FolderOpen, Plus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
-import type { Project } from "@/lib/api";
-import { api } from "@/lib/api";
 import { useNavigationStore } from "@/stores/navigationStore";
 import { useFolderStore } from "@/stores/FolderStore";
 import { useCodexStore } from "@/stores/codex";
@@ -22,35 +20,30 @@ interface FileSystemProject {
 interface UnifiedProject {
   path: string;
   hasCodex: boolean;
-  hasCC: boolean;
   trustLevel?: string;
-  ccProject?: Project;
 }
 
 export function ProjectPanel() {
   const [codexProjects, setCodexProjects] = useState<FileSystemProject[]>([]);
-  const [ccProjects, setCCProjects] = useState<Project[]>([]);
   const [unifiedProjects, setUnifiedProjects] = useState<UnifiedProject[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const { setSelectedProject, setMainView, setSidebarTab, setSubTab } = useNavigationStore();
+  const { setMainView, setSidebarTab, setSubTab } = useNavigationStore();
   const { setCurrentFolder } = useFolderStore();
   const { setCwd } = useCodexStore();
   const { setFileTree, setChatPane } = useLayoutStore();
 
-  // Load both project lists and scanned projects
+  // Load project lists and scanned projects
   useEffect(() => {
     const loadProjects = async () => {
       try {
-        const [codexList, ccList, scannedList] = await Promise.all([
+        const [codexList, scannedList] = await Promise.all([
           invoke<FileSystemProject[]>("read_codex_config").catch(() => []),
-          api.listProjects().catch(() => []),
           invoke<Array<{name: string; path: string}>>("get_scanned_projects").catch(() => []),
         ]);
 
         setCodexProjects(codexList);
-        setCCProjects(ccList);
 
         // Add scanned projects to codex projects (if not already in config)
         const existingPaths = new Set(codexList.map(p => p.path));
@@ -71,38 +64,16 @@ export function ProjectPanel() {
     loadProjects();
   }, []);
 
-  // Merge projects from both sources
+  // Map codex projects to unified format
   useEffect(() => {
-    const projectMap = new Map<string, UnifiedProject>();
+    const unifiedProjects = codexProjects.map((project) => ({
+      path: project.path,
+      hasCodex: true,
+      trustLevel: project.trust_level,
+    }));
 
-    // Add codex projects
-    codexProjects.forEach((project) => {
-      projectMap.set(project.path, {
-        path: project.path,
-        hasCodex: true,
-        hasCC: false,
-        trustLevel: project.trust_level,
-      });
-    });
-
-    // Add or merge CC projects
-    ccProjects.forEach((project) => {
-      const existing = projectMap.get(project.path);
-      if (existing) {
-        existing.hasCC = true;
-        existing.ccProject = project;
-      } else {
-        projectMap.set(project.path, {
-          path: project.path,
-          hasCodex: false,
-          hasCC: true,
-          ccProject: project,
-        });
-      }
-    });
-
-    setUnifiedProjects(Array.from(projectMap.values()));
-  }, [codexProjects, ccProjects]);
+    setUnifiedProjects(unifiedProjects);
+  }, [codexProjects]);
 
   const handleCodexClick = (project: UnifiedProject, e: React.MouseEvent) => {
     e.stopPropagation();
@@ -117,16 +88,6 @@ export function ProjectPanel() {
     setSubTab("main");
   };
 
-  const handleCCClick = (project: UnifiedProject, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!project.hasCC || !project.ccProject) return;
-
-    setSelectedProject(project.ccProject);
-    setCurrentFolder(project.path);
-    setMainView("cc");
-    setSidebarTab("cc");
-    setSubTab("main");
-  };
 
   const selectNewProject = async () => {
     try {
@@ -206,20 +167,6 @@ export function ProjectPanel() {
               title={project.hasCodex ? "Open in Codex" : "Not a Codex project"}
             >
               <LoaderPinwheel className="w-4 h-4" />
-            </Button>
-            <Button
-              variant={project.hasCC ? "ghost" : "ghost"}
-              size="icon"
-              className={`w-8 h-8 ${
-                project.hasCC
-                  ? "hover:bg-primary/10 text-foreground"
-                  : "opacity-30 cursor-not-allowed"
-              }`}
-              onClick={(e) => handleCCClick(project, e)}
-              disabled={!project.hasCC}
-              title={project.hasCC ? "Open in Claude Code" : "Not a Claude Code project"}
-            >
-              <CreativeCommons className="w-4 h-4" />
             </Button>
           </div>
         </div>

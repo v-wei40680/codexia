@@ -1,12 +1,4 @@
-import {
-  ExternalLink,
-  EllipsisVertical,
-  Settings,
-  Usb,
-  BarChart3,
-  FilePen,
-  Wrench,
-} from "lucide-react";
+import { ExternalLink, EllipsisVertical, FilePen } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,13 +21,6 @@ export function AppMenu() {
       console.error("Failed to create new window:", error);
     }
   };
-
-  const viewMenuItems = [
-    { id: "skills", icon: Wrench, label: "header.skills" },
-    { id: "mcp", icon: Usb, label: "header.mcp" },
-    { id: "usage", icon: BarChart3, label: "header.usage" },
-    { id: "settings", icon: Settings, label: "header.settings" },
-  ];
 
   return (
     <DropdownMenu>
@@ -83,19 +68,6 @@ export function AppMenu() {
             claude.md editor
           </Button>
         </DropdownMenuItem>
-        {viewMenuItems.map(({ id, icon: Icon, label }) => (
-          <DropdownMenuItem asChild key={id}>
-            <Button
-              variant="ghost"
-              onClick={() => setMainView(id as any)}
-              className="w-full justify-start"
-              title={t(label)}
-            >
-              <Icon className="w-4 h-4 mr-2" />
-              {t(label)}
-            </Button>
-          </DropdownMenuItem>
-        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );

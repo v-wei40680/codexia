@@ -13,7 +13,6 @@ import { PlanDisplay, SimplePlanStep } from "../chat/messages/PlanDisplay";
 import { HistoryFilters, createInitialFilterState } from "./HistoryFilters";
 import { Button } from "../ui/button";
 import { MarkdownRenderer } from "../chat/MarkdownRenderer";
-import { usePageView, useTrackEvent } from "@/hooks";
 
 export function History() {
   const { selectConversation } = useActiveConversationStore();
@@ -24,9 +23,6 @@ export function History() {
     Record<string, boolean>
   >({});
   const [messageTypes, setMessageTypes] = useState(createInitialFilterState);
-
-  const trackEvent = useTrackEvent();
-  usePageView("codex_history");
 
   useEffect(() => {
     let isMounted = true;
@@ -40,7 +36,9 @@ export function History() {
 
     const readConversation = async () => {
       try {
-        const lines = await invoke<string[]>("read_text_file_lines", {filePath: currentPath});
+        const lines = await invoke<string[]>("read_text_file_lines", {
+          filePath: currentPath,
+        });
         let messages: RawMessage[] = [];
         let payload: Record<string, any> = {};
         for await (const line of lines) {
@@ -122,14 +120,10 @@ export function History() {
   );
 
   const toggleExecCommand = (id: string) => {
-    const isExpanding = !expandedExecCommands[id];
     setExpandedExecCommands((prev) => ({
       ...prev,
       [id]: !prev[id],
     }));
-    trackEvent.featureUsed("codex_history", "exec_command_toggle", {
-      expanded: isExpanding,
-    });
   };
 
   const handleFilterChange = (type: string, checked: boolean) => {
@@ -137,10 +131,6 @@ export function History() {
       ...prev,
       [type]: checked,
     }));
-    trackEvent.featureUsed("codex_history", "filter_toggle", {
-      filter_type: type,
-      enabled: checked,
-    });
   };
 
   if (!currentPath) {
@@ -167,9 +157,6 @@ export function History() {
         onClick={() => {
           const newValue = !showFilter;
           setShowFilter(newValue);
-          trackEvent.featureUsed("codex_history", "filter_panel_toggle", {
-            visible: newValue,
-          });
         }}
         className="fixed bottom-0 right-4 z-20"
       >
@@ -185,7 +172,10 @@ export function History() {
             );
           case "user_message":
             return (
-              <div key={`user-${index}`} className="p-3 rounded-lg max-w-[90%] self-end shadow-md">
+              <div
+                key={`user-${index}`}
+                className="p-3 rounded-lg max-w-[90%] self-end shadow-md"
+              >
                 {msg.images && msg.images.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-2">
                     {msg.images.map((image: string, index: number) => (

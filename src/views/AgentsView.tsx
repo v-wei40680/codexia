@@ -8,7 +8,6 @@ import { invoke } from "@/lib/tauri-proxy";
 import { useFolderStore } from "@/stores/FolderStore";
 import { getErrorMessage } from "@/utils/errorUtils";
 import { useThemeContext } from "@/contexts/ThemeContext";
-import { usePageView, useTrackEvent } from "@/hooks";
 
 const AGENTS_FILE_NAME = "AGENTS.md";
 
@@ -20,9 +19,6 @@ export default function AgentsView() {
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { theme } = useThemeContext();
-
-  const trackEvent = useTrackEvent();
-  usePageView("agent_editor");
 
   const filePath = useMemo(() => {
     if (currentFolder) {
@@ -47,7 +43,6 @@ export default function AgentsView() {
       } catch (err) {
         if (active) {
           setError(getErrorMessage(err));
-          trackEvent.errorOccurred("agents_file_read_failed", undefined, "agent_editor");
         }
       } finally {
         if (active) {
@@ -65,13 +60,11 @@ export default function AgentsView() {
     setSaving(true);
     setError(null);
     setStatusMessage(null);
-    trackEvent.fileSaved("AGENTS.md");
     try {
       await invoke("write_file", { filePath, content });
       setStatusMessage("Changes saved.");
     } catch (err) {
       setError(getErrorMessage(err));
-      trackEvent.errorOccurred("agents_file_save_failed", undefined, "agent_editor");
     } finally {
       setSaving(false);
     }

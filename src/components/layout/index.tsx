@@ -9,23 +9,22 @@ import {
   ResizablePanel,
   ResizablePanelGroup,
 } from "@/components/ui/resizable";
-import { FileExplorerPanel, ProjectPanel } from "@/components/panels";
+import {
+  FileExplorerPanel,
+  McpPanel,
+  SettingsPanel,
+  UsagePanel,
+} from "@/components/panels";
 import ChatView from "@/views/ChatView";
-import { SessionViewer } from "../cc/SessionViewer";
-import { ProjectViewErrorBoundary } from "../cc/ProjectViewErrorBoundary";
 import AgentsView from "@/views/AgentsView";
-import ClaudeMdView from "@/views/ClaudeMdView";
-import ClaudeCodeApp from "@/views/CcView";
 import { WebPreview } from "../WebPreview";
 import { useLayoutStore } from "@/stores";
 import { DiffViewer } from "../filetree/DiffViewer";
 import { NoteList, NoteEditor } from "../notes";
 import { useNoteStore } from "@/stores/useNoteStore";
 import LoginView from "@/views/LoginView";
-import { McpPanel } from "../panels/McpPanel";
-import { UsagePanel } from "../panels/UsagePanel";
-import { SettingsPanel } from "../panels/SettingsPanel";
 import { SkillsView } from "../skills/SkillsView";
+import { HomeView } from "@/views/HomeView";
 
 export function Layout() {
   const { mainView, rightView, setRightView, setMainView } =
@@ -74,16 +73,9 @@ export function Layout() {
               {mainView && (
                 <Panel defaultSize={30} minSize={15}>
                   <div className="h-full overflow-auto">
-                    {mainView === "project" && <ProjectPanel />}
+                    {mainView === "home" && <HomeView />}
                     {mainView === "codex" && <ChatView />}
-                    {mainView === "cc" && (
-                      <ProjectViewErrorBoundary>
-                        <SessionViewer />
-                      </ProjectViewErrorBoundary>
-                    )}
                     {mainView === "agents-editor" && <AgentsView />}
-                    {mainView === "claude-md-editor" && <ClaudeMdView />}
-                    {mainView === "cc-app" && <ClaudeCodeApp />}
                     {mainView === "login" && <LoginView />}
                     {mainView === "prompt" && <NoteList />}
                     {mainView === "mcp" && <McpPanel />}

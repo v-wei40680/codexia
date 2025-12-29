@@ -1,5 +1,4 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Settings } from "@/components/cc/Settings";
 import SettingsView from "@/views/SettingsView";
 
 export function SettingsPanel() {
@@ -16,7 +15,7 @@ export function SettingsPanel() {
         </TabsContent>
 
         <TabsContent value="cc" className="flex-1 overflow-hidden">
-          <Settings onBack={() => {}} />
+          wait
         </TabsContent>
       </Tabs>
     </div>

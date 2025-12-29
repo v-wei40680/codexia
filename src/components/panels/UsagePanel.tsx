@@ -1,6 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import UsageView from "@/views/UsageView";
-import { UsageDashboard } from "../cc";
 
 export function UsagePanel() {
   return (
@@ -16,7 +15,7 @@ export function UsagePanel() {
         </TabsContent>
 
         <TabsContent value="cc" className="flex-1 overflow-hidden">
-          <UsageDashboard onBack={() => {}} />
+          wait
         </TabsContent>
       </Tabs>
     </div>

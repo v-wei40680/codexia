@@ -19,10 +19,6 @@ path = "src/main.rs"
 name = "codexia_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
-[features]
-default = ["cc-support"]
-cc-support = ["cc"]
-
 [build-dependencies]
 tauri-build.workspace = true
 
@@ -72,4 +68,3 @@ tauri-plugin-updater.workspace = true
 codex-bindings.workspace = true
 fix-path-env.workspace = true
 codex-client.workspace = true
-cc = { path = "../cc", optional = true }

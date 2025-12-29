@@ -1,6 +1,5 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import McpView from "@/views/McpView";
-import { MCPManager } from "@/components/cc/MCPManager";
 
 export function McpPanel() {
   return (
@@ -16,7 +15,7 @@ export function McpPanel() {
         </TabsContent>
 
         <TabsContent value="cc" className="flex-1 overflow-hidden">
-          <MCPManager onBack={() => {}} />
+          wait
         </TabsContent>
       </Tabs>
     </div>

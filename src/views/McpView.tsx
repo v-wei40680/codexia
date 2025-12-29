@@ -12,7 +12,6 @@ import {
   McpServerCard,
   getServerProtocol,
 } from '@/components/mcp';
-import { usePageView, useTrackEvent } from '@/hooks';
 
 export default function McpPage() {
   const [servers, setServers] = useState<Record<string, McpServerConfig>>({});
@@ -34,9 +33,6 @@ export default function McpPage() {
     command: { command: string; args: string; env: string };
     http: { url: string };
   } | null>(null);
-
-  const trackEvent = useTrackEvent();
-  usePageView("mcp_manager");
 
   const loadServers = async () => {
     try {
@@ -69,7 +65,6 @@ export default function McpPage() {
             config.env = JSON.parse(commandConfig.env);
           } catch (e) {
             toast.error('Invalid JSON format for environment variables');
-            trackEvent.errorOccurred("mcp_invalid_env", undefined, "mcp_manager");
             return;
           }
         }
@@ -82,11 +77,6 @@ export default function McpPage() {
 
       await invoke('add_mcp_server', { name: newServerName, config });
 
-      trackEvent.mcpServerAdded({
-        server_type: newServerProtocol,
-        configuration_method: 'manual',
-      });
-
       setNewServerName('');
       setCommandConfig({ command: '', args: '', env: '' });
       setHttpConfig({ url: '' });
@@ -95,11 +85,6 @@ export default function McpPage() {
     } catch (error) {
       console.error('Failed to add MCP server:', error);
       toast.error('Failed to add MCP server: ' + error);
-      trackEvent.mcpConnectionError({
-        server_name: newServerName,
-        error_type: "add_failed",
-        retry_attempt: 0,
-      });
     }
   };
 
@@ -142,7 +127,6 @@ export default function McpPage() {
             config.env = JSON.parse(editConfig.command.env);
           } catch (e) {
             toast.error('Invalid JSON format for environment variables');
-            trackEvent.errorOccurred("mcp_invalid_env", undefined, "mcp_manager");
             return;
           }
         }
@@ -156,18 +140,12 @@ export default function McpPage() {
       await invoke('delete_mcp_server', { name: editingServer });
       await invoke('add_mcp_server', { name: editConfig.name, config });
 
-      trackEvent.featureUsed("mcp_manager", "server_edited", {
-        server_name: editConfig.name,
-        server_type: editConfig.protocol,
-      });
-
       setEditingServer(null);
       setEditConfig(null);
       loadServers();
     } catch (error) {
       console.error('Failed to update MCP server:', error);
       toast.error('Failed to update MCP server: ' + error);
-      trackEvent.errorOccurred("mcp_edit_failed", undefined, "mcp_manager");
     }
   };
 
@@ -178,7 +156,6 @@ export default function McpPage() {
 
   const handleTabChange = (value: string) => {
     setActiveTab(value);
-    trackEvent.featureUsed("mcp_manager", "tab_switch", { tab: value });
   };
 
   return (
