@@ -168,19 +168,6 @@ By contributing to this project, you agree that your contributions may be licens
 - [Claude](https://claude.ai) by Anthropic
 - [Codex](https://github.com/openai/codex) by OpenAI
 
-## ❤️ Support & Participate
-
-I'm working on Codexia Pro and need your input!
-
-**Fill this 5-min survey & get:**
-- 🎁 50% lifetime discount on Pro  
-- 🚀 Early access to Pro features  
-- 💬 Direct influence on roadmap  
-
-[Take Survey](https://forms.gle/fchcQsE2HUiCcwfQ6) · [Join Discord](https://discord.gg/zAjtD4kf5K)
-
-_First 100 respondents only!_
-
 ---
 
 [Report Bug · Request Feature](https://github.com/milisp/codexia/issues)</a>
