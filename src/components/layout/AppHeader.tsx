@@ -1,5 +1,4 @@
 import {
-  Notebook,
   PanelRightOpen,
   PanelRightClose,
   PanelLeft,
@@ -54,15 +53,6 @@ export function AppHeader() {
           ) : (
             <PanelRightOpen className="w-4 h-4" />
           )}
-        </Button>
-        <Button
-          variant={rightView === "notepad" ? "default" : "outline"}
-          size="icon"
-          onClick={() =>
-            setRightView(rightView === "notepad" ? null : "notepad")
-          }
-        >
-          <Notebook className="w-4 h-4" />
         </Button>
         <PublishCloudDialog />
         <UserDropdown />

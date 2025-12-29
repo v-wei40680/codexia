@@ -5,11 +5,6 @@ import { Toaster } from "sonner";
 import { useNavigationStore } from "@/stores/navigationStore";
 import { PanelGroup, Panel, PanelResizeHandle } from "react-resizable-panels";
 import {
-  ResizableHandle,
-  ResizablePanel,
-  ResizablePanelGroup,
-} from "@/components/ui/resizable";
-import {
   FileExplorerPanel,
   McpPanel,
   SettingsPanel,
@@ -20,18 +15,16 @@ import AgentsView from "@/views/AgentsView";
 import { WebPreview } from "../WebPreview";
 import { useLayoutStore } from "@/stores";
 import { DiffViewer } from "../filetree/DiffViewer";
-import { NoteList, NoteEditor } from "../notes";
-import { useNoteStore } from "@/stores/useNoteStore";
 import LoginView from "@/views/LoginView";
 import { SkillsView } from "../skills/SkillsView";
 import { HomeView } from "@/views/HomeView";
+import { NoteView } from "@/views/NoteView";
 
 export function Layout() {
   const { mainView, rightView, setRightView, setMainView } =
     useNavigationStore();
   const { webPreviewUrl, setWebPreviewUrl, diffFile, selectedFile } =
     useLayoutStore();
-  const { showNoteList } = useNoteStore();
 
   const handleTabChange = (view: string) => {
     setMainView(view as any);
@@ -77,7 +70,7 @@ export function Layout() {
                     {mainView === "codex" && <ChatView />}
                     {mainView === "agents-editor" && <AgentsView />}
                     {mainView === "login" && <LoginView />}
-                    {mainView === "prompt" && <NoteList />}
+                    {mainView === "prompt" && <NoteView />}
                     {mainView === "mcp" && <McpPanel />}
                     {mainView === "skills" && <SkillsView />}
                     {mainView === "usage" && <UsagePanel />}
@@ -98,38 +91,7 @@ export function Layout() {
                   minSize={20}
                   className="overflow-hidden"
                 >
-                  {rightView === "notepad" ? (
-                    <ResizablePanelGroup
-                      direction="horizontal"
-                      className="h-full w-full overflow-hidden"
-                    >
-                      {showNoteList && (
-                        <>
-                          <ResizablePanel
-                            id="notepad-list"
-                            order={1}
-                            defaultSize={30}
-                            minSize={0}
-                            className="min-w-0 overflow-hidden"
-                          >
-                            <div className="h-full w-full overflow-auto">
-                              <NoteList />
-                            </div>
-                          </ResizablePanel>
-                          <ResizableHandle withHandle />
-                        </>
-                      )}
-                      <ResizablePanel
-                        id="notepad-editor"
-                        order={showNoteList ? 2 : 1}
-                        defaultSize={showNoteList ? 70 : 100}
-                        minSize={50}
-                        className="min-w-0 overflow-hidden"
-                      >
-                        <NoteEditor />
-                      </ResizablePanel>
-                    </ResizablePanelGroup>
-                  ) : rightView === "webPreview" ? (
+                  {rightView === "webPreview" ? (
                     <div className="h-full overflow-auto">
                       <WebPreview
                         url={webPreviewUrl || ""}
