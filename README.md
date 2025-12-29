@@ -182,3 +182,6 @@ _First 100 respondents only!_
 ---
 
 [Report Bug · Request Feature](https://github.com/milisp/codexia/issues)</a>
+
+## License
+This project is licensed under the GNU Affero General Public License v3.0.
