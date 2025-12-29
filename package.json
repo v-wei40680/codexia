@@ -48,7 +48,6 @@
     "@tauri-apps/plugin-opener": "^2",
     "@tauri-apps/plugin-process": "~2",
     "@tauri-apps/plugin-shell": "~2",
-    "@tauri-apps/plugin-updater": "~2",
     "@uiw/react-md-editor": "^4.0.8",
     "ace-builds": "^1.43.2",
     "ansi-to-html": "^0.7.2",

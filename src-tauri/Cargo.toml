@@ -63,7 +63,6 @@ thiserror = "2.0"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-single-instance.workspace = true
-tauri-plugin-updater.workspace = true
 
 codex-bindings.workspace = true
 fix-path-env.workspace = true
