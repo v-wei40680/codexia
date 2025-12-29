@@ -1,6 +1,6 @@
 use super::file::{get_session_info, get_sessions_path, read_first_line};
 use super::utils::{count_lines, extract_datetime, parse_session_project_path};
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, NaiveDateTime, Utc};
 use serde_json::{json, Value};
 use std::collections::HashSet;
 use std::path::Path;
@@ -45,27 +45,27 @@ pub fn scan_sessions_after(
 
         let file_path = path.to_string_lossy().to_string();
 
-        // Read first line and parse JSON
+        // Read first line and parse JSON once
         match read_first_line(path) {
             Ok(line) => {
-                if let Some(cwd) = parse_session_project_path(&line) {
-                    if cwd == project_path {
-                        if let Ok(info) = get_session_info(path) {
-                            let original_text = info.user_message.unwrap_or_default();
-                            let truncated_text: String = original_text.chars().take(50).collect();
-                            let timestamp = extract_datetime(&file_path)
-                                .map(|dt| dt.format("%Y-%m-%dT%H:%M:%S").to_string());
-                            let source = serde_json::from_str::<Value>(&line)
-                                .ok()
-                                .and_then(|v| v["payload"]["source"].as_str().map(|s| s.to_string()))
-                                .unwrap_or_default();
-                            sessions.push(json!({
-                                "path": file_path,
-                                "conversationId": info.session_id,
-                                "preview": truncated_text,
-                                "timestamp": timestamp,
-                                "source": source
-                            }));
+                // Parse JSON once to extract both project path and source
+                if let Ok(json_value) = serde_json::from_str::<Value>(&line) {
+                    if let Some(cwd) = json_value["payload"]["cwd"].as_str() {
+                        if cwd == project_path {
+                            if let Ok(info) = get_session_info(path) {
+                                let original_text = info.user_message.unwrap_or_default();
+                                let truncated_text: String = original_text.chars().take(50).collect();
+                                let source = json_value["payload"]["source"]
+                                    .as_str()
+                                    .unwrap_or_default()
+                                    .to_string();
+                                sessions.push(json!({
+                                    "path": file_path,
+                                    "conversationId": info.session_id,
+                                    "preview": truncated_text,
+                                    "source": source
+                                }));
+                            }
                         }
                     }
                 } else {
@@ -76,17 +76,31 @@ pub fn scan_sessions_after(
         }
     }
 
-    // Sort newest first
-    sessions.sort_by(|a, b| {
-        let a_dt = extract_datetime(a["path"].as_str().unwrap_or_default());
-        let b_dt = extract_datetime(b["path"].as_str().unwrap_or_default());
-        match (a_dt, b_dt) {
-            (Some(a_dt), Some(b_dt)) => b_dt.cmp(&a_dt),
+    // Pre-compute datetime and timestamp for efficient sorting
+    let mut sessions_with_datetime: Vec<(Value, Option<NaiveDateTime>, String)> = sessions
+        .into_iter()
+        .map(|mut session| {
+            let path_str = session["path"].as_str().unwrap_or_default().to_string();
+            let datetime = extract_datetime(&path_str);
+            let timestamp = datetime
+                .map(|dt| dt.format("%Y-%m-%dT%H:%M:%S").to_string())
+                .unwrap_or_default();
+            session["timestamp"] = Value::String(timestamp.clone());
+            (session, datetime, path_str)
+        })
+        .collect();
+
+    // Sort newest first using pre-computed datetime
+    sessions_with_datetime.sort_by(|a, b| {
+        match (&a.1, &b.1) {
+            (Some(a_dt), Some(b_dt)) => b_dt.cmp(a_dt),
             (Some(_), None) => std::cmp::Ordering::Less,
             (None, Some(_)) => std::cmp::Ordering::Greater,
-            (None, None) => a["path"].as_str().cmp(&b["path"].as_str()),
+            (None, None) => a.2.cmp(&b.2),
         }
     });
+
+    let sessions: Vec<Value> = sessions_with_datetime.into_iter().map(|(s, _, _)| s).collect();
 
     Ok(ScanResult {
         sessions,
@@ -94,12 +108,25 @@ pub fn scan_sessions_after(
 }
 
 /// Scan all projects that appear in sessions folder
-pub async fn scan_projects() -> Result<Vec<Value>, String> {
+/// Only scans files modified after the given cutoff time to improve performance
+pub async fn scan_projects(after: Option<DateTime<Utc>>) -> Result<Vec<Value>, String> {
     let sessions_dir = get_sessions_path()?;
     let mut unique_projects = HashSet::new();
 
     for entry in scan_jsonl_files(&sessions_dir) {
         let file_path = entry.path().to_path_buf();
+
+        // Skip files not modified after cutoff time
+        if let Some(cutoff) = after {
+            if let Ok(metadata) = std::fs::metadata(&file_path) {
+                if let Ok(modified) = metadata.modified() {
+                    let modified_datetime: DateTime<Utc> = modified.into();
+                    if modified_datetime <= cutoff {
+                        continue;
+                    }
+                }
+            }
+        }
 
         // Filter out invalid small files
         match count_lines(&file_path) {

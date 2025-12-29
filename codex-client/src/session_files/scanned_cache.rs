@@ -1,7 +1,4 @@
-use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
-use std::fs;
-use std::path::PathBuf;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ScannedProject {
@@ -9,77 +6,67 @@ pub struct ScannedProject {
     pub path: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-pub struct ScannedProjectsCache {
-    pub last_scan: DateTime<Utc>,
-    pub projects: Vec<ScannedProject>,
-}
-
-/// Get the path to the scanned projects cache file
-fn get_cache_path() -> Result<PathBuf, String> {
-    let home_dir = dirs::home_dir().ok_or("Could not get home directory")?;
-    let codex_dir = home_dir.join(".codex");
-    std::fs::create_dir_all(&codex_dir)
-        .map_err(|e| format!("Failed to create .codex directory: {}", e))?;
-    Ok(codex_dir.join("scanned_projects.json"))
-}
-
-/// Read scanned projects from cache
+/// Read scanned projects from database
 pub async fn read_scanned_projects() -> Result<Vec<ScannedProject>, String> {
-    let cache_path = get_cache_path()?;
+    use crate::db::get_all_projects;
 
-    if !cache_path.exists() {
-        return Ok(Vec::new());
-    }
+    let project_paths = get_all_projects()?;
 
-    let content = fs::read_to_string(&cache_path)
-        .map_err(|e| format!("Failed to read scanned projects cache: {}", e))?;
-
-    let cache: ScannedProjectsCache = serde_json::from_str(&content)
-        .map_err(|e| format!("Failed to parse scanned projects cache: {}", e))?;
-
-    Ok(cache.projects)
-}
-
-/// Write scanned projects to cache
-pub async fn write_scanned_projects(projects: Vec<ScannedProject>) -> Result<(), String> {
-    let cache_path = get_cache_path()?;
-
-    let cache = ScannedProjectsCache {
-        last_scan: Utc::now(),
-        projects,
-    };
-
-    let content = serde_json::to_string_pretty(&cache)
-        .map_err(|e| format!("Failed to serialize scanned projects: {}", e))?;
-
-    fs::write(&cache_path, content)
-        .map_err(|e| format!("Failed to write scanned projects cache: {}", e))?;
-
-    Ok(())
-}
-
-/// Scan projects and save to cache
-pub async fn scan_and_cache_projects() -> Result<Vec<ScannedProject>, String> {
-    use super::scanner::scan_projects;
-
-    let scanned = scan_projects().await?;
-
-    let projects: Vec<ScannedProject> = scanned
+    let projects: Vec<ScannedProject> = project_paths
         .into_iter()
-        .map(|v| {
-            let path = v["path"].as_str().unwrap_or_default().to_string();
+        .map(|path| {
             let name = path
                 .split('/')
                 .last()
                 .unwrap_or(&path)
                 .to_string();
-
             ScannedProject { name, path }
         })
         .collect();
 
-    write_scanned_projects(projects.clone()).await?;
+    Ok(projects)
+}
+
+/// Scan projects and update database
+/// Uses incremental scanning: only scans files modified since last scan
+pub async fn scan_and_cache_projects() -> Result<Vec<ScannedProject>, String> {
+    use super::scanner::scan_projects;
+    use crate::db::{get_all_projects, get_last_global_scan, update_last_global_scan};
+    use std::collections::HashSet;
+
+    // Get last global scan time from database
+    let last_scan = get_last_global_scan()?;
+
+    // Scan only files modified after last scan
+    let scanned = scan_projects(last_scan).await?;
+
+    // Get newly found project paths
+    let new_project_paths: HashSet<String> = scanned
+        .iter()
+        .filter_map(|v| v["path"].as_str())
+        .map(String::from)
+        .collect();
+
+    // If we found new projects, they'll be added to database via individual project scans
+    // Here we just update the global scan time
+    if !new_project_paths.is_empty() || last_scan.is_none() {
+        update_last_global_scan()?;
+    }
+
+    // Get all projects from database (includes both old and newly scanned)
+    let all_paths = get_all_projects()?;
+
+    let projects: Vec<ScannedProject> = all_paths
+        .into_iter()
+        .map(|path| {
+            let name = path
+                .split('/')
+                .last()
+                .unwrap_or(&path)
+                .to_string();
+            ScannedProject { name, path }
+        })
+        .collect();
 
     Ok(projects)
 }

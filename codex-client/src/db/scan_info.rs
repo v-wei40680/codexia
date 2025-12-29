@@ -3,6 +3,8 @@ use rusqlite::{params, OptionalExtension};
 
 use super::get_connection;
 
+const GLOBAL_SCAN_KEY: &str = "__global_projects_scan__";
+
 /// Get the last scanned timestamp for a project
 pub(crate) fn get_last_scanned(project_path: &str) -> Result<Option<DateTime<Utc>>, String> {
     let conn = get_connection()?;
@@ -36,4 +38,14 @@ pub(crate) fn update_last_scanned(project_path: &str) -> Result<(), String> {
     .map_err(|e| format!("Failed to update scan_info: {}", e))?;
 
     Ok(())
+}
+
+/// Get the last global projects scan timestamp
+pub fn get_last_global_scan() -> Result<Option<DateTime<Utc>>, String> {
+    get_last_scanned(GLOBAL_SCAN_KEY)
+}
+
+/// Update the last global projects scan timestamp
+pub fn update_last_global_scan() -> Result<(), String> {
+    update_last_scanned(GLOBAL_SCAN_KEY)
 }

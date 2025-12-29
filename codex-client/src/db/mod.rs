@@ -11,7 +11,8 @@ pub use sessions::*;
 pub use favorites::*;
 pub use usage::read_token_usage;
 pub use notes::*;
-pub(crate) use scan_info::*;
+pub(crate) use scan_info::{get_last_scanned, update_last_scanned};
+pub use scan_info::{get_last_global_scan, update_last_global_scan};
 
 use chrono::{DateTime, Utc};
 use serde_json::Value;

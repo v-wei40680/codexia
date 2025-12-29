@@ -3,6 +3,23 @@ use serde_json::{json, Value};
 
 use super::get_connection;
 
+/// Get all unique project paths from sessions
+pub fn get_all_projects() -> Result<Vec<String>, String> {
+    let conn = get_connection()?;
+
+    let mut stmt = conn
+        .prepare("SELECT DISTINCT project_path FROM sessions ORDER BY project_path")
+        .map_err(|e| format!("Failed to prepare projects query: {}", e))?;
+
+    let projects: Result<Vec<String>, String> = stmt
+        .query_map([], |row| row.get(0))
+        .map_err(|e| format!("Failed to query projects: {}", e))?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(|e| format!("Failed to collect projects: {}", e));
+
+    projects
+}
+
 /// Read sessions for a specific project
 pub(crate) fn get_sessions_by_project(project_path: &str) -> Result<Vec<Value>, String> {
     let conn = get_connection()?;
