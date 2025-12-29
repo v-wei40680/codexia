@@ -57,17 +57,6 @@ export function AppMenu() {
             Agents.md editor
           </Button>
         </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Button
-            variant="ghost"
-            onClick={() => setMainView("claude-md-editor")}
-            className="w-full justify-start"
-            title="claude.md editor"
-          >
-            <FilePen className="w-4 h-4 mr-2" />
-            claude.md editor
-          </Button>
-        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
