@@ -150,6 +150,8 @@ Join the [Discussions](https://github.com/milisp/codexia/discussions)
 
 We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
+By contributing to this project, you agree that your contributions may be licensed under both the AGPL-3.0 license and the Codexia commercial license.
+
 ### Areas for Contribution
 
 - 🐛 Bug fixes and improvements
@@ -184,4 +186,10 @@ _First 100 respondents only!_
 [Report Bug · Request Feature](https://github.com/milisp/codexia/issues)</a>
 
 ## License
-This project is licensed under the GNU Affero General Public License v3.0.
+
+Codexia is dual-licensed under **AGPL-3.0** and a **Commercial License**.
+
+- **AGPL-3.0** — for open-source use.
+- **Commercial License** — required for closed-source, proprietary, hosted, or SaaS use.
+
+For full terms and commercial inquiries, see [COMMERCIAL.md](COMMERCIAL.md).
