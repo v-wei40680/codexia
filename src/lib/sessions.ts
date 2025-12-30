@@ -75,9 +75,9 @@ export async function getSessions(): Promise<SessionData[]> {
         if (typeof data === 'string') {
           data = JSON.parse(data);
         }
-
-        if (data.project && data.sessionId) {
-          sessions.push({
+        const slashCommands: string[] = ["/ide", "/model", "/status"]
+        if (data.project && data.sessionId && !slashCommands.includes(data.display.trim())) {
+          sessions.unshift({
             project: data.project,
             display: data.display || 'Untitled',
             timestamp: data.timestamp || Date.now(),

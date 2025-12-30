@@ -19,6 +19,7 @@ import LoginView from "@/views/LoginView";
 import { SkillsView } from "../skills/SkillsView";
 import { HomeView } from "@/views/HomeView";
 import { NoteView } from "@/views/NoteView";
+import CCView from "@/views/CCView";
 
 export function Layout() {
   const { mainView, rightView, setRightView, setMainView } =
@@ -68,6 +69,7 @@ export function Layout() {
                   <div className="h-full overflow-auto">
                     {mainView === "home" && <HomeView />}
                     {mainView === "codex" && <ChatView />}
+                    {mainView === "cc" && <CCView />}
                     {mainView === "agents-editor" && <AgentsView />}
                     {mainView === "login" && <LoginView />}
                     {mainView === "prompt" && <NoteView />}

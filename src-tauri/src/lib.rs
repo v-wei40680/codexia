@@ -1,5 +1,6 @@
 mod app_state;
 mod app_types;
+mod cc_commands;
 mod codex_commands;
 mod commands;
 mod config;
@@ -11,6 +12,7 @@ mod sleep;
 mod state;
 
 use crate::state::{RemoteAccessState, WatchState};
+use cc_commands::CCState;
 use codex_commands::CodexState;
 use filesystem::{
     directory_ops::{canonicalize_path, get_default_directories, read_directory, search_files},
@@ -53,6 +55,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_remote_ui::init())
         .manage(CodexState::new())
+        .manage(CCState::new())
         .manage(RemoteAccessState::default())
         .manage(WatchState::new())
         .manage(SleepState::default())
@@ -151,6 +154,14 @@ pub fn run() {
             commands::skill::get_skill_repos,
             commands::skill::add_skill_repo,
             commands::skill::remove_skill_repo,
+            // CC commands
+            cc_commands::cc_connect,
+            cc_commands::cc_new_session,
+            cc_commands::cc_send_message,
+            cc_commands::cc_receive_response,
+            cc_commands::cc_disconnect,
+            cc_commands::cc_interrupt,
+            cc_commands::cc_update_permission_mode,
         ])
         .setup(|app| {
             // Initialize Skills database
