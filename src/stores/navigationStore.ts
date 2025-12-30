@@ -7,7 +7,6 @@ type MainViewType =
   | "cc"
   | "agents-editor"
   | "claude-md-editor"
-  | "cc-app"
   | "notepad"
   | "prompt"
   | "login"
@@ -19,7 +18,6 @@ type MainViewType =
 type SidebarTabType =
   | "codex"
   | "cc"
-  | "cc-app"
   | "prompt"
   | "mcp"
   | "skills"
@@ -28,6 +26,7 @@ type SidebarTabType =
   | null;
 type SubTabType = "main" | "fileTree" | "git";
 type RightViewType = "notepad" | "webPreview" | "editor" | "gitDiff" | null;
+type SelectedAgentType = "codex" | "cc" | string;
 
 interface NavigationState {
   // Main panel view (Projects, Codex, CC, etc.)
@@ -49,6 +48,10 @@ interface NavigationState {
   // Sidebar visibility
   sidebarVisible: boolean;
   setSidebarVisible: (visible: boolean) => void;
+
+  // Selected agent (codex, cc, etc.)
+  selectedAgent: SelectedAgentType;
+  setSelectedAgent: (agent: SelectedAgentType) => void;
 }
 
 export const useNavigationStore = create<NavigationState>()(
@@ -62,6 +65,7 @@ export const useNavigationStore = create<NavigationState>()(
       selectedProject: null,
       selectedSession: null,
       sidebarVisible: true,
+      selectedAgent: "codex",
 
       // Actions
       setMainView: (view: MainViewType) =>
@@ -88,6 +92,11 @@ export const useNavigationStore = create<NavigationState>()(
         set({
           sidebarVisible: visible,
         }),
+
+      setSelectedAgent: (agent: SelectedAgentType) =>
+        set({
+          selectedAgent: agent,
+        }),
     }),
     {
       name: "navigation-store",
@@ -97,6 +106,7 @@ export const useNavigationStore = create<NavigationState>()(
         subTab: state.subTab,
         rightView: state.rightView,
         sidebarVisible: state.sidebarVisible,
+        selectedAgent: state.selectedAgent,
       }),
     },
   ),

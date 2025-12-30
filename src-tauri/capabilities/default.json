@@ -23,6 +23,10 @@
     "log:default",
     "deep-link:default",
     "fs:default",
+      {
+        "identifier": "fs:allow-read-text-file-lines",
+        "allow": [{ "path": "$APPDATA/*" }, { "path": "$HOME/.claude/*" }]
+      },
     "fs:allow-read-dir",
     "fs:allow-read-file",
     "fs:allow-write-file",

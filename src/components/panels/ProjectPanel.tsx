@@ -11,6 +11,7 @@ import { invoke } from "@/lib/tauri-proxy";
 import { isRemoteRuntime } from "@/lib/tauri-proxy";
 import { open } from "@tauri-apps/plugin-dialog";
 import { toast } from "sonner";
+import { getProjectsFromSessions } from "@/lib/sessions";
 
 interface FileSystemProject {
   path: string;
@@ -27,7 +28,13 @@ export function ProjectPanel() {
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
 
-  const { setMainView, setSidebarTab, setSubTab } = useNavigationStore();
+  const {
+    setMainView,
+    setSidebarTab,
+    setSubTab,
+    setSelectedAgent,
+    selectedAgent,
+  } = useNavigationStore();
   const { setCurrentFolder } = useFolderStore();
   const { setCwd } = useCodexStore();
   const { setFileTree, setChatPane } = useLayoutStore();
@@ -36,22 +43,37 @@ export function ProjectPanel() {
   useEffect(() => {
     const loadProjects = async () => {
       try {
-        const [codexList, scannedList] = await Promise.all([
+        const [codexList, scannedList, sessionProjects] = await Promise.all([
           invoke<FileSystemProject[]>("read_codex_config").catch(() => []),
-          invoke<Array<{name: string; path: string}>>("get_scanned_projects").catch(() => []),
+          invoke<Array<{ name: string; path: string }>>(
+            "get_scanned_projects",
+          ).catch(() => []),
+          getProjectsFromSessions(),
         ]);
 
-        setCodexProjects(codexList);
+        // Combine all projects
+        const existingPaths = new Set(codexList.map((p) => p.path));
 
-        // Add scanned projects to codex projects (if not already in config)
-        const existingPaths = new Set(codexList.map(p => p.path));
+        // Add scanned projects
         const scannedCodexProjects = scannedList
-          .filter(p => !existingPaths.has(p.path))
-          .map(p => ({ path: p.path }));
+          .filter((p) => !existingPaths.has(p.path))
+          .map((p) => {
+            existingPaths.add(p.path);
+            return { path: p.path };
+          });
 
-        if (scannedCodexProjects.length > 0) {
-          setCodexProjects([...codexList, ...scannedCodexProjects]);
-        }
+        // Add session projects that aren't already included
+        const sessionCodexProjects = Array.from(sessionProjects)
+          .filter((p) => !existingPaths.has(p))
+          .map((p) => ({ path: p }));
+
+        const allProjects = [
+          ...codexList,
+          ...scannedCodexProjects,
+          ...sessionCodexProjects,
+        ];
+
+        setCodexProjects(allProjects);
       } catch (error) {
         console.error("Failed to load projects:", error);
       } finally {
@@ -72,6 +94,19 @@ export function ProjectPanel() {
     setUnifiedProjects(unifiedProjects);
   }, [codexProjects]);
 
+  const handleCCClick = (project: UnifiedProject, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!project.hasCodex) return;
+
+    setCurrentFolder(project.path);
+    setCwd(project.path);
+    setFileTree(true);
+    setChatPane(true);
+    setMainView("cc");
+    setSidebarTab("cc");
+    setSubTab("main");
+  };
+
   const handleCodexClick = (project: UnifiedProject, e: React.MouseEvent) => {
     e.stopPropagation();
     if (!project.hasCodex) return;
@@ -83,8 +118,31 @@ export function ProjectPanel() {
     setMainView("codex");
     setSidebarTab("codex");
     setSubTab("main");
+    setSelectedAgent("codex");
   };
 
+  const handleProjectNameClick = (
+    project: UnifiedProject,
+    e: React.MouseEvent,
+  ) => {
+    e.stopPropagation();
+    if (!project.hasCodex) return;
+
+    setCurrentFolder(project.path);
+    setCwd(project.path);
+    setFileTree(true);
+    setChatPane(true);
+
+    if (selectedAgent === "cc") {
+      setMainView("cc");
+      setSidebarTab("cc");
+    } else {
+      setMainView("codex");
+      setSidebarTab("codex");
+      setSelectedAgent("codex");
+    }
+    setSubTab("main");
+  };
 
   const selectNewProject = async () => {
     try {
@@ -107,7 +165,9 @@ export function ProjectPanel() {
         setSidebarTab("codex");
 
         // Reload projects
-        const codexList = await invoke<FileSystemProject[]>("read_codex_config").catch(() => []);
+        const codexList = await invoke<FileSystemProject[]>(
+          "read_codex_config",
+        ).catch(() => []);
         setCodexProjects(codexList);
       }
     } catch (error) {
@@ -134,7 +194,9 @@ export function ProjectPanel() {
       <div className="flex items-center justify-center h-full">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="w-6 h-6 animate-spin" />
-          <div className="text-sm text-muted-foreground">Loading projects...</div>
+          <div className="text-sm text-muted-foreground">
+            Loading projects...
+          </div>
         </div>
       </div>
     );
@@ -144,30 +206,33 @@ export function ProjectPanel() {
     const projectName = project.path.split(/[/\\]/).pop() || project.path;
 
     return (
-      <div
-        key={project.path}
-        onClick={(e) => handleCodexClick(project, e)}
-        className={`p-4 rounded-lg transition-colors ${
-          project.hasCodex
-            ? "hover:bg-accent/50 cursor-pointer"
-            : "opacity-60 cursor-not-allowed"
-        }`}
-        title={
-          project.hasCodex
-            ? "Click to open in Codex"
-            : "Not a Codex project"
-        }
-      >
-        <div className="flex items-center justify-between gap-3 min-w-0 mb-1">
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            <FolderOpen className="w-5 h-5 flex-shrink-0" />
-            <span className="truncate font-medium">{projectName}</span>
-          </div>
-          <ChevronRight className={`w-4 h-4 flex-shrink-0 ${
-            project.hasCodex ? "text-foreground" : "text-muted-foreground"
-          }`} />
+      <div className="flex items-stretch gap-4 p-4 rounded-lg border hover:bg-accent transition-colors">
+        <div className="flex flex-col gap-1 shrink-0">
+          <button
+            onClick={(e) => handleCCClick(project, e)}
+            className="text-xs px-2 py-1 rounded text-muted-foreground hover:text-accent-foreground hover:bg-orange-400 transition-colors cursor-pointer"
+            title="Open in Claude Code"
+          >
+            cc
+          </button>
+          <button
+            onClick={(e) => handleCodexClick(project, e)}
+            className="text-xs px-2 py-1 rounded text-muted-foreground hover:text-accent-foreground hover:bg-cyan-400 transition-colors cursor-pointer"
+            title="Open in Codex"
+          >
+            codex
+          </button>
         </div>
-        <div className="text-sm text-muted-foreground pl-7 break-words">{project.path}</div>
+        <div
+          onClick={(e) => handleProjectNameClick(project, e)}
+          className="flex-1 min-w-0 cursor-pointer"
+        >
+          <div className="font-medium truncate">{projectName}</div>
+          <div className="text-sm text-muted-foreground break-words">
+            {project.path}
+          </div>
+        </div>
+        <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
       </div>
     );
   };
@@ -178,7 +243,11 @@ export function ProjectPanel() {
         <div className="space-y-3">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-lg font-semibold">Projects</h2>
-            <Button onClick={selectNewProject} size="sm" className="w-full sm:w-auto">
+            <Button
+              onClick={selectNewProject}
+              size="sm"
+              className="w-full sm:w-auto"
+            >
               <Plus className="w-3 h-3" />
               Open Project
             </Button>
@@ -198,16 +267,22 @@ export function ProjectPanel() {
             <Card>
               <CardContent className="p-6 text-center">
                 <FolderOpen className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
-                <h3 className="text-lg font-semibold mb-2">No projects found</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  No projects found
+                </h3>
                 <p className="text-muted-foreground">
-                  {searchTerm ? "Try a different search term" : "Open a project to get started"}
+                  {searchTerm
+                    ? "Try a different search term"
+                    : "Open a project to get started"}
                 </p>
               </CardContent>
             </Card>
           </div>
         ) : (
           <div className="space-y-1 p-4 sm:p-6">
-            {filteredProjects.map((project) => renderProjectRow(project))}
+            {filteredProjects.map((project) => (
+              <div key={project.path}>{renderProjectRow(project)}</div>
+            ))}
           </div>
         )}
       </div>

@@ -9,6 +9,7 @@ import {
   GitBranch,
   Home,
   PenLine,
+  CreativeCommons,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigationStore } from "@/stores/navigationStore";
@@ -17,10 +18,12 @@ import { FileTree } from "../filetree/FileTreeView";
 import { useLayoutStore } from "@/stores";
 import { useFolderStore } from "@/stores/FolderStore";
 import { SourceControl } from "../SourceControl";
+import { ClaudeCodeSessionList } from "../cc/SessionList";
 
 type IconKey =
   | "home"
   | "codex"
+  | "cc"
   | "mcp"
   | "prompt"
   | "skills"
@@ -37,6 +40,7 @@ const ICON_CONFIG: Record<
 > = {
   home: { mainView: "home" },
   codex: { mainView: "codex", sidebarTab: "codex", subTab: "main" },
+  cc: { mainView: "cc", sidebarTab: "cc", subTab: "main" },
   mcp: { mainView: "mcp", subTab: "main" },
   prompt: { mainView: "prompt", subTab: "main" },
   skills: { mainView: "skills", subTab: "main" },
@@ -100,6 +104,19 @@ export function AppSidebar({ onTabChange }: AppSidebarProps) {
           className="w-10 h-10"
         >
           <LoaderPinwheel className="w-5 h-5" />
+        </Button>
+        <Button
+          variant={
+            mainView === "cc" && sidebarTab === "cc"
+              ? "secondary"
+              : "ghost"
+          }
+          size="icon"
+          onClick={() => handleIconClick("cc")}
+          title="cc"
+          className="w-10 h-10"
+        >
+          <CreativeCommons className="w-5 h-5" />
         </Button>
         <div className="w-8 h-px bg-border my-1" />
         <Button
@@ -196,6 +213,11 @@ export function AppSidebar({ onTabChange }: AppSidebarProps) {
               {sidebarTab === "codex" && (
                 <div className="flex-1 min-h-0 overflow-auto">
                   <ChatTab />
+                </div>
+              )}
+              {sidebarTab === "cc" && (
+                <div className="flex-1 min-h-0 overflow-auto">
+                  <ClaudeCodeSessionList />
                 </div>
               )}
             </>
