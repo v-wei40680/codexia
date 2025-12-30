@@ -67,4 +67,4 @@ tauri-plugin-single-instance.workspace = true
 codex-bindings.workspace = true
 fix-path-env.workspace = true
 codex-client.workspace = true
-claude-agent-sdk = { path = "../../claude-agent-sdk-rust" }
+claude-agent-sdk = { git = "https://github.com/milisp/claude-agent-sdk-rust" }
