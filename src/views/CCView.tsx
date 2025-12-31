@@ -1,118 +1,97 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { useCodexStore } from "@/stores/codex";
-import { useCCStore, CCMessage } from "@/stores/ccStore";
+import { listen } from "@tauri-apps/api/event";
+import { useCCStore, CCMessage as CCMessageType } from "@/stores/ccStore";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
-import { Pencil, Clock } from "lucide-react";
-import { CCHistoryMessages } from "@/components/cc/CCHistoryMessage";
+import { Pencil, CircleStop, Send, Settings } from "lucide-react";
+import { CCMessage } from "@/components/cc/CCMessage";
 import { CCFooter } from "@/components/cc/CCFooter";
+import { ExamplePrompts } from "@/components/cc/ExamplePrompts";
+import { useCCSessionManager } from "@/hooks/useCCSessionManager";
 
 export default function CCView() {
-  const { cwd } = useCodexStore();
   const {
     activeSessionId,
     messages,
-    model,
-    permissionMode,
+    options,
     isConnected,
-    isHistoryMode,
+    isLoading,
+    showExamples,
+    showFooter,
     addMessage,
-    setConnected,
-    setHistoryMode,
+    setLoading,
+    setShowExamples,
+    setShowFooter,
   } = useCCStore();
 
+  const { handleNewSession } = useCCSessionManager();
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
 
+  // Listen to message events
   useEffect(() => {
-    if (activeSessionId && !isConnected && !isHistoryMode) {
-      connectToSession();
-    }
-  }, [activeSessionId, isHistoryMode]);
-
-  const connectToSession = async () => {
     if (!activeSessionId) return;
 
-    try {
-      setLoading(true);
-      await invoke("cc_connect", {
-        params: {
-          sessionId: activeSessionId,
-          cwd,
-          model,
-          permissionMode,
-          resumeId: activeSessionId,
-        },
-      });
-      setConnected(true);
-    } catch (error) {
-      console.error("Failed to connect:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
+    const eventName = `cc-message:${activeSessionId}`;
+    const unlisten = listen<CCMessageType>(eventName, (event) => {
+      const message = event.payload;
+      addMessage(message);
 
-  const handleSendMessage = async () => {
-    if (!input.trim() || !activeSessionId || !isConnected) return;
+      // Set loading to false when we receive a Result message
+      if (message.type === "result") {
+        setLoading(false);
+      }
+    });
 
-    const userMessage: CCMessage = {
-      role: "user",
-      content: input,
+    return () => {
+      unlisten.then((fn) => fn());
     };
+  }, [activeSessionId, addMessage, setLoading]);
 
-    addMessage(userMessage);
+  const handleSendMessage = async (messageText?: string) => {
+    const textToSend = messageText || input;
+    if (!textToSend.trim() || isLoading) return;
+
+    // Create new session if not connected
+    if (!activeSessionId || !isConnected) {
+      await handleNewSession(textToSend);
+      return;
+    }
+
+    // Add user message to store
+    addMessage({
+      type: "user",
+      text: textToSend,
+    });
+
     setInput("");
     setLoading(true);
+    setShowExamples(false);
 
     try {
       await invoke("cc_send_message", {
         sessionId: activeSessionId,
-        message: input,
-      });
-
-      const responses = await invoke<CCMessage[]>("cc_receive_response", {
-        sessionId: activeSessionId,
-      });
-
-      responses.forEach((msg) => {
-        addMessage({
-          role: "assistant",
-          content: msg.content,
-        });
+        message: textToSend,
       });
     } catch (error) {
       console.error("Failed to send message:", error);
+      setLoading(false);
       addMessage({
-        role: "assistant",
-        content: `Error: ${error}`,
+        type: "assistant",
+        message: {
+          content: [
+            {
+              type: "text",
+              text: `Error: ${error}`,
+            },
+          ],
+        },
       });
-    } finally {
-      setLoading(false);
     }
   };
 
-  const handleNewSession = async () => {
-    try {
-      setLoading(true);
-      const newSessionId = await invoke<string>("cc_new_session", {
-        cwd,
-        model,
-        permissionMode,
-      });
-
-      useCCStore.getState().setActiveSessionId(newSessionId);
-      useCCStore.getState().clearMessages();
-      useCCStore.getState().setConnected(true);
-      useCCStore.getState().addResumedId(newSessionId);
-    } catch (error) {
-      console.error("Failed to create new session:", error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleInterrupt = async () => {
     if (!activeSessionId) return;
@@ -123,97 +102,126 @@ export default function CCView() {
       });
     } catch (error) {
       console.error("Failed to interrupt:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (!activeSessionId) {
-    return (
-      <div className="flex h-full flex-col items-center justify-center gap-4">
-        <p className="text-muted-foreground">Select a session from the list or create a new one</p>
-        <Button onClick={handleNewSession} disabled={loading}>
-          New Session
-        </Button>
-      </div>
-    );
-  }
+  const handleExamplePrompt = (prompt: string) => {
+    // Append to input instead of replacing
+    setInput((prev) => (prev ? prev + "\n\n" + prompt : prompt));
+    setShowExamples(false);
+  };
 
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Fixed header */}
-      <div className="shrink-0 flex gap-2 items-center border-b p-2 bg-background">
+      <div className="sticky top-0 z-10 shrink-0 flex gap-2 items-center border-b p-2 bg-background">
         <Button
-          onClick={handleNewSession}
-          disabled={loading}
-          variant={isHistoryMode ? "outline" : "default"}
+          onClick={() => {
+            handleNewSession();
+            setShowExamples(false);
+          }}
+          disabled={isLoading}
+          variant="default"
           size="icon"
+          title="New Session"
         >
           <Pencil />
         </Button>
-        <Button
-          onClick={() => setHistoryMode(!isHistoryMode)}
-          disabled={loading}
-          variant={isHistoryMode ? "default" : "outline"}
-          size="icon"
-        >
-          <Clock />
-        </Button>
 
-        <div className="ml-auto">
+        <div className="ml-auto flex items-center gap-2">
+          {activeSessionId && (
+            <span className="text-xs text-muted-foreground">
+              {activeSessionId.slice(0, 8)}... | {options.model}
+            </span>
+          )}
           {isConnected ? (
-            <span className="text-sm text-green-600">Connected</span>
+            <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
+              Connected
+            </span>
           ) : (
-            <span className="text-sm text-muted-foreground">Disconnected</span>
+            <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100">
+              Ready
+            </span>
           )}
         </div>
       </div>
 
-      {/* Content area */}
-      <div className="flex-1 min-h-0 flex flex-col">
-        {isHistoryMode ? (
-          <CCHistoryMessages project={cwd} sessionId={activeSessionId || ""} />
-        ) : (
-          <>
-            <ScrollArea className="flex-1">
-              <div className="flex flex-col gap-2 p-2">
-                {messages.map((msg, idx) => (
-                  <Card key={idx} className={`p-3 ${msg.role === "user" ? "bg-blue-50 dark:bg-blue-950" : ""}`}>
-                    <div className="text-xs font-semibold mb-1 text-muted-foreground">
-                      {msg.role === "user" ? "You" : "Claude"}
-                    </div>
-                    <div className="whitespace-pre-wrap">{msg.content}</div>
-                  </Card>
-                ))}
+      {/* Scrollable content area */}
+      <div className="flex-1 min-h-0 overflow-hidden">
+        <ScrollArea className="h-full">
+          <div className="flex flex-col">
+            {/* Examples */}
+            {showExamples && (
+              <div className="border-b">
+                <ExamplePrompts onSelectPrompt={handleExamplePrompt} />
               </div>
-            </ScrollArea>
+            )}
 
-            <div className="shrink-0 flex gap-2 p-2 border-t">
-              <Textarea
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    handleSendMessage();
-                  }
-                }}
-                placeholder="Type your message..."
-                className="flex-1"
-                rows={3}
-                disabled={loading || !isConnected}
-              />
-              <Button onClick={handleSendMessage} disabled={loading || !isConnected}>
-                {loading ? "Sending..." : "Send"}
-              </Button>
-              <Button onClick={handleInterrupt} disabled={!isConnected || loading} variant="outline" size="sm">
-                Interrupt
-              </Button>
+            {/* Messages area */}
+            <div className="flex flex-col gap-2 p-2">
+              {messages.length === 0 && !isLoading && !showExamples && (
+                <Card className="p-4 m-4">
+                  <p className="text-sm text-muted-foreground text-center">
+                    Type your message below and press Enter to start a conversation with Claude Code.
+                  </p>
+                </Card>
+              )}
+              {messages.map((msg, idx) => (
+                <CCMessage key={idx} message={msg} index={idx} />
+              ))}
+              {isLoading && (
+                <Card className="p-3 bg-gray-50 dark:bg-gray-900">
+                  <div className="text-xs text-muted-foreground animate-pulse">
+                    Claude is thinking...
+                  </div>
+                </Card>
+              )}
             </div>
-          </>
-        )}
+          </div>
+        </ScrollArea>
       </div>
 
-      {/* Fixed footer - Model & Permission selection */}
-      <CCFooter />
+      {/* Fixed input area */}
+      <div className="shrink-0 flex gap-2 p-2 border-t bg-background">
+        <Button
+          onClick={() => setShowFooter(!showFooter)}
+          size="icon"
+          variant="ghost"
+          title="Toggle Options"
+        >
+          <Settings className={showFooter ? "text-primary" : ""} />
+        </Button>
+        <Textarea
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              if (!isLoading) {
+                handleSendMessage();
+              }
+            }
+          }}
+          onFocus={() => setShowExamples(false)}
+          placeholder="Ask Claude Code to write code, fix bugs, explain concepts..."
+          className="flex-1"
+          rows={3}
+          disabled={isLoading}
+        />
+        <Button
+          onClick={isLoading ? handleInterrupt : () => handleSendMessage()}
+          size="icon"
+          variant={isLoading ? "destructive" : "default"}
+          disabled={!input.trim() && !isLoading}
+        >
+          {isLoading ? <CircleStop /> : <Send />}
+        </Button>
+      </div>
+
+      {/* Fixed footer - Options */}
+      {showFooter && <CCFooter />}
     </div>
   );
 }

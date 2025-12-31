@@ -19,6 +19,7 @@ import { useLayoutStore } from "@/stores";
 import { useFolderStore } from "@/stores/FolderStore";
 import { SourceControl } from "../SourceControl";
 import { ClaudeCodeSessionList } from "../cc/SessionList";
+import { useCCSessionManager } from "@/hooks/useCCSessionManager";
 
 type IconKey =
   | "home"
@@ -64,6 +65,7 @@ export function AppSidebar({ onTabChange }: AppSidebarProps) {
   } = useNavigationStore();
   const { openFile } = useLayoutStore();
   const { currentFolder } = useFolderStore();
+  const { handleSessionSelect } = useCCSessionManager();
 
   if (!sidebarVisible) {
     return null;
@@ -216,8 +218,8 @@ export function AppSidebar({ onTabChange }: AppSidebarProps) {
                 </div>
               )}
               {sidebarTab === "cc" && (
-                <div className="flex-1 min-h-0 overflow-auto">
-                  <ClaudeCodeSessionList />
+                <div className="flex-1 min-h-0 overflow-auto p-2">
+                  <ClaudeCodeSessionList onSelectSession={handleSessionSelect} />
                 </div>
               )}
             </>

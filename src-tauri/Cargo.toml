@@ -60,6 +60,7 @@ tempfile = "3.10"
 serde_yaml = "0.9"
 indexmap = { version = "2.0", features = ["serde"] }
 thiserror = "2.0"
+claude-agent-sdk-rs = "0.4.0"
 
 [target.'cfg(not(any(target_os = "android", target_os = "ios")))'.dependencies]
 tauri-plugin-single-instance.workspace = true
@@ -67,4 +68,3 @@ tauri-plugin-single-instance.workspace = true
 codex-bindings.workspace = true
 fix-path-env.workspace = true
 codex-client.workspace = true
-claude-agent-sdk = { git = "https://github.com/milisp/claude-agent-sdk-rust" }

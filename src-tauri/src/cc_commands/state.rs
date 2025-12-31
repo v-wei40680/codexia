@@ -1,13 +1,12 @@
-use claude_agent_sdk::{ClaudeSDKClient, ClaudeAgentOptions, PermissionMode};
+use claude_agent_sdk_rs::{ClaudeClient, ClaudeAgentOptions};
 use std::collections::HashMap;
-use std::path::PathBuf;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
 pub type ClientId = String;
 
 pub struct CCState {
-    clients: Arc<Mutex<HashMap<ClientId, Arc<Mutex<ClaudeSDKClient>>>>>,
+    pub clients: Arc<Mutex<HashMap<ClientId, Arc<Mutex<ClaudeClient>>>>>,
 }
 
 impl CCState {
@@ -17,7 +16,7 @@ impl CCState {
         }
     }
 
-    pub async fn get_client(&self, client_id: &str) -> Option<Arc<Mutex<ClaudeSDKClient>>> {
+    pub async fn get_client(&self, client_id: &str) -> Option<Arc<Mutex<ClaudeClient>>> {
         let clients = self.clients.lock().await;
         clients.get(client_id).cloned()
     }
@@ -25,10 +24,7 @@ impl CCState {
     pub async fn create_client(
         &self,
         client_id: String,
-        cwd: PathBuf,
-        model: Option<String>,
-        permission_mode: Option<PermissionMode>,
-        resume_id: Option<String>,
+        options: ClaudeAgentOptions,
     ) -> Result<(), String> {
         let mut clients = self.clients.lock().await;
 
@@ -36,18 +32,7 @@ impl CCState {
             return Ok(());
         }
 
-        let options = ClaudeAgentOptions {
-            model,
-            cwd: Some(cwd),
-            permission_mode,
-            resume: resume_id,
-            stderr_callback: Some(Arc::new(|msg| {
-                log::error!("[CC STDERR] {}", msg);
-            })),
-            ..Default::default()
-        };
-
-        let client = ClaudeSDKClient::new(options);
+        let client = ClaudeClient::new(options);
         clients.insert(client_id, Arc::new(Mutex::new(client)));
 
         Ok(())

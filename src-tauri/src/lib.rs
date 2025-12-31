@@ -158,10 +158,10 @@ pub fn run() {
             cc_commands::cc_connect,
             cc_commands::cc_new_session,
             cc_commands::cc_send_message,
-            cc_commands::cc_receive_response,
             cc_commands::cc_disconnect,
             cc_commands::cc_interrupt,
-            cc_commands::cc_update_permission_mode,
+            cc_commands::cc_list_sessions,
+            cc_commands::cc_resume_session,
         ])
         .setup(|app| {
             // Initialize Skills database
