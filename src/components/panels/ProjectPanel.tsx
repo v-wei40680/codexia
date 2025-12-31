@@ -11,7 +11,7 @@ import { invoke } from "@/lib/tauri-proxy";
 import { isRemoteRuntime } from "@/lib/tauri-proxy";
 import { open } from "@tauri-apps/plugin-dialog";
 import { toast } from "sonner";
-import { getProjectsFromSessions } from "@/lib/sessions";
+import { getProjects } from "@/lib/sessions";
 
 interface FileSystemProject {
   path: string;
@@ -48,7 +48,7 @@ export function ProjectPanel() {
           invoke<Array<{ name: string; path: string }>>(
             "get_scanned_projects",
           ).catch(() => []),
-          getProjectsFromSessions(),
+          getProjects(),
         ]);
 
         // Combine all projects
