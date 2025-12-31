@@ -1,14 +1,14 @@
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useCodexStore } from "@/stores/codex";
-import { useCCStore, ModelType, PermissionMode, CCMessage } from "@/stores/ccStore";
+import { useCCStore, CCMessage } from "@/stores/ccStore";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
 import { Pencil, Clock } from "lucide-react";
 import { CCHistoryMessages } from "@/components/cc/CCHistoryMessage";
+import { CCFooter } from "@/components/cc/CCFooter";
 
 export default function CCView() {
   const { cwd } = useCodexStore();
@@ -19,8 +19,6 @@ export default function CCView() {
     permissionMode,
     isConnected,
     isHistoryMode,
-    setModel,
-    setPermissionMode,
     addMessage,
     setConnected,
     setHistoryMode,
@@ -94,14 +92,6 @@ export default function CCView() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleModelChange = (value: string) => {
-    setModel(value as ModelType);
-  };
-
-  const handlePermissionModeChange = (value: string) => {
-    setPermissionMode(value as PermissionMode);
   };
 
   const handleNewSession = async () => {
@@ -223,30 +213,7 @@ export default function CCView() {
       </div>
 
       {/* Fixed footer - Model & Permission selection */}
-      <div className="shrink-0 flex gap-2 p-2 border-t bg-background">
-        <Select value={model} onValueChange={handleModelChange}>
-          <SelectTrigger className="w-24">
-            <SelectValue placeholder="Select model" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="sonnet">Sonnet</SelectItem>
-            <SelectItem value="haiku">Haiku</SelectItem>
-            <SelectItem value="opus">Opus</SelectItem>
-          </SelectContent>
-        </Select>
-
-        <Select value={permissionMode} onValueChange={handlePermissionModeChange}>
-          <SelectTrigger className="w-24">
-            <SelectValue placeholder="Permission mode" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="default">Default</SelectItem>
-            <SelectItem value="acceptEdits">Accept Edits</SelectItem>
-            <SelectItem value="plan">Plan</SelectItem>
-            <SelectItem value="bypassPermissions">Bypass</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      <CCFooter />
     </div>
   );
 }
