@@ -3,15 +3,41 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { X } from "lucide-react";
+import { X, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Popover } from "@/components/ui/popover";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useEffect, useState } from "react";
+import { invoke } from "@tauri-apps/api/core";
 
 export function CCFooter() {
   const { options, updateOptions } = useCCStore();
+  const [installedSkills, setInstalledSkills] = useState<string[]>([]);
+  const [skillsOpen, setSkillsOpen] = useState(false);
+
+  useEffect(() => {
+    const loadInstalledSkills = async () => {
+      try {
+        const skills = await invoke<string[]>("cc_get_installed_skills");
+        setInstalledSkills(skills);
+      } catch (error) {
+        console.error("Failed to load installed skills:", error);
+      }
+    };
+    loadInstalledSkills();
+  }, []);
+
+  const toggleSkill = (skill: string) => {
+    const current = options.enabledSkills ?? [];
+    const updated = current.includes(skill)
+      ? current.filter((s) => s !== skill)
+      : [...current, skill];
+    updateOptions({ enabledSkills: updated.length > 0 ? updated : undefined });
+  };
 
   return (
     <Card className="shrink-0 border-t p-3">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">Model</Label>
           <div className="relative">
@@ -118,6 +144,66 @@ export function CCFooter() {
               </Button>
             )}
           </div>
+        </div>
+
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">Skills</Label>
+          <Popover
+            open={skillsOpen}
+            onOpenChange={setSkillsOpen}
+            align="end"
+            side="top"
+            className="w-56 p-2"
+            trigger={
+              <Button
+                variant="outline"
+                className="h-8 w-full text-xs justify-between font-normal"
+              >
+                <div className="flex items-center gap-1.5">
+                  <Package className="h-3 w-3" />
+                  <span>
+                    {options.enabledSkills?.length
+                      ? `${options.enabledSkills.length} enabled`
+                      : "None"}
+                  </span>
+                </div>
+                {options.enabledSkills && options.enabledSkills.length > 0 && (
+                  <X
+                    className="h-3 w-3 ml-1"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      updateOptions({ enabledSkills: undefined });
+                    }}
+                  />
+                )}
+              </Button>
+            }
+            content={
+              <div className="space-y-2">
+                {installedSkills.length === 0 ? (
+                  <div className="text-xs text-muted-foreground text-center py-2">
+                    No skills installed
+                  </div>
+                ) : (
+                  installedSkills.map((skill) => (
+                    <div key={skill} className="flex items-center space-x-2">
+                      <Checkbox
+                        id={`skill-${skill}`}
+                        checked={options.enabledSkills?.includes(skill) ?? false}
+                        onCheckedChange={() => toggleSkill(skill)}
+                      />
+                      <label
+                        htmlFor={`skill-${skill}`}
+                        className="text-xs font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                      >
+                        {skill}
+                      </label>
+                    </div>
+                  ))
+                )}
+              </div>
+            }
+          />
         </div>
       </div>
     </Card>

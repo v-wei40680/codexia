@@ -5,11 +5,12 @@ import { useCCStore, CCMessage as CCMessageType } from "@/stores/ccStore";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { Pencil, CircleStop, Send, Settings, ArrowUp, ArrowDown } from "lucide-react";
+import { Pencil, CircleStop, Send, Settings, ArrowUp, ArrowDown, Slash } from "lucide-react";
 import { CCMessage } from "@/components/cc/CCMessage";
 import { CCFooter } from "@/components/cc/CCFooter";
 import { ExamplePrompts } from "@/components/cc/ExamplePrompts";
 import { useCCSessionManager } from "@/hooks/useCCSessionManager";
+import { Popover } from "@/components/ui/popover";
 
 export default function CCView() {
   const {
@@ -31,6 +32,7 @@ export default function CCView() {
 
   const { handleNewSession } = useCCSessionManager();
   const [input, setInput] = useState("");
+  const [showCommands, setShowCommands] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Listen to message events
@@ -54,8 +56,22 @@ export default function CCView() {
   }, [activeSessionId, addMessage, setLoading]);
 
   const handleSendMessage = async (messageText?: string) => {
-    const textToSend = messageText || input;
+    let textToSend = messageText || input;
     if (!textToSend.trim() || isLoading) return;
+
+    // Convert slash commands to natural language
+    // e.g., "/pdf extract tables" -> "Please use the pdf skill to extract tables"
+    if (textToSend.startsWith('/')) {
+      const parts = textToSend.slice(1).split(/\s+/, 1);
+      const skillName = parts[0];
+      const restOfMessage = textToSend.slice(skillName.length + 2).trim();
+
+      if (options.enabledSkills?.includes(skillName)) {
+        textToSend = restOfMessage
+          ? `Please use the ${skillName} skill to ${restOfMessage}`
+          : `Please use the ${skillName} skill to help me.`;
+      }
+    }
 
     // Create new session if no active session
     if (!activeSessionId) {
@@ -143,6 +159,11 @@ export default function CCView() {
         behavior: "smooth",
       });
     }
+  };
+
+  const handleInsertCommand = (skillName: string) => {
+    setInput(`/${skillName} `);
+    setShowCommands(false);
   };
 
   return (
@@ -239,6 +260,42 @@ export default function CCView() {
         >
           <Settings className={showFooter ? "text-primary" : ""} />
         </Button>
+        <Popover
+          open={showCommands}
+          onOpenChange={setShowCommands}
+          align="start"
+          side="top"
+          className="w-56 p-2"
+          trigger={
+            <Button
+              size="icon"
+              variant="ghost"
+              title="Insert Slash Command"
+            >
+              <Slash className={showCommands ? "text-primary" : ""} />
+            </Button>
+          }
+          content={
+            <div className="space-y-1">
+              {!options.enabledSkills || options.enabledSkills.length === 0 ? (
+                <div className="text-xs text-muted-foreground text-center py-2">
+                  No skills enabled
+                </div>
+              ) : (
+                options.enabledSkills.map((skill) => (
+                  <Button
+                    key={skill}
+                    variant="ghost"
+                    className="w-full justify-start text-xs h-7 font-mono"
+                    onClick={() => handleInsertCommand(skill)}
+                  >
+                    /{skill}
+                  </Button>
+                ))
+              )}
+            </div>
+          }
+        />
         <Textarea
           value={input}
           onChange={(e) => setInput(e.target.value)}

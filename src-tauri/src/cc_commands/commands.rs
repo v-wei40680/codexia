@@ -1,6 +1,6 @@
 use super::state::CCState;
 use super::db::{SessionDB, SessionData};
-use claude_agent_sdk_rs::{ClaudeAgentOptions, Message, PermissionMode};
+use claude_agent_sdk_rs::{ClaudeAgentOptions, Message, PermissionMode, SdkPluginConfig};
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, State};
@@ -33,6 +33,7 @@ pub struct AgentOptions {
     pub settings: Option<String>,
     pub allowed_tools: Option<Vec<String>>,
     pub disallowed_tools: Option<Vec<String>>,
+    pub enabled_skills: Option<Vec<String>>,
 }
 
 impl AgentOptions {
@@ -42,6 +43,20 @@ impl AgentOptions {
         let permission_mode = self.permission_mode
             .as_ref()
             .and_then(|m| parse_permission_mode(m));
+
+        // Convert enabled_skills to plugins
+        let plugins = if let Some(skills) = &self.enabled_skills {
+            let home = dirs::home_dir().unwrap_or_default();
+            let skills_dir = home.join(".claude").join("skills");
+
+            skills.iter()
+                .map(|skill_name| {
+                    SdkPluginConfig::local(skills_dir.join(skill_name))
+                })
+                .collect()
+        } else {
+            vec![]
+        };
 
         ClaudeAgentOptions {
             cwd: Some(PathBuf::from(&self.cwd)),
@@ -54,6 +69,7 @@ impl AgentOptions {
             permission_mode,
             allowed_tools: self.allowed_tools.clone().unwrap_or_default(),
             disallowed_tools: self.disallowed_tools.clone().unwrap_or_default(),
+            plugins,
             resume: resume_id,
             stderr_callback: Some(Arc::new(|msg| {
                 log::error!("[CC STDERR] {}", msg);
@@ -282,6 +298,35 @@ pub fn cc_get_projects() -> Result<Vec<String>, String> {
         .ok_or("No projects found in .claude.json")?;
 
     Ok(projects.keys().cloned().collect())
+}
+
+#[tauri::command]
+pub fn cc_get_installed_skills() -> Result<Vec<String>, String> {
+    let home = dirs::home_dir().ok_or("Failed to get home directory")?;
+    let skills_dir = home.join(".claude").join("skills");
+
+    if !skills_dir.exists() {
+        return Ok(vec![]);
+    }
+
+    let mut skills = Vec::new();
+
+    for entry in fs::read_dir(&skills_dir).map_err(|e| format!("Failed to read skills dir: {}", e))? {
+        let entry = entry.map_err(|e| format!("Failed to read entry: {}", e))?;
+        let path = entry.path();
+
+        if path.is_dir() {
+            // Check if SKILL.md exists
+            if path.join("SKILL.md").exists() {
+                if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+                    skills.push(name.to_string());
+                }
+            }
+        }
+    }
+
+    skills.sort();
+    Ok(skills)
 }
 
 #[tauri::command]

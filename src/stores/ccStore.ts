@@ -23,6 +23,7 @@ export interface CCOptions {
   fallbackModel?: string;
   maxBudgetUsd?: number;
   plugins?: CCPluginConfig[];
+  enabledSkills?: string[];
 }
 
 interface CCStoreState {
