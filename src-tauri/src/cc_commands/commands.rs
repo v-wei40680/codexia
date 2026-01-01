@@ -123,6 +123,13 @@ pub async fn cc_send_message(
         .await
         .ok_or("Client not found")?;
 
+    // Ensure client is connected before sending (lazy connection)
+    // connect() is idempotent - returns immediately if already connected
+    {
+        let mut client = client.lock().await;
+        client.connect().await.map_err(|e| e.to_string())?;
+    }
+
     // Send the query
     {
         let mut client = client.lock().await;
@@ -177,13 +184,8 @@ pub async fn cc_new_session(
         .create_client(session_id.clone(), claude_options)
         .await?;
 
-    let client = state
-        .get_client(&session_id)
-        .await
-        .ok_or("Failed to get client")?;
-
-    let mut client = client.lock().await;
-    client.connect().await.map_err(|e| e.to_string())?;
+    // Don't connect immediately - defer connection until first message
+    // This makes session creation instant (~0ms instead of ~6s)
 
     Ok(session_id)
 }
@@ -258,13 +260,8 @@ pub async fn cc_resume_session(
         .create_client(session_id.clone(), claude_options)
         .await?;
 
-    let client = state
-        .get_client(&session_id)
-        .await
-        .ok_or("Failed to get client")?;
-
-    let mut client_guard = client.lock().await;
-    client_guard.connect().await.map_err(|e| e.to_string())?;
+    // Don't connect immediately - connection will happen on first message
+    // This makes session resumption instant
 
     Ok(())
 }

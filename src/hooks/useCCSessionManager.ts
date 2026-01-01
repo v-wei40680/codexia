@@ -76,8 +76,13 @@ export function useCCSessionManager() {
       setIsLoading(true);
       setLoading(true);
       setMessages([]);
-      setActiveSessionId(sessionId);
       setShowExamples(false);
+
+      // Set session ID FIRST to ensure event listener is set up
+      setActiveSessionId(sessionId);
+
+      // Wait a tick to ensure the event listener is registered
+      await new Promise(resolve => setTimeout(resolve, 0));
 
       const ClaudeAgentOptions: any = {
         cwd,
