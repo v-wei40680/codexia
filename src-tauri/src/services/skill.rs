@@ -5,7 +5,10 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::sync::OnceLock;
+use std::process::Command;
 use tokio::time::timeout;
+use moka::future::Cache;
 
 use crate::app_types::{AppType, format_skill_error};
 
@@ -103,19 +106,33 @@ pub struct SkillMetadata {
     pub description: Option<String>,
 }
 
+// Global cache for repo skills with 5-minute TTL
+static REPO_CACHE: OnceLock<Cache<String, Vec<Skill>>> = OnceLock::new();
+
+fn get_repo_cache() -> &'static Cache<String, Vec<Skill>> {
+    REPO_CACHE.get_or_init(|| {
+        Cache::builder()
+            .time_to_live(std::time::Duration::from_secs(300)) // 5 minutes
+            .max_capacity(100)
+            .build()
+    })
+}
+
+// Check if git is available
+fn is_git_available() -> bool {
+    Command::new("git")
+        .arg("--version")
+        .output()
+        .map(|output| output.status.success())
+        .unwrap_or(false)
+}
+
 pub struct SkillService {
     http_client: Client,
     install_dir: PathBuf,
-    #[allow(dead_code)]
-    app_type: AppType,
 }
 
 impl SkillService {
-    #[allow(dead_code)]
-    pub fn new() -> Result<Self> {
-        Self::new_for_app(AppType::Claude)
-    }
-
     pub fn new_for_app(app_type: AppType) -> Result<Self> {
         let install_dir = Self::get_install_dir_for_app(&app_type)?;
 
@@ -129,7 +146,6 @@ impl SkillService {
                 .timeout(std::time::Duration::from_secs(10))
                 .build()?,
             install_dir,
-            app_type,
         })
     }
 
@@ -150,15 +166,50 @@ impl SkillService {
         Ok(dir)
     }
 
-    #[allow(dead_code)]
-    pub fn app_type(&self) -> &AppType {
-        &self.app_type
+    /// Get cached repo directory
+    fn get_repo_cache_dir() -> Result<PathBuf> {
+        let home = dirs::home_dir().context("Failed to get home directory")?;
+        let cache_dir = home.join(".codexia").join("repo_cache");
+        fs::create_dir_all(&cache_dir)?;
+        Ok(cache_dir)
     }
 
-    /// Get default skill repositories
-    #[allow(dead_code)]
-    pub fn get_default_repos(&self) -> Vec<SkillRepo> {
-        SkillStore::default().repos
+    /// Get skill list cache file path
+    fn get_skill_list_cache_path(repo: &SkillRepo) -> Result<PathBuf> {
+        let cache_dir = Self::get_repo_cache_dir()?;
+        Ok(cache_dir.join(format!("{}_{}_{}.json", repo.owner, repo.name, repo.branch)))
+    }
+
+    /// Load cached skill list from disk
+    async fn load_cached_skill_list(&self, repo: &SkillRepo) -> Result<Vec<Skill>> {
+        let cache_file = Self::get_skill_list_cache_path(repo)?;
+
+        if !cache_file.exists() {
+            return Err(anyhow!("Cache file not found"));
+        }
+
+        // Check if cache is stale (older than 1 hour)
+        if let Ok(metadata) = fs::metadata(&cache_file) {
+            if let Ok(modified) = metadata.modified() {
+                if let Ok(elapsed) = modified.elapsed() {
+                    if elapsed.as_secs() > 3600 {
+                        return Err(anyhow!("Cache is stale"));
+                    }
+                }
+            }
+        }
+
+        let content = fs::read_to_string(&cache_file)?;
+        let skills: Vec<Skill> = serde_json::from_str(&content)?;
+        Ok(skills)
+    }
+
+    /// Save skill list to disk cache
+    async fn save_cached_skill_list(&self, repo: &SkillRepo, skills: &[Skill]) -> Result<()> {
+        let cache_file = Self::get_skill_list_cache_path(repo)?;
+        let content = serde_json::to_string(skills)?;
+        fs::write(&cache_file, content)?;
+        Ok(())
     }
 }
 
@@ -196,6 +247,25 @@ impl SkillService {
 
     /// Fetch skill list from repository
     async fn fetch_repo_skills(&self, repo: &SkillRepo) -> Result<Vec<Skill>> {
+        // Generate cache key
+        let cache_key = format!("{}:{}:{}", repo.owner, repo.name, repo.branch);
+
+        // Check memory cache first
+        let cache = get_repo_cache();
+        if let Some(cached_skills) = cache.get(&cache_key).await {
+            log::debug!("Memory cache hit for repo {}/{}", repo.owner, repo.name);
+            return Ok(cached_skills);
+        }
+
+        // Check disk cache (persisted skill list)
+        if let Ok(cached_skills) = self.load_cached_skill_list(repo).await {
+            log::debug!("Disk cache hit for repo {}/{}", repo.owner, repo.name);
+            cache.insert(cache_key.clone(), cached_skills.clone()).await;
+            return Ok(cached_skills);
+        }
+
+        log::debug!("Cache miss for repo {}/{}, downloading and scanning...", repo.owner, repo.name);
+
         // Add overall timeout for single repository loading to avoid long blocks from invalid links
         let temp_dir = timeout(std::time::Duration::from_secs(60), self.download_repo(repo))
             .await
@@ -212,23 +282,31 @@ impl SkillService {
             })??;
         let mut skills = Vec::new();
 
-        // 扫描仓库根目录（支持全仓库递归扫描）
+        // Scan repository root directory (supports full repository recursive scan)
         let scan_dir = temp_dir.clone();
 
-        // 递归扫描目录查找所有技能
+        // Recursively scan directories to find all skills
         self.scan_dir_recursive(&scan_dir, &scan_dir, repo, &mut skills)?;
 
-        // 清理临时目录
-        let _ = fs::remove_dir_all(&temp_dir);
+        // Clean up temp directory if it's not from git cache
+        if !temp_dir.starts_with(&Self::get_repo_cache_dir()?) {
+            let _ = fs::remove_dir_all(&temp_dir);
+        }
+
+        // Save to disk cache
+        let _ = self.save_cached_skill_list(repo, &skills).await;
+
+        // Cache in memory
+        cache.insert(cache_key, skills.clone()).await;
 
         Ok(skills)
     }
 
-    /// 递归扫描目录查找 SKILL.md
+    /// Recursively scan directories to find SKILL.md
     ///
-    /// 规则：
-    /// 1. 如果当前目录存在 SKILL.md，则识别为技能，停止扫描其子目录（子目录视为功能文件夹）
-    /// 2. 如果当前目录不存在 SKILL.md，则递归扫描所有子目录
+    /// Rules:
+    /// 1. If the current directory contains SKILL.md, treat it as a skill and stop scanning its subdirectories (subdirectories are considered functional folders)
+    /// 2. If the current directory does not contain SKILL.md, recursively scan all subdirectories
     fn scan_dir_recursive(
         &self,
         current_dir: &Path,
@@ -236,16 +314,16 @@ impl SkillService {
         repo: &SkillRepo,
         skills: &mut Vec<Skill>,
     ) -> Result<()> {
-        // 检查当前目录是否包含 SKILL.md
+        // Check whether the current directory contains SKILL.md
         let skill_md = current_dir.join("SKILL.md");
 
         if skill_md.exists() {
-            // 发现技能！获取相对路径作为目录名
+            // Skill found! Use the relative path as the directory name
             let directory = if current_dir == base_dir {
-                // 根目录的 SKILL.md，使用仓库名
+                // SKILL.md at the repository root, use the repository name
                 repo.name.clone()
             } else {
-                // 子目录的 SKILL.md，使用相对路径
+                // SKILL.md in a subdirectory, use the relative path
                 current_dir
                     .strip_prefix(base_dir)
                     .unwrap_or(current_dir)
@@ -257,16 +335,15 @@ impl SkillService {
                 skills.push(skill);
             }
 
-            // 停止扫描此目录的子目录（同级目录都是功能文件夹）
+            // Stop scanning subdirectories of this directory (they are considered functional folders)
             return Ok(());
         }
 
-        // 未发现 SKILL.md，继续递归扫描所有子目录
+        // SKILL.md not found, continue recursively scanning all subdirectories
         for entry in fs::read_dir(current_dir)? {
             let entry = entry?;
             let path = entry.path();
 
-            // 只处理目录
             if path.is_dir() {
                 self.scan_dir_recursive(&path, base_dir, repo, skills)?;
             }
@@ -275,7 +352,7 @@ impl SkillService {
         Ok(())
     }
 
-    /// 从 SKILL.md 构建技能对象
+    /// Build a Skill object from SKILL.md
     fn build_skill_from_metadata(
         &self,
         skill_md: &Path,
@@ -284,7 +361,7 @@ impl SkillService {
     ) -> Result<Skill> {
         let meta = self.parse_skill_metadata(skill_md)?;
 
-        // 构建 README URL
+        // build README URL
         let readme_path = directory.to_string();
 
         Ok(Skill {
@@ -303,14 +380,14 @@ impl SkillService {
         })
     }
 
-    /// 解析技能元数据
+    /// Parse skill metadata
     fn parse_skill_metadata(&self, path: &Path) -> Result<SkillMetadata> {
         let content = fs::read_to_string(path)?;
 
-        // 移除 BOM
+        // Remove BOM
         let content = content.trim_start_matches('\u{feff}');
 
-        // 提取 YAML front matter
+        // Extract YAML front matter
         let parts: Vec<&str> = content.splitn(3, "---").collect();
         if parts.len() < 3 {
             return Ok(SkillMetadata {
@@ -328,22 +405,22 @@ impl SkillService {
         Ok(meta)
     }
 
-    /// 合并本地技能
+    /// Merge local skills
     fn merge_local_skills(&self, skills: &mut Vec<Skill>) -> Result<()> {
         if !self.install_dir.exists() {
             return Ok(());
         }
 
-        // 收集所有本地技能
+        // Collect all local skills
         let mut local_skills = Vec::new();
         self.scan_local_dir_recursive(&self.install_dir, &self.install_dir, &mut local_skills)?;
 
-        // 处理找到的本地技能
+        // Process found local skills
         for local_skill in local_skills {
             let directory = &local_skill.directory;
 
-            // 更新已安装状态（匹配远程技能）
-            // 使用目录最后一段进行比较，因为安装时只使用最后一段作为目录名
+            // Update installed state (match against remote skills)
+            // Compare using the last path segment, since only the last segment is used as the install directory name
             let mut found = false;
             let local_install_name = Path::new(directory)
                 .file_name()
@@ -363,7 +440,7 @@ impl SkillService {
                 }
             }
 
-            // 添加本地独有的技能（仅当在仓库中未找到时）
+            // Add local-only skills (only if not found in repositories)
             if !found {
                 skills.push(local_skill);
             }
@@ -372,27 +449,27 @@ impl SkillService {
         Ok(())
     }
 
-    /// 递归扫描本地目录查找 SKILL.md
+    /// Recursively scan local directories to find SKILL.md
     fn scan_local_dir_recursive(
         &self,
         current_dir: &Path,
         base_dir: &Path,
         skills: &mut Vec<Skill>,
     ) -> Result<()> {
-        // 检查当前目录是否包含 SKILL.md
+        // Check whether the current directory contains SKILL.md
         let skill_md = current_dir.join("SKILL.md");
 
         if skill_md.exists() {
-            // 发现技能！获取相对路径作为目录名
+            // Skill found! Use the relative path as the directory name
             let directory = if current_dir == base_dir {
-                // 如果是 install_dir 本身，使用最后一段路径名
+                // If this is the install_dir itself, use the last path segment
                 current_dir
                     .file_name()
                     .unwrap_or_default()
                     .to_string_lossy()
                     .to_string()
             } else {
-                // 使用相对于 install_dir 的路径
+                // Use the path relative to install_dir
                 current_dir
                     .strip_prefix(base_dir)
                     .unwrap_or(current_dir)
@@ -400,7 +477,7 @@ impl SkillService {
                     .to_string()
             };
 
-            // 解析元数据并创建本地技能对象
+            // Parse metadata and create a local Skill object
             if let Ok(meta) = self.parse_skill_metadata(&skill_md) {
                 skills.push(Skill {
                     key: format!("local:{directory}"),
@@ -415,16 +492,15 @@ impl SkillService {
                 });
             }
 
-            // 停止扫描此目录的子目录（同级目录都是功能文件夹）
+            // Stop scanning subdirectories of this directory (they are considered functional folders)
             return Ok(());
         }
 
-        // 未发现 SKILL.md，继续递归扫描所有子目录
+        // SKILL.md not found, continue recursively scanning all subdirectories
         for entry in fs::read_dir(current_dir)? {
             let entry = entry?;
             let path = entry.path();
 
-            // 只处理目录
             if path.is_dir() {
                 self.scan_local_dir_recursive(&path, base_dir, skills)?;
             }
@@ -433,12 +509,12 @@ impl SkillService {
         Ok(())
     }
 
-    /// 去重技能列表
-    /// 使用完整的 key (owner/name:directory) 来区分不同仓库的同名技能
+    /// Deduplicate skill list
+    /// Use the full key (owner/name:directory) to distinguish skills with the same name from different repositories
     fn deduplicate_skills(skills: &mut Vec<Skill>) {
         let mut seen = HashMap::new();
         skills.retain(|skill| {
-            // 使用完整 key 而非仅 directory，允许不同仓库的同名技能共存
+            // Using the complete key instead of just the directory allows skills with the same name from different repositories to coexist.
             let unique_key = skill.key.to_lowercase();
             if let std::collections::hash_map::Entry::Vacant(e) = seen.entry(unique_key) {
                 e.insert(true);
@@ -449,13 +525,95 @@ impl SkillService {
         });
     }
 
-    /// 下载仓库
+    /// Download repository (prefer git clone, fallback to ZIP)
     async fn download_repo(&self, repo: &SkillRepo) -> Result<PathBuf> {
+        // Try git clone first if git is available
+        if is_git_available() {
+            match self.download_repo_with_git(repo).await {
+                Ok(path) => return Ok(path),
+                Err(e) => {
+                    log::warn!("Git clone failed, falling back to ZIP download: {}", e);
+                }
+            }
+        }
+
+        // Fallback to ZIP download
+        self.download_repo_with_zip(repo).await
+    }
+
+    /// Download repository using git clone to cache directory
+    async fn download_repo_with_git(&self, repo: &SkillRepo) -> Result<PathBuf> {
+        let cache_dir = Self::get_repo_cache_dir()?;
+        let repo_dir = cache_dir.join(format!("{}_{}", repo.owner, repo.name));
+
+        if repo_dir.exists() {
+            // Check if repo was recently accessed (within last hour)
+            if let Ok(metadata) = fs::metadata(&repo_dir) {
+                if let Ok(modified) = metadata.modified() {
+                    if let Ok(elapsed) = modified.elapsed() {
+                        if elapsed.as_secs() < 3600 {
+                            // Accessed within last hour, use cached version
+                            log::debug!("Using cached repo (updated {} seconds ago): {}/{}",
+                                elapsed.as_secs(), repo.owner, repo.name);
+                            return Ok(repo_dir);
+                        }
+                    }
+                }
+            }
+
+            // Older than 1 hour, try to update
+            log::debug!("Updating existing repo: {}/{}", repo.owner, repo.name);
+            let output = Command::new("git")
+                .arg("-C")
+                .arg(&repo_dir)
+                .arg("pull")
+                .arg("--depth")
+                .arg("1")
+                .output()?;
+
+            if !output.status.success() {
+                // Pull failed, remove and re-clone
+                log::warn!("Git pull failed, re-cloning...");
+                fs::remove_dir_all(&repo_dir)?;
+            } else {
+                return Ok(repo_dir);
+            }
+        }
+
+        // Clone new repository
+        log::debug!("Cloning repo: {}/{}", repo.owner, repo.name);
+        let url = format!("https://github.com/{}/{}.git", repo.owner, repo.name);
+        let branch = if repo.branch.is_empty() {
+            "main"
+        } else {
+            &repo.branch
+        };
+
+        let output = Command::new("git")
+            .arg("clone")
+            .arg("--depth")
+            .arg("1")
+            .arg("--branch")
+            .arg(branch)
+            .arg(&url)
+            .arg(&repo_dir)
+            .output()?;
+
+        if !output.status.success() {
+            let error = String::from_utf8_lossy(&output.stderr);
+            return Err(anyhow!("Git clone failed: {}", error));
+        }
+
+        Ok(repo_dir)
+    }
+
+    /// Download repository using ZIP (fallback method)
+    async fn download_repo_with_zip(&self, repo: &SkillRepo) -> Result<PathBuf> {
         let temp_dir = tempfile::tempdir()?;
         let temp_path = temp_dir.path().to_path_buf();
-        let _ = temp_dir.keep(); // 保持临时目录，稍后手动清理
+        let _ = temp_dir.keep(); // Keep temp directory for later manual cleanup
 
-        // 尝试多个分支
+        // Try multiple branches
         let branches = if repo.branch.is_empty() {
             vec!["main", "master"]
         } else {
@@ -480,12 +638,12 @@ impl SkillService {
             }
         }
 
-        Err(last_error.unwrap_or_else(|| anyhow::anyhow!("所有分支下载失败")))
+        Err(last_error.unwrap_or_else(|| anyhow::anyhow!("All branches failed to download")))
     }
 
-    /// 下载并解压 ZIP
+    /// Download and extract ZIP
     async fn download_and_extract(&self, url: &str, dest: &Path) -> Result<()> {
-        // 下载 ZIP
+        // Download ZIP
         let response = self.http_client.get(url).send().await?;
         if !response.status().is_success() {
             let status = response.status().as_u16().to_string();
@@ -503,11 +661,11 @@ impl SkillService {
 
         let bytes = response.bytes().await?;
 
-        // 解压
+        // Extract
         let cursor = std::io::Cursor::new(bytes);
         let mut archive = zip::ZipArchive::new(cursor)?;
 
-        // 获取根目录名称 (GitHub 的 zip 会有一个根目录)
+        // Get root directory name (GitHub ZIPs contain a root directory)
         let root_name = if !archive.is_empty() {
             let first_file = archive.by_index(0)?;
             let name = first_file.name();
@@ -520,12 +678,12 @@ impl SkillService {
             )));
         };
 
-        // 解压所有文件
+        // Extract all files
         for i in 0..archive.len() {
             let mut file = archive.by_index(i)?;
             let file_path = file.name();
 
-            // 跳过根目录，直接提取内容
+            // Skip the root directory and extract the content directly.
             let relative_path =
                 if let Some(stripped) = file_path.strip_prefix(&format!("{root_name}/")) {
                     stripped
@@ -553,10 +711,10 @@ impl SkillService {
         Ok(())
     }
 
-    /// 安装技能（仅负责下载和文件操作，状态更新由上层负责）
+    /// Install a skill (only handles downloading and file operations; state updates are handled by upper layers)
     pub async fn install_skill(&self, directory: String, repo: SkillRepo) -> Result<()> {
-        // 使用技能目录的最后一段作为安装目录名，避免嵌套路径问题
-        // 例如: "skills/codex" -> "codex"
+        // Use the last segment of the skill directory as the install directory name to avoid nested paths
+        // For example: "skills/codex" -> "codex"
         let install_name = Path::new(&directory)
             .file_name()
             .map(|s| s.to_string_lossy().to_string())
@@ -564,12 +722,12 @@ impl SkillService {
 
         let dest = self.install_dir.join(&install_name);
 
-        // 若目标目录已存在，则视为已安装，避免重复下载
+        // If the destination directory already exists, treat it as installed and avoid re-downloading
         if dest.exists() {
             return Ok(());
         }
 
-        // 下载仓库时增加总超时，防止无效链接导致长时间卡住安装过程
+        // Add an overall timeout when downloading the repository to avoid long hangs caused by invalid links
         let temp_dir = timeout(
             std::time::Duration::from_secs(60),
             self.download_repo(&repo),
@@ -587,7 +745,7 @@ impl SkillService {
             ))
         })??;
 
-        // 确定源目录路径（技能相对于仓库根目录的路径）
+        // Determine the source directory path (skill path relative to the repository root)
         let source = temp_dir.join(&directory);
 
         if !source.exists() {
@@ -599,21 +757,21 @@ impl SkillService {
             )));
         }
 
-        // 删除旧版本
+        // Remove old version
         if dest.exists() {
             fs::remove_dir_all(&dest)?;
         }
 
-        // 递归复制
+        // Recursively copy
         Self::copy_dir_recursive(&source, &dest)?;
 
-        // 清理临时目录
+        // Clean up temporary directory
         let _ = fs::remove_dir_all(&temp_dir);
 
         Ok(())
     }
 
-    /// 递归复制目录
+    /// Recursively copy a directory
     fn copy_dir_recursive(src: &Path, dest: &Path) -> Result<()> {
         fs::create_dir_all(dest)?;
 
@@ -632,9 +790,9 @@ impl SkillService {
         Ok(())
     }
 
-    /// 卸载技能（仅负责文件操作，状态更新由上层负责）
+    /// Uninstall a skill (only handles file operations; state updates are handled by upper layers)
     pub fn uninstall_skill(&self, directory: String) -> Result<()> {
-        // 使用技能目录的最后一段作为安装目录名，与 install_skill 保持一致
+        // Use the last section of the skill directory as the installation directory name, consistent with `install_skill`.
         let install_name = Path::new(&directory)
             .file_name()
             .map(|s| s.to_string_lossy().to_string())
@@ -645,39 +803,6 @@ impl SkillService {
         if dest.exists() {
             fs::remove_dir_all(&dest)?;
         }
-
-        Ok(())
-    }
-
-    /// List repositories (legacy method, now handled by database)
-    #[allow(dead_code)]
-    pub fn list_repos(&self, store: &SkillStore) -> Vec<SkillRepo> {
-        store.repos.clone()
-    }
-
-    /// Add repository (legacy method, now handled by database)
-    #[allow(dead_code)]
-    pub fn add_repo(&self, store: &mut SkillStore, repo: SkillRepo) -> Result<()> {
-        // Check for duplicates
-        if let Some(pos) = store
-            .repos
-            .iter()
-            .position(|r| r.owner == repo.owner && r.name == repo.name)
-        {
-            store.repos[pos] = repo;
-        } else {
-            store.repos.push(repo);
-        }
-
-        Ok(())
-    }
-
-    /// Remove repository (legacy method, now handled by database)
-    #[allow(dead_code)]
-    pub fn remove_repo(&self, store: &mut SkillStore, owner: String, name: String) -> Result<()> {
-        store
-            .repos
-            .retain(|r| !(r.owner == owner && r.name == name));
 
         Ok(())
     }

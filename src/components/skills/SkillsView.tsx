@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/select";
 import { RefreshCw, Search, Settings } from "lucide-react";
 import { toast } from "sonner";
-import { SkillCard } from "./SkillCard";
+import { SkillCard, SkillCardSkeleton } from "./SkillCard";
 import { RepoManagerPanel } from "./RepoManagerPanel";
 import {
   skillsApi,
@@ -93,13 +93,30 @@ export const SkillsView = forwardRef<SkillsViewHandle, SkillsViewProps>(
     }));
 
     const handleInstall = async (directory: string) => {
+      // Optimistic update
+      setSkills((prev) =>
+        prev.map((skill) =>
+          skill.directory === directory ? { ...skill, installed: true } : skill,
+        ),
+      );
+
       try {
         await skillsApi.install(directory, selectedApp);
         toast.success(t("skills.installSuccess", { name: directory }), {
           closeButton: true,
         });
+        // Refresh to sync state
         await loadSkills();
       } catch (error) {
+        // Revert optimistic update on error
+        setSkills((prev) =>
+          prev.map((skill) =>
+            skill.directory === directory
+              ? { ...skill, installed: false }
+              : skill,
+          ),
+        );
+
         const errorMessage =
           error instanceof Error ? error.message : String(error);
 
@@ -117,13 +134,30 @@ export const SkillsView = forwardRef<SkillsViewHandle, SkillsViewProps>(
     };
 
     const handleUninstall = async (directory: string) => {
+      // Optimistic update
+      setSkills((prev) =>
+        prev.map((skill) =>
+          skill.directory === directory ? { ...skill, installed: false } : skill,
+        ),
+      );
+
       try {
         await skillsApi.uninstall(directory, selectedApp);
         toast.success(t("skills.uninstallSuccess", { name: directory }), {
           closeButton: true,
         });
+        // Refresh to sync state
         await loadSkills();
       } catch (error) {
+        // Revert optimistic update on error
+        setSkills((prev) =>
+          prev.map((skill) =>
+            skill.directory === directory
+              ? { ...skill, installed: true }
+              : skill,
+          ),
+        );
+
         const errorMessage =
           error instanceof Error ? error.message : String(error);
 
@@ -232,8 +266,10 @@ export const SkillsView = forwardRef<SkillsViewHandle, SkillsViewProps>(
         <div className="flex-1 overflow-y-auto overflow-x-hidden animate-fade-in">
           <div className="py-4">
             {loading ? (
-              <div className="flex items-center justify-center h-64">
-                <RefreshCw className="h-8 w-8 animate-spin text-muted-foreground" />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <SkillCardSkeleton key={i} />
+                ))}
               </div>
             ) : skills.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-64 text-center">
