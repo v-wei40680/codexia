@@ -16,6 +16,7 @@ export function useCCSessionManager() {
     setConnected,
     setLoading,
     setShowExamples,
+    setViewingHistory,
     addMessage,
   } = useCCStore();
 
@@ -25,11 +26,30 @@ export function useCCSessionManager() {
     try {
       setIsLoading(true);
       setLoading(true);
+
+      // If no initial message, just reset UI without creating backend session
+      // Session will be created when user sends first message
+      if (!initialMessage) {
+        setActiveSessionId(null);
+        setMessages([]);
+        setConnected(false);
+        setViewingHistory(false);
+        setShowExamples(false);
+        setLoading(false);
+        setIsLoading(false);
+        return;
+      }
+
+      // Create session with current options when sending first message
       const ClaudeAgentOptions: any = {
         cwd,
-        model: `claude-${options.model}-4-5`,
         permissionMode: options.permissionMode,
       };
+
+      // Only include model if specified (otherwise use CLI default)
+      if (options.model) {
+        ClaudeAgentOptions.model = `claude-${options.model}-4-5`;
+      }
 
       // Only include optional fields if they are defined
       if (options.fallbackModel !== undefined) ClaudeAgentOptions.fallbackModel = options.fallbackModel;
@@ -46,23 +66,22 @@ export function useCCSessionManager() {
 
       setActiveSessionId(newSessionId);
       setMessages([]);
-      setConnected(true);
       setShowExamples(false);
+      setViewingHistory(false);
 
-      // Send initial message if provided
-      if (initialMessage) {
-        addMessage({
-          type: "user",
-          text: initialMessage,
-        });
+      // Connection will happen automatically when sending the first message
+      addMessage({
+        type: "user",
+        text: initialMessage,
+      });
 
-        await invoke("cc_send_message", {
-          sessionId: newSessionId,
-          message: initialMessage,
-        });
-      } else {
-        setLoading(false);
-      }
+      await invoke("cc_send_message", {
+        sessionId: newSessionId,
+        message: initialMessage,
+      });
+
+      // Mark as connected after successfully sending message
+      setConnected(true);
     } catch (error) {
       console.error("Failed to create new session:", error);
       setLoading(false);
@@ -86,9 +105,13 @@ export function useCCSessionManager() {
 
       const ClaudeAgentOptions: any = {
         cwd,
-        model: `claude-${options.model}-4-5`,
         permissionMode: options.permissionMode,
       };
+
+      // Only include model if specified (otherwise use CLI default)
+      if (options.model) {
+        ClaudeAgentOptions.model = `claude-${options.model}-4-5`;
+      }
 
       // Only include optional fields if they are defined
       if (options.fallbackModel !== undefined) ClaudeAgentOptions.fallbackModel = options.fallbackModel;
@@ -103,7 +126,10 @@ export function useCCSessionManager() {
         options: ClaudeAgentOptions,
       });
 
-      setConnected(true);
+      // Session history loaded, but not connected yet
+      // Connection will happen when user sends first message
+      setConnected(false);
+      setViewingHistory(true);
     } catch (error) {
       console.error("Failed to resume session:", error);
     } finally {

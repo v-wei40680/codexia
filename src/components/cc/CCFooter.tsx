@@ -14,19 +14,33 @@ export function CCFooter() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">Model</Label>
-          <Select
-            value={options.model}
-            onValueChange={(value) => updateOptions({ model: value as ModelType })}
-          >
-            <SelectTrigger className="h-8 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="sonnet">Sonnet 4.5</SelectItem>
-              <SelectItem value="opus">Opus 4.5</SelectItem>
-              <SelectItem value="haiku">Haiku 4.5</SelectItem>
-            </SelectContent>
-          </Select>
+          <div className="relative">
+            <Select
+              value={options.model ?? "default"}
+              onValueChange={(value) => updateOptions({ model: value === "default" ? undefined : value as ModelType })}
+            >
+              <SelectTrigger className="h-8 text-xs pr-8">
+                <SelectValue placeholder="Auto" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="default">Auto (Default)</SelectItem>
+                <SelectItem value="sonnet">Sonnet 4.5</SelectItem>
+                <SelectItem value="opus">Opus 4.5</SelectItem>
+                <SelectItem value="haiku">Haiku 4.5</SelectItem>
+              </SelectContent>
+            </Select>
+            {options.model !== undefined && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={() => updateOptions({ model: undefined })}
+                className="absolute right-0 top-0 h-8 w-8 p-0 hover:bg-transparent"
+              >
+                <X className="h-3 w-3" />
+              </Button>
+            )}
+          </div>
         </div>
 
         <div className="space-y-1">

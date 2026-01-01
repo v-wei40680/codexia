@@ -20,10 +20,13 @@ export default function CCView() {
     isLoading,
     showExamples,
     showFooter,
+    isViewingHistory,
     addMessage,
     setLoading,
     setShowExamples,
     setShowFooter,
+    setConnected,
+    setViewingHistory,
   } = useCCStore();
 
   const { handleNewSession } = useCCSessionManager();
@@ -54,10 +57,15 @@ export default function CCView() {
     const textToSend = messageText || input;
     if (!textToSend.trim() || isLoading) return;
 
-    // Create new session if not connected
-    if (!activeSessionId || !isConnected) {
+    // Create new session if no active session
+    if (!activeSessionId) {
       await handleNewSession(textToSend);
       return;
+    }
+
+    // If viewing history, first message will connect the session
+    if (isViewingHistory) {
+      setViewingHistory(false);
     }
 
     // Add user message to store
@@ -71,10 +79,16 @@ export default function CCView() {
     setShowExamples(false);
 
     try {
+      // Backend will connect automatically on first message if not connected
       await invoke("cc_send_message", {
         sessionId: activeSessionId,
         message: textToSend,
       });
+
+      // Mark as connected after successfully sending message
+      if (!isConnected) {
+        setConnected(true);
+      }
     } catch (error) {
       console.error("Failed to send message:", error);
       setLoading(false);
@@ -151,12 +165,16 @@ export default function CCView() {
         <div className="ml-auto flex items-center gap-2">
           {activeSessionId && (
             <span className="text-xs text-muted-foreground">
-              {activeSessionId.slice(0, 8)}... | {options.model}
+              {activeSessionId.slice(0, 8)}... | {options.model ?? "auto"}
             </span>
           )}
           {isConnected ? (
             <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
               Connected
+            </span>
+          ) : isViewingHistory ? (
+            <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
+              Viewing History
             </span>
           ) : (
             <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100">

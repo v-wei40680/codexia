@@ -14,7 +14,7 @@ export interface CCPluginConfig {
 }
 
 export interface CCOptions {
-  model: ModelType;
+  model?: ModelType;
   permissionMode: PermissionMode;
   maxTurns?: number;
   allowedTools?: string[];
@@ -34,6 +34,7 @@ interface CCStoreState {
   isLoading: boolean;
   showExamples: boolean;
   showFooter: boolean;
+  isViewingHistory: boolean; // true when viewing history, false when actively working
 
   setActiveSessionId: (id: string | null) => void;
   addActiveSessionId: (id: string) => void;
@@ -45,6 +46,7 @@ interface CCStoreState {
   setLoading: (loading: boolean) => void;
   setShowExamples: (show: boolean) => void;
   setShowFooter: (show: boolean) => void;
+  setViewingHistory: (viewing: boolean) => void;
   clearMessages: () => void;
 }
 
@@ -55,13 +57,14 @@ export const useCCStore = create<CCStoreState>()(
       activeSessionIds: [],
       messages: [],
       options: {
-        model: "sonnet",
+        model: undefined,
         permissionMode: "default",
       },
       isConnected: false,
       isLoading: false,
       showExamples: true,
       showFooter: true,
+      isViewingHistory: false,
 
       setActiveSessionId: (id) => set((state) => {
         const newIds = id && !state.activeSessionIds.includes(id)
@@ -89,6 +92,7 @@ export const useCCStore = create<CCStoreState>()(
       setLoading: (loading) => set({ isLoading: loading }),
       setShowExamples: (show) => set({ showExamples: show }),
       setShowFooter: (show) => set({ showFooter: show }),
+      setViewingHistory: (viewing) => set({ isViewingHistory: viewing }),
       clearMessages: () => set({ messages: [] }),
     }),
     {
