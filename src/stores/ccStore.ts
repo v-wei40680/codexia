@@ -1,77 +1,12 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import type { CCMessage } from "@/types/cc-messages";
 
 export type PermissionMode = "default" | "acceptEdits" | "plan" | "bypassPermissions";
 export type ModelType = "sonnet" | "haiku" | "opus";
 
-// SDK Message types
-export interface CCContentBlock {
-  type: "text" | "thinking" | "tool_use" | "tool_result";
-  text?: string;
-  thinking?: string;
-  signature?: string;
-  id?: string;
-  name?: string;
-  input?: Record<string, any>;
-  tool_use_id?: string;
-  content?: any;
-  is_error?: boolean;
-}
-
-export interface CCAssistantMessage {
-  type: "assistant";
-  message: {
-    content: CCContentBlock[];
-    model?: string;
-    id?: string;
-    stop_reason?: string;
-  };
-  session_id?: string;
-}
-
-export interface CCSystemMessage {
-  type: "system";
-  subtype: string;
-  cwd?: string;
-  session_id?: string;
-  tools?: string[];
-  mcp_servers?: any[];
-  model?: string;
-  permission_mode?: string;
-}
-
-export interface CCResultMessage {
-  type: "result";
-  subtype: string;
-  duration_ms: number;
-  duration_api_ms: number;
-  is_error: boolean;
-  num_turns: number;
-  session_id: string;
-  total_cost_usd?: number;
-  usage?: any;
-  result?: string;
-}
-
-export interface CCUserMessage {
-  type: "user";
-  text?: string;
-  content?: CCContentBlock[];
-}
-
-export interface CCStreamEvent {
-  type: "stream_event";
-  uuid: string;
-  session_id: string;
-  event: any;
-}
-
-export type CCMessage =
-  | CCAssistantMessage
-  | CCSystemMessage
-  | CCResultMessage
-  | CCUserMessage
-  | CCStreamEvent;
+// Re-export message types for convenience
+export type { CCMessage } from "@/types/cc-messages";
 
 export interface CCPluginConfig {
   path: string;

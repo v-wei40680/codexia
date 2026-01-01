@@ -1,8 +1,8 @@
 import { Badge } from "../ui/badge";
-import { CCContentBlock } from "@/stores/ccStore";
+import type { ContentBlock } from "@/types/cc-messages";
 
 interface Props {
-  block: CCContentBlock;
+  block: ContentBlock;
   index: number;
 }
 
@@ -99,7 +99,10 @@ export function CCMessageBlock({ block, index }: Props) {
         </div>
       );
 
-    case "tool_result":
+    case "tool_result": {
+      const isString = typeof block.content === "string";
+      const isLongText = isString && (block.content as string).length > 500;
+
       return (
         <div
           key={blockKey}
@@ -116,11 +119,18 @@ export function CCMessageBlock({ block, index }: Props) {
           >
             TOOL RESULT {block.is_error && "(ERROR)"}
           </div>
-          <pre className="text-sm overflow-auto max-h-60">
-            <code>{JSON.stringify(block.content, null, 2)}</code>
-          </pre>
+          {isString ? (
+            <div className={`text-sm whitespace-pre-wrap overflow-auto ${isLongText ? "max-h-60" : ""}`}>
+              {block.content as string}
+            </div>
+          ) : (
+            <pre className="text-sm overflow-auto max-h-60">
+              <code>{JSON.stringify(block.content, null, 2)}</code>
+            </pre>
+          )}
         </div>
       );
+    }
 
     default:
       return (
