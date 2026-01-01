@@ -1,5 +1,6 @@
 import { Badge } from "../ui/badge";
 import type { ContentBlock } from "@/types/cc-messages";
+import { DiffMessage } from "./DiffMessage";
 
 interface Props {
   block: ContentBlock;
@@ -12,23 +13,23 @@ export function CCMessageBlock({ block, index }: Props) {
   switch (block.type) {
     case "text":
       return (
-        <div key={blockKey} className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+        <div key={blockKey} className="rounded-lg border border-gray-200 bg-gray-50 p-3 max-w-full overflow-hidden">
           <div className="text-xs font-semibold text-gray-900 mb-2">ASSISTANT</div>
-          <div className="text-sm text-gray-800 whitespace-pre-wrap">{block.text}</div>
+          <div className="text-sm text-gray-800 whitespace-pre-wrap break-words">{block.text}</div>
         </div>
       );
 
     case "thinking":
       return (
-        <div key={blockKey} className="rounded-lg border border-amber-200 bg-amber-50 p-3">
+        <div key={blockKey} className="rounded-lg border border-amber-200 bg-amber-50 p-3 max-w-full overflow-hidden">
           <div className="text-xs font-semibold text-amber-900 mb-2">THINKING</div>
-          <div className="text-sm text-amber-900 whitespace-pre-wrap">{block.thinking}</div>
+          <div className="text-sm text-amber-900 whitespace-pre-wrap break-words">{block.thinking}</div>
         </div>
       );
 
     case "tool_use":
       return (
-        <div key={blockKey} className="rounded-lg border border-purple-200 bg-purple-50 p-3">
+        <div key={blockKey} className="rounded-lg border border-purple-200 bg-purple-50 p-3 max-w-full overflow-hidden">
           <div className="flex items-center gap-2 mb-2">
             <div className="text-xs font-semibold text-purple-900">TOOL USE</div>
             <Badge variant="outline" className="text-xs">
@@ -67,32 +68,22 @@ export function CCMessageBlock({ block, index }: Props) {
 
           {/* Show full input for non-file tools */}
           {!["Read", "Edit", "Glob", "Write"].includes(block.name || "") && (
-            <pre className="text-sm overflow-auto bg-white rounded border p-2 max-h-60">
+            <pre className="text-sm overflow-auto bg-white rounded border p-2 max-h-60 break-all whitespace-pre-wrap">
               <code>{JSON.stringify(block.input, null, 2)}</code>
             </pre>
           )}
 
           {/* Special rendering for Edit */}
           {block.name === "Edit" && (
-            <div className="space-y-2">
-              <div>
-                <div className="text-xs text-gray-600 mb-1">Old:</div>
-                <pre className="text-sm overflow-auto bg-white rounded border p-2 max-h-40">
-                  <code>{block.input?.old_string}</code>
-                </pre>
-              </div>
-              <div>
-                <div className="text-xs text-gray-600 mb-1">New:</div>
-                <pre className="text-sm overflow-auto bg-white rounded border p-2 max-h-40">
-                  <code>{block.input?.new_string}</code>
-                </pre>
-              </div>
-            </div>
+            <DiffMessage
+              oldString={block.input?.old_string || ""}
+              newString={block.input?.new_string || ""}
+            />
           )}
 
           {/* Special rendering for Write */}
           {block.name === "Write" && block.input?.content && (
-            <pre className="text-sm overflow-auto bg-white rounded border p-2 max-h-60">
+            <pre className="text-sm overflow-auto bg-white rounded border p-2 max-h-60 break-all whitespace-pre-wrap">
               <code>{block.input.content}</code>
             </pre>
           )}
@@ -106,7 +97,7 @@ export function CCMessageBlock({ block, index }: Props) {
       return (
         <div
           key={blockKey}
-          className={`rounded-lg border p-3 ${
+          className={`rounded-lg border p-3 max-w-full overflow-hidden ${
             block.is_error
               ? "border-red-200 bg-red-50"
               : "border-green-200 bg-green-50"
@@ -120,11 +111,11 @@ export function CCMessageBlock({ block, index }: Props) {
             TOOL RESULT {block.is_error && "(ERROR)"}
           </div>
           {isString ? (
-            <div className={`text-sm whitespace-pre-wrap overflow-auto ${isLongText ? "max-h-60" : ""}`}>
+            <div className={`text-sm whitespace-pre-wrap break-words overflow-auto ${isLongText ? "max-h-60" : ""}`}>
               {block.content as string}
             </div>
           ) : (
-            <pre className="text-sm overflow-auto max-h-60">
+            <pre className="text-sm overflow-auto max-h-60 break-all whitespace-pre-wrap">
               <code>{JSON.stringify(block.content, null, 2)}</code>
             </pre>
           )}
@@ -134,8 +125,8 @@ export function CCMessageBlock({ block, index }: Props) {
 
     default:
       return (
-        <div key={blockKey} className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-          <pre className="text-sm overflow-auto">
+        <div key={blockKey} className="rounded-lg border border-gray-200 bg-gray-50 p-3 max-w-full overflow-hidden">
+          <pre className="text-sm overflow-auto break-all whitespace-pre-wrap">
             <code>{JSON.stringify(block, null, 2)}</code>
           </pre>
         </div>

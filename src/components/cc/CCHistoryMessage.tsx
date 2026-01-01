@@ -4,6 +4,7 @@ import { Badge } from "../ui/badge";
 import { MarkdownRenderer } from "../chat/MarkdownRenderer";
 import { Button } from "../ui/button";
 import { ArrowUp, ArrowDown } from "lucide-react";
+import { DiffMessage } from "./DiffMessage";
 
 type MessageContent = {
   type: string;
@@ -102,14 +103,14 @@ export function CCHistoryMessages({ project, sessionId }: Props) {
         return <div>{content}</div>;
       case "user":
         return (
-          <div className="rounded-lg border border-blue-200 bg-blue-50 p-3">
+          <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 max-w-full overflow-hidden">
             <div className="text-xs font-semibold text-blue-900 mb-2">USER</div>
-            <div className="text-sm text-gray-800 whitespace-pre-wrap">
+            <div className="text-sm text-gray-800 whitespace-pre-wrap break-words">
               {typeof message.content === "string" ? (
                 <MarkdownRenderer content={message.content} />
               ) : (
                 (message.content[0].content ?? (
-                  <pre className="text-sm overflow-auto">
+                  <pre className="text-sm overflow-auto break-all whitespace-pre-wrap max-w-full">
                     <code>{JSON.stringify(message.content, null, 2)}</code>
                   </pre>
                 ))
@@ -121,11 +122,11 @@ export function CCHistoryMessages({ project, sessionId }: Props) {
       case "assistant":
         if (!Array.isArray(message.content)) {
           return (
-            <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
+            <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 max-w-full overflow-hidden">
               <div className="text-xs font-semibold text-gray-900 mb-2">
                 ASSISTANT
               </div>
-              <pre className="text-sm overflow-auto">
+              <pre className="text-sm overflow-auto break-all whitespace-pre-wrap max-w-full">
                 <code>{JSON.stringify(message.content, null, 2)}</code>
               </pre>
             </div>
@@ -139,12 +140,12 @@ export function CCHistoryMessages({ project, sessionId }: Props) {
               return (
                 <div
                   key={blockKey}
-                  className="rounded-lg border border-gray-200 bg-gray-50 p-3"
+                  className="rounded-lg border border-gray-200 bg-gray-50 p-3 max-w-full overflow-hidden"
                 >
                   <div className="text-xs font-semibold text-gray-900 mb-2">
                     ASSISTANT
                   </div>
-                  <div className="text-sm text-gray-800 whitespace-pre-wrap">
+                  <div className="text-sm text-gray-800 whitespace-pre-wrap break-words">
                     {block.text}
                   </div>
                 </div>
@@ -154,12 +155,12 @@ export function CCHistoryMessages({ project, sessionId }: Props) {
               return (
                 <div
                   key={blockKey}
-                  className="rounded-lg border border-amber-200 bg-amber-50 p-3"
+                  className="rounded-lg border border-amber-200 bg-amber-50 p-3 max-w-full overflow-hidden"
                 >
                   <div className="text-xs font-semibold text-amber-900 mb-2">
                     THINKING
                   </div>
-                  <div className="text-sm text-amber-900 whitespace-pre-wrap">
+                  <div className="text-sm text-amber-900 whitespace-pre-wrap break-words">
                     {block.thinking}
                   </div>
                 </div>
@@ -169,7 +170,7 @@ export function CCHistoryMessages({ project, sessionId }: Props) {
               return (
                 <div
                   key={blockKey}
-                  className="rounded-lg border border-purple-200 bg-purple-50 p-3"
+                  className="rounded-lg border border-purple-200 bg-purple-50 p-3 max-w-full overflow-hidden"
                 >
                   <div className="flex items-center gap-2 mb-2">
                     <div className="text-xs font-semibold text-purple-900">
@@ -204,19 +205,15 @@ export function CCHistoryMessages({ project, sessionId }: Props) {
                   {!["Read", "Edit", "Glob", "Write"].includes(
                     block.name as string,
                   ) && (
-                    <pre className="text-sm overflow-auto bg-white rounded border p-2">
+                    <pre className="text-sm overflow-auto bg-white rounded border p-2 break-all whitespace-pre-wrap max-w-full">
                       <code>{JSON.stringify(block.input, null, 2)}</code>
                     </pre>
                   )}
                   {block.name === "Edit" && (
-                    <>
-                      <pre className="text-sm overflow-auto bg-white rounded border p-2">
-                        <code>{block.input?.old_string}</code>
-                      </pre>
-                      <pre className="text-sm overflow-auto bg-white rounded border p-2">
-                        <code>{block.input?.new_string}</code>
-                      </pre>
-                    </>
+                    <DiffMessage
+                      oldString={block.input?.old_string || ""}
+                      newString={block.input?.new_string || ""}
+                    />
                   )}
                   {block.name === "Write" && (
                     <MarkdownRenderer
@@ -230,9 +227,9 @@ export function CCHistoryMessages({ project, sessionId }: Props) {
               return (
                 <div
                   key={blockKey}
-                  className="rounded-lg border border-gray-200 bg-gray-50 p-3"
+                  className="rounded-lg border border-gray-200 bg-gray-50 p-3 max-w-full overflow-hidden"
                 >
-                  <pre className="text-sm overflow-auto">
+                  <pre className="text-sm overflow-auto break-all whitespace-pre-wrap max-w-full">
                     <code>{JSON.stringify(block, null, 2)}</code>
                   </pre>
                 </div>
@@ -245,8 +242,8 @@ export function CCHistoryMessages({ project, sessionId }: Props) {
 
       default:
         return (
-          <div className="rounded-lg border border-gray-200 bg-gray-50 p-3">
-            <pre className="text-sm overflow-auto">
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 max-w-full overflow-hidden">
+            <pre className="text-sm overflow-auto break-all whitespace-pre-wrap max-w-full">
               <code>{JSON.stringify(obj, null, 2)}</code>
             </pre>
           </div>

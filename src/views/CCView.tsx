@@ -1,12 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { listen } from "@tauri-apps/api/event";
 import { useCCStore, CCMessage as CCMessageType } from "@/stores/ccStore";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Card } from "@/components/ui/card";
-import { Pencil, CircleStop, Send, Settings } from "lucide-react";
+import { Pencil, CircleStop, Send, Settings, ArrowUp, ArrowDown } from "lucide-react";
 import { CCMessage } from "@/components/cc/CCMessage";
 import { CCFooter } from "@/components/cc/CCFooter";
 import { ExamplePrompts } from "@/components/cc/ExamplePrompts";
@@ -29,6 +28,7 @@ export default function CCView() {
 
   const { handleNewSession } = useCCSessionManager();
   const [input, setInput] = useState("");
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Listen to message events
   useEffect(() => {
@@ -113,6 +113,24 @@ export default function CCView() {
     setShowExamples(false);
   };
 
+  const handleScrollUp = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    }
+  };
+
+  const handleScrollDown = () => {
+    if (scrollContainerRef.current) {
+      scrollContainerRef.current.scrollTo({
+        top: scrollContainerRef.current.scrollHeight,
+        behavior: "smooth",
+      });
+    }
+  };
+
   return (
     <div className="flex flex-col h-full min-h-0">
       {/* Fixed header */}
@@ -149,8 +167,8 @@ export default function CCView() {
       </div>
 
       {/* Scrollable content area */}
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <ScrollArea className="h-full">
+      <div className="flex-1 min-h-0 overflow-hidden relative">
+        <div ref={scrollContainerRef} className="h-full overflow-y-auto">
           <div className="flex flex-col">
             {/* Examples */}
             {showExamples && (
@@ -180,7 +198,17 @@ export default function CCView() {
               )}
             </div>
           </div>
-        </ScrollArea>
+        </div>
+
+        {/* Fixed scroll controls - bottom right */}
+        <div className="fixed bottom-20 right-4 flex shadow-lg">
+          <Button onClick={handleScrollUp} variant="outline" size="icon" className="h-8 w-8 rounded-r-none border-r-0">
+            <ArrowUp className="h-4 w-4" />
+          </Button>
+          <Button onClick={handleScrollDown} variant="outline" size="icon" className="h-8 w-8 rounded-l-none">
+            <ArrowDown className="h-4 w-4" />
+          </Button>
+        </div>
       </div>
 
       {/* Fixed input area */}
