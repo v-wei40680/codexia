@@ -1,0 +1,30 @@
+// MCP Server configuration types for Claude Code
+// Based on claude-agent-sdk-rs types
+
+export type CCMcpStdioConfig = {
+  type?: "stdio";
+  command: string;
+  args?: string[];
+  env?: Record<string, string>;
+};
+
+export type CCMcpHttpConfig = {
+  type: "http";
+  url: string;
+  headers?: Record<string, string>;
+};
+
+export type CCMcpSseConfig = {
+  type: "sse";
+  url: string;
+  headers?: Record<string, string>;
+};
+
+export type CCMcpServerConfig =
+  | CCMcpStdioConfig
+  | CCMcpHttpConfig
+  | CCMcpSseConfig;
+
+export interface CCMcpServers {
+  [serverName: string]: CCMcpServerConfig;
+}

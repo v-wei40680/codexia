@@ -3,17 +3,19 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { X, Package } from "lucide-react";
+import { X, Package, Server } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { CCMCPManager } from "./CCMCPManager";
 
 export function CCFooter() {
   const { options, updateOptions } = useCCStore();
   const [installedSkills, setInstalledSkills] = useState<string[]>([]);
   const [skillsOpen, setSkillsOpen] = useState(false);
+  const [mcpOpen, setMcpOpen] = useState(false);
 
   useEffect(() => {
     const loadInstalledSkills = async () => {
@@ -37,7 +39,7 @@ export function CCFooter() {
 
   return (
     <Card className="shrink-0 border-t p-3">
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">Model</Label>
           <div className="relative">
@@ -202,6 +204,51 @@ export function CCFooter() {
                   ))
                 )}
               </div>
+            }
+          />
+        </div>
+
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">MCP Servers</Label>
+          <Popover
+            open={mcpOpen}
+            onOpenChange={setMcpOpen}
+            align="end"
+            side="top"
+            className="w-96 p-3 max-h-96 overflow-y-auto"
+            trigger={
+              <Button
+                variant="outline"
+                className="h-8 w-full text-xs justify-between font-normal"
+              >
+                <div className="flex items-center gap-1.5">
+                  <Server className="h-3 w-3" />
+                  <span>
+                    {options.mcpServers && Object.keys(options.mcpServers).length > 0
+                      ? `${Object.keys(options.mcpServers).length} configured`
+                      : "None"}
+                  </span>
+                </div>
+                {options.mcpServers && Object.keys(options.mcpServers).length > 0 && (
+                  <X
+                    className="h-3 w-3 ml-1"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      updateOptions({ mcpServers: undefined });
+                    }}
+                  />
+                )}
+              </Button>
+            }
+            content={
+              <CCMCPManager
+                servers={options.mcpServers || {}}
+                onChange={(servers) => {
+                  updateOptions({
+                    mcpServers: Object.keys(servers).length > 0 ? servers : undefined,
+                  });
+                }}
+              />
             }
           />
         </div>

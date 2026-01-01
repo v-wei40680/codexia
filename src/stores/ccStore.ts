@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import type { CCMessage } from "@/types/cc-messages";
+import type { CCMcpServers } from "@/types/cc-mcp";
 
 export type PermissionMode = "default" | "acceptEdits" | "plan" | "bypassPermissions";
 export type ModelType = "sonnet" | "haiku" | "opus";
@@ -24,6 +25,7 @@ export interface CCOptions {
   maxBudgetUsd?: number;
   plugins?: CCPluginConfig[];
   enabledSkills?: string[];
+  mcpServers?: CCMcpServers;
 }
 
 interface CCStoreState {

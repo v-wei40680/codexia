@@ -1,12 +1,18 @@
 use super::state::CCState;
 use super::db::{SessionDB, SessionData};
-use claude_agent_sdk_rs::{ClaudeAgentOptions, Message, PermissionMode, SdkPluginConfig};
+use claude_agent_sdk_rs::{
+    ClaudeAgentOptions, Message, PermissionMode, SdkPluginConfig,
+};
+use claude_agent_sdk_rs::types::mcp::{
+    McpServers, McpServerConfig, McpStdioServerConfig, McpHttpServerConfig, McpSseServerConfig,
+};
 use futures::StreamExt;
 use serde::{Deserialize, Serialize};
 use tauri::{AppHandle, Emitter, State};
 use std::path::PathBuf;
 use std::fs;
 use std::io::{BufRead, BufReader};
+use std::collections::HashMap;
 use uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -17,6 +23,45 @@ pub struct CCConnectParams {
     pub model: Option<String>,
     pub permission_mode: Option<String>,
     pub resume_id: Option<String>,
+}
+
+/// MCP server configuration for serialization
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "lowercase")]
+pub enum McpServerConfigSerde {
+    Stdio {
+        command: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        args: Option<Vec<String>>,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        env: Option<HashMap<String, String>>,
+    },
+    Http {
+        url: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        headers: Option<HashMap<String, String>>,
+    },
+    Sse {
+        url: String,
+        #[serde(skip_serializing_if = "Option::is_none")]
+        headers: Option<HashMap<String, String>>,
+    },
+}
+
+impl From<McpServerConfigSerde> for McpServerConfig {
+    fn from(config: McpServerConfigSerde) -> Self {
+        match config {
+            McpServerConfigSerde::Stdio { command, args, env } => {
+                McpServerConfig::Stdio(McpStdioServerConfig { command, args, env })
+            }
+            McpServerConfigSerde::Http { url, headers } => {
+                McpServerConfig::Http(McpHttpServerConfig { url, headers })
+            }
+            McpServerConfigSerde::Sse { url, headers } => {
+                McpServerConfig::Sse(McpSseServerConfig { url, headers })
+            }
+        }
+    }
 }
 
 /// Serializable options for ClaudeAgent
@@ -34,6 +79,7 @@ pub struct AgentOptions {
     pub allowed_tools: Option<Vec<String>>,
     pub disallowed_tools: Option<Vec<String>>,
     pub enabled_skills: Option<Vec<String>>,
+    pub mcp_servers: Option<HashMap<String, McpServerConfigSerde>>,
 }
 
 impl AgentOptions {
@@ -58,6 +104,17 @@ impl AgentOptions {
             vec![]
         };
 
+        // Convert MCP servers
+        let mcp_servers = if let Some(servers) = &self.mcp_servers {
+            let servers_map: HashMap<String, McpServerConfig> = servers
+                .iter()
+                .map(|(name, config)| (name.clone(), config.clone().into()))
+                .collect();
+            McpServers::Dict(servers_map)
+        } else {
+            McpServers::Empty
+        };
+
         ClaudeAgentOptions {
             cwd: Some(PathBuf::from(&self.cwd)),
             model: self.model.clone(),
@@ -70,6 +127,7 @@ impl AgentOptions {
             allowed_tools: self.allowed_tools.clone().unwrap_or_default(),
             disallowed_tools: self.disallowed_tools.clone().unwrap_or_default(),
             plugins,
+            mcp_servers,
             resume: resume_id,
             stderr_callback: Some(Arc::new(|msg| {
                 log::error!("[CC STDERR] {}", msg);
