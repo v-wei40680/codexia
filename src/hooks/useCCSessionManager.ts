@@ -58,7 +58,6 @@ export function useCCSessionManager() {
       if (options.maxThinkingTokens !== undefined) ClaudeAgentOptions.maxThinkingTokens = options.maxThinkingTokens;
       if (options.allowedTools !== undefined) ClaudeAgentOptions.allowedTools = options.allowedTools;
       if (options.disallowedTools !== undefined) ClaudeAgentOptions.disallowedTools = options.disallowedTools;
-      if (options.enabledSkills !== undefined) ClaudeAgentOptions.enabledSkills = options.enabledSkills;
 
       console.debug("ClaudeAgentOptions", ClaudeAgentOptions)
       const newSessionId = await invoke<string>("cc_new_session", {
@@ -121,7 +120,6 @@ export function useCCSessionManager() {
       if (options.maxThinkingTokens !== undefined) ClaudeAgentOptions.maxThinkingTokens = options.maxThinkingTokens;
       if (options.allowedTools !== undefined) ClaudeAgentOptions.allowedTools = options.allowedTools;
       if (options.disallowedTools !== undefined) ClaudeAgentOptions.disallowedTools = options.disallowedTools;
-      if (options.enabledSkills !== undefined) ClaudeAgentOptions.enabledSkills = options.enabledSkills;
 
       await invoke("cc_resume_session", {
         sessionId,

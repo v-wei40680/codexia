@@ -24,7 +24,8 @@ export interface CCOptions {
   fallbackModel?: string;
   maxBudgetUsd?: number;
   plugins?: CCPluginConfig[];
-  enabledSkills?: string[];
+  // Note: enabledSkills removed - skills are auto-discovered by Claude Code CLI
+  // from ~/.claude/skills/ and cannot be filtered per-session
   mcpServers?: CCMcpServers;
 }
 

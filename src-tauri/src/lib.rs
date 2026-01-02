@@ -165,6 +165,8 @@ pub fn run() {
             cc_commands::cc_get_projects,
             cc_commands::cc_get_sessions,
             cc_commands::cc_get_installed_skills,
+            cc_commands::cc_get_settings,
+            cc_commands::cc_update_settings,
         ])
         .setup(|app| {
             // Initialize Skills database

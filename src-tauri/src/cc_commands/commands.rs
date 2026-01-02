@@ -1,7 +1,7 @@
 use super::state::CCState;
 use super::db::{SessionDB, SessionData};
 use claude_agent_sdk_rs::{
-    ClaudeAgentOptions, Message, PermissionMode, SdkPluginConfig,
+    ClaudeAgentOptions, Message, PermissionMode,
 };
 use claude_agent_sdk_rs::types::mcp::{
     McpServers, McpServerConfig, McpStdioServerConfig, McpHttpServerConfig, McpSseServerConfig,
@@ -78,7 +78,8 @@ pub struct AgentOptions {
     pub settings: Option<String>,
     pub allowed_tools: Option<Vec<String>>,
     pub disallowed_tools: Option<Vec<String>>,
-    pub enabled_skills: Option<Vec<String>>,
+    // Note: enabled_skills removed - skills are auto-discovered by Claude Code CLI
+    // from ~/.claude/skills/ and cannot be filtered per-session
     pub mcp_servers: Option<HashMap<String, McpServerConfigSerde>>,
 }
 
@@ -90,19 +91,11 @@ impl AgentOptions {
             .as_ref()
             .and_then(|m| parse_permission_mode(m));
 
-        // Convert enabled_skills to plugins
-        let plugins = if let Some(skills) = &self.enabled_skills {
-            let home = dirs::home_dir().unwrap_or_default();
-            let skills_dir = home.join(".claude").join("skills");
-
-            skills.iter()
-                .map(|skill_name| {
-                    SdkPluginConfig::local(skills_dir.join(skill_name))
-                })
-                .collect()
-        } else {
-            vec![]
-        };
+        // Note: Skills are automatically discovered by Claude Code CLI from ~/.claude/skills/
+        // They don't need to be configured as plugins. The enabled_skills option is
+        // currently not used since Claude Code doesn't support per-session skill filtering.
+        // Skills will be available based on their location (personal/project/plugin).
+        let plugins = vec![];
 
         // Convert MCP servers
         let mcp_servers = if let Some(servers) = &self.mcp_servers {
@@ -212,12 +205,15 @@ pub async fn cc_send_message(
 
     // Start streaming responses in a background task
     tauri::async_runtime::spawn(async move {
-        let client = client.lock().await;
-        let mut stream = client.receive_response();
+        loop {
+            let result = {
+                let client = client.lock().await;
+                let mut stream = client.receive_response();
+                stream.next().await
+            };
 
-        while let Some(result) = stream.next().await {
             match result {
-                Ok(msg) => {
+                Some(Ok(msg)) => {
                     // Emit each message to the frontend as it arrives
                     let event_name = format!("cc-message:{}", session_id);
                     if let Err(e) = app.emit(&event_name, &msg) {
@@ -229,10 +225,11 @@ pub async fn cc_send_message(
                         break;
                     }
                 }
-                Err(e) => {
+                Some(Err(e)) => {
                     log::error!("Error receiving message: {}", e);
                     break;
                 }
+                None => break,
             }
         }
     });
@@ -385,6 +382,54 @@ pub fn cc_get_installed_skills() -> Result<Vec<String>, String> {
 
     skills.sort();
     Ok(skills)
+}
+
+#[tauri::command]
+pub fn cc_get_settings() -> Result<serde_json::Value, String> {
+    let home = dirs::home_dir().ok_or("Failed to get home directory")?;
+    let settings_path = home.join(".claude").join("settings.json");
+
+    if !settings_path.exists() {
+        // Return default settings if file doesn't exist
+        return Ok(serde_json::json!({
+            "env": {},
+            "permissions": {
+                "allow": [],
+                "deny": []
+            },
+            "enabledPlugins": {},
+            "enabledSkills": {}
+        }));
+    }
+
+    let content = fs::read_to_string(&settings_path)
+        .map_err(|e| format!("Failed to read settings.json: {}", e))?;
+
+    let settings: serde_json::Value = serde_json::from_str(&content)
+        .map_err(|e| format!("Failed to parse settings.json: {}", e))?;
+
+    Ok(settings)
+}
+
+#[tauri::command]
+pub fn cc_update_settings(settings: serde_json::Value) -> Result<(), String> {
+    let home = dirs::home_dir().ok_or("Failed to get home directory")?;
+    let claude_dir = home.join(".claude");
+    let settings_path = claude_dir.join("settings.json");
+
+    // Create .claude directory if it doesn't exist
+    if !claude_dir.exists() {
+        fs::create_dir_all(&claude_dir)
+            .map_err(|e| format!("Failed to create .claude directory: {}", e))?;
+    }
+
+    let content = serde_json::to_string_pretty(&settings)
+        .map_err(|e| format!("Failed to serialize settings: {}", e))?;
+
+    fs::write(&settings_path, content)
+        .map_err(|e| format!("Failed to write settings.json: {}", e))?;
+
+    Ok(())
 }
 
 #[tauri::command]

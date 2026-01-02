@@ -33,7 +33,21 @@ export default function CCView() {
   const { handleNewSession } = useCCSessionManager();
   const [input, setInput] = useState("");
   const [showCommands, setShowCommands] = useState(false);
+  const [installedSkills, setInstalledSkills] = useState<string[]>([]);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  // Load installed skills
+  useEffect(() => {
+    const loadSkills = async () => {
+      try {
+        const skills = await invoke<string[]>("cc_get_installed_skills");
+        setInstalledSkills(skills);
+      } catch (error) {
+        console.error("Failed to load installed skills:", error);
+      }
+    };
+    loadSkills();
+  }, []);
 
   // Listen to message events
   useEffect(() => {
@@ -61,16 +75,16 @@ export default function CCView() {
 
     // Convert slash commands to natural language
     // e.g., "/pdf extract tables" -> "Please use the pdf skill to extract tables"
+    // Note: Skills are managed globally in ~/.claude/settings.json
     if (textToSend.startsWith('/')) {
       const parts = textToSend.slice(1).split(/\s+/, 1);
       const skillName = parts[0];
       const restOfMessage = textToSend.slice(skillName.length + 2).trim();
 
-      if (options.enabledSkills?.includes(skillName)) {
-        textToSend = restOfMessage
-          ? `Please use the ${skillName} skill to ${restOfMessage}`
-          : `Please use the ${skillName} skill to help me.`;
-      }
+      // Transform slash command to natural language request
+      textToSend = restOfMessage
+        ? `Please use the ${skillName} skill to ${restOfMessage}`
+        : `Please use the ${skillName} skill to help me.`;
     }
 
     // Create new session if no active session
@@ -277,12 +291,12 @@ export default function CCView() {
           }
           content={
             <div className="space-y-1">
-              {!options.enabledSkills || options.enabledSkills.length === 0 ? (
+              {installedSkills.length === 0 ? (
                 <div className="text-xs text-muted-foreground text-center py-2">
-                  No skills enabled
+                  No skills installed
                 </div>
               ) : (
-                options.enabledSkills.map((skill) => (
+                installedSkills.map((skill) => (
                   <Button
                     key={skill}
                     variant="ghost"

@@ -3,39 +3,56 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { X, Package, Server } from "lucide-react";
+import { X, Server, Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { CCMCPManager } from "./CCMCPManager";
 
 export function CCFooter() {
   const { options, updateOptions } = useCCStore();
   const [installedSkills, setInstalledSkills] = useState<string[]>([]);
+  const [enabledSkills, setEnabledSkills] = useState<Record<string, boolean>>({});
   const [skillsOpen, setSkillsOpen] = useState(false);
   const [mcpOpen, setMcpOpen] = useState(false);
 
   useEffect(() => {
-    const loadInstalledSkills = async () => {
+    const loadSkills = async () => {
       try {
+        // Load installed skills
         const skills = await invoke<string[]>("cc_get_installed_skills");
         setInstalledSkills(skills);
+
+        // Load global settings to get enabled skills
+        const settings = await invoke<any>("cc_get_settings");
+        setEnabledSkills(settings.enabledSkills || {});
       } catch (error) {
-        console.error("Failed to load installed skills:", error);
+        console.error("Failed to load skills:", error);
       }
     };
-    loadInstalledSkills();
+    loadSkills();
   }, []);
 
-  const toggleSkill = (skill: string) => {
-    const current = options.enabledSkills ?? [];
-    const updated = current.includes(skill)
-      ? current.filter((s) => s !== skill)
-      : [...current, skill];
-    updateOptions({ enabledSkills: updated.length > 0 ? updated : undefined });
+  const toggleSkill = async (skill: string) => {
+    try {
+      const newEnabledSkills = {
+        ...enabledSkills,
+        [skill]: !enabledSkills[skill],
+      };
+      setEnabledSkills(newEnabledSkills);
+
+      // Update global settings
+      const settings = await invoke<any>("cc_get_settings");
+      settings.enabledSkills = newEnabledSkills;
+      await invoke("cc_update_settings", { settings });
+    } catch (error) {
+      console.error("Failed to toggle skill:", error);
+    }
   };
+
+  const enabledSkillCount = Object.values(enabledSkills).filter(Boolean).length;
 
   return (
     <Card className="shrink-0 border-t p-3">
@@ -149,7 +166,7 @@ export function CCFooter() {
         </div>
 
         <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">Skills</Label>
+          <Label className="text-xs text-muted-foreground">Skills (Global)</Label>
           <Popover
             open={skillsOpen}
             onOpenChange={setSkillsOpen}
@@ -164,17 +181,24 @@ export function CCFooter() {
                 <div className="flex items-center gap-1.5">
                   <Package className="h-3 w-3" />
                   <span>
-                    {options.enabledSkills?.length
-                      ? `${options.enabledSkills.length} enabled`
+                    {enabledSkillCount > 0
+                      ? `${enabledSkillCount} enabled`
                       : "None"}
                   </span>
                 </div>
-                {options.enabledSkills && options.enabledSkills.length > 0 && (
+                {enabledSkillCount > 0 && (
                   <X
                     className="h-3 w-3 ml-1"
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       e.stopPropagation();
-                      updateOptions({ enabledSkills: undefined });
+                      setEnabledSkills({});
+                      try {
+                        const settings = await invoke<any>("cc_get_settings");
+                        settings.enabledSkills = {};
+                        await invoke("cc_update_settings", { settings });
+                      } catch (error) {
+                        console.error("Failed to clear skills:", error);
+                      }
                     }}
                   />
                 )}
@@ -191,7 +215,7 @@ export function CCFooter() {
                     <div key={skill} className="flex items-center space-x-2">
                       <Checkbox
                         id={`skill-${skill}`}
-                        checked={options.enabledSkills?.includes(skill) ?? false}
+                        checked={enabledSkills[skill] ?? false}
                         onCheckedChange={() => toggleSkill(skill)}
                       />
                       <label
