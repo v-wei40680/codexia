@@ -56,7 +56,7 @@ export function CCFooter() {
 
   return (
     <Card className="shrink-0 border-t p-3">
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">Model</Label>
           <div className="relative">
