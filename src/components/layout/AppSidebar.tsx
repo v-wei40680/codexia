@@ -1,6 +1,5 @@
 import {
   LoaderPinwheel,
-  Plug,
   BarChart,
   Settings,
   Wrench,
@@ -10,6 +9,7 @@ import {
   Home,
   PenLine,
   CreativeCommons,
+  Network,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigationStore } from "@/stores/navigationStore";
@@ -137,7 +137,7 @@ export function AppSidebar({ onTabChange }: AppSidebarProps) {
           title="MCP"
           className="w-10 h-10"
         >
-          <Plug className="w-5 h-5" />
+          <Network className="w-5 h-5" />
         </Button>
         <Button
           variant={mainView === "skills" ? "secondary" : "ghost"}
