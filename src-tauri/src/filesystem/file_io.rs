@@ -56,6 +56,14 @@ pub async fn write_file(file_path: String, content: String) -> Result<(), String
         return Err("Only text files can be edited".to_string());
     }
 
+    // Create parent directory if it doesn't exist
+    if let Some(parent) = expanded_path.parent() {
+        if !parent.exists() {
+            fs::create_dir_all(parent)
+                .map_err(|e| format!("Failed to create parent directory: {}", e))?;
+        }
+    }
+
     match fs::write(&expanded_path, content) {
         Ok(()) => Ok(()),
         Err(e) => Err(format!("Failed to write file: {}", e)),

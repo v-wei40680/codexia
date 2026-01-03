@@ -4,15 +4,19 @@ import "@uiw/react-md-editor/markdown-editor.css";
 import "@uiw/react-markdown-preview/markdown.css";
 
 import { Button } from "@/components/ui/button";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { invoke } from "@/lib/tauri-proxy";
 import { useFolderStore } from "@/stores/FolderStore";
+import { useNavigationStore } from "@/stores/navigationStore";
 import { getErrorMessage } from "@/utils/errorUtils";
 import { useThemeContext } from "@/contexts/ThemeContext";
 
-const AGENTS_FILE_NAME = "AGENTS.md";
+const CODEX_INSTRUCTIONS_FILE_NAME = "AGENTS.md";
+const CC_INSTRUCTIONS_FILE_NAME = "CLAUDE.md";
 
 export default function AgentsView() {
   const { currentFolder } = useFolderStore();
+  const { selectedAgent, instructionType, setSelectedAgent, setInstructionType } = useNavigationStore();
   const [content, setContent] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -20,13 +24,36 @@ export default function AgentsView() {
   const [error, setError] = useState<string | null>(null);
   const { theme } = useThemeContext();
 
-  const filePath = useMemo(() => {
-    if (currentFolder) {
-      const trimmed = currentFolder.replace(/\/$/, "");
-      return `${trimmed}/${AGENTS_FILE_NAME}`;
+  // Ensure we have default values
+  const currentAgent = selectedAgent || "codex";
+  const currentInstructionType = instructionType || "project";
+
+  // Set default values on mount if not set
+  useEffect(() => {
+    if (!selectedAgent) {
+      setSelectedAgent("codex");
     }
-    return AGENTS_FILE_NAME;
-  }, [currentFolder]);
+    if (!instructionType) {
+      setInstructionType("project");
+    }
+  }, [selectedAgent, instructionType, setSelectedAgent, setInstructionType]);
+
+  const filePath = useMemo(() => {
+    const fileName = currentAgent === "cc" ? CC_INSTRUCTIONS_FILE_NAME : CODEX_INSTRUCTIONS_FILE_NAME;
+    
+    if (currentInstructionType === "system") {
+      // System instructions: ~/.codex/AGENTS.md or ~/.claude/CLAUDE.md
+      const configDir = currentAgent === "cc" ? ".claude" : ".codex";
+      return `~/${configDir}/${fileName}`;
+    } else {
+      // Project instructions: $currentFolder/AGENTS.md or $currentFolder/CLAUDE.md
+      if (currentFolder) {
+        const trimmed = currentFolder.replace(/\/$/, "");
+        return `${trimmed}/${fileName}`;
+      }
+      return fileName;
+    }
+  }, [currentFolder, currentAgent, currentInstructionType]);
 
   useEffect(() => {
     let active = true;
@@ -41,8 +68,16 @@ export default function AgentsView() {
           setContent(instructions);
         }
       } catch (err) {
-        if (active) {
-          setError(getErrorMessage(err));
+        // If file doesn't exist, start with empty content (for new files)
+        const errorMsg = getErrorMessage(err);
+        if (errorMsg.includes("does not exist")) {
+          if (active) {
+            setContent("");
+          }
+        } else {
+          if (active) {
+            setError(errorMsg);
+          }
         }
       } finally {
         if (active) {
@@ -70,24 +105,62 @@ export default function AgentsView() {
     }
   };
 
+  const handleAgentChange = (agent: string) => {
+    setSelectedAgent(agent as "codex" | "cc");
+  };
+
+  const handleInstructionTypeChange = (type: string) => {
+    setInstructionType(type as "system" | "project");
+  };
+
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center justify-between border-b px-6 py-4">
-        <div>
-          <p className="text-xs font-semibold tracking-wider text-muted-foreground">
-            {currentFolder}/AGENTS.md
-          </p>
-          <span className="text-sm">
-            Editing workspace instructions
-          </span>
+      <div className="flex flex-col border-b">
+        {/* Tabs for Agent and Instruction Type */}
+        <div className="px-6 pt-4 pb-2">
+          <div className="flex items-center gap-4">
+            <Tabs
+              value={currentAgent}
+              onValueChange={handleAgentChange}
+              className="w-auto"
+            >
+              <TabsList>
+                <TabsTrigger value="codex">Codex</TabsTrigger>
+                <TabsTrigger value="cc">Claude Code</TabsTrigger>
+              </TabsList>
+            </Tabs>
+            <Tabs
+              value={currentInstructionType}
+              onValueChange={handleInstructionTypeChange}
+              className="w-auto"
+            >
+              <TabsList>
+                <TabsTrigger value="system">System</TabsTrigger>
+                <TabsTrigger value="project">Project</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
         </div>
-        <Button
-          onClick={handleSave}
-          disabled={loading || saving}
-          variant="secondary"
-        >
-          {saving ? "Saving…" : "Save"}
-        </Button>
+
+        {/* File path and Save button */}
+        <div className="flex items-center justify-between px-6 pb-4">
+          <div>
+            <p className="text-xs font-semibold tracking-wider text-muted-foreground">
+              {filePath}
+            </p>
+            <span className="text-sm">
+              Editing {currentInstructionType === "system" ? "system" : "project"} instructions
+              {` (${currentAgent})`}
+            </span>
+          </div>
+          <Button
+            onClick={handleSave}
+            disabled={loading || saving}
+            variant="secondary"
+          >
+            {saving ? "Saving…" : "Save"}
+          </Button>
+        </div>
       </div>
 
       <div className="flex flex-1 flex-col">

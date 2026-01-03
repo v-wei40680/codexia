@@ -27,6 +27,7 @@ type SidebarTabType =
 type SubTabType = "main" | "fileTree" | "git";
 type RightViewType = "notepad" | "webPreview" | "editor" | "gitDiff" | null;
 type SelectedAgentType = "codex" | "cc" | string;
+type InstructionType = "system" | "project" | null;
 
 interface NavigationState {
   // Main panel view (Projects, Codex, CC, etc.)
@@ -52,6 +53,10 @@ interface NavigationState {
   // Selected agent (codex, cc, etc.)
   selectedAgent: SelectedAgentType;
   setSelectedAgent: (agent: SelectedAgentType) => void;
+
+  // Instruction type (system or project)
+  instructionType: InstructionType;
+  setInstructionType: (type: InstructionType) => void;
 }
 
 export const useNavigationStore = create<NavigationState>()(
@@ -66,6 +71,7 @@ export const useNavigationStore = create<NavigationState>()(
       selectedSession: null,
       sidebarVisible: true,
       selectedAgent: "codex",
+      instructionType: null,
 
       // Actions
       setMainView: (view: MainViewType) =>
@@ -97,6 +103,11 @@ export const useNavigationStore = create<NavigationState>()(
         set({
           selectedAgent: agent,
         }),
+
+      setInstructionType: (type: InstructionType) =>
+        set({
+          instructionType: type,
+        }),
     }),
     {
       name: "navigation-store",
@@ -107,6 +118,7 @@ export const useNavigationStore = create<NavigationState>()(
         rightView: state.rightView,
         sidebarVisible: state.sidebarVisible,
         selectedAgent: state.selectedAgent,
+        instructionType: state.instructionType,
       }),
     },
   ),
