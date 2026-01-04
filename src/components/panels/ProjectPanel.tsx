@@ -161,9 +161,10 @@ export function ProjectPanel() {
         setCwd(result);
         setFileTree(true);
         setChatPane(true);
-        setMainView("codex");
-        setSidebarTab("codex");
-
+        if (selectedAgent === "codex" || selectedAgent === "cc") {
+          setMainView(selectedAgent);
+          setSidebarTab(selectedAgent);
+        }
         // Reload projects
         const codexList = await invoke<FileSystemProject[]>(
           "read_codex_config",

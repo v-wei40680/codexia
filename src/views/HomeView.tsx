@@ -3,55 +3,49 @@ import { Button } from '@/components/ui/button';
 import { useNavigationStore } from '@/stores/navigationStore';
 
 export function HomeView() {
-  const { setMainView, setSidebarTab, setSelectedAgent, setInstructionType } = useNavigationStore();
+  const { setMainView, setSidebarTab, setSelectedAgent, selectedAgent } = useNavigationStore();
   return (
     <div className="m-auto flex flex-col items-center gap-4">
-      <div className="flex mt-8 gap-2">
-        <Button onClick={() => {
-          setSelectedAgent('codex')
-          setMainView('codex')
-          setSidebarTab('codex')
-        }}>Codex</Button>
-        <Button onClick={() => {
-          setSelectedAgent('cc')
-          setMainView('cc')
-          setSidebarTab('cc')
-        }}>Claude Code</Button>
+      <div className="flex mt-8 rounded-lg bg-muted p-1 gap-1">
+        <button
+          className={`px-4 py-2 text-sm rounded-md border-2 transition-all ${
+            selectedAgent === 'codex'
+              ? 'border-blue-500 text-blue-600 bg-background shadow-sm'
+              : 'border-transparent text-blue-500 hover:border-blue-500/40 hover:bg-blue-500/5'
+          }`}
+          onClick={() => {
+            setSelectedAgent('codex');
+            setMainView('codex');
+            setSidebarTab('codex');
+          }}
+        >
+          Codex
+        </button>
+        <button
+          className={`px-4 py-2 text-sm rounded-md border-2 transition-all ${
+            selectedAgent === 'cc'
+              ? 'border-orange-500 text-orange-600 bg-background shadow-sm'
+              : 'border-transparent text-orange-500 hover:border-orange-500/40 hover:bg-orange-500/5'
+          }`}
+          onClick={() => {
+            setSelectedAgent('cc');
+            setMainView('cc');
+            setSidebarTab('cc');
+          }}
+        >
+          Claude Code
+        </button>
       </div>
       <div className="flex gap-2">
-        <Button onClick={() => {
-          setSelectedAgent('codex')
-          setInstructionType('system')
+        <Button  variant="secondary" onClick={() => {
           setMainView('agents-editor')
           setSidebarTab(null)
-        }}>Codex</Button>
-        <Button onClick={() => {
-          setSelectedAgent('cc')
-          setInstructionType('system')
-          setMainView('agents-editor')
-          setSidebarTab(null)
-        }}>Claude Code</Button>
-        <span className="flex">System instructions</span>
-      </div>
-      <div className="flex gap-2">
-        <Button onClick={() => {
-          setSelectedAgent('codex')
-          setInstructionType('project')
-          setMainView('agents-editor')
-          setSidebarTab(null)
-        }}>Codex</Button>
-        <Button onClick={() => {
-          setSelectedAgent('cc')
-          setInstructionType('project')
-          setMainView('agents-editor')
-          setSidebarTab(null)
-        }}>Claude Code</Button>
-        <span className="flex">Project instructions</span>
+        }}>Agent Instructions</Button>
       </div>
       <div className="grid grid-cols-3 gap-2">
-        <Button onClick={() => setMainView('prompt')}>Prompt</Button>
-        <Button onClick={() => setMainView('skills')}>Skills</Button>
-        <Button onClick={() => setMainView('mcp')}>MCP</Button>
+        <Button variant="secondary" onClick={() => setMainView('prompt')}>Prompt</Button>
+        <Button variant="secondary" onClick={() => setMainView('skills')}>Skills</Button>
+        <Button variant="secondary" onClick={() => setMainView('mcp')}>MCP</Button>
       </div>
       <ProjectPanel />
     </div>
