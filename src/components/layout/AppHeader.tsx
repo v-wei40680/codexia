@@ -6,7 +6,6 @@ import {
 import { Button } from "@/components/ui/button";
 import { isRemoteRuntime } from "@/lib/tauri-proxy";
 import { PublishCloudDialog } from "../dialogs/PublishCloudDialog";
-import { UserDropdown } from "../common/UserDropdown";
 import { useCodexStore } from "@/stores/codex";
 import { useNavigationStore } from "@/stores/navigationStore";
 import { Badge } from "@/components/ui/badge";
@@ -55,7 +54,6 @@ export function AppHeader() {
           )}
         </Button>
         <PublishCloudDialog />
-        <UserDropdown />
         <AppMenu />
       </div>
     </div>

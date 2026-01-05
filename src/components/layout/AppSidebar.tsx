@@ -20,6 +20,7 @@ import { useFolderStore } from "@/stores/FolderStore";
 import { SourceControl } from "../SourceControl";
 import { ClaudeCodeSessionList } from "../cc/SessionList";
 import { useCCSessionManager } from "@/hooks/useCCSessionManager";
+import { UserDropdown } from "../common/UserDropdown";
 
 type IconKey =
   | "home"
@@ -158,6 +159,7 @@ export function AppSidebar({ onTabChange }: AppSidebarProps) {
         >
           <BarChart className="w-5 h-5" />
         </Button>
+        <UserDropdown />
         <Button
           variant={mainView === "settings" ? "secondary" : "ghost"}
           size="icon"

@@ -1,4 +1,4 @@
-import { ExternalLink, EllipsisVertical, FilePen } from "lucide-react";
+import { ExternalLink, EllipsisVertical } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -7,11 +7,9 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { invoke } from "@/lib/tauri-proxy";
-import { useNavigationStore } from "@/stores/navigationStore";
 import { useTranslation } from "react-i18next";
 
 export function AppMenu() {
-  const { setMainView } = useNavigationStore();
   const { t } = useTranslation();
 
   const handleNewWindow = async () => {
@@ -44,17 +42,6 @@ export function AppMenu() {
           >
             <ExternalLink className="w-4 h-4 mr-2" />
             {t("header.openNewWindow")}
-          </Button>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild>
-          <Button
-            variant="ghost"
-            onClick={() => setMainView("agents-editor")}
-            className="w-full justify-start"
-            title="Agents editor"
-          >
-            <FilePen className="w-4 h-4 mr-2" />
-            Agents.md editor
           </Button>
         </DropdownMenuItem>
       </DropdownMenuContent>
