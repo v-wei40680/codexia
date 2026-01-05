@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ExternalLink, Download, Trash2, Loader2 } from "lucide-react";
-import { invoke } from "@/lib/tauri-proxy";
+import { open } from "@tauri-apps/plugin-shell";
 import type { Skill } from "@/lib/skillsApi";
 
 interface SkillCardProps {
@@ -39,16 +39,6 @@ export function SkillCard({ skill, onInstall, onUninstall }: SkillCardProps) {
       await onUninstall(skill.directory);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleOpenGithub = async () => {
-    if (skill.readmeUrl) {
-      try {
-        await invoke("open_external_url", { url: skill.readmeUrl });
-      } catch (error) {
-        console.error("Failed to open URL:", error);
-      }
     }
   };
 
@@ -101,7 +91,7 @@ export function SkillCard({ skill, onInstall, onUninstall }: SkillCardProps) {
           <Button
             variant="ghost"
             size="sm"
-            onClick={handleOpenGithub}
+            onClick={() => skill.readmeUrl && open(skill.readmeUrl)}
             disabled={loading}
             className="flex-1"
           >

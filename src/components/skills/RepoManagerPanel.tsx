@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Trash2, ExternalLink, Plus } from "lucide-react";
-import { invoke } from "@/lib/tauri-proxy";
 import { FullScreenPanel } from "@/components/common/FullScreenPanel";
 import type { Skill, SkillRepo } from "@/lib/skillsApi";
+import { open } from "@tauri-apps/plugin-shell";
 
 interface RepoManagerPanelProps {
   repos: SkillRepo[];
@@ -72,14 +72,6 @@ export function RepoManagerPanel({
       setBranch("");
     } catch (e) {
       setError(e instanceof Error ? e.message : t("skills.repo.addFailed"));
-    }
-  };
-
-  const handleOpenRepo = async (owner: string, name: string) => {
-    try {
-      await invoke("open_external_url", { url: `https://github.com/${owner}/${name}` });
-    } catch (error) {
-      console.error("Failed to open URL:", error);
     }
   };
 
@@ -169,8 +161,8 @@ export function RepoManagerPanel({
                     variant="ghost"
                     size="icon"
                     type="button"
-                    onClick={() => handleOpenRepo(repo.owner, repo.name)}
-                    title={t("common.view", { defaultValue: "查看" })}
+                    onClick={() => open(`https://github.com/${repo.owner}/${repo.name}`)}
+                    title={t("common.view")}
                     className="hover:bg-black/5 dark:hover:bg-white/5"
                   >
                     <ExternalLink className="h-4 w-4" />
