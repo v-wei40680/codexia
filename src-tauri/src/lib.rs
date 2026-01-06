@@ -184,6 +184,13 @@ pub fn run() {
             dxt::save_dxt_setting,
             dxt::download_and_extract_manifests,
             dxt::check_manifests_exist,
+            
+            // Unified MCP commands (routes to Codex or CC based on client_name)
+            commands::mcp::unified_add_mcp_server,
+            commands::mcp::unified_remove_mcp_server,
+            commands::mcp::unified_enable_mcp_server,
+            commands::mcp::unified_disable_mcp_server,
+            commands::mcp::unified_read_mcp_config,
         ])
         .setup(|app| {
             // Initialize Skills database

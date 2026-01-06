@@ -6,18 +6,24 @@ export type CCMcpStdioConfig = {
   command: string;
   args?: string[];
   env?: Record<string, string>;
+  enabled?: boolean;
+  scope?: string;
 };
 
 export type CCMcpHttpConfig = {
   type: "http";
   url: string;
   headers?: Record<string, string>;
+  enabled?: boolean;
+  scope?: string;
 };
 
 export type CCMcpSseConfig = {
   type: "sse";
   url: string;
   headers?: Record<string, string>;
+  enabled?: boolean;
+  scope?: string;
 };
 
 export type CCMcpServerConfig =

@@ -129,64 +129,81 @@ pub async fn cc_mcp_add(
     request: ClaudeCodeMcpServer,
     working_dir: String,
 ) -> Result<ClaudeCodeResponse, String> {
-    let cc_config_path = get_cc_config_path(Some(working_dir.clone()))?;
-
-    // Create backup if config file exists
-    let backup_path = if cc_config_path.exists() {
-        Some(create_backup(&cc_config_path)?)
-    } else {
-        None
-    };
-
-    // Read existing config or create new one
-    let mut config: serde_json::Value = if cc_config_path.exists() {
-        let config_content = fs::read_to_string(&cc_config_path)
-            .map_err(|e| format!("Failed to read Claude config: {}", e))?;
-        serde_json::from_str(&config_content)
-            .map_err(|e| format!("Failed to parse Claude config: {}", e))?
-    } else {
-        serde_json::json!({"projects": {}})
-    };
-
-    // Get or create the current working directory entry
-    let current_dir = working_dir;
-
-    if !config["projects"].is_object() {
-        config["projects"] = serde_json::json!({});
-    }
-
-    if !config["projects"][&current_dir].is_object() {
-        config["projects"][&current_dir] = serde_json::json!({"mcpServers": {}});
-    }
-
-    if !config["projects"][&current_dir]["mcpServers"].is_object() {
-        config["projects"][&current_dir]["mcpServers"] = serde_json::json!({});
-    }
-
-    // Convert server to JSON format
+    let scope = request.scope.clone();
+    let server_name = request.name.clone();
     let server_json = server_to_json(&request)?;
-    config["projects"][&current_dir]["mcpServers"][&request.name] = server_json;
 
-    // Write back to file
-    if let Err(e) = fs::write(
-        &cc_config_path,
-        serde_json::to_string_pretty(&config).unwrap(),
-    ) {
-        // Restore backup if write fails
-        if let Some(backup_path) = &backup_path {
-            let _ = restore_backup(&cc_config_path, backup_path);
+    match scope.as_str() {
+        "global" => {
+            let config_path = get_cc_config_path(None)?;
+            let backup_path = if config_path.exists() { Some(create_backup(&config_path)?) } else { None };
+            
+            let mut config = if config_path.exists() {
+                let content = fs::read_to_string(&config_path).map_err(|e| format!("Failed to read config: {}", e))?;
+                serde_json::from_str(&content).map_err(|e| format!("Failed to parse config: {}", e))?
+            } else {
+                serde_json::json!({"mcpServers": {}})
+            };
+
+            if !config["mcpServers"].is_object() {
+                config["mcpServers"] = serde_json::json!({});
+            }
+            config["mcpServers"][&server_name] = server_json;
+
+            fs::write(&config_path, serde_json::to_string_pretty(&config).unwrap()).map_err(|e| {
+                if let Some(bp) = backup_path { let _ = restore_backup(&config_path, &bp); }
+                format!("Failed to write config: {}", e)
+            })?;
         }
-        return Err(format!("Failed to write Claude config: {}", e));
-    }
+        "project" => {
+            let config_path = Path::new(&working_dir).join(".mcp.json");
+            let backup_path = if config_path.exists() { Some(create_backup(&config_path)?) } else { None };
 
-    // Clean up backup file on success
-    if let Some(backup_path) = backup_path {
-        let _ = fs::remove_file(backup_path);
+            let mut config = if config_path.exists() {
+                let content = fs::read_to_string(&config_path).map_err(|e| format!("Failed to read local config: {}", e))?;
+                serde_json::from_str(&content).map_err(|e| format!("Failed to parse local config: {}", e))?
+            } else {
+                serde_json::json!({"mcpServers": {}})
+            };
+
+            if !config["mcpServers"].is_object() {
+                config["mcpServers"] = serde_json::json!({});
+            }
+            config["mcpServers"][&server_name] = server_json;
+
+            fs::write(&config_path, serde_json::to_string_pretty(&config).unwrap()).map_err(|e| {
+                if let Some(bp) = backup_path { let _ = restore_backup(&config_path, &bp); }
+                format!("Failed to write local config: {}", e)
+            })?;
+        }
+        "local" | "" => {
+            let config_path = get_cc_config_path(Some(working_dir.clone()))?;
+            let backup_path = if config_path.exists() { Some(create_backup(&config_path)?) } else { None };
+
+            let mut config = if config_path.exists() {
+                let content = fs::read_to_string(&config_path).map_err(|e| format!("Failed to read config: {}", e))?;
+                serde_json::from_str(&content).map_err(|e| format!("Failed to parse config: {}", e))?
+            } else {
+                serde_json::json!({"projects": {}})
+            };
+
+            if !config["projects"].is_object() { config["projects"] = serde_json::json!({}); }
+            if !config["projects"][&working_dir].is_object() { config["projects"][&working_dir] = serde_json::json!({"mcpServers": {}}); }
+            if !config["projects"][&working_dir]["mcpServers"].is_object() { config["projects"][&working_dir]["mcpServers"] = serde_json::json!({}); }
+            
+            config["projects"][&working_dir]["mcpServers"][&server_name] = server_json;
+
+            fs::write(&config_path, serde_json::to_string_pretty(&config).unwrap()).map_err(|e| {
+                if let Some(bp) = backup_path { let _ = restore_backup(&config_path, &bp); }
+                format!("Failed to write config: {}", e)
+            })?;
+        }
+        _ => return Err(format!("Invalid scope: {}", scope)),
     }
 
     Ok(ClaudeCodeResponse {
         success: true,
-        message: format!("Server '{}' added successfully", request.name),
+        message: format!("Server '{}' added successfully to {} scope", server_name, scope),
     })
 }
 
@@ -195,59 +212,89 @@ pub async fn cc_mcp_add(
 pub async fn cc_mcp_remove(
     name: String,
     working_dir: String,
+    scope: String,
 ) -> Result<ClaudeCodeResponse, String> {
-    let cc_config_path = get_cc_config_path(Some(working_dir.clone()))?;
+    match scope.as_str() {
+        "global" => {
+            let config_path = get_cc_config_path(None)?;
+            if !config_path.exists() { return Err("Global config not found".to_string()); }
+            let backup_path = create_backup(&config_path)?;
+            
+            let content = fs::read_to_string(&config_path).map_err(|e| format!("Failed to read config: {}", e))?;
+            let mut config: serde_json::Value = serde_json::from_str(&content).map_err(|e| format!("Failed to parse config: {}", e))?;
 
-    if !cc_config_path.exists() {
-        return Err("Claude config file not found".to_string());
-    }
+            let removed = if let Some(mcp) = config.get_mut("mcpServers") {
+                mcp.as_object_mut().map(|obj| obj.remove(&name).is_some()).unwrap_or(false)
+            } else { false };
 
-    // Create backup before making changes
-    let backup_path = create_backup(&cc_config_path)?;
-
-    let config_content = fs::read_to_string(&cc_config_path)
-        .map_err(|e| format!("Failed to read Claude config: {}", e))?;
-
-    let mut config: serde_json::Value = serde_json::from_str(&config_content)
-        .map_err(|e| format!("Failed to parse Claude config: {}", e))?;
-
-    // Check if server exists in the specified working directory
-    let mut found = false;
-    if let Some(projects) = config.get_mut("projects") {
-        if let Some(project) = projects.get_mut(&working_dir) {
-            if let Some(mcp_servers) = project.get_mut("mcpServers") {
-                if let Some(servers_obj) = mcp_servers.as_object_mut() {
-                    if servers_obj.remove(&name).is_some() {
-                        found = true;
-                    }
-                }
+            if removed {
+                fs::write(&config_path, serde_json::to_string_pretty(&config).unwrap()).map_err(|e| {
+                    let _ = restore_backup(&config_path, &backup_path);
+                    format!("Failed to write config: {}", e)
+                })?;
+                let _ = fs::remove_file(backup_path);
+            } else {
+                let _ = fs::remove_file(backup_path);
+                return Err(format!("Server '{}' not found in global scope", name));
             }
         }
-    }
+        "project" => {
+            let config_path = Path::new(&working_dir).join(".mcp.json");
+            if !config_path.exists() { return Err("Project .mcp.json not found".to_string()); }
+            let backup_path = create_backup(&config_path)?;
 
-    if found {
-        // Write back to file
-        if let Err(e) = fs::write(
-            &cc_config_path,
-            serde_json::to_string_pretty(&config).unwrap(),
-        ) {
-            // Restore backup if write fails
-            let _ = restore_backup(&cc_config_path, &backup_path);
-            return Err(format!("Failed to write Claude config: {}", e));
+            let content = fs::read_to_string(&config_path).map_err(|e| format!("Failed to read local config: {}", e))?;
+            let mut config: serde_json::Value = serde_json::from_str(&content).map_err(|e| format!("Failed to parse local config: {}", e))?;
+
+            let removed = if let Some(mcp) = config.get_mut("mcpServers") {
+                mcp.as_object_mut().map(|obj| obj.remove(&name).is_some()).unwrap_or(false)
+            } else { false };
+
+            if removed {
+                fs::write(&config_path, serde_json::to_string_pretty(&config).unwrap()).map_err(|e| {
+                    let _ = restore_backup(&config_path, &backup_path);
+                    format!("Failed to write local config: {}", e)
+                })?;
+                let _ = fs::remove_file(backup_path);
+            } else {
+                let _ = fs::remove_file(backup_path);
+                return Err(format!("Server '{}' not found in project scope", name));
+            }
         }
+        "local" | "" => {
+            let config_path = get_cc_config_path(Some(working_dir.clone()))?;
+            if !config_path.exists() { return Err("Claude config not found".to_string()); }
+            let backup_path = create_backup(&config_path)?;
 
-        // Clean up backup file on success
-        let _ = fs::remove_file(backup_path);
+            let content = fs::read_to_string(&config_path).map_err(|e| format!("Failed to read config: {}", e))?;
+            let mut config: serde_json::Value = serde_json::from_str(&content).map_err(|e| format!("Failed to parse config: {}", e))?;
 
-        Ok(ClaudeCodeResponse {
-            success: true,
-            message: format!("Server '{}' removed successfully", name),
-        })
-    } else {
-        // Clean up backup file if server not found
-        let _ = fs::remove_file(backup_path);
-        Err(format!("Server '{}' not found", name))
+            let removed = if let Some(projects) = config.get_mut("projects") {
+                if let Some(project) = projects.get_mut(&working_dir) {
+                    if let Some(mcp) = project.get_mut("mcpServers") {
+                        mcp.as_object_mut().map(|obj| obj.remove(&name).is_some()).unwrap_or(false)
+                    } else { false }
+                } else { false }
+            } else { false };
+
+            if removed {
+                fs::write(&config_path, serde_json::to_string_pretty(&config).unwrap()).map_err(|e| {
+                    let _ = restore_backup(&config_path, &backup_path);
+                    format!("Failed to write config: {}", e)
+                })?;
+                let _ = fs::remove_file(backup_path);
+            } else {
+                let _ = fs::remove_file(backup_path);
+                return Err(format!("Server '{}' not found in local scope", name));
+            }
+        }
+        _ => return Err(format!("Invalid scope: {}", scope)),
     }
+
+    Ok(ClaudeCodeResponse {
+        success: true,
+        message: format!("Server '{}' removed successfully from {} scope", name, scope),
+    })
 }
 
 /// List all projects configured in Claude Code
