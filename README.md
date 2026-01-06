@@ -52,8 +52,12 @@ One Click pdf/xlsx/csv from filetree  to preview
 - **Visual Charts**: Beautiful charts showing usage trends and patterns
 
 ### 🔌 **MCP Server Management**
-- simple mcp management
+- MCP marketplace and management for both codex and Claude code
 - One click add from mcp marketplace or sync mcp server via [mcp-linker](https://mcp-linker.store)
+
+### Agent/Claude Skills
+- Agent skills management
+- Agent skills marketplace
 
 ### 📝 **AGENTS.md**
 - **Built-in Editor**: Edit AGENTS.md file directly within the app
@@ -84,7 +88,12 @@ One Click pdf/xlsx/csv from filetree  to preview
 - token usage
 
 ## Claude code features
-- see [opcode](//github.com/winfunc/opcode)
+- show projects from ~/.claude.json
+- show sessions at ~/.claude/projects
+- show all sessions at ~/.claude/projects
+- show active sessions
+- continue or resume session from GUI
+- send prompt or click pencil icon to start new session 
 
 ## 🚀 Installation
 
@@ -116,13 +125,8 @@ brew install --cask codexia
 
 ### Claude code
 - select a project to show history sessions
-- click session to show history
-
-#### new cc session (agent)
-- click bot icon (#2) from left sidebar - You will see opcode app ui
-- click bot icon at right top (opcode app ui) - show agents
-- Create Agent -> fill the form - save agent - run agent
-- other steps see [opcode](//github.com/winfunc/opcode)
+- Option step (config)
+- send prompt to start agent or plan
 
 ### Remote control
 
