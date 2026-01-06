@@ -10,6 +10,7 @@ import {
   PenLine,
   CreativeCommons,
   Network,
+  GraduationCap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigationStore } from "@/stores/navigationStore";
@@ -30,6 +31,7 @@ type IconKey =
   | "prompt"
   | "skills"
   | "usage"
+  | "learning"
   | "settings";
 
 const ICON_CONFIG: Record<
@@ -47,6 +49,7 @@ const ICON_CONFIG: Record<
   prompt: { mainView: "prompt", subTab: "main" },
   skills: { mainView: "skills", subTab: "main" },
   usage: { mainView: "usage", subTab: "main" },
+  learning: { mainView: "learning", sidebarTab: "learning", subTab: "main" },
   settings: { mainView: "settings", subTab: "main" },
 };
 
@@ -159,6 +162,19 @@ export function AppSidebar({ onTabChange }: AppSidebarProps) {
         >
           <BarChart className="w-5 h-5" />
         </Button>
+        <Button
+          variant={
+            mainView === "learning" && sidebarTab === "learning"
+              ? "secondary"
+              : "ghost"
+          }
+          size="icon"
+          onClick={() => handleIconClick("learning")}
+          title="Learning"
+          className="w-10 h-10"
+        >
+          <GraduationCap className="w-5 h-5" />
+        </Button>
         <UserDropdown />
         <Button
           variant={mainView === "settings" ? "secondary" : "ghost"}
@@ -178,33 +194,30 @@ export function AppSidebar({ onTabChange }: AppSidebarProps) {
           <div className="flex border-b shrink-0">
             <button
               onClick={() => setSubTab("main")}
-              className={`flex-1 px-3 py-2 flex items-center justify-center transition-colors ${
-                subTab === "main"
+              className={`flex-1 px-3 py-2 flex items-center justify-center transition-colors ${subTab === "main"
                   ? "bg-background text-foreground border-b-2 border-primary"
                   : "text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
               title={sidebarTab === "codex" ? "codex Sessions" : "cc Sessions"}
             >
               <MessageSquare className="w-4 h-4" />
             </button>
             <button
               onClick={() => setSubTab("fileTree")}
-              className={`flex-1 px-3 py-2 flex items-center justify-center transition-colors ${
-                subTab === "fileTree"
+              className={`flex-1 px-3 py-2 flex items-center justify-center transition-colors ${subTab === "fileTree"
                   ? "bg-background text-foreground border-b-2 border-primary"
                   : "text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
               title="Files"
             >
               <Files className="w-4 h-4" />
             </button>
             <button
               onClick={() => setSubTab("git")}
-              className={`flex-1 px-3 py-2 flex items-center justify-center transition-colors ${
-                subTab === "git"
+              className={`flex-1 px-3 py-2 flex items-center justify-center transition-colors ${subTab === "git"
                   ? "bg-background text-foreground border-b-2 border-primary"
                   : "text-muted-foreground hover:text-foreground"
-              }`}
+                }`}
               title="Git"
             >
               <GitBranch className="w-4 h-4" />

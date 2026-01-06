@@ -20,6 +20,7 @@ import { SkillsView } from "../skills/SkillsView";
 import { HomeView } from "@/views/HomeView";
 import { NoteView } from "@/views/NoteView";
 import CCView from "@/views/CCView";
+import { LearnView } from "@/views/LearnView";
 
 export function Layout() {
   const { mainView, rightView, setRightView, setMainView } =
@@ -76,6 +77,7 @@ export function Layout() {
                     {mainView === "mcp" && <McpPanel />}
                     {mainView === "skills" && <SkillsView />}
                     {mainView === "usage" && <UsagePanel />}
+                    {mainView === "learning" && <LearnView />}
                     {mainView === "settings" && <SettingsPanel />}
                   </div>
                 </Panel>

@@ -6,7 +6,7 @@ type MainViewType =
   | "codex"
   | "cc"
   | "agents-editor"
-  | "claude-md-editor"
+  | "learning"
   | "notepad"
   | "prompt"
   | "login"
@@ -22,6 +22,7 @@ type SidebarTabType =
   | "mcp"
   | "skills"
   | "usage"
+  | "learning"
   | "settings"
   | null;
 type SubTabType = "main" | "fileTree" | "git";

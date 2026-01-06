@@ -1,0 +1,179 @@
+[
+  {
+    "id": "book-1984",
+    "title": "1984",
+    "author": "George Orwell",
+    "type": "book",
+    "tab": "book",
+    "coverImage": "/covers/1984.jpg",
+    "description": "A dystopian social science fiction novel and cautionary tale about the dangers of totalitarianism.",
+    "tags": ["politics", "dystopia", "classic"],
+    "rating": 4.7,
+    "reviews": 89234,
+    "affiliate": {
+      "amazonUS": "https://www.amazon.com/dp/0451524934/?tag=codexia-20",
+      "amazonCN": "https://www.amazon.cn/dp/B00DKH0N2M/?tag=codexia-23",
+      "amazonJP": "https://www.amazon.co.jp/dp/4151200533/?tag=codexia-22"
+    },
+    "curator": "Program Think",
+    "curatorNote": "理解极权主义的必读经典"
+  },
+  {
+    "id": "book-animal-farm",
+    "title": "Animal Farm",
+    "author": "George Orwell",
+    "type": "book",
+    "tab": "book",
+    "coverImage": "/covers/animal-farm.jpg",
+    "description": "A satirical allegorical novella reflecting events leading up to the Russian Revolution and the Stalinist era.",
+    "tags": ["politics", "satire", "classic"],
+    "rating": 4.6,
+    "reviews": 67890,
+    "affiliate": {
+      "amazonUS": "https://www.amazon.com/dp/0451526341/?tag=codexia-20",
+      "amazonCN": "https://www.amazon.cn/dp/B008IKCXO2/?tag=codexia-23"
+    },
+    "curator": "Program Think"
+  },
+  {
+    "id": "book-brave-new-world",
+    "title": "Brave New World",
+    "author": "Aldous Huxley",
+    "type": "book",
+    "tab": "book",
+    "description": "A dystopian novel set in a futuristic World State of genetically modified citizens.",
+    "tags": ["dystopia", "science-fiction", "philosophy"],
+    "rating": 4.5,
+    "reviews": 54321,
+    "affiliate": {
+      "amazonUS": "https://www.amazon.com/dp/0060850523/?tag=codexia-20"
+    }
+  },
+  {
+    "id": "book-sicp",
+    "title": "Structure and Interpretation of Computer Programs",
+    "author": "Harold Abelson, Gerald Jay Sussman",
+    "type": "book",
+    "tab": "book",
+    "coverImage": "/covers/sicp.jpg",
+    "description": "The wizard book that teaches fundamental principles of computer programming through Scheme.",
+    "tags": ["programming", "cs-fundamentals", "lisp"],
+    "rating": 4.8,
+    "reviews": 12456,
+    "affiliate": {
+      "amazonUS": "https://www.amazon.com/dp/0262510871/?tag=codexia-20",
+      "amazonJP": "https://www.amazon.co.jp/dp/4798135984/?tag=codexia-22"
+    },
+    "curator": "Program Think",
+    "curatorNote": "计算机科学入门神书"
+  },
+  {
+    "id": "book-clean-code",
+    "title": "Clean Code: A Handbook of Agile Software Craftsmanship",
+    "author": "Robert C. Martin",
+    "type": "book",
+    "tab": "book",
+    "description": "Learn to write code that is easy to read, understand, and maintain.",
+    "tags": ["programming", "software-engineering", "best-practices"],
+    "rating": 4.7,
+    "reviews": 23456,
+    "affiliate": {
+      "amazonUS": "https://www.amazon.com/dp/0132350882/?tag=codexia-20",
+      "amazonCN": "https://www.amazon.cn/dp/B0031M9GHC/?tag=codexia-23"
+    }
+  },
+  {
+    "id": "book-thinking-fast-slow",
+    "title": "Thinking, Fast and Slow",
+    "author": "Daniel Kahneman",
+    "type": "book",
+    "tab": "book",
+    "description": "Explores the two systems that drive the way we think and make decisions.",
+    "tags": ["psychology", "decision-making", "cognitive-science"],
+    "rating": 4.6,
+    "reviews": 34567,
+    "affiliate": {
+      "amazonUS": "https://www.amazon.com/dp/0374533555/?tag=codexia-20",
+      "amazonCN": "https://www.amazon.cn/dp/B00HEX5N86/?tag=codexia-23"
+    },
+    "curator": "Program Think"
+  },
+  {
+    "id": "book-deep-work",
+    "title": "Deep Work: Rules for Focused Success in a Distracted World",
+    "author": "Cal Newport",
+    "type": "book",
+    "tab": "book",
+    "description": "One of the most valuable skills in our economy is becoming increasingly rare.",
+    "tags": ["productivity", "focus", "career"],
+    "rating": 4.6,
+    "reviews": 12453,
+    "affiliate": {
+      "amazonUS": "https://www.amazon.com/dp/B013UWFM52/?tag=codexia-20",
+      "amazonCN": "https://www.amazon.cn/dp/B01N5AX7T2/?tag=codexia-23"
+    }
+  },
+  {
+    "id": "book-sapiens",
+    "title": "Sapiens: A Brief History of Humankind",
+    "author": "Yuval Noah Harari",
+    "type": "book",
+    "tab": "book",
+    "description": "Explores how Homo sapiens came to dominate the world.",
+    "tags": ["history", "anthropology", "philosophy"],
+    "rating": 4.7,
+    "reviews": 45678,
+    "affiliate": {
+      "amazonUS": "https://www.amazon.com/dp/0062316095/?tag=codexia-20",
+      "amazonCN": "https://www.amazon.cn/dp/B00UJNRM3K/?tag=codexia-23"
+    }
+  },
+  {
+    "id": "course-ml-ng",
+    "title": "Machine Learning Specialization",
+    "provider": "Andrew Ng",
+    "type": "course",
+    "tab": "video",
+    "description": "Learn the fundamentals of machine learning from Stanford professor Andrew Ng.",
+    "tags": ["machine-learning", "ai", "course"],
+    "externalUrl": "https://www.coursera.org/specializations/machine-learning-introduction",
+    "rating": 4.9,
+    "reviews": 156789
+  },
+  {
+    "id": "craft-gpt",
+    "title": "Build GPT from scratch",
+    "provider": "Andrej Karpathy",
+    "type": "craft",
+    "tab": "video",
+    "description": "Learn to build a GPT-like language model from the ground up.",
+    "tags": ["deep-learning", "nlp", "tutorial"],
+    "externalUrl": "https://karpathy.ai/zero-to-hero.html",
+    "rating": 4.9,
+    "reviews": 8765
+  },
+  {
+    "id": "course-cs50",
+    "title": "CS50: Introduction to Computer Science",
+    "provider": "Harvard University",
+    "type": "course",
+    "tab": "video",
+    "description": "Harvard University's introduction to computer science and programming.",
+    "tags": ["computer-science", "programming", "fundamentals"],
+    "externalUrl": "https://cs50.harvard.edu/x/",
+    "rating": 4.9,
+    "reviews": 234567
+  },
+  {
+    "id": "course-rust-book",
+    "title": "The Rust Programming Language",
+    "provider": "Rust Team",
+    "type": "course",
+    "tab": "video",
+    "description": "The official Rust book - comprehensive guide to Rust programming.",
+    "tags": ["rust", "systems-programming", "tutorial"],
+    "externalUrl": "https://doc.rust-lang.org/book/",
+    "rating": 4.8,
+    "reviews": 12345
+  }
+]
