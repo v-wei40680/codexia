@@ -5,11 +5,13 @@ mod codex_commands;
 mod commands;
 mod config;
 mod database;
+mod dxt;
 mod error;
 mod filesystem;
 mod services;
 mod sleep;
 mod state;
+mod window;
 
 use crate::state::{RemoteAccessState, WatchState};
 use cc_commands::CCState;
@@ -28,8 +30,7 @@ use filesystem::{
     watch::{start_watch_directory, stop_watch_directory},
 };
 use sleep::{allow_sleep, prevent_sleep, SleepState};
-use tauri::{AppHandle, Manager};
-use tauri_remote_ui::EmitterExt;
+use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -39,7 +40,7 @@ pub fn run() {
     #[cfg(desktop)]
     {
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
-            show_window(app, argv);
+            window::show_window(app, argv);
         }));
     }
 
@@ -167,6 +168,22 @@ pub fn run() {
             cc_commands::cc_get_installed_skills,
             cc_commands::cc_get_settings,
             cc_commands::cc_update_settings,
+
+            // cc mcp
+            cc_commands::cc_mcp_list,
+            cc_commands::cc_mcp_get,
+            cc_commands::cc_mcp_add,
+            cc_commands::cc_mcp_remove,
+            cc_commands::cc_list_projects,
+            cc_commands::cc_mcp_disable,
+            cc_commands::cc_mcp_enable,
+
+            dxt::load_manifests,
+            dxt::load_manifest,
+            dxt::read_dxt_setting,
+            dxt::save_dxt_setting,
+            dxt::download_and_extract_manifests,
+            dxt::check_manifests_exist,
         ])
         .setup(|app| {
             // Initialize Skills database
@@ -209,23 +226,4 @@ pub fn run() {
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
-}
-
-fn show_window(app: &AppHandle, args: Vec<String>) {
-    let windows = app.webview_windows();
-    let main_window = windows.values().next().expect("Sorry, no window found");
-
-    main_window
-        .set_focus()
-        .expect("Can't Bring Window to Focus");
-
-    dbg!(args.clone());
-    if args.len() > 1 {
-        let url = args[1].clone();
-
-        dbg!(url.clone());
-        if url.starts_with("codexia://") {
-            let _ = EmitterExt::emit(main_window, "deep-link-received", url);
-        }
-    }
 }

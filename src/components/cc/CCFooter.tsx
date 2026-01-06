@@ -9,7 +9,7 @@ import { Popover } from "@/components/ui/popover";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/core";
-import { CCMCPManager } from "./CCMCPManager";
+import { CCMCPManager } from "./mcp";
 
 export function CCFooter() {
   const { options, updateOptions } = useCCStore();

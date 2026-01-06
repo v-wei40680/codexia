@@ -25,6 +25,21 @@ export type CCMcpServerConfig =
   | CCMcpHttpConfig
   | CCMcpSseConfig;
 
+export interface ClaudeCodeMcpServer {
+  name: string;
+  type: "stdio" | "http" | "sse";
+  url?: string;
+  command?: string;
+  args?: string[];
+  env?: Record<string, string>;
+  scope: "global" | "project" | "local";
+  enabled?: boolean;
+}
+
 export interface CCMcpServers {
   [serverName: string]: CCMcpServerConfig;
 }
+
+export type MCPConfigType = {
+  mcpServers: CCMcpServers;
+};

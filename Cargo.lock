@@ -956,6 +956,7 @@ dependencies = [
  "dirs",
  "fix-path-env",
  "futures",
+ "glob",
  "indexmap 2.12.1",
  "log",
  "moka",
