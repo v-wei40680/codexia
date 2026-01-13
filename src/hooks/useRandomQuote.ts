@@ -10,7 +10,7 @@ interface QuotesData {
     [category: string]: Quote[];
 }
 
-export function useRandomQuote() {
+export function useRandomQuote(trigger?: any) {
     const { locale } = useLocaleStore();
     const [quote, setQuote] = useState<Quote | null>(null);
 
@@ -37,7 +37,7 @@ export function useRandomQuote() {
         };
 
         fetchQuote();
-    }, [locale]);
+    }, [locale, trigger]);
 
     return quote;
 }

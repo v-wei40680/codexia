@@ -5,7 +5,7 @@ import { useRandomQuote } from '@/hooks/useRandomQuote';
 
 export function HomeView() {
   const { setMainView, setSidebarTab, setSelectedAgent, selectedAgent } = useNavigationStore();
-  const quote = useRandomQuote();
+  const quote = useRandomQuote(selectedAgent);
 
   return (
     <div className="m-auto flex flex-col items-center gap-4 w-full max-w-4xl px-6">
@@ -15,12 +15,12 @@ export function HomeView() {
 
           <div className="relative z-10">
             <p className="font-serif italic leading-relaxed whitespace-pre-wrap">
-              “{quote.content}”
+              {quote.content}
             </p>
             {quote.author && (
               <p className="mt-4 text-sm text-muted-foreground font-light tracking-wide flex items-center justify-center gap-2">
                 <span className="w-6 h-px bg-border/40" />
-                {quote.author}
+                -- {quote.author}
                 <span className="w-6 h-px bg-border/40" />
               </p>
             )}
