@@ -1,6 +1,7 @@
 import { Badge } from "../ui/badge";
 import type { ContentBlock } from "@/types/cc-messages";
 import { DiffMessage } from "./DiffMessage";
+import { CCTodoList } from "./CCTodoList";
 
 interface Props {
   block: ContentBlock;
@@ -59,15 +60,15 @@ export function CCMessageBlock({ block, index }: Props) {
                 {block.input.pattern}
               </Badge>
             )}
-            {block.name === "TodoWrite" && (
-              <Badge variant="secondary" className="text-[10px] h-4">
-                Tasks
+            {block.name === "Bash" && (
+              <Badge variant="outline" className="text-xs">
+                {block.input.description}
               </Badge>
             )}
           </div>
 
           {/* Show full input for non-file tools */}
-          {!["Read", "Edit", "Glob", "Write"].includes(block.name || "") && (
+          {!["Read", "Edit", "Glob", "Write", "Bash", "TodoWrite"].includes(block.name || "") && (
             <pre className="text-xs overflow-auto bg-background/50 rounded-md border border-border p-3 max-h-60 break-all whitespace-pre-wrap font-mono">
               <code>{JSON.stringify(block.input, null, 2)}</code>
             </pre>
@@ -86,6 +87,17 @@ export function CCMessageBlock({ block, index }: Props) {
             <pre className="text-xs overflow-auto bg-background/50 rounded-md border border-border p-3 max-h-60 break-all whitespace-pre-wrap font-mono">
               <code>{block.input.content}</code>
             </pre>
+          )}
+
+          {/* Special rendering for TodoWrite */}
+          {block.name === "TodoWrite" && block.input?.todos && (
+            <CCTodoList todos={block.input.todos} />
+          )}
+
+          {block.name === "Bash" && (
+            <div className="flex">
+              {block.input?.command}
+            </div>
           )}
         </div>
       );
