@@ -52,7 +52,7 @@ export function FolderSelectorCompact() {
                     <ChevronDown className="h-3 w-3 opacity-40 group-hover:opacity-70 transition-opacity" />
                 </>
             ) : (
-                <span className="text-[11px]">Select Folder</span>
+                <span className="text-[11px]">Work in a folder</span>
             )}
         </Button>
     );
