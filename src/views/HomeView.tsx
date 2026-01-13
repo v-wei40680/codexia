@@ -2,9 +2,12 @@ import { ProjectPanel } from '@/components/panels';
 import { Button } from '@/components/ui/button';
 import { useNavigationStore } from '@/stores/navigationStore';
 import { useRandomQuote } from '@/hooks/useRandomQuote';
+import { useSettingsStore } from '@/stores/settings/SettingsStore';
+import { Settings } from 'lucide-react';
 
 export function HomeView() {
   const { setMainView, setSidebarTab, setSelectedAgent, selectedAgent } = useNavigationStore();
+  const { setActiveSection } = useSettingsStore();
   const quote = useRandomQuote(selectedAgent);
 
   return (
@@ -17,13 +20,19 @@ export function HomeView() {
             <p className="font-serif italic leading-relaxed whitespace-pre-wrap">
               {quote.content}
             </p>
-            {quote.author && (
-              <p className="mt-4 text-sm text-muted-foreground font-light tracking-wide flex items-center justify-center gap-2">
-                <span className="w-6 h-px bg-border/40" />
-                -- {quote.author}
-                <span className="w-6 h-px bg-border/40" />
-              </p>
-            )}
+            <p className="mt-4 text-sm text-muted-foreground font-light tracking-wide flex items-center justify-center gap-2">
+              <button
+                onClick={() => {
+                  setMainView('settings');
+                  setActiveSection('quote');
+                }}
+                className="p-1 hover:bg-muted rounded-full transition-colors ml-1"
+                title="Quote settings"
+              >
+                <Settings className="w-3 h-3 text-muted-foreground/60" />
+              </button>
+              {quote.author}
+            </p>
           </div>
 
           <div className="absolute -bottom-8 -right-8 w-32 h-32 bg-blue-500/5 rounded-full blur-2xl" />

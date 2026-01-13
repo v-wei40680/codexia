@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocaleStore } from '@/stores/settings/LocaleStore';
+import { useSettingsStore } from '@/stores/settings/SettingsStore';
 
 interface Quote {
     content: string;
@@ -12,6 +13,7 @@ interface QuotesData {
 
 export function useRandomQuote(trigger?: any) {
     const { locale } = useLocaleStore();
+    const { enabledQuoteCategories } = useSettingsStore();
     const [quote, setQuote] = useState<Quote | null>(null);
 
     useEffect(() => {
@@ -24,10 +26,20 @@ export function useRandomQuote(trigger?: any) {
                 if (!response.ok) throw new Error('Network response was not ok');
                 const data: QuotesData = await response.json();
 
-                // Flatten all quotes into a single array
-                const allQuotes: Quote[] = Object.values(data).flat();
+                // Filter categories based on enabledQuoteCategories
+                const activeCategories = Object.keys(data).filter(cat =>
+                    enabledQuoteCategories.includes(cat)
+                );
 
-                if (allQuotes.length > 0) {
+                // Flatten only enabled quotes
+                const filteredQuotes: Quote[] = activeCategories.flatMap(cat => data[cat]);
+
+                if (filteredQuotes.length > 0) {
+                    const randomIndex = Math.floor(Math.random() * filteredQuotes.length);
+                    setQuote(filteredQuotes[randomIndex]);
+                } else if (Object.keys(data).length > 0) {
+                    // Fallback to all quotes if all categories are disabled
+                    const allQuotes: Quote[] = Object.values(data).flat();
                     const randomIndex = Math.floor(Math.random() * allQuotes.length);
                     setQuote(allQuotes[randomIndex]);
                 }
@@ -37,7 +49,7 @@ export function useRandomQuote(trigger?: any) {
         };
 
         fetchQuote();
-    }, [locale, trigger]);
+    }, [locale, trigger, enabledQuoteCategories]);
 
     return quote;
 }

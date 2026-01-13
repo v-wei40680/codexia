@@ -5,6 +5,7 @@ import { useSettingsStore } from "@/stores/settings/SettingsStore";
 import { PromptOptimizerSettings } from "@/components/settings/PromptOptimizerSettings";
 import { RemoteAccessSettings } from "@/components/settings/RemoteAccessSettings";
 import { GitWorktreeSettings } from "@/components/settings/GitWorktreeSettings";
+import { QuoteSettings } from "@/components/settings/QuoteSettings";
 import { Button } from "@/components/ui/button";
 import { AccentColorSelector } from "@/components/common/AccentColorSelector";
 import { LanguageSelector } from "@/components/common/LanguageSelector";
@@ -69,6 +70,7 @@ export default function SettingsPage() {
         {activeSection === "exclude" && <ExcludeFolders />}
         {activeSection === "gitWorktree" && <GitWorktreeSettings />}
         {activeSection === "appearance" && <ThemeSettings />}
+        {activeSection === "quote" && <QuoteSettings />}
       </div>
     </div>
   );

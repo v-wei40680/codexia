@@ -23,6 +23,8 @@ interface SettingsStore {
   setEnableTaskCompleteBeep: (enabled: boolean) => void;
   preventSleepDuringTasks: boolean;
   setPreventSleepDuringTasks: (enabled: boolean) => void;
+  enabledQuoteCategories: string[];
+  setEnabledQuoteCategories: (categories: string[]) => void;
 }
 
 const DEFAULT_EXCLUDE_FOLDERS = [
@@ -53,6 +55,7 @@ export const useSettingsStore = create<SettingsStore>()(
       autoCommitGitWorktree: true,
       enableTaskCompleteBeep: true,
       preventSleepDuringTasks: true,
+      enabledQuoteCategories: ["economics", "gfw", "history", "interest", "life", "management", "politics", "programming"],
       addExcludeFolder: (folder: string) =>
         set((state) => ({
           excludeFolders: [...state.excludeFolders, folder],
@@ -92,6 +95,7 @@ export const useSettingsStore = create<SettingsStore>()(
       setEnableTaskCompleteBeep: (enabled: boolean) => set({ enableTaskCompleteBeep: enabled }),
       setPreventSleepDuringTasks: (enabled: boolean) =>
         set({ preventSleepDuringTasks: enabled }),
+      setEnabledQuoteCategories: (categories: string[]) => set({ enabledQuoteCategories: categories }),
     }),
     {
       name: "settings-storage",
