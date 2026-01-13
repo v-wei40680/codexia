@@ -58,6 +58,10 @@ interface NavigationState {
   // Instruction type (system or project)
   instructionType: InstructionType;
   setInstructionType: (type: InstructionType) => void;
+
+  // Cowork mode
+  isCoworkMode: boolean;
+  setIsCoworkMode: (isCoworkMode: boolean) => void;
 }
 
 export const useNavigationStore = create<NavigationState>()(
@@ -73,6 +77,7 @@ export const useNavigationStore = create<NavigationState>()(
       sidebarVisible: true,
       selectedAgent: "codex",
       instructionType: null,
+      isCoworkMode: false,
 
       // Actions
       setMainView: (view: MainViewType) =>
@@ -109,6 +114,11 @@ export const useNavigationStore = create<NavigationState>()(
         set({
           instructionType: type,
         }),
+
+      setIsCoworkMode: (isCoworkMode: boolean) =>
+        set({
+          isCoworkMode,
+        }),
     }),
     {
       name: "navigation-store",
@@ -120,6 +130,7 @@ export const useNavigationStore = create<NavigationState>()(
         sidebarVisible: state.sidebarVisible,
         selectedAgent: state.selectedAgent,
         instructionType: state.instructionType,
+        isCoworkMode: state.isCoworkMode,
       }),
     },
   ),

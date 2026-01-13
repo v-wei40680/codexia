@@ -110,7 +110,7 @@ export function useCCSessionManager() {
 
       // Only include model if specified (otherwise use CLI default)
       if (options.model) {
-        ClaudeAgentOptions.model = `claude-${options.model}-4-5`;
+        ClaudeAgentOptions.model = `${options.model}`;
       }
 
       // Only include optional fields if they are defined

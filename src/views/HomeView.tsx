@@ -3,10 +3,19 @@ import { Button } from '@/components/ui/button';
 import { useNavigationStore } from '@/stores/navigationStore';
 import { useRandomQuote } from '@/hooks/useRandomQuote';
 import { useSettingsStore } from '@/stores/settings/SettingsStore';
-import { Settings } from 'lucide-react';
+import { Settings, Users } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 
 export function HomeView() {
-  const { setMainView, setSidebarTab, setSelectedAgent, selectedAgent } = useNavigationStore();
+  const {
+    setMainView,
+    setSidebarTab,
+    setSelectedAgent,
+    selectedAgent,
+    isCoworkMode,
+    setIsCoworkMode,
+  } = useNavigationStore();
   const { setActiveSection } = useSettingsStore();
   const quote = useRandomQuote(selectedAgent);
 
@@ -17,9 +26,7 @@ export function HomeView() {
           <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-blue-500/0 via-blue-500/20 to-blue-500/0 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-700" />
 
           <div className="relative z-10">
-            <p className="font-serif italic leading-relaxed whitespace-pre-wrap">
-              {quote.content}
-            </p>
+            <p className="font-serif italic leading-relaxed whitespace-pre-wrap">{quote.content}</p>
             <p className="mt-4 text-sm text-muted-foreground font-light tracking-wide flex items-center justify-center gap-2">
               <button
                 onClick={() => {
@@ -42,35 +49,83 @@ export function HomeView() {
       <div className="flex rounded-lg bg-muted p-1 gap-1">
         {(
           [
-            { id: 'codex', label: 'Codex', active: 'border-blue-500 text-blue-600', inactive: 'text-blue-500 hover:border-blue-500/40 hover:bg-blue-500/5' },
-            { id: 'cc', label: 'Claude Code', active: 'border-orange-500 text-orange-600', inactive: 'text-orange-500 hover:border-orange-500/40 hover:bg-orange-500/5' }
+            {
+              id: 'codex',
+              label: 'Codex',
+              active: 'border-blue-500 text-blue-600',
+              inactive: 'text-blue-500 hover:border-blue-500/40 hover:bg-blue-500/5',
+            },
+            {
+              id: 'cc',
+              label: 'Claude Code',
+              active: 'border-orange-500 text-orange-600',
+              inactive: 'text-orange-500 hover:border-orange-500/40 hover:bg-orange-500/5',
+            },
           ] as const
         ).map((agent) => (
           <button
             key={agent.id}
-            className={`px-4 py-2 text-sm rounded-md border-2 transition-all ${selectedAgent === agent.id
-              ? `${agent.active} bg-background shadow-sm`
-              : `border-transparent ${agent.inactive}`
-              }`}
+            className={`px-4 py-2 text-sm rounded-md border-2 transition-all ${
+              selectedAgent === agent.id
+                ? `${agent.active} bg-background shadow-sm`
+                : `border-transparent ${agent.inactive}`
+            }`}
             onClick={() => setSelectedAgent(agent.id)}
           >
             {agent.label}
           </button>
         ))}
       </div>
-      <div className="flex gap-2">
-        <Button variant="secondary" onClick={() => {
-          setMainView('agents-editor')
-          setSidebarTab(null)
-        }}>Agent Instructions</Button>
-      </div>
-      <div className="grid grid-cols-3 gap-2">
-        <Button variant="secondary" onClick={() => setMainView('prompt')}>Prompt</Button>
-        <Button variant="secondary" onClick={() => setMainView('skills')}>Skills</Button>
-        <Button variant="secondary" onClick={() => setMainView('mcp')}>MCP</Button>
+
+      <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-muted/30 border border-border/50 backdrop-blur-sm transition-all hover:bg-muted/40 group">
+        <Users
+          className={`w-4 h-4 transition-colors ${isCoworkMode ? 'text-orange-500' : 'text-muted-foreground'}`}
+        />
+        <Label htmlFor="cowork-mode" className="text-sm font-medium cursor-pointer">
+          Cowork Mode
+        </Label>
+        <Switch
+          id="cowork-mode"
+          checked={isCoworkMode}
+          onCheckedChange={(checked) => {
+            setIsCoworkMode(checked);
+            if (checked) {
+              setMainView('cc');
+              setSidebarTab('cc');
+            }
+          }}
+          className="data-[state=checked]:bg-orange-500"
+        />
       </div>
 
-      <ProjectPanel />
+      {!isCoworkMode && (
+        <>
+          <div className="flex gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setMainView('agents-editor');
+                setSidebarTab(null);
+              }}
+            >
+              Agent Instructions
+            </Button>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            <Button variant="secondary" onClick={() => setMainView('prompt')}>
+              Prompt
+            </Button>
+            <Button variant="secondary" onClick={() => setMainView('skills')}>
+              Skills
+            </Button>
+            <Button variant="secondary" onClick={() => setMainView('mcp')}>
+              MCP
+            </Button>
+          </div>
+
+          <ProjectPanel />
+        </>
+      )}
     </div>
   );
 }

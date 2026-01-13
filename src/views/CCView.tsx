@@ -1,16 +1,15 @@
 import { useEffect, useState, useRef } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { listen } from "@tauri-apps/api/event";
+import { invoke, listen } from "@/lib/tauri-proxy";
 import { useCCStore, CCMessage as CCMessageType } from "@/stores/ccStore";
 import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
-import { Pencil, CircleStop, Send, Settings, ArrowUp, ArrowDown, Slash } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { CCMessage } from "@/components/cc/CCMessage";
-import { CCFooter } from "@/components/cc/CCFooter";
 import { ExamplePrompts } from "@/components/cc/ExamplePrompts";
 import { useCCSessionManager } from "@/hooks/useCCSessionManager";
-import { Popover } from "@/components/ui/popover";
+import { CCInput } from "@/components/cc/CCInput";
+import { CCScrollControls } from "@/components/cc/CCScrollControls";
+import { useCodexStore } from "@/stores/codex/useCodexStore";
 
 export default function CCView() {
   const {
@@ -20,34 +19,31 @@ export default function CCView() {
     isConnected,
     isLoading,
     showExamples,
-    showFooter,
     isViewingHistory,
     addMessage,
     setLoading,
     setShowExamples,
-    setShowFooter,
     setConnected,
     setViewingHistory,
+    clearMessages,
+    setActiveSessionId,
   } = useCCStore();
+  const { cwd } = useCodexStore();
 
   const { handleNewSession } = useCCSessionManager();
   const [input, setInput] = useState("");
-  const [showCommands, setShowCommands] = useState(false);
-  const [installedSkills, setInstalledSkills] = useState<string[]>([]);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Load installed skills
+  // Clear messages and reset session when directory changes
   useEffect(() => {
-    const loadSkills = async () => {
-      try {
-        const skills = await invoke<string[]>("cc_get_installed_skills");
-        setInstalledSkills(skills);
-      } catch (error) {
-        console.error("Failed to load installed skills:", error);
-      }
-    };
-    loadSkills();
-  }, []);
+    if (cwd) {
+      clearMessages();
+      setActiveSessionId(null);
+      setConnected(false);
+      setLoading(false);
+      setShowExamples(true);
+    }
+  }, [cwd, clearMessages, setActiveSessionId, setConnected, setLoading, setShowExamples]);
 
   // Listen to message events
   useEffect(() => {
@@ -74,9 +70,7 @@ export default function CCView() {
     if (!textToSend.trim() || isLoading) return;
 
     // Convert slash commands to natural language
-    // e.g., "/pdf extract tables" -> "Please use the pdf skill to extract tables"
-    // Note: Skills are managed globally in ~/.claude/settings.json
-    if (textToSend.startsWith('/')) {
+    if (textToSend.startsWith("/")) {
       const parts = textToSend.slice(1).split(/\s+/, 1);
       const skillName = parts[0];
       const restOfMessage = textToSend.slice(skillName.length + 2).trim();
@@ -136,7 +130,6 @@ export default function CCView() {
     }
   };
 
-
   const handleInterrupt = async () => {
     if (!activeSessionId) return;
 
@@ -173,11 +166,6 @@ export default function CCView() {
         behavior: "smooth",
       });
     }
-  };
-
-  const handleInsertCommand = (skillName: string) => {
-    setInput(`/${skillName} `);
-    setShowCommands(false);
   };
 
   return (
@@ -222,123 +210,34 @@ export default function CCView() {
       {/* Scrollable content area */}
       <div className="flex-1 min-h-0 overflow-hidden relative">
         <div ref={scrollContainerRef} className="h-full overflow-y-auto">
-          <div className="flex flex-col">
-            {/* Examples */}
-            {showExamples && (
+          <div className="flex flex-col gap-2 p-2">
+            {messages.length === 0 && !isLoading && !showExamples && (
               <div className="border-b">
                 <ExamplePrompts onSelectPrompt={handleExamplePrompt} />
               </div>
             )}
-
-            {/* Messages area */}
-            <div className="flex flex-col gap-2 p-2">
-              {messages.length === 0 && !isLoading && !showExamples && (
-                <Card className="p-4 m-4">
-                  <p className="text-sm text-muted-foreground text-center">
-                    Type your message below and press Enter to start a conversation with Claude Code.
-                  </p>
-                </Card>
-              )}
-              {messages.map((msg, idx) => (
-                <CCMessage key={idx} message={msg} index={idx} />
-              ))}
-              {isLoading && (
-                <Card className="p-3 bg-gray-50 dark:bg-gray-900">
-                  <div className="text-xs text-muted-foreground animate-pulse">
-                    Claude is thinking...
-                  </div>
-                </Card>
-              )}
-            </div>
+            {messages.map((msg, idx) => (
+              <CCMessage key={idx} message={msg} index={idx} />
+            ))}
+            {isLoading && (
+              <Card className="p-3 bg-gray-50 dark:bg-gray-900">
+                <div className="text-xs text-muted-foreground animate-pulse">
+                  Claude is thinking...
+                </div>
+              </Card>
+            )}
           </div>
         </div>
 
-        {/* Fixed scroll controls - bottom right */}
-        <div className="fixed bottom-20 right-4 flex shadow-lg">
-          <Button onClick={handleScrollUp} variant="outline" size="icon" className="h-8 w-8 rounded-r-none border-r-0">
-            <ArrowUp className="h-4 w-4" />
-          </Button>
-          <Button onClick={handleScrollDown} variant="outline" size="icon" className="h-8 w-8 rounded-l-none">
-            <ArrowDown className="h-4 w-4" />
-          </Button>
-        </div>
+        <CCScrollControls onScrollUp={handleScrollUp} onScrollDown={handleScrollDown} />
       </div>
 
-      {/* Fixed input area */}
-      <div className="shrink-0 flex gap-2 p-2 border-t bg-background">
-        <Button
-          onClick={() => setShowFooter(!showFooter)}
-          size="icon"
-          variant="ghost"
-          title="Toggle Options"
-        >
-          <Settings className={showFooter ? "text-primary" : ""} />
-        </Button>
-        <Popover
-          open={showCommands}
-          onOpenChange={setShowCommands}
-          align="start"
-          side="top"
-          className="w-56 p-2"
-          trigger={
-            <Button
-              size="icon"
-              variant="ghost"
-              title="Insert Slash Command"
-            >
-              <Slash className={showCommands ? "text-primary" : ""} />
-            </Button>
-          }
-          content={
-            <div className="space-y-1">
-              {installedSkills.length === 0 ? (
-                <div className="text-xs text-muted-foreground text-center py-2">
-                  No skills installed
-                </div>
-              ) : (
-                installedSkills.map((skill) => (
-                  <Button
-                    key={skill}
-                    variant="ghost"
-                    className="w-full justify-start text-xs h-7 font-mono"
-                    onClick={() => handleInsertCommand(skill)}
-                  >
-                    /{skill}
-                  </Button>
-                ))
-              )}
-            </div>
-          }
-        />
-        <Textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              if (!isLoading) {
-                handleSendMessage();
-              }
-            }
-          }}
-          onFocus={() => setShowExamples(false)}
-          placeholder="Ask Claude Code to write code, fix bugs, explain concepts..."
-          className="flex-1"
-          rows={3}
-          disabled={isLoading}
-        />
-        <Button
-          onClick={isLoading ? handleInterrupt : () => handleSendMessage()}
-          size="icon"
-          variant={isLoading ? "destructive" : "default"}
-          disabled={!input.trim() && !isLoading}
-        >
-          {isLoading ? <CircleStop /> : <Send />}
-        </Button>
-      </div>
-
-      {/* Fixed footer - Options */}
-      {showFooter && <CCFooter />}
+      <CCInput
+        input={input}
+        setInput={setInput}
+        onSendMessage={handleSendMessage}
+        onInterrupt={handleInterrupt}
+      />
     </div>
   );
 }

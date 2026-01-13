@@ -1,5 +1,6 @@
+import { useNavigationStore } from "@/stores";
 import { Card } from "../ui/card";
-import { Code, FileText, Bug, Sparkles, RefreshCw, TestTube, Rocket, Lightbulb, Search, Wrench, ChevronsDown, ChevronsUp } from "lucide-react";
+import { Code, FileText, Bug, Sparkles, RefreshCw, TestTube, Rocket, Lightbulb, Search, Wrench, ChevronsDown, ChevronsUp, Sheet, Folder } from "lucide-react";
 import { useState } from "react";
 
 interface Example {
@@ -72,12 +73,28 @@ const EXAMPLES: Example[] = [
   },
 ];
 
+const CoworkExamples: Example[] = [
+  {
+    icon: <Sheet className="h-5 w-5" />,
+    title: "Create a file",
+    prompt: "Create a spreadsheet",
+    category: "Create"
+  },
+  {
+    icon: <Folder className="h-5 w-5" />,
+    title: "Organize files",
+    prompt: "Organize files",
+    category: "Organize"
+  },
+]
+
 interface Props {
   onSelectPrompt: (prompt: string) => void;
 }
 
 export function ExamplePrompts({ onSelectPrompt }: Props) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const { isCoworkMode } = useNavigationStore()
 
   const toggleAll = () => {
     setIsExpanded(prev => !prev);
@@ -106,7 +123,7 @@ export function ExamplePrompts({ onSelectPrompt }: Props) {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {EXAMPLES.map((example, idx) => (
+        {(isCoworkMode ? CoworkExamples : EXAMPLES).map((example, idx) => (
           <Card
             key={idx}
             className="p-3 hover:bg-accent cursor-pointer transition-colors"

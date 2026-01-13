@@ -1,4 +1,4 @@
-import { useCCStore, ModelType, PermissionMode } from "@/stores/ccStore";
+import { useCCStore, PermissionMode } from "@/stores/ccStore";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -57,36 +57,6 @@ export function CCFooter() {
   return (
     <Card className="shrink-0 border-t p-3">
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        <div className="space-y-1">
-          <Label className="text-xs text-muted-foreground">Model</Label>
-          <div className="relative">
-            <Select
-              value={options.model ?? "default"}
-              onValueChange={(value) => updateOptions({ model: value === "default" ? undefined : value as ModelType })}
-            >
-              <SelectTrigger className="h-8 text-xs pr-8">
-                <SelectValue placeholder="Auto" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="default">Auto (Default)</SelectItem>
-                <SelectItem value="sonnet">Sonnet 4.5</SelectItem>
-                <SelectItem value="opus">Opus 4.5</SelectItem>
-                <SelectItem value="haiku">Haiku 4.5</SelectItem>
-              </SelectContent>
-            </Select>
-            {options.model !== undefined && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={() => updateOptions({ model: undefined })}
-                className="absolute right-0 top-0 h-8 w-8 p-0 hover:bg-transparent"
-              >
-                <X className="h-3 w-3" />
-              </Button>
-            )}
-          </div>
-        </div>
 
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">Permission</Label>
@@ -153,9 +123,8 @@ export function CCFooter() {
             />
             {options.maxThinkingTokens !== undefined && (
               <Button
-                type="button"
                 variant="ghost"
-                size="sm"
+                size="icon"
                 onClick={() => updateOptions({ maxThinkingTokens: undefined })}
                 className="absolute right-0 top-0 h-8 w-8 p-0 hover:bg-transparent"
               >
