@@ -3,8 +3,15 @@ import { useCodexStore } from '@/stores/codex';
 import { useCCStore } from '@/stores/ccStore';
 import { getSessions, SessionData } from '@/lib/sessions';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Clock, List, Activity } from 'lucide-react';
-import { Badge } from '../ui/badge';
+import { Clock, List, Activity, MoreVertical, Copy } from 'lucide-react';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/components/ui/use-toast';
 
 interface Props {
   onSelectSession?: (sessionId: string) => void;
@@ -16,6 +23,8 @@ export function ClaudeCodeSessionList({ onSelectSession }: Props) {
   const [error, setError] = useState<string | null>(null);
   const { cwd } = useCodexStore();
   const { activeSessionIds } = useCCStore();
+  const [activeTab, setActiveTab] = useState('current');
+  const { toast } = useToast();
 
   useEffect(() => {
     const loadSessions = async () => {
@@ -57,6 +66,14 @@ export function ClaudeCodeSessionList({ onSelectSession }: Props) {
   // Normalize paths for comparison
   const normalizedCwd = cwd.replace(/\\/g, '/');
 
+  const copySessionId = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(id);
+    toast({
+      description: "Session ID copied to clipboard",
+    });
+  };
+
   // Filter sessions by cwd
   const currentProjectSessions = allSessions.filter((s) => {
     const normalizedProject = s.project.replace(/\\/g, '/');
@@ -68,7 +85,7 @@ export function ClaudeCodeSessionList({ onSelectSession }: Props) {
     activeSessionIds.includes(s.sessionId)
   );
 
-  const renderSessionList = (sessions: SessionData[], emptyMessage: string) => {
+  const renderSessionList = (sessions: SessionData[], emptyMessage: string, showProject: boolean) => {
     if (sessions.length === 0) {
       return <div className="text-sm text-muted-foreground p-2">{emptyMessage}</div>;
     }
@@ -80,33 +97,52 @@ export function ClaudeCodeSessionList({ onSelectSession }: Props) {
           return (
             <div
               key={index}
-              className={`border p-3 rounded-lg cursor-pointer hover:bg-accent transition-colors hover:border-primary ${
-                isActive ? 'border-primary bg-accent/50' : ''
-              }`}
+              className={`border p-3 rounded-lg cursor-pointer hover:bg-accent transition-colors hover:border-primary ${isActive ? 'border-primary bg-accent/50' : ''
+                }`}
               onClick={() => handleSessionClick(session)}
             >
-              <div className="flex items-start justify-between gap-2">
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <div className="font-medium text-sm truncate">{session.display}</div>
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {new Date(session.timestamp).toLocaleString()}
-                  </div>
-                  <div className="flex items-center justify-between shrink-0 text-xs font-mono text-muted-foreground">
-                    <span className="truncate">{session.sessionId.split('-')[0]}</span>
-                    <span className="truncate">{session.project.split(/[/\\]/).pop()}</span>
+              <div className="flex flex-col gap-1">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="font-medium text-sm truncate">{session.display}</div>
+                </div>
 
-                    <span className="w-2 h-2 shrink-0">
-                      {isActive && (
-                        <Badge
-                          className="h-3.5 w-3.5 p-0 bg-green-500/20 border border-green-500/30"
-                          variant="secondary"
-                        />
-                      )}
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    {isActive && (
+                      <div className="w-2 h-2 rounded-full bg-green-500 shrink-0 shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
+                    )}
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(session.timestamp * 1000).toLocaleString()}
+                    </div>
+                  </div>
+
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 hover:bg-accent -mr-1"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <MoreVertical className="h-3.5 w-3.5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={(e) => copySessionId(e, session.sessionId)}>
+                        <Copy className="h-3 w-3 mr-2" />
+                        <span>Copy Session ID</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                {showProject && (
+                  <div className="mt-0.5">
+                    <span className="truncate bg-accent/50 px-1.5 py-0.5 rounded text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
+                      {session.project.split(/[/\\]/).pop()}
                     </span>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           );
@@ -116,7 +152,7 @@ export function ClaudeCodeSessionList({ onSelectSession }: Props) {
   };
 
   return (
-    <Tabs defaultValue="current" className="w-full">
+    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
       <TabsList className="w-full">
         <TabsTrigger value="current" className="flex items-center gap-2">
           <Clock className="h-4 w-4" />
@@ -135,15 +171,15 @@ export function ClaudeCodeSessionList({ onSelectSession }: Props) {
       </TabsList>
 
       <TabsContent value="current" className="mt-4">
-        {renderSessionList(currentProjectSessions, 'No sessions found for this project')}
+        {renderSessionList(currentProjectSessions, 'No sessions found for this project', false)}
       </TabsContent>
 
       <TabsContent value="all" className="mt-4">
-        {renderSessionList(allSessions, 'No sessions found')}
+        {renderSessionList(allSessions, 'No sessions found', true)}
       </TabsContent>
 
       <TabsContent value="active" className="mt-4">
-        {renderSessionList(activeSessions, 'No active sessions in this project')}
+        {renderSessionList(activeSessions, 'No active sessions in this project', false)}
       </TabsContent>
     </Tabs>
   );
