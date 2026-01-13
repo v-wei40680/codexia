@@ -22,7 +22,7 @@ export function ClaudeCodeSessionList({ onSelectSession }: Props) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { cwd } = useCodexStore();
-  const { activeSessionIds } = useCCStore();
+  const { activeSessionIds, activeSessionId } = useCCStore();
   const [activeTab, setActiveTab] = useState('current');
   const { toast } = useToast();
 
@@ -93,17 +93,20 @@ export function ClaudeCodeSessionList({ onSelectSession }: Props) {
     return (
       <div className="flex flex-col gap-1">
         {sessions.map((session, index) => {
+          const isSelected = activeSessionId === session.sessionId;
           const isActive = activeSessionIds.includes(session.sessionId);
           return (
             <div
               key={index}
-              className={`border p-3 rounded-lg cursor-pointer hover:bg-accent transition-colors hover:border-primary ${isActive ? 'border-primary bg-accent/50' : ''
+              className={`border p-3 rounded-lg cursor-pointer transition-all duration-200 group ${isSelected
+                ? 'border-primary bg-primary/[0.06] dark:bg-primary/[0.15] shadow-sm'
+                : 'border-border/50 hover:border-primary/30 hover:bg-accent/50'
                 }`}
               onClick={() => handleSessionClick(session)}
             >
               <div className="flex flex-col gap-1">
                 <div className="flex items-start justify-between gap-2">
-                  <div className="font-medium text-sm truncate">{session.display}</div>
+                  <div className={`font-medium text-sm truncate ${isSelected ? 'text-primary' : ''}`}>{session.display}</div>
                 </div>
 
                 <div className="flex items-center justify-between gap-2">
@@ -121,7 +124,7 @@ export function ClaudeCodeSessionList({ onSelectSession }: Props) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-6 w-6 hover:bg-accent -mr-1"
+                        className={`h-6 w-6 -mr-1 transition-colors ${isSelected ? 'hover:bg-primary/10' : 'hover:bg-accent'}`}
                         onClick={(e) => e.stopPropagation()}
                       >
                         <MoreVertical className="h-3.5 w-3.5" />
@@ -138,7 +141,7 @@ export function ClaudeCodeSessionList({ onSelectSession }: Props) {
 
                 {showProject && (
                   <div className="mt-0.5">
-                    <span className="truncate bg-accent/50 px-1.5 py-0.5 rounded text-[10px] font-mono text-muted-foreground uppercase tracking-wider">
+                    <span className={`truncate px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider ${isSelected ? 'bg-primary/10 text-primary/80' : 'bg-accent/50 text-muted-foreground'}`}>
                       {session.project.split(/[/\\]/).pop()}
                     </span>
                   </div>
