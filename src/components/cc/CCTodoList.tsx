@@ -27,15 +27,22 @@ export function CCTodoList({ todos }: Props) {
     // 2. OR: We just started the first task and haven't completed anything yet
     const shouldShowAll = !hasInProgress || (firstIsInProgress && !hasCompleted && othersPending);
 
-    const inProgressTodos = todos.filter(t => t.status === "in_progress");
-    const otherTodos = todos.filter(t => t.status !== "in_progress");
+    // Split todos while keeping original indices
+    const indexedTodos = todos.map((todo, index) => ({ ...todo, originalIndex: index + 1 }));
+    const inProgressTodos = indexedTodos.filter(t => t.status === "in_progress");
+    const otherTodos = indexedTodos.filter(t => t.status !== "in_progress");
 
     if (shouldShowAll) {
         return (
             <div className="flex flex-col gap-2 py-2">
                 <AnimatePresence mode="popLayout">
-                    {todos.map((todo, idx) => (
-                        <TodoItemView key={todo.content + idx} todo={todo} idx={idx} />
+                    {indexedTodos.map((todo, idx) => (
+                        <TodoItemView
+                            key={todo.content + todo.originalIndex}
+                            todo={todo}
+                            displayIndex={todo.originalIndex}
+                            delayIdx={idx}
+                        />
                     ))}
                 </AnimatePresence>
             </div>
@@ -47,7 +54,12 @@ export function CCTodoList({ todos }: Props) {
             {/* Active Items */}
             <AnimatePresence mode="popLayout">
                 {inProgressTodos.map((todo, idx) => (
-                    <TodoItemView key={todo.content + idx} todo={todo} idx={idx} />
+                    <TodoItemView
+                        key={todo.content + todo.originalIndex}
+                        todo={todo}
+                        displayIndex={todo.originalIndex}
+                        delayIdx={idx}
+                    />
                 ))}
             </AnimatePresence>
 
@@ -86,9 +98,10 @@ export function CCTodoList({ todos }: Props) {
                             >
                                 {otherTodos.map((todo, idx) => (
                                     <TodoItemView
-                                        key={todo.content + idx}
+                                        key={todo.content + todo.originalIndex}
                                         todo={todo}
-                                        idx={idx}
+                                        displayIndex={todo.originalIndex}
+                                        delayIdx={idx}
                                         isOther
                                     />
                                 ))}
@@ -101,16 +114,26 @@ export function CCTodoList({ todos }: Props) {
     );
 }
 
-function TodoItemView({ todo, idx, isOther }: { todo: TodoItem; idx: number; isOther?: boolean }) {
+function TodoItemView({
+    todo,
+    displayIndex,
+    delayIdx,
+    isOther
+}: {
+    todo: TodoItem;
+    displayIndex: number;
+    delayIdx: number;
+    isOther?: boolean
+}) {
     return (
         <motion.div
             layout
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95 }}
-            transition={{ duration: 0.2, delay: isOther ? 0 : idx * 0.05 }}
+            transition={{ duration: 0.2, delay: isOther ? 0 : delayIdx * 0.05 }}
             className={cn(
-                "group relative flex items-start gap-3 rounded-xl border p-3 transition-all duration-200",
+                "group relative flex items-center gap-3 rounded-xl border p-3 transition-all duration-200",
                 todo.status === "completed"
                     ? "bg-emerald-50/20 border-emerald-500/10 dark:bg-emerald-500/5"
                     : todo.status === "in_progress"
@@ -118,32 +141,36 @@ function TodoItemView({ todo, idx, isOther }: { todo: TodoItem; idx: number; isO
                         : "bg-muted/10 border-border/50 dark:bg-muted/5 opacity-60"
             )}
         >
-            <div className="mt-0.5 shrink-0">
+            <div className="shrink-0 relative flex items-center justify-center w-5 h-5">
                 {todo.status === "completed" ? (
                     <CheckCircle2 className="h-5 w-5 text-emerald-500/80 fill-emerald-500/10" />
-                ) : todo.status === "in_progress" ? (
-                    <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />
                 ) : (
-                    <Circle className="h-5 w-5 text-muted-foreground/30" />
+                    <>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-[9px] font-bold text-muted-foreground/60 tabular-nums">
+                                {displayIndex}
+                            </span>
+                        </div>
+                        {todo.status === "in_progress" ? (
+                            <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />
+                        ) : (
+                            <Circle className="h-5 w-5 text-muted-foreground/30" />
+                        )}
+                    </>
                 )}
             </div>
 
-            <div className="flex flex-col gap-1 min-w-0 flex-1">
+            <div className="min-w-0 flex-1">
                 <span className={cn(
-                    "text-sm font-medium leading-none transition-colors",
+                    "text-sm font-medium transition-colors",
                     todo.status === "completed"
                         ? "text-emerald-700/80 dark:text-emerald-400/80 line-through decoration-emerald-500/20"
                         : todo.status === "in_progress"
                             ? "text-blue-700 dark:text-blue-300"
                             : "text-muted-foreground/80"
                 )}>
-                    {todo.content}
+                    {todo.status === "in_progress" ? (todo.activeForm || todo.content) : todo.content}
                 </span>
-                {todo.activeForm && todo.activeForm !== todo.content && (
-                    <span className="text-[11px] text-muted-foreground/50 truncate">
-                        {todo.activeForm}
-                    </span>
-                )}
             </div>
 
             {todo.status === "in_progress" && (
