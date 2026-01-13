@@ -76,7 +76,7 @@ export function DiffMessage({ oldString, newString }: DiffMessageProps) {
       </div>
 
       {/* Content display */}
-      <div className="bg-white rounded border overflow-hidden">
+      <div className="bg-background/50 rounded-lg border border-border overflow-hidden">
         {viewMode === "diff" && (
           <div className="overflow-x-auto">
             <table className="w-full font-mono text-xs">
@@ -86,26 +86,21 @@ export function DiffMessage({ oldString, newString }: DiffMessageProps) {
                     key={index}
                     className={
                       line.type === "add"
-                        ? "bg-green-50"
+                        ? "bg-emerald-500/10"
                         : line.type === "remove"
-                          ? "bg-red-50"
+                          ? "bg-red-500/10"
                           : ""
                     }
                   >
                     <td
-                      className={`w-6 text-center select-none font-medium ${
-                        line.type === "add"
-                          ? "bg-green-100 text-green-700"
+                      className={`w-8 text-center select-none font-medium border-r border-border/50 ${line.type === "add"
+                          ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400"
                           : line.type === "remove"
-                            ? "bg-red-100 text-red-700"
-                            : "bg-gray-50 text-gray-400"
-                      }`}
+                            ? "bg-red-500/20 text-red-600 dark:text-red-400"
+                            : "bg-muted/50 text-muted-foreground/50"
+                        }`}
                     >
-                      {line.type === "add"
-                        ? "+"
-                        : line.type === "remove"
-                          ? "-"
-                          : ""}
+                      {line.type === "add" ? "+" : line.type === "remove" ? "-" : ""}
                     </td>
                     <td className="px-2 py-0.5 break-all whitespace-pre-wrap">
                       {line.content}
@@ -118,13 +113,13 @@ export function DiffMessage({ oldString, newString }: DiffMessageProps) {
         )}
 
         {viewMode === "old" && (
-          <pre className="p-2 text-xs overflow-x-auto break-all whitespace-pre-wrap">
+          <pre className="p-3 text-xs overflow-x-auto break-all whitespace-pre-wrap font-mono bg-background/30">
             <code>{oldString}</code>
           </pre>
         )}
 
         {viewMode === "new" && (
-          <pre className="p-2 text-xs overflow-x-auto break-all whitespace-pre-wrap">
+          <pre className="p-3 text-xs overflow-x-auto break-all whitespace-pre-wrap font-mono bg-background/30">
             <code>{newString}</code>
           </pre>
         )}

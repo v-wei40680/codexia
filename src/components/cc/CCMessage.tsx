@@ -14,8 +14,8 @@ export function CCMessage({ message: msg, index: idx }: CCMessageProps) {
       return (
         <div className="space-y-2">
           {msg.message.error && (
-            <Card className="p-3 bg-red-50 dark:bg-red-950 border-red-200">
-              <div className="text-xs font-semibold mb-1 text-red-900 dark:text-red-100">
+            <Card className="p-3 bg-red-500/5 border-red-500/20">
+              <div className="text-xs font-semibold mb-1 text-red-600 dark:text-red-400">
                 Error: {msg.message.error}
               </div>
             </Card>
@@ -39,7 +39,6 @@ export function CCMessage({ message: msg, index: idx }: CCMessageProps) {
 
       return (
         <Card className="p-3 bg-blue-50 dark:bg-blue-950">
-          <div className="text-xs font-semibold mb-1 text-muted-foreground">You</div>
           {userContent ? (
             <div className="whitespace-pre-wrap">{userContent}</div>
           ) : userBlocks ? (
@@ -60,7 +59,7 @@ export function CCMessage({ message: msg, index: idx }: CCMessageProps) {
         const [showTools, setShowTools] = useState(false);
 
         return (
-          <Card className="p-2 bg-slate-50 dark:bg-slate-900">
+          <Card className="p-2 bg-muted/30 border-border">
             <div className="text-xs text-muted-foreground">
               Session initialized: {msg.session_id}
               {msg.tools && (
@@ -77,13 +76,13 @@ export function CCMessage({ message: msg, index: idx }: CCMessageProps) {
               {msg.model && ` | Model: ${msg.model}`}
             </div>
             {showTools && msg.tools && (
-              <div className="mt-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+              <div className="mt-2 pt-2 border-t border-border">
                 <div className="text-xs font-semibold mb-1 text-muted-foreground">Available Tools:</div>
                 <div className="flex flex-wrap gap-1">
                   {msg.tools.map((tool, i) => (
                     <span
                       key={i}
-                      className="text-xs px-2 py-0.5 rounded bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                      className="text-[10px] px-1.5 py-0.5 rounded-sm bg-muted text-muted-foreground border border-border/50"
                     >
                       {tool}
                     </span>
@@ -99,22 +98,22 @@ export function CCMessage({ message: msg, index: idx }: CCMessageProps) {
 
     case "result":
       return (
-        <Card className="p-3 bg-green-50 dark:bg-green-950">
-          <div className="text-xs font-semibold mb-1 text-green-900 dark:text-green-100">
+        <Card className="p-3 bg-emerald-500/5 border-emerald-500/20">
+          <div className="text-xs font-semibold mb-1 text-emerald-600 dark:text-emerald-400">
             Result
           </div>
-          <div className="text-xs space-y-1 text-green-800 dark:text-green-200">
+          <div className="text-xs space-y-1 text-emerald-900/80 dark:text-emerald-100/80">
             <div>Duration: {msg.duration_ms}ms ({(msg.duration_ms / 1000).toFixed(2)}s)</div>
             <div>Turns: {msg.num_turns}</div>
             {msg.total_cost_usd && <div>Cost: ${msg.total_cost_usd.toFixed(4)}</div>}
-            {msg.is_error && <div className="text-red-600">Error occurred</div>}
+            {msg.is_error && <div className="text-red-600 dark:text-red-400 font-semibold italic">Error occurred</div>}
             {msg.result && (
-              <div className="mt-2 whitespace-pre-wrap">{msg.result}</div>
+              <div className="mt-2 whitespace-pre-wrap text-foreground">{msg.result}</div>
             )}
             {msg.structured_output && (
               <div className="mt-2">
-                <div className="font-semibold mb-1">Structured Output:</div>
-                <pre className="overflow-auto bg-white dark:bg-gray-800 rounded p-2 text-xs">
+                <div className="font-semibold mb-1 text-foreground/80">Structured Output:</div>
+                <pre className="overflow-auto bg-background/50 border border-border rounded-md p-3 text-xs font-mono">
                   <code>{JSON.stringify(msg.structured_output, null, 2)}</code>
                 </pre>
               </div>

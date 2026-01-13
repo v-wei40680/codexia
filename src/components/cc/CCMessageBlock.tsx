@@ -13,30 +13,30 @@ export function CCMessageBlock({ block, index }: Props) {
   switch (block.type) {
     case "text":
       return (
-        <div key={blockKey} className="rounded-lg border border-gray-200 bg-gray-50 p-3 max-w-full overflow-hidden">
-          <div className="text-xs font-semibold text-gray-900 mb-2">ASSISTANT</div>
-          <div className="text-sm text-gray-800 whitespace-pre-wrap break-words">{block.text}</div>
+        <div key={blockKey} className="rounded-lg border border-border bg-muted/30 p-3 max-w-full overflow-hidden">
+          <div className="text-xs font-semibold text-muted-foreground mb-2">ASSISTANT</div>
+          <div className="text-sm text-foreground whitespace-pre-wrap break-words">{block.text}</div>
         </div>
       );
 
     case "thinking":
       return (
-        <div key={blockKey} className="rounded-lg border border-amber-200 bg-amber-50 p-3 max-w-full overflow-hidden">
-          <div className="text-xs font-semibold text-amber-900 mb-2">THINKING</div>
-          <div className="text-sm text-amber-900 whitespace-pre-wrap break-words">{block.thinking}</div>
+        <div key={blockKey} className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 max-w-full overflow-hidden">
+          <div className="text-xs font-semibold text-amber-600 dark:text-amber-400 mb-2">THINKING</div>
+          <div className="text-sm text-amber-900 dark:text-amber-100 whitespace-pre-wrap break-words">{block.thinking}</div>
         </div>
       );
 
     case "tool_use":
       return (
-        <div key={blockKey} className="rounded-lg border border-purple-200 bg-purple-50 p-3 max-w-full overflow-hidden">
-          <div className="flex items-center gap-2 mb-2">
-            <div className="text-xs font-semibold text-purple-900">TOOL USE</div>
-            <Badge variant="outline" className="text-xs">
+        <div key={blockKey} className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-3 max-w-full overflow-hidden">
+          <div className="flex items-center gap-2 mb-3">
+            <div className="text-xs font-semibold text-purple-600 dark:text-purple-400">TOOL USE</div>
+            <Badge variant="secondary" className="text-[10px] h-4 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-none">
               {block.name}
             </Badge>
             {["Read", "Edit", "Write"].includes(block.name || "") && (
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-[10px] h-4 border-purple-200/50 dark:border-purple-800/50 text-purple-600 dark:text-purple-400">
                 {block.input?.file_path}
               </Badge>
             )}
@@ -60,7 +60,7 @@ export function CCMessageBlock({ block, index }: Props) {
               </Badge>
             )}
             {block.name === "TodoWrite" && (
-              <Badge variant="secondary" className="text-xs">
+              <Badge variant="secondary" className="text-[10px] h-4">
                 Tasks
               </Badge>
             )}
@@ -68,7 +68,7 @@ export function CCMessageBlock({ block, index }: Props) {
 
           {/* Show full input for non-file tools */}
           {!["Read", "Edit", "Glob", "Write"].includes(block.name || "") && (
-            <pre className="text-sm overflow-auto bg-white rounded border p-2 max-h-60 break-all whitespace-pre-wrap">
+            <pre className="text-xs overflow-auto bg-background/50 rounded-md border border-border p-3 max-h-60 break-all whitespace-pre-wrap font-mono">
               <code>{JSON.stringify(block.input, null, 2)}</code>
             </pre>
           )}
@@ -83,7 +83,7 @@ export function CCMessageBlock({ block, index }: Props) {
 
           {/* Special rendering for Write */}
           {block.name === "Write" && block.input?.content && (
-            <pre className="text-sm overflow-auto bg-white rounded border p-2 max-h-60 break-all whitespace-pre-wrap">
+            <pre className="text-xs overflow-auto bg-background/50 rounded-md border border-border p-3 max-h-60 break-all whitespace-pre-wrap font-mono">
               <code>{block.input.content}</code>
             </pre>
           )}
@@ -97,25 +97,25 @@ export function CCMessageBlock({ block, index }: Props) {
       return (
         <div
           key={blockKey}
-          className={`rounded-lg border p-3 max-w-full overflow-hidden ${
-            block.is_error
-              ? "border-red-200 bg-red-50"
-              : "border-green-200 bg-green-50"
-          }`}
+          className={`rounded-lg border p-3 max-w-full overflow-hidden ${block.is_error
+            ? "border-red-500/20 bg-red-500/5"
+            : "border-emerald-500/20 bg-emerald-500/5"
+            }`}
         >
           <div
-            className={`text-xs font-semibold mb-2 ${
-              block.is_error ? "text-red-900" : "text-green-900"
-            }`}
+            className={`text-xs font-semibold mb-2 ${block.is_error
+              ? "text-red-600 dark:text-red-400"
+              : "text-emerald-600 dark:text-emerald-400"
+              }`}
           >
             TOOL RESULT {block.is_error && "(ERROR)"}
           </div>
           {isString ? (
-            <div className={`text-sm whitespace-pre-wrap break-words overflow-auto ${isLongText ? "max-h-60" : ""}`}>
+            <div className={`text-sm whitespace-pre-wrap break-words overflow-auto text-foreground/90 ${isLongText ? "max-h-60" : ""}`}>
               {block.content as string}
             </div>
           ) : (
-            <pre className="text-sm overflow-auto max-h-60 break-all whitespace-pre-wrap">
+            <pre className="text-xs overflow-auto max-h-60 break-all whitespace-pre-wrap font-mono bg-background/30 p-2 rounded border border-border/50">
               <code>{JSON.stringify(block.content, null, 2)}</code>
             </pre>
           )}
@@ -125,8 +125,8 @@ export function CCMessageBlock({ block, index }: Props) {
 
     default:
       return (
-        <div key={blockKey} className="rounded-lg border border-gray-200 bg-gray-50 p-3 max-w-full overflow-hidden">
-          <pre className="text-sm overflow-auto break-all whitespace-pre-wrap">
+        <div key={blockKey} className="rounded-lg border border-border bg-muted/30 p-3 max-w-full overflow-hidden">
+          <pre className="text-xs overflow-auto break-all whitespace-pre-wrap font-mono">
             <code>{JSON.stringify(block, null, 2)}</code>
           </pre>
         </div>
