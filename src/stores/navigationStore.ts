@@ -5,6 +5,7 @@ type MainViewType =
   | "home"
   | "codex"
   | "cc"
+  | "codexV2"
   | "agents-editor"
   | "learning"
   | "notepad"
@@ -18,6 +19,7 @@ type MainViewType =
 type SidebarTabType =
   | "codex"
   | "cc"
+  | "codexV2"
   | "prompt"
   | "mcp"
   | "skills"

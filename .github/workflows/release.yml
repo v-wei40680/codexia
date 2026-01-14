@@ -61,7 +61,9 @@ jobs:
         run: bun install
 
       - name: Export TS bindings
-        run: bun run export:bindings
+        run: |
+          bun add -g @openai/codex
+          codex app-server generate-ts -o src/bindings
 
       - uses: tauri-apps/tauri-action@v0
         env:

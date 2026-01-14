@@ -1,6 +1,7 @@
 mod app_state;
 mod app_types;
 mod cc_commands;
+mod codex;
 mod codex_commands;
 mod commands;
 mod config;
@@ -36,6 +37,8 @@ use tauri::Manager;
 pub fn run() {
     let mut builder = tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_log::Builder::new().build());
     #[cfg(desktop)]
     {
@@ -54,6 +57,7 @@ pub fn run() {
         .plugin(tauri_plugin_screenshots::init())
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_updater::Builder::new().build())
         .plugin(tauri_remote_ui::init())
         .manage(CodexState::new())
         .manage(CCState::new())
@@ -184,7 +188,38 @@ pub fn run() {
             dxt::save_dxt_setting,
             dxt::download_and_extract_manifests,
             dxt::check_manifests_exist,
-            
+
+            // v2 commands
+            crate::codex::v2::settings::get_app_settings,
+            crate::codex::v2::settings::update_app_settings,
+            crate::codex::v2::workspaces::list_workspaces,
+            crate::codex::v2::workspaces::add_workspace,
+            crate::codex::v2::workspaces::add_worktree,
+            crate::codex::v2::workspaces::remove_workspace,
+            crate::codex::v2::workspaces::remove_worktree,
+            crate::codex::v2::workspaces::update_workspace_settings,
+            crate::codex::v2::codex::start_thread,
+            crate::codex::v2::codex::send_user_message_v2,
+            crate::codex::v2::codex::turn_interrupt,
+            crate::codex::v2::codex::start_review,
+            crate::codex::v2::codex::respond_to_server_request,
+            crate::codex::v2::codex::resume_thread,
+            crate::codex::v2::codex::list_threads,
+            crate::codex::v2::codex::archive_thread,
+            crate::codex::v2::workspaces::connect_workspace,
+            crate::codex::v2::git::get_git_status_v2,
+            crate::codex::v2::git::get_git_diffs,
+            crate::codex::v2::git::get_git_log,
+            crate::codex::v2::git::get_git_remote,
+            crate::codex::v2::git::get_github_issues,
+            crate::codex::v2::workspaces::list_workspace_files,
+            crate::codex::v2::git::list_git_branches,
+            crate::codex::v2::git::checkout_git_branch,
+            crate::codex::v2::git::create_git_branch,
+            crate::codex::v2::codex::model_list,
+            crate::codex::v2::codex::account_rate_limits,
+            crate::codex::v2::codex::skills_list,
+
             // Unified MCP commands (routes to Codex or CC based on client_name)
             commands::mcp::unified_add_mcp_server,
             commands::mcp::unified_remove_mcp_server,
@@ -204,6 +239,7 @@ pub fn run() {
             }
 
             app.manage(app_state::AppState::new(db_arc));
+            app.manage(crate::codex::v2::state::AppState::load(&app.handle()));
 
             // Setup event bridge between codex-client and Tauri
             let codex_state = app.state::<CodexState>();

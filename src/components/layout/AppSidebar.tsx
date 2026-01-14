@@ -27,6 +27,7 @@ type IconKey =
   | "home"
   | "codex"
   | "cc"
+  | "codexV2"
   | "mcp"
   | "prompt"
   | "skills"
@@ -45,6 +46,7 @@ const ICON_CONFIG: Record<
   home: { mainView: "home" },
   codex: { mainView: "codex", sidebarTab: "codex", subTab: "main" },
   cc: { mainView: "cc", sidebarTab: "cc", subTab: "main" },
+  codexV2: { mainView: "codexV2", sidebarTab: "codexV2", subTab: "main" },
   mcp: { mainView: "mcp", subTab: "main" },
   prompt: { mainView: "prompt", subTab: "main" },
   skills: { mainView: "skills", subTab: "main" },
@@ -124,6 +126,21 @@ export function AppSidebar({ onTabChange }: AppSidebarProps) {
         >
           <CreativeCommons className="w-5 h-5" />
         </Button>
+        <Button
+          variant={
+            mainView === "codexV2" && sidebarTab === "codexV2"
+              ? "secondary"
+              : "ghost"
+          }
+          size="icon"
+          onClick={() => handleIconClick("codexV2")}
+          title="Codex V2"
+          className="w-10 h-10 relative group"
+        >
+          <div className="w-6 h-6 flex items-center justify-center font-bold text-[10px] border-2 border-current rounded-md transition-transform group-hover:scale-110">
+            V2
+          </div>
+        </Button>
         <div className="w-8 h-px bg-border my-1" />
         <Button
           variant={mainView === "prompt" ? "secondary" : "ghost"}
@@ -195,8 +212,8 @@ export function AppSidebar({ onTabChange }: AppSidebarProps) {
             <button
               onClick={() => setSubTab("main")}
               className={`flex-1 px-3 py-2 flex items-center justify-center transition-colors ${subTab === "main"
-                  ? "bg-background text-foreground border-b-2 border-primary"
-                  : "text-muted-foreground hover:text-foreground"
+                ? "bg-background text-foreground border-b-2 border-primary"
+                : "text-muted-foreground hover:text-foreground"
                 }`}
               title={sidebarTab === "codex" ? "codex Sessions" : "cc Sessions"}
             >
@@ -205,8 +222,8 @@ export function AppSidebar({ onTabChange }: AppSidebarProps) {
             <button
               onClick={() => setSubTab("fileTree")}
               className={`flex-1 px-3 py-2 flex items-center justify-center transition-colors ${subTab === "fileTree"
-                  ? "bg-background text-foreground border-b-2 border-primary"
-                  : "text-muted-foreground hover:text-foreground"
+                ? "bg-background text-foreground border-b-2 border-primary"
+                : "text-muted-foreground hover:text-foreground"
                 }`}
               title="Files"
             >
@@ -215,8 +232,8 @@ export function AppSidebar({ onTabChange }: AppSidebarProps) {
             <button
               onClick={() => setSubTab("git")}
               className={`flex-1 px-3 py-2 flex items-center justify-center transition-colors ${subTab === "git"
-                  ? "bg-background text-foreground border-b-2 border-primary"
-                  : "text-muted-foreground hover:text-foreground"
+                ? "bg-background text-foreground border-b-2 border-primary"
+                : "text-muted-foreground hover:text-foreground"
                 }`}
               title="Git"
             >

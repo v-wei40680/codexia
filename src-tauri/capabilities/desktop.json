@@ -9,5 +9,7 @@
     "main",
     "main-*"
   ],
-  "permissions": []
+  "permissions": [
+    "updater:default"
+  ]
 }

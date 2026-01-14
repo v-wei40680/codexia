@@ -8,8 +8,6 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
-    "tauri:build:no-cc": "VITE_ENABLE_CC=false bun tauri build -- --no-default-features",
-    "export:bindings": "cargo run -p codex-bindings --bin codex_export_bindings",
     "lint": "biome check",
     "lint:fix": "biome check --write",
     "format": "biome format --write"
@@ -48,6 +46,7 @@
     "@tauri-apps/plugin-opener": "^2",
     "@tauri-apps/plugin-process": "~2",
     "@tauri-apps/plugin-shell": "~2",
+    "@tauri-apps/plugin-updater": "~2",
     "@uiw/react-md-editor": "^4.0.8",
     "ace-builds": "^1.43.2",
     "ansi-to-html": "^0.7.2",

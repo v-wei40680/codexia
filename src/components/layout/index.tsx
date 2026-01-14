@@ -21,6 +21,7 @@ import { HomeView } from "@/views/HomeView";
 import { NoteView } from "@/views/NoteView";
 import CCView from "@/views/CCView";
 import { LearnView } from "@/views/LearnView";
+import CodexV2View from "@/views/CodexV2View";
 
 export function Layout() {
   const { mainView, rightView, setRightView, setMainView } =
@@ -71,6 +72,7 @@ export function Layout() {
                     {mainView === "home" && <HomeView />}
                     {mainView === "codex" && <ChatView />}
                     {mainView === "cc" && <CCView />}
+                    {mainView === "codexV2" && <CodexV2View />}
                     {mainView === "agents-editor" && <AgentsView />}
                     {mainView === "login" && <LoginView />}
                     {mainView === "prompt" && <NoteView />}
