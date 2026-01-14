@@ -133,6 +133,7 @@ export function useSendMessage() {
           model: selectedModel ?? null,
           effort: reasoningEffort,
           summary: null,
+          outputSchema: null
         };
         await invoke<TurnStartResponse>("turn_start", {
           params: turnStartParams,

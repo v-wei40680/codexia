@@ -1,7 +1,7 @@
 import { invoke, listen } from "@/lib/tauri-proxy";
 import { handleTaskComplete } from "@/utils/handleTaskComplete";
 import { useEffect, useRef } from "react";
-import { ConversationId } from "@/bindings/ConversationId";
+import { ConversationId } from "@/types/codex";
 import { CodexEvent } from "@/types/chat";
 import { useSessionStore } from "@/stores/codex";
 import { useSystemSleepPrevention } from "../useSystemSleepPrevention";

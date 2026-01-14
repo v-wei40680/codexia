@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { invoke } from "@/lib/tauri-proxy";
-import { ConversationId } from "@/bindings/ConversationId";
+import { ConversationId } from "@/types/codex";
 import { CodexEvent } from "@/types/chat";
 
 export function useSystemSleepPrevention(
