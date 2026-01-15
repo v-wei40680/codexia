@@ -1,4 +1,6 @@
 import type { UpdateState } from "@/hooks/codex/v2/useUpdaterV2";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 
 type UpdateToastProps = {
   state: UpdateState;
@@ -33,45 +35,43 @@ export function UpdateToast({ state, onUpdate, onDismiss }: UpdateToastProps) {
       : null;
 
   return (
-    <div className="update-toasts" role="region" aria-live="polite">
-      <div className="update-toast" role="status">
-        <div className="update-toast-header">
-          <div className="update-toast-title">Update</div>
+    <div
+      className="fixed bottom-6 right-6 z-[100] w-full max-w-sm rounded-xl border bg-background p-4 shadow-xl"
+      role="region"
+      aria-live="polite"
+    >
+      <div role="status" className="space-y-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="text-sm font-medium leading-none">Update available</div>
           {state.version ? (
-            <div className="update-toast-version">v{state.version}</div>
+            <div className="text-xs text-muted-foreground">v{state.version}</div>
           ) : null}
         </div>
+
         {state.stage === "checking" && (
-          <div className="update-toast-body">Checking for updates...</div>
+          <div className="text-sm text-muted-foreground">Checking for updates...</div>
         )}
+
         {state.stage === "available" && (
           <>
-            <div className="update-toast-body">
-              A new version is available.
-            </div>
-            <div className="update-toast-actions">
-              <button className="secondary" onClick={onDismiss}>
+            <div className="text-sm">A new version is available.</div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="secondary" size="sm" onClick={onDismiss}>
                 Later
-              </button>
-              <button className="primary" onClick={onUpdate}>
+              </Button>
+              <Button size="sm" onClick={onUpdate}>
                 Update
-              </button>
+              </Button>
             </div>
           </>
         )}
+
         {state.stage === "downloading" && (
           <>
-            <div className="update-toast-body">
-              Downloading update…
-            </div>
-            <div className="update-toast-progress">
-              <div className="update-toast-progress-bar">
-                <span
-                  className="update-toast-progress-fill"
-                  style={{ width: percent ? `${percent}%` : "24%" }}
-                />
-              </div>
-              <div className="update-toast-progress-meta">
+            <div className="text-sm">Downloading update…</div>
+            <div className="space-y-1">
+              <Progress value={percent ?? 24} />
+              <div className="text-xs text-muted-foreground">
                 {totalBytes
                   ? `${formatBytes(downloadedBytes)} / ${formatBytes(totalBytes)}`
                   : `${formatBytes(downloadedBytes)} downloaded`}
@@ -79,25 +79,28 @@ export function UpdateToast({ state, onUpdate, onDismiss }: UpdateToastProps) {
             </div>
           </>
         )}
+
         {state.stage === "installing" && (
-          <div className="update-toast-body">Installing update…</div>
+          <div className="text-sm">Installing update…</div>
         )}
+
         {state.stage === "restarting" && (
-          <div className="update-toast-body">Restarting…</div>
+          <div className="text-sm">Restarting…</div>
         )}
+
         {state.stage === "error" && (
           <>
-            <div className="update-toast-body">Update failed.</div>
+            <div className="text-sm text-destructive">Update failed.</div>
             {state.error ? (
-              <div className="update-toast-error">{state.error}</div>
+              <div className="text-xs text-muted-foreground">{state.error}</div>
             ) : null}
-            <div className="update-toast-actions">
-              <button className="secondary" onClick={onDismiss}>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="secondary" size="sm" onClick={onDismiss}>
                 Dismiss
-              </button>
-              <button className="primary" onClick={onUpdate}>
+              </Button>
+              <Button size="sm" onClick={onUpdate}>
                 Retry
-              </button>
+              </Button>
             </div>
           </>
         )}

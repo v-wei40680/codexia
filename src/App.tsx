@@ -1,3 +1,6 @@
+import { UpdateToast } from "@/components/codex-v2/UpdateToast";
+import { useUpdaterV2 } from "@/hooks/codex/v2/useUpdaterV2";
+import { useDebugLogV2 } from "@/hooks/codex/v2/useDebugLogV2";
 import { useEffect, useState } from "react";
 import { Layout } from "@/components/layout";
 import { useDeepLink } from "./hooks/useDeepLink";
@@ -10,6 +13,9 @@ export default function App() {
   // Initialize deep linking - must be called at top level, not conditionally
   useDeepLink();
   const [initialized, setInitialized] = useState(false);
+
+  const { addDebugEntry } = useDebugLogV2();
+  const updater = useUpdaterV2({ onDebug: addDebugEntry });
 
   useEffect(() => {
     // Initialize codex client before any other operations
@@ -36,5 +42,14 @@ export default function App() {
     return <div className="flex items-center justify-center h-screen">Initializing...</div>;
   }
 
-  return <Layout />;
+  return (
+    <>
+      <UpdateToast
+        state={updater.state}
+        onUpdate={updater.startUpdate}
+        onDismiss={updater.dismiss}
+      />
+      <Layout />
+    </>
+  );
 }

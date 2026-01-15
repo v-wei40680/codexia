@@ -5,7 +5,6 @@ import { Home } from "@/components/codex-v2/Home";
 import { MainHeader } from "@/components/codex-v2/MainHeader";
 import { Messages } from "@/components/codex-v2/Messages";
 import { ApprovalToasts } from "@/components/codex-v2/ApprovalToasts";
-import { UpdateToast } from "@/components/codex-v2/UpdateToast";
 import { Composer } from "@/components/codex-v2/Composer";
 import { GitDiffPanel } from "@/components/codex-v2/GitDiffPanel";
 import { GitDiffViewer } from "@/components/codex-v2/GitDiffViewer";
@@ -33,7 +32,6 @@ import { useWorkspaceRestoreV2 } from "@/hooks/codex/v2/useWorkspaceRestoreV2";
 import { useResizablePanelsV2 } from "@/hooks/codex/v2/useResizablePanelsV2";
 import { useLayoutModeV2 } from "@/hooks/codex/v2/useLayoutModeV2";
 import { useAppSettingsV2 } from "@/hooks/codex/v2/useAppSettingsV2";
-import { useUpdaterV2 } from "@/hooks/codex/v2/useUpdaterV2";
 import type {
   AccessMode,
   DiffLineReference,
@@ -91,7 +89,6 @@ function CodexV2ViewMain() {
     clearDebugEntries,
   } = useDebugLogV2();
 
-  const updater = useUpdaterV2({ onDebug: addDebugEntry });
 
   const { settings: appSettings, saveSettings } = useAppSettingsV2();
 
@@ -724,11 +721,6 @@ function CodexV2ViewMain() {
       />
 
       <section className="flex-1 flex flex-col min-w-0 h-full relative bg-[#080a10]/45">
-        <UpdateToast
-          state={updater.state}
-          onUpdate={updater.startUpdate}
-          onDismiss={updater.dismiss}
-        />
         {showHome && (
           <Home
             onOpenProject={handleAddWorkspace}
@@ -887,11 +879,6 @@ function CodexV2ViewMain() {
           workspaces={workspaces}
           onDecision={handleApprovalDecision}
         />
-        <UpdateToast
-          state={updater.state}
-          onUpdate={updater.startUpdate}
-          onDismiss={updater.dismiss}
-        />
         {showHome && (
           <Home
             onOpenProject={handleAddWorkspace}
@@ -995,11 +982,6 @@ function CodexV2ViewMain() {
         approvals={approvals}
         workspaces={workspaces}
         onDecision={handleApprovalDecision}
-      />
-      <UpdateToast
-        state={updater.state}
-        onUpdate={updater.startUpdate}
-        onDismiss={updater.dismiss}
       />
       {activeTab === "projects" && (
         <div className="flex flex-1 min-h-0 flex-col">{sidebarNode}</div>
