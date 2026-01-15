@@ -68,9 +68,9 @@
     ],
     "resources": [],
     "externalBin": [],
-    "copyright": "© 2025 Milisp. All rights reserved.",
+    "copyright": "© 2026 Milisp. All rights reserved.",
     "category": "DeveloperTool",
-    "shortDescription": "GUI app and Toolkit for Codex CLI",
+    "shortDescription": "Agent OS and Toolkit for Codex CLI + Claude Code",
     "longDescription": "codexia is a comprehensive GUI application and toolkit for working with Codex CLI, providing an intuitive interface for AI-assisted development.",
     "linux": {
       "appimage": {
