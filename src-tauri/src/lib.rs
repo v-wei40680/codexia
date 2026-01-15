@@ -250,13 +250,21 @@ pub fn run() {
 
             #[cfg(debug_assertions)]
             {
-                use std::path::Path;
-                let out = Path::new(env!("CARGO_MANIFEST_DIR"))
-                    .join("..")
-                    .join("src")
-                    .join("bindings");
+                use std::process::Command;
 
-                codex_bindings::export_ts_types(Some(out));
+                let status = Command::new("codex")
+                    .args(["app-server", "generate-ts", "-o", "src/bindings"])
+                    .current_dir(
+                        std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                            .parent()
+                            .expect("Failed to get project root"),
+                    )
+                    .status()
+                    .expect("Failed to run codex app-server generate-ts");
+
+                if !status.success() {
+                    panic!("codex app-server generate-ts exited with non-zero status");
+                }
             }
 
             #[cfg(any(windows, target_os = "linux"))]

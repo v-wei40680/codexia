@@ -37,7 +37,6 @@ export default defineConfig(async () => ({
         "**/target/**",
         "**/dist/**",
         "**/node_modules/**",
-        "**/codex-bindings/**",
         "**/codex-client/**",
         "**/docs/**",
         "**/README.md",

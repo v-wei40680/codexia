@@ -849,15 +849,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "codex-bindings"
-version = "0.21.0"
-dependencies = [
- "codex-app-server-protocol",
- "codex-protocol",
- "ts-rs",
-]
-
-[[package]]
 name = "codex-client"
 version = "0.21.0"
 dependencies = [
@@ -950,7 +941,6 @@ dependencies = [
  "calamine",
  "chrono",
  "claude-agent-sdk-rs",
- "codex-bindings",
  "codex-client",
  "csv",
  "dirs",
