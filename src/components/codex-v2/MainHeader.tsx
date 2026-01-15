@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ChevronDown, Copy, FolderOpen, GitBranch, Terminal } from "lucide-react";
 import { revealItemInDir } from "@tauri-apps/plugin-opener";
 import type { BranchInfo, WorkspaceInfo } from "@/types/codex-v2";
@@ -81,76 +82,83 @@ export function MainHeader({
           ›
         </span>
         {disableBranchMenu ? (
-          <div className="relative flex min-w-0 items-center" ref={infoRef}>
+          <div
+            className="relative flex min-w-0 items-center"
+          >
             <button
               type="button"
               className="inline-flex items-center gap-1.5 rounded-full border border-white/18 bg-white/5 px-3 py-1.5 text-xs font-medium text-white/90 shadow-sm transition-colors hover:border-white/35 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-              onClick={() => setInfoOpen((prev) => !prev)}
+              onClick={() => {
+                console.log("Worktree info button clicked");
+                setInfoOpen((prev) => !prev);
+              }}
               aria-haspopup="dialog"
               aria-expanded={infoOpen}
-              
               title="Worktree info"
             >
               <GitBranch aria-hidden className="h-3.5 w-3.5 text-emerald-300/90" />
               <span className="truncate">{worktreeLabel || branchName}</span>
               <ChevronDown aria-hidden className="h-3 w-3 text-white/45" />
             </button>
-            {infoOpen && (
-              <div
-                className="absolute left-0 top-8 z-30 w-80 rounded-xl border border-white/15 bg-[#05060b]/95 p-4 text-xs text-white/85 shadow-xl backdrop-blur-md"
-                role="dialog"
-              >
-                <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
-                  Worktree
-                </div>
-                <div className="mt-3 space-y-2">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="inline-flex items-center gap-1 text-[11px] text-white/65">
-                      <Terminal aria-hidden className="h-3.5 w-3.5 text-white/55" />
-                      <span>
-                        Terminal
-                        {parentPath ? " (repo root)" : ""}
-                      </span>
-                    </span>
-                    <div className="flex items-center gap-1.5">
-                      <code className="max-w-[160px] truncate rounded-md bg-black/60 px-2 py-1 text-[11px] font-mono text-white/80">
-                        {cdCommand}
-                      </code>
-                      <button
-                        type="button"
-                        className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white/80 transition-colors hover:border-white/35 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-                        onClick={async () => {
-                          await navigator.clipboard.writeText(cdCommand);
-                        }}
-                        aria-label="Copy command"
-                        title="Copy command"
-                      >
-                        <Copy aria-hidden className="h-3.5 w-3.5" />
-                      </button>
-                    </div>
+            {infoOpen &&
+              createPortal(
+                <div
+                  className="absolute left-0 top-8 z-50 w-80 rounded-xl border border-white/15 bg-[#05060b]/95 p-4 text-xs text-white/85 shadow-xl backdrop-blur-md"
+                  role="dialog"
+                  ref={infoRef}
+                >
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.16em] text-white/55">
+                    Worktree
                   </div>
-                  <p className="text-[11px] text-white/50">
-                    Use this command to open the worktree in your terminal.
-                  </p>
-                </div>
-                <div className="mt-3 space-y-1.5">
-                  <span className="inline-flex items-center gap-1 text-[11px] text-white/65">
-                    <FolderOpen aria-hidden className="h-3.5 w-3.5 text-white/55" />
-                    <span>Reveal</span>
-                  </span>
-                  <button
-                    type="button"
-                    className="mt-1 inline-flex items-center gap-1.5 rounded-md border border-white/18 bg-white/5 px-2.5 py-1.5 text-[11px] font-medium text-white/90 transition-colors hover:border-white/35 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-                    onClick={async () => {
-                      await revealItemInDir(resolvedWorktreePath);
-                    }}
-                    
-                  >
-                    <span>Reveal in Finder</span>
-                  </button>
-                </div>
-              </div>
-            )}
+                  <div className="mt-3 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="inline-flex items-center gap-1 text-[11px] text-white/65">
+                        <Terminal aria-hidden className="h-3.5 w-3.5 text-white/55" />
+                        <span>
+                          Terminal
+                          {parentPath ? " (repo root)" : ""}
+                        </span>
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <code className="max-w-[160px] truncate rounded-md bg-black/60 px-2 py-1 text-[11px] font-mono text-white/80">
+                          {cdCommand}
+                        </code>
+                        <button
+                          type="button"
+                          className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-white/15 bg-white/5 text-white/80 transition-colors hover:border-white/35 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+                          onClick={async () => {
+                            await navigator.clipboard.writeText(cdCommand);
+                          }}
+                          aria-label="Copy command"
+                          title="Copy command"
+                        >
+                          <Copy aria-hidden className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-white/50">
+                      Use this command to open the worktree in your terminal.
+                    </p>
+                  </div>
+                  <div className="mt-3 space-y-1.5">
+                    <span className="inline-flex items-center gap-1 text-[11px] text-white/65">
+                      <FolderOpen aria-hidden className="h-3.5 w-3.5 text-white/55" />
+                      <span>Reveal</span>
+                    </span>
+                    <button
+                      type="button"
+                      className="mt-1 inline-flex items-center gap-1.5 rounded-md border border-white/18 bg-white/5 px-2.5 py-1.5 text-[11px] font-medium text-white/90 transition-colors hover:border-white/35 hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+                      onClick={async () => {
+                        await revealItemInDir(resolvedWorktreePath);
+                      }}
+                    >
+                      <span>Reveal in Finder</span>
+                    </button>
+                  </div>
+                </div>,
+                document.body
+              )
+            }
           </div>
         ) : (
           <DropdownMenu>

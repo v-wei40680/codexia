@@ -1152,7 +1152,6 @@ function CodexV2ViewMain() {
         } as React.CSSProperties
       }
     >
-      <div className="drag-strip" id="titlebar" />
       {isPhone ? phoneLayout : isTablet ? tabletLayout : desktopLayout}
       {worktreePrompt && (
         <WorktreePrompt
