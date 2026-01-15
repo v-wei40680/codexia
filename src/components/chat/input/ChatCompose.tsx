@@ -1,10 +1,7 @@
-import { useCallback } from "react";
 import { ChatInput } from "./ChatInput";
 import { Sandbox } from "../../config/Sandbox";
 import { ProviderModels } from "@/components/config/provider-models";
 import { ReasoningEffortSelector } from "../../config/ReasoningEffortSelector";
-import { Button } from "../../ui/button";
-import { useLayoutStore } from "@/stores/settings/layoutStore";
 import type { MediaAttachment } from "@/types/chat";
 import type { TokenUsage } from "@/bindings/TokenUsage";
 import { TokenCountInfo } from "../../common/TokenCountInfo";
@@ -26,10 +23,6 @@ export function ChatCompose({
   isBusy,
   tokenUsage,
 }: ChatComposeProps) {
-  const { showReview, setReview } = useLayoutStore();
-  const handleToggleReviewMode = useCallback(() => {
-    setReview(!showReview);
-  }, [setReview, showReview]);
 
   return (
     <div className="border-t bg-background">
@@ -47,15 +40,6 @@ export function ChatCompose({
           <ProviderModels />
           <ReasoningEffortSelector />
           <TokenCountInfo usage={tokenUsage} />
-        </span>
-        <span className="flex items-center">
-          <Button
-            onClick={handleToggleReviewMode}
-            className={showReview ? "bg-accent" : ""}
-            title="Toggle Review Mode"
-          >
-            Reivew
-          </Button>
         </span>
       </div>
     </div>
