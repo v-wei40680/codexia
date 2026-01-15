@@ -1,57 +1,32 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import supabase, { isSupabaseConfigured } from "@/lib/supabase";
-import { ensureProfileRecord, mapProfileRow, type ProfileRecord } from "@/lib/profile";
-import { Badge, Github } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
-import { useSettingsStore } from "@/stores/settings/SettingsStore";
-import { useEffect, useState } from "react";
-import { toast } from "sonner";
-import { isRemoteRuntime } from "@/lib/tauri-proxy";
-import { open } from "@tauri-apps/plugin-shell"
-import { useAuthStore } from "@/stores/useAuthStore";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import supabase, { isSupabaseConfigured } from '@/lib/supabase';
+import { Badge, Github } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useSettingsStore } from '@/stores/settings/SettingsStore';
+import { useState } from 'react';
+import { toast } from 'sonner';
+import { open } from '@tauri-apps/plugin-shell';
+import { useAuthStore } from '@/stores/useAuthStore';
 
 export default function AuthPage() {
-  const { user, loading } = useAuth();
-  const {lastOAuthProvider, setLastOAuthProvider} = useAuthStore();
+  const { user } = useAuth();
+  const { lastOAuthProvider, setLastOAuthProvider } = useAuthStore();
   const { windowTitle } = useSettingsStore();
-  const [email, setEmail] = useState(() => localStorage.getItem("email") || "");
-  const [password, setPassword] = useState("");
+  const [email, setEmail] = useState(() => localStorage.getItem('email') || '');
+  const [password, setPassword] = useState('');
   const [loadingForm, setLoadingForm] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-  const remoteMode = isRemoteRuntime();
 
-  useEffect(() => {
-    const ensureProfile = async () => {
-      if (loading || !user) return;
-      if (!isSupabaseConfigured || !supabase) return;
-      try {
-        const client = supabase!;
-        const { data, error } = await client
-          .from("profiles")
-          .select("id, bio, website, github_url, x_url")
-          .eq("id", user.id)
-          .maybeSingle();
-        if (error) throw error;
-        const profile: ProfileRecord | null = mapProfileRow(data);
-        if (!profile) {
-          await ensureProfileRecord(user);
-        }
-      } catch (_e) {
-        console.error("Failed to ensure profile:", _e);
-      }
-    };
-    ensureProfile();
-  }, [loading, user]);
 
   // If user is logged in, layout will handle displaying the main app
   if (user) {
     return null;
   }
 
-  const handleOAuthLogin = async (provider: "github" | "google") => {
+  const handleOAuthLogin = async (provider: 'github' | 'google') => {
     if (!isSupabaseConfigured || !supabase) return;
     try {
       setLastOAuthProvider(provider);
@@ -63,13 +38,13 @@ export default function AuthPage() {
           skipBrowserRedirect: true,
           redirectTo: import.meta.env.VITE_REDIRECT_URL,
           queryParams: {
-            access_type: "offline",
-            prompt: "consent",
+            access_type: 'offline',
+            prompt: 'consent',
           },
         },
       });
 
-      if (!data?.url) throw new Error("No auth URL returned");
+      if (!data?.url) throw new Error('No auth URL returned');
       open(data.url);
     } catch (error) {
       console.error(`Error signing in with ${provider}:`, error);
@@ -81,7 +56,7 @@ export default function AuthPage() {
   const handleEmailSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isSupabaseConfigured || !supabase) {
-      setFormError("Authentication is not configured");
+      setFormError('Authentication is not configured');
       return;
     }
     setLoadingForm(true);
@@ -89,9 +64,9 @@ export default function AuthPage() {
     try {
       const { error } = await supabase.auth.signUp({ email, password });
       if (error) throw error;
-      toast.success("Please check your email to confirm");
+      toast.success('Please check your email to confirm');
     } catch (err: any) {
-      setFormError(err?.message || "Sign up failed");
+      setFormError(err?.message || 'Sign up failed');
     } finally {
       setLoadingForm(false);
     }
@@ -101,7 +76,7 @@ export default function AuthPage() {
   const handleEmailSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isSupabaseConfigured || !supabase) {
-      setFormError("Authentication is not configured");
+      setFormError('Authentication is not configured');
       return;
     }
     setLoadingForm(true);
@@ -109,10 +84,10 @@ export default function AuthPage() {
     try {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
-      toast.success("Signed in");
+      toast.success('Signed in');
       // Redirect is handled by the effect that checks profile completeness.
     } catch (err: any) {
-      setFormError(err?.message || "Sign in failed");
+      setFormError(err?.message || 'Sign in failed');
     } finally {
       setLoadingForm(false);
     }
@@ -124,100 +99,104 @@ export default function AuthPage() {
       <p className="mb-6 text-gray-500 dark:text-gray-400">Sign in to get more</p>
 
       <div className="w-full max-w-sm text-left">
-        {(import.meta.env.DEV || remoteMode) &&
-          <>
-            <Tabs defaultValue="signin" className="w-full mb-4">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
+        <Tabs defaultValue="signin" className="w-full mb-4">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="signin">Sign In</TabsTrigger>
+            <TabsTrigger value="signup">Sign Up</TabsTrigger>
+          </TabsList>
 
-              <TabsContent value="signin">
-                <form onSubmit={handleEmailSignIn} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => {
-                        setEmail(e.target.value);
-                        localStorage.setItem("email", e.target.value);
-                      }}
-                      required
-                      disabled={!isSupabaseConfigured || loadingForm}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="password">Password</Label>
-                    <Input
-                      id="password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      disabled={!isSupabaseConfigured || loadingForm}
-                    />
-                  </div>
-                  {formError && <p className="text-red-500 text-sm">{formError}</p>}
-                  <Button type="submit" className="w-full" disabled={!isSupabaseConfigured || loadingForm}>
-                    {loadingForm ? "Loading..." : "Sign In"}
-                  </Button>
-                </form>
-              </TabsContent>
-
-              <TabsContent value="signup">
-                <form onSubmit={handleEmailSignUp} className="space-y-4">
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-email">Email</Label>
-                    <Input
-                      id="signup-email"
-                      type="email"
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
-                      disabled={!isSupabaseConfigured || loadingForm}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="signup-password">Password</Label>
-                    <Input
-                      id="signup-password"
-                      type="password"
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      required
-                      disabled={!isSupabaseConfigured || loadingForm}
-                    />
-                  </div>
-                  {formError && <p className="text-red-500 text-sm">{formError}</p>}
-                  <Button type="submit" className="w-full" disabled={!isSupabaseConfigured || loadingForm}>
-                    {loadingForm ? "Loading..." : "Sign Up"}
-                  </Button>
-                </form>
-              </TabsContent>
-            </Tabs>
-
-            <div className="relative my-4">
-              <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
+          <TabsContent value="signin">
+            <form onSubmit={handleEmailSignIn} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    localStorage.setItem('email', e.target.value);
+                  }}
+                  required
+                  disabled={!isSupabaseConfigured || loadingForm}
+                />
               </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={!isSupabaseConfigured || loadingForm}
+                />
               </div>
-            </div>
-          </>
-        }
+              {formError && <p className="text-red-500 text-sm">{formError}</p>}
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={!isSupabaseConfigured || loadingForm}
+              >
+                {loadingForm ? 'Loading...' : 'Sign In'}
+              </Button>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="signup">
+            <form onSubmit={handleEmailSignUp} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="signup-email">Email</Label>
+                <Input
+                  id="signup-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={!isSupabaseConfigured || loadingForm}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="signup-password">Password</Label>
+                <Input
+                  id="signup-password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={!isSupabaseConfigured || loadingForm}
+                />
+              </div>
+              {formError && <p className="text-red-500 text-sm">{formError}</p>}
+              <Button
+                type="submit"
+                className="w-full"
+                disabled={!isSupabaseConfigured || loadingForm}
+              >
+                {loadingForm ? 'Loading...' : 'Sign Up'}
+              </Button>
+            </form>
+          </TabsContent>
+        </Tabs>
+
+        <div className="relative my-4">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+          </div>
+        </div>
 
         <div className="relative mb-4">
           <Button
-            onClick={() => handleOAuthLogin("github")}
+            onClick={() => handleOAuthLogin('github')}
             className="w-full flex items-center justify-center gap-2"
           >
             <Github />
             Continue with GitHub
           </Button>
-          {lastOAuthProvider === "github" && (
+          {lastOAuthProvider === 'github' && (
             <Badge className="absolute -top-2 -right-2 text-xs bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-300">
               Last used
             </Badge>
@@ -226,20 +205,19 @@ export default function AuthPage() {
 
         <div className="relative">
           <Button
-            onClick={() => handleOAuthLogin("google")}
+            onClick={() => handleOAuthLogin('google')}
             className="w-full flex items-center justify-center gap-2"
             variant="outline"
           >
             <span className="text-sm">🔍</span>
             Continue with Google
           </Button>
-          {lastOAuthProvider === "google" && (
+          {lastOAuthProvider === 'google' && (
             <Badge className="absolute -top-2 -right-2 text-xs bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-300">
               Last used
             </Badge>
           )}
         </div>
-
       </div>
     </div>
   );
