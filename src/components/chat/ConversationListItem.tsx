@@ -15,9 +15,11 @@ import {
   FolderPlus,
   Pencil,
   Calendar,
+  Copy,
 } from "lucide-react";
 import type { ConversationSummary } from "@/bindings/ConversationSummary";
 import { formatSessionSource } from "@/utils/formatSessionSource";
+import { toast } from "sonner";
 
 export interface ConversationListItemProps {
   conversation: ConversationSummary;
@@ -77,11 +79,10 @@ export function ConversationListItem({
           )}
           <button
             onClick={handleSelect}
-            className={`flex-1 min-w-0 truncate text-left rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${
-              isActive
-                ? "bg-accent text-accent-foreground"
-                : "text-muted-foreground"
-            }`}
+            className={`flex-1 min-w-0 truncate text-left rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground ${isActive
+              ? "bg-accent text-accent-foreground"
+              : "text-muted-foreground"
+              }`}
           >
             <span className="truncate">{conversation.preview}</span>
           </button>
@@ -118,6 +119,16 @@ export function ConversationListItem({
           >
             <Pencil className="h-4 w-4 mr-2" />
             Rename
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            onClick={(event) => {
+              event.stopPropagation();
+              navigator.clipboard.writeText(conversation.conversationId);
+              toast.success("Session ID copied to clipboard");
+            }}
+          >
+            <Copy className="h-4 w-4 mr-2" />
+            Copy Session ID
           </DropdownMenuItem>
           <DropdownMenuItem
             onClick={(event) => {
