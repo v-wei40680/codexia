@@ -22,7 +22,11 @@ const buildUserInputs = (
   text: string,
   attachments: MediaAttachment[],
 ): UserInput[] => {
-  const textInput: UserInput = { type: "text", text };
+  const textInput: UserInput = {
+    type: "text",
+    text,
+    text_elements: [],
+  };
   const imageInputs: UserInput[] = attachments
     .filter((attachment) => attachment.type === "image")
     .map((attachment) => ({
