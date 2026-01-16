@@ -40,23 +40,7 @@ const baseProviders: ProviderStateModelProvider[] = [
     apiKey: "",
     envKey: "OPENROUTER_API_KEY",
     baseUrl: "https://openrouter.ai/api/v1",
-  },
-  {
-    id: "hf",
-    name: "Huggingface",
-    models: ["openai/gpt-oss-20b"],
-    apiKey: "",
-    envKey: "HF_API_TOKEN",
-    baseUrl: "https://router.huggingface.co/v1",
-  },
-  {
-    id: "xai",
-    name: "grok",
-    models: ["grok-4"],
-    apiKey: "",
-    envKey: "XAI_API_KEY",
-    baseUrl: "https://api.x.ai/v1",
-  },
+  }
 ];
 
 const cloneProvider = (

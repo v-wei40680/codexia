@@ -1,7 +1,7 @@
 mod app_state;
 mod app_types;
 mod cc_commands;
-mod codex;
+pub mod codex;
 mod codex_commands;
 mod commands;
 mod config;
@@ -100,11 +100,6 @@ pub fn run() {
             codex_commands::delete_mcp_server,
             codex_commands::set_mcp_server_enabled,
             codex_commands::read_model_providers,
-            codex_commands::read_profiles,
-            codex_commands::get_provider_config,
-            codex_commands::get_profile_config,
-            codex_commands::add_or_update_profile,
-            codex_commands::delete_profile,
             codex_commands::add_or_update_model_provider,
             codex_commands::delete_model_provider,
             commands::remote::enable_remote_ui,
@@ -127,11 +122,9 @@ pub fn run() {
             codex_commands::get_account_rate_limits,
             codex_commands::initialize_client,
             commands::file::delete_file,
-            commands::env::set_system_env,
-            commands::env::get_system_env,
             codex_commands::scan_projects,
-            codex_commands::scanned_projects::get_scanned_projects,
-            codex_commands::scanned_projects::scan_and_cache_projects,
+            codex_commands::get_scanned_projects,
+            codex_commands::scan_and_cache_projects,
             codex_commands::load_project_sessions,
             codex_commands::update_cache_title,
             commands::terminal::open_terminal_with_command,

@@ -120,12 +120,6 @@ export const useProviderStore = create<ProviderState & ProviderActions>()(
             newProvider.id,
             configServiceNewProvider,
           );
-
-          // Persist profile config
-          ConfigService.addOrUpdateProfile(newProvider.id, {
-            model_provider: newProvider.id,
-            model: newProvider.models[0] || undefined,
-          });
         }
       },
       addModel: (providerId, model) => {
@@ -168,8 +162,6 @@ export const useProviderStore = create<ProviderState & ProviderActions>()(
 
           // Delete provider config
           ConfigService.deleteModelProvider(providerId);
-          // Delete profile config
-          ConfigService.deleteProfile(providerId);
 
           return {
             providers: updatedProviders,

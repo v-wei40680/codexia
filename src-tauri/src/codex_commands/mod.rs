@@ -5,29 +5,18 @@
 
 pub mod state;
 pub mod events;
-pub mod accounts;
 pub mod check;
 pub mod config;
-pub mod conversation;
-pub mod initialize;
-pub mod listeners;
 pub mod mcp;
-pub mod reviews;
-pub mod scanned_projects;
+pub mod protocol;
 pub mod session_files;
 
 pub use state::CodexState;
 pub use events::setup_event_bridge;
 
 // Re-export all commands for tauri::generate_handler!
-pub use accounts::*;
-// pub use check::*; // check commands accessed via check:: prefix in lib.rs
-pub use config::profile::*;
 pub use config::project::*;
 pub use config::provider::*;
-pub use conversation::*;
-pub use initialize::*;
-pub use listeners::*;
 pub use mcp::*;
-pub use reviews::*;
+pub use protocol::*;
 pub use session_files::*;

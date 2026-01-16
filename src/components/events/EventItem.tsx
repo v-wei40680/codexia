@@ -155,6 +155,7 @@ export const EventItem = memo(function EventItem({
       );
     }
     case "error":
+      return <p className="bg-red-500 rounded p-2">{msg.message}</p>;
     case "stream_error":
       return <Badge variant="destructive">{msg.message}</Badge>;
     case "warning":

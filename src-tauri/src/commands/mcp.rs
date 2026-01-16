@@ -1,5 +1,6 @@
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
+use crate::codex;
 use tauri::command;
 
 use crate::cc_commands::mcp::{ClaudeCodeMcpServer, cc_mcp_add, cc_mcp_enable, cc_mcp_disable, cc_mcp_list, cc_mcp_remove};
@@ -16,13 +17,13 @@ pub async fn unified_add_mcp_server(
 ) -> Result<(), String> {
     match client_name.as_str() {
         "codex" => {
-            let config: codex_client::McpServerConfig = serde_json::from_value(server_config)
+            let config: codex::v1::McpServerConfig = serde_json::from_value(server_config)
                 .map_err(|e| format!("Failed to parse Codex MCP config: {}", e))?;
             codex_commands::add_mcp_server(server_name, config).await
         }
         "cc" => {
             let working_dir = path.ok_or("CC requires a project path")?;
-            
+
             let cc_server = ClaudeCodeMcpServer {
                 name: server_name.clone(),
                 r#type: server_config
@@ -50,7 +51,7 @@ pub async fn unified_add_mcp_server(
                 scope: scope.unwrap_or_else(|| "local".to_string()),
                 enabled: true,
             };
-            
+
             cc_mcp_add(cc_server, working_dir).await.map(|_| ())
         }
         _ => Err(format!("Unknown client: {}", client_name)),
@@ -132,7 +133,7 @@ pub async fn unified_read_mcp_config(
         "cc" => {
             let working_dir = path.ok_or("CC requires a project path")?;
             let servers = cc_mcp_list(working_dir).await?;
-            
+
             let mut servers_map: HashMap<String, JsonValue> = HashMap::new();
             for server in servers {
                 let mut server_json = serde_json::json!({
@@ -140,7 +141,7 @@ pub async fn unified_read_mcp_config(
                     "enabled": server.enabled,
                     "scope": server.scope,
                 });
-                
+
                 if let Some(url) = server.url {
                     server_json["url"] = JsonValue::String(url);
                 }
@@ -153,10 +154,10 @@ pub async fn unified_read_mcp_config(
                 if let Some(env) = server.env {
                     server_json["env"] = serde_json::to_value(env).unwrap();
                 }
-                
+
                 servers_map.insert(server.name, server_json);
             }
-            
+
             Ok(serde_json::json!({
                 "mcpServers": servers_map
             }))

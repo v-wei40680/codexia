@@ -3,7 +3,7 @@
 //! This module sets up subscriptions on the codex-client EventBus
 //! and forwards them to Tauri's event system.
 
-use codex_client::ClientState;
+use crate::codex::v1::ClientState;
 use std::sync::Arc;
 use tauri::{AppHandle, Manager, Runtime};
 use tauri_remote_ui::EmitterExt;

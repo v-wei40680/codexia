@@ -2,7 +2,7 @@
 //!
 //! Wraps ClientState in a Tauri-managed state container
 
-use codex_client::ClientState;
+use crate::codex::v1::ClientState;
 use std::sync::Arc;
 
 /// Tauri-managed state wrapper

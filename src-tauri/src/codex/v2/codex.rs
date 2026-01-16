@@ -2,7 +2,7 @@ use serde::Serialize;
 use serde_json::{json, Map, Value};
 use std::collections::HashMap;
 use std::env;
-use codex_client::utils::codex_discovery::discover_codex_command;
+use codex_finder::discover_codex_command;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Arc;
 use std::time::Duration;
