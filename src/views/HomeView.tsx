@@ -46,36 +46,49 @@ export function HomeView() {
           <div className="absolute -top-8 -left-8 w-32 h-32 bg-orange-500/5 rounded-full blur-2xl" />
         </div>
       )}
-      <div className="flex rounded-lg bg-muted p-1 gap-1">
-        {(
-          [
-            {
-              id: 'codex',
-              label: 'Codex',
-              active: 'border-blue-500 text-blue-600',
-              inactive: 'text-blue-500 hover:border-blue-500/40 hover:bg-blue-500/5',
-            },
-            {
-              id: 'cc',
-              label: 'Claude Code',
-              active: 'border-orange-500 text-orange-600',
-              inactive: 'text-orange-500 hover:border-orange-500/40 hover:bg-orange-500/5',
-            },
-          ] as const
-        ).map((agent) => (
-          <button
-            key={agent.id}
-            className={`px-4 py-2 text-sm rounded-md border-2 transition-all ${
-              selectedAgent === agent.id
-                ? `${agent.active} bg-background shadow-sm`
-                : `border-transparent ${agent.inactive}`
-            }`}
-            onClick={() => setSelectedAgent(agent.id)}
-          >
-            {agent.label}
-          </button>
-        ))}
-      </div>
+      {isCoworkMode ?
+        <button
+          className={`px-4 py-2 text-sm rounded-md border-2 transition-all border-orange-500 text-orange-600`}
+          onClick={() => {
+            setSelectedAgent("cc")
+            setMainView("cc")
+            setSidebarTab("cc")
+          }}
+        >
+          Claude code
+        </button>
+        : (
+          <div className="flex rounded-lg bg-muted p-1 gap-1">
+            {(
+              [
+                {
+                  id: 'codex',
+                  label: 'Codex',
+                  active: 'border-blue-500 text-blue-600',
+                  inactive: 'text-blue-500 hover:border-blue-500/40 hover:bg-blue-500/5',
+                },
+                {
+                  id: 'cc',
+                  label: 'Claude Code',
+                  active: 'border-orange-500 text-orange-600',
+                  inactive: 'text-orange-500 hover:border-orange-500/40 hover:bg-orange-500/5',
+                },
+              ] as const
+            ).map((agent) => (
+              <button
+                key={agent.id}
+                className={`px-4 py-2 text-sm rounded-md border-2 transition-all ${selectedAgent === agent.id
+                  ? `${agent.active} bg-background shadow-sm`
+                  : `border-transparent ${agent.inactive}`
+                  }`}
+                onClick={() => setSelectedAgent(agent.id)}
+              >
+                {agent.label}
+              </button>
+            ))}
+          </div>
+        )
+      }
 
       <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-muted/30 border border-border/50 backdrop-blur-sm transition-all hover:bg-muted/40 group">
         <Users
