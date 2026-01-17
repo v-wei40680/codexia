@@ -1,7 +1,6 @@
 # Codexia
 
 [![中文文档](https://img.shields.io/badge/README-中文-brightgreen)](docs/README.zh-CN.md)
-[![Subreddit subscribers](https://img.shields.io/reddit/subreddit-subscribers/codexia?style=flat&logo=reddit&label=codexia)](https://www.reddit.com/r/codexia/)
 [![Discord](https://img.shields.io/badge/Discord-Join-5865F2?style=flat&logo=discord&logoColor=white)](https://discord.gg/zAjtD4kf5K)
 [![Follow on 𝕏](https://img.shields.io/badge/𝕏-@lisp__mi-1c9bf0)](http://x.com/intent/follow?screen_name=lisp_mi)
 
@@ -60,8 +59,7 @@ One-click PDF / XLSX / CSV preview directly from the File Tree
 - One click add from mcp marketplace or sync mcp server via [mcp-linker](https://mcp-linker.store)
 
 ### Agent/Claude Skills
-- Agent skills management
-- Agent skills marketplace
+- Agent skills marketplace and management
 
 ### 📝 **AGENTS.md**
 - **Built-in Editor**: Edit AGENTS.md file directly within the app
@@ -178,6 +176,7 @@ By contributing to this project, you agree that your contributions may be licens
 - Built with [Tauri](https://tauri.app/) - The secure framework for building desktop apps
 - [Claude](https://claude.ai) by Anthropic
 - [Codex](https://github.com/openai/codex) by OpenAI
+- [CodexMonitor](https://github.com/Dimillian/CodexMonitor) - Codex app-server v2 with workspace support
 
 ---
 
