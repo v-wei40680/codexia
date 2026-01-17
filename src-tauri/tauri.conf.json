@@ -51,7 +51,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDNCM0Q1ODU3RTRGMkJFRgpSV1R2SzA5K2hkV3pBNHI0NlpIYzYyb2tvR09wWFJIMWhsRE5teHRCL0RzQWsvY1F4WWZzdGtXdwo=",
       "endpoints": [
-        "https://github.com/milisp/codexia/releases/download/{{version}}/latest.json"
+        "https://github.com/milisp/codexia/releases/latest/download/latest.json"
       ]
     }
   },
