@@ -136,4 +136,4 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          bash scripts/update-homebrew-tap.sh "${GITHUB_REF_NAME#v}"
+          bash scripts/update-homebrew-tap.sh

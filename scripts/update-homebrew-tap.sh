@@ -1,19 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-VERSION="$1"
-
-if [ -z "$VERSION" ]; then
-  echo "VERSION argument is required"
-  exit 1
-fi
-
 if [ -z "${GITHUB_TOKEN:-}" ]; then
   echo "GITHUB_TOKEN is not set"
   exit 1
 fi
-TAG="v${VERSION}"
-curl -f -L "https://api.github.com/repos/milisp/codexia/releases/tags/${TAG}" > release.json
+curl -f -L \
+  -H "Authorization: Bearer ${GITHUB_TOKEN}" \
+  -H "Accept: application/vnd.github+json" \
+  "https://api.github.com/repos/milisp/codexia/releases/latest" > release.json
 RELEASE_JSON="release.json"
 
 if [ ! -f "$RELEASE_JSON" ]; then
@@ -21,11 +16,7 @@ if [ ! -f "$RELEASE_JSON" ]; then
   exit 1
 fi
 
-RELEASE_TAG=$(jq -r '.tag_name' "$RELEASE_JSON")
-if [ "$RELEASE_TAG" != "$TAG" ]; then
-  echo "Error: fetched release tag ($RELEASE_TAG) does not match expected tag ($TAG)"
-  exit 1
-fi
+VERSION=$(jq -r '.tag_name' "$RELEASE_JSON")
 
 git clone https://x-access-token:${GITHUB_TOKEN}@github.com/milisp/homebrew-codexia.git
 cd homebrew-codexia
