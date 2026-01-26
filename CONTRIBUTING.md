@@ -34,7 +34,7 @@ bun tauri dev
 
 Build the frontend only:
 ```bash
-bun run export:bindings  # if you didn't run `bun tauri dev`
+codex app-server generate-ts -o src/bindings  # if you didn't run `bun tauri dev`
 bun run build
 ```
 
