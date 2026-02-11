@@ -4,6 +4,7 @@ import { codexService } from '@/services/codexService';
 import { ProjectSelector } from '@/components/ProjectSelector';
 import { useLayoutStore } from '@/stores';
 import { useCodexStore, useCurrentThread } from '@/stores/codex';
+import { useCCSessionManager } from '@/hooks/useCCSessionManager';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 
 type MainHeaderProps = {
@@ -15,11 +16,17 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
   const { isRightPanelOpen, toggleRightPanel, isSidebarOpen, setSidebarOpen, setView, view } =
     useLayoutStore();
   const { historyMode, setHistoryMode, selectedAgent } = useWorkspaceStore();
+  const { handleNewSession } = useCCSessionManager();
   const { currentThreadId, activeThreadIds } = useCodexStore();
   const currentThread = useCurrentThread();
   const showTerminalButton = view === 'codex' || view === 'cc';
 
   const handleNewThread = async () => {
+    if (selectedAgent === 'cc') {
+      setView('cc');
+      await handleNewSession();
+      return;
+    }
     await codexService.setCurrentThread(null);
   };
   const handleToggleHistoryMode = async () => {

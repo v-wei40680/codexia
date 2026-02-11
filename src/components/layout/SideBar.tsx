@@ -27,7 +27,7 @@ import { UpdateButton } from '../features/UpdateButton';
 import { getFilename } from '@/utils/getFilename';
 
 export function SideBar() {
-  const { cwd, setCwd, setSelectedAgent, projects, addProject, setInstructionType } =
+  const { cwd, setCwd, selectedAgent, setSelectedAgent, projects, addProject, setInstructionType } =
     useWorkspaceStore();
   const {
     isSidebarOpen,
@@ -40,10 +40,20 @@ export function SideBar() {
     setRightPanelOpen,
   } = useLayoutStore();
   const { searchTerm, setSearchTerm, handleNewThread, handleMenu } = useThreadList();
-  const { handleSessionSelect } = useCCSessionManager();
+  const { handleSessionSelect, handleNewSession } = useCCSessionManager();
   const { hasUpdate, startUpdate } = useUpdater({ enabled: true });
   const [expandedProjects, setExpandedProjects] = useState<Record<string, boolean>>({});
   const sortedProjects = useMemo(() => projects, [projects]);
+
+  const handleCreateNew = useCallback(async () => {
+    if (selectedAgent === 'cc') {
+      setActiveSidebarTab('cc');
+      setView('cc');
+      await handleNewSession();
+      return;
+    }
+    await handleNewThread();
+  }, [handleNewSession, handleNewThread, selectedAgent, setActiveSidebarTab, setView]);
 
   const handleAddProject = useCallback(async () => {
     const projectPath = await open({
@@ -86,11 +96,11 @@ export function SideBar() {
         <div className="flex flex-col gap-1 px-1">
           <Button
             variant="ghost"
-            onClick={handleNewThread}
+            onClick={handleCreateNew}
             size="sm"
             className="justify-start gap-2 h-8"
           >
-            <SquarePen /> New Thread
+            <SquarePen /> {selectedAgent === 'cc' ? 'New Session' : 'New Thread'}
           </Button>
           <Button
             variant="ghost"
@@ -199,7 +209,7 @@ export function SideBar() {
                       variant="ghost"
                       size="icon-xs"
                       title={`Start new thread in ${getFilename(project) || project}`}
-                      onClick={handleNewThread}
+                      onClick={handleCreateNew}
                       className="shrink-0"
                     >
                       <SquarePen />

@@ -11,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
+import { useLayoutStore } from '@/stores';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 
 interface Props {
@@ -21,7 +22,8 @@ export function ClaudeCodeSessionList({ onSelectSession }: Props) {
   const [allSessions, setAllSessions] = useState<SessionData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { cwd } = useWorkspaceStore();
+  const { cwd, setSelectedAgent } = useWorkspaceStore();
+  const { setView } = useLayoutStore();
   const { activeSessionIds, activeSessionId } = useCCStore();
   const [activeTab, setActiveTab] = useState('current');
   const { toast } = useToast();
@@ -58,6 +60,8 @@ export function ClaudeCodeSessionList({ onSelectSession }: Props) {
   }
 
   const handleSessionClick = (session: SessionData) => {
+    setSelectedAgent('cc');
+    setView('cc');
     if (onSelectSession) {
       onSelectSession(session.sessionId);
     }
