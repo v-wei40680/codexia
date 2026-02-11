@@ -1,53 +1,77 @@
-import React, { ReactNode, useEffect } from 'react';
-import { useThemeStore, type Accent } from '@/stores/settings/ThemeStore';
+import React, { ReactNode, useEffect, useState } from 'react';
+import { useThemeStore, type Accent, type Theme } from '@/stores/settings/useThemeStore';
 
 interface ThemeContextType {
-  theme: 'light' | 'dark';
+  theme: Theme;
+  resolvedTheme: 'light' | 'dark';
   accent: Accent;
   toggleTheme: () => void;
-  setTheme: (theme: 'light' | 'dark') => void;
+  setTheme: (theme: Theme) => void;
   setAccent: (accent: Accent) => void;
 }
 
-export type { Accent };
+export type { Accent, Theme };
 
 const ThemeContext = React.createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const { theme, accent, toggleTheme, setTheme, setAccent } = useThemeStore();
+  const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('dark');
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+
+    const updateResolvedTheme = () => {
+      if (theme === 'system') {
+        setResolvedTheme(mediaQuery.matches ? 'dark' : 'light');
+      } else {
+        setResolvedTheme(theme);
+      }
+    };
+
+    updateResolvedTheme();
+
+    const handler = () => updateResolvedTheme();
+    mediaQuery.addEventListener('change', handler);
+    return () => mediaQuery.removeEventListener('change', handler);
+  }, [theme]);
 
   useEffect(() => {
     const root = window.document.documentElement;
 
     // Classes to cleanup
     const themes = ['light', 'dark'];
-    const accents = ['accent-black', 'accent-pink', 'accent-blue', 'accent-green', 'accent-purple', 'accent-orange'];
+    const accents = [
+      'accent-black',
+      'accent-pink',
+      'accent-blue',
+      'accent-green',
+      'accent-purple',
+      'accent-orange',
+    ];
 
     // Handle dark/light mode
     root.classList.remove(...themes);
-    root.classList.add(theme);
+    root.classList.add(resolvedTheme);
 
     // Handle accent color
     root.classList.remove(...accents);
     root.classList.add(`accent-${accent}`);
 
     // Apply color-scheme for browser UI elements (affects scrollbars, etc)
-    root.style.setProperty('color-scheme', theme);
-  }, [theme, accent]);
+    root.style.setProperty('color-scheme', resolvedTheme);
+  }, [resolvedTheme, accent]);
 
   const value: ThemeContextType = {
     theme,
+    resolvedTheme,
     accent,
     toggleTheme,
     setTheme,
     setAccent,
   };
 
-  return (
-    <ThemeContext.Provider value={value}>
-      {children}
-    </ThemeContext.Provider>
-  );
+  return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }
 
 export function useThemeContext(): ThemeContextType {

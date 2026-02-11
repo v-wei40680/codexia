@@ -1,9 +1,9 @@
-import i18n from "i18next";
-import { initReactI18next } from "react-i18next";
-import { AppLocale, localeLabels, localeResources } from "@/locales";
-import { useLocaleStore } from "@/stores/settings/LocaleStore";
+import i18n from 'i18next';
+import { initReactI18next } from 'react-i18next';
+import { AppLocale, localeLabels, localeResources } from '@/locales';
+import { useLocaleStore } from '@/stores/settings/useLocaleStore';
 
-const fallbackLocale: AppLocale = "en";
+const fallbackLocale: AppLocale = 'en';
 const initialLocale = useLocaleStore.getState().locale ?? fallbackLocale;
 
 if (!i18n.isInitialized) {
@@ -26,9 +26,7 @@ useLocaleStore.subscribe((state) => {
 
 export { i18n };
 
-export const supportedLocales = (Object.keys(localeResources) as AppLocale[]).map(
-  (code) => ({
-    code,
-    label: localeLabels[code],
-  }),
-);
+export const supportedLocales = (Object.keys(localeResources) as AppLocale[]).map((code) => ({
+  code,
+  label: localeLabels[code],
+}));

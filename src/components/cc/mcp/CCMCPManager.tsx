@@ -1,36 +1,42 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trash2, Plus } from "lucide-react";
-import type { CCMcpServerConfig, CCMcpServers } from "@/types/cc-mcp";
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Trash2, Plus } from 'lucide-react';
+import type { CCMcpServerConfig, CCMcpServers } from '@/types/cc/cc-mcp';
 
 interface CCMCPManagerProps {
   servers: CCMcpServers;
   onChange: (servers: CCMcpServers) => void;
 }
 
-type ServerType = "stdio" | "http" | "sse";
+type ServerType = 'stdio' | 'http' | 'sse';
 
 export function CCMCPManager({ servers, onChange }: CCMCPManagerProps) {
-  const [newServerName, setNewServerName] = useState("");
-  const [newServerType, setNewServerType] = useState<ServerType>("stdio");
-  const [newCommand, setNewCommand] = useState("");
-  const [newUrl, setNewUrl] = useState("");
-  const [newArgs, setNewArgs] = useState("");
+  const [newServerName, setNewServerName] = useState('');
+  const [newServerType, setNewServerType] = useState<ServerType>('stdio');
+  const [newCommand, setNewCommand] = useState('');
+  const [newUrl, setNewUrl] = useState('');
+  const [newArgs, setNewArgs] = useState('');
 
   const handleAddServer = () => {
     if (!newServerName.trim()) return;
 
     let config: CCMcpServerConfig;
 
-    if (newServerType === "stdio") {
+    if (newServerType === 'stdio') {
       if (!newCommand.trim()) return;
       config = {
-        type: "stdio",
+        type: 'stdio',
         command: newCommand,
-        args: newArgs ? newArgs.split(" ").filter(a => a) : undefined,
+        args: newArgs ? newArgs.split(' ').filter((a) => a) : undefined,
       };
     } else {
       if (!newUrl.trim()) return;
@@ -46,10 +52,10 @@ export function CCMCPManager({ servers, onChange }: CCMCPManagerProps) {
     });
 
     // Reset form
-    setNewServerName("");
-    setNewCommand("");
-    setNewUrl("");
-    setNewArgs("");
+    setNewServerName('');
+    setNewCommand('');
+    setNewUrl('');
+    setNewArgs('');
   };
 
   const handleRemoveServer = (name: string) => {
@@ -73,13 +79,15 @@ export function CCMCPManager({ servers, onChange }: CCMCPManagerProps) {
                   <div className="flex items-center gap-2">
                     <span className="text-xs font-mono font-medium">{name}</span>
                     <span className="text-xs px-1.5 py-0.5 rounded bg-muted">
-                      {config.type || "stdio"}
+                      {config.type || 'stdio'}
                     </span>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    {config.type === "stdio" || !config.type
-                      ? `${"command" in config ? config.command : ""} ${"args" in config ? (config.args || []).join(" ") : ""}`
-                      : "url" in config ? config.url : ""}
+                    {config.type === 'stdio' || !config.type
+                      ? `${'command' in config ? config.command : ''} ${'args' in config ? (config.args || []).join(' ') : ''}`
+                      : 'url' in config
+                        ? config.url
+                        : ''}
                   </p>
                 </div>
                 <Button
@@ -124,7 +132,7 @@ export function CCMCPManager({ servers, onChange }: CCMCPManagerProps) {
             </Select>
           </div>
 
-          {newServerType === "stdio" ? (
+          {newServerType === 'stdio' ? (
             <>
               <div className="space-y-1">
                 <Label className="text-xs">Command</Label>
@@ -163,7 +171,7 @@ export function CCMCPManager({ servers, onChange }: CCMCPManagerProps) {
             className="w-full h-8 text-xs"
             disabled={
               !newServerName.trim() ||
-              (newServerType === "stdio" ? !newCommand.trim() : !newUrl.trim())
+              (newServerType === 'stdio' ? !newCommand.trim() : !newUrl.trim())
             }
           >
             <Plus className="h-3.5 w-3.5 mr-1" />

@@ -1,21 +1,15 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Progress } from "@/components/ui/progress";
-import { invoke } from "@/lib/tauri-proxy";
-import type { GetAccountRateLimitsResponse } from "@/bindings/v2/GetAccountRateLimitsResponse";
-import type { RateLimitWindow } from "@/bindings/v2/RateLimitWindow";
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { invoke } from '@tauri-apps/api/core';
+import type { GetAccountRateLimitsResponse } from '@/bindings/v2/GetAccountRateLimitsResponse';
+import type { RateLimitWindow } from '@/bindings/v2/RateLimitWindow';
 
 function formatTimestamp(timestamp: number | bigint | null) {
   if (timestamp == null) {
-    return "Unknown";
+    return 'Unknown';
   }
 
   return new Date(Number(timestamp) * 1000).toLocaleString();
@@ -32,9 +26,7 @@ function renderWindow(window: RateLimitWindow | null, label: string) {
       {window ? (
         <div className="mt-3 space-y-3 text-sm text-muted-foreground">
           <div className="flex items-center justify-between">
-            <span className="font-semibold text-foreground">
-              {remainingPercent}% remaining
-            </span>
+            <span className="font-semibold text-foreground">{remainingPercent}% remaining</span>
           </div>
           <Progress
             value={remainingPercent}
@@ -67,13 +59,11 @@ export function RateLimitSettings() {
     setLastError(null);
 
     try {
-      const response = await invoke<GetAccountRateLimitsResponse>(
-        "get_account_rate_limits",
-      );
+      const response = await invoke<GetAccountRateLimitsResponse>('account_rate_limits');
       setRateLimits(response);
       setLastFetchedAt(new Date());
     } catch (error) {
-      const message = error instanceof Error ? error.message : String(error ?? "Unknown error");
+      const message = error instanceof Error ? error.message : String(error ?? 'Unknown error');
       setLastError(message);
     } finally {
       setIsLoading(false);
@@ -89,15 +79,15 @@ export function RateLimitSettings() {
 
   const statusText = useMemo(() => {
     if (isLoading) {
-      return "Refreshing...";
+      return 'Refreshing...';
     }
     if (lastFetchedAt) {
       return `Last updated ${lastFetchedAt.toLocaleTimeString()}`;
     }
     if (lastError) {
-      return "Unable to load rate limits";
+      return 'Unable to load rate limits';
     }
-    return "No data yet";
+    return 'No data yet';
   }, [isLoading, lastError, lastFetchedAt]);
 
   return (
@@ -108,13 +98,13 @@ export function RateLimitSettings() {
       <CardContent className="space-y-4">
         {lastError && <p className="text-sm text-destructive">{lastError}</p>}
         <div className="space-y-4">
-          {renderWindow(primaryWindow, "5 hour usage limit")}
-          {renderWindow(secondaryWindow, "Weekly usage limit")}
+          {renderWindow(primaryWindow, '5 hour usage limit')}
+          {renderWindow(secondaryWindow, 'Weekly usage limit')}
         </div>
       </CardContent>
       <CardFooter className="flex items-center gap-2">
         <Button onClick={fetchRateLimits} disabled={isLoading}>
-          {isLoading ? "Refreshing…" : "Refresh"}
+          {isLoading ? 'Refreshing…' : 'Refresh'}
         </Button>
         <span className="text-xs text-muted-foreground">{statusText}</span>
       </CardFooter>

@@ -1,4 +1,4 @@
-use calamine::{open_workbook, Data, Reader as CalamineReader, Xlsx};
+use calamine::{Data, Reader as CalamineReader, Xlsx, open_workbook};
 use std::path::Path;
 
 #[tauri::command]

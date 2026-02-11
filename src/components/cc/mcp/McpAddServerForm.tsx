@@ -1,13 +1,13 @@
-import { useState } from "react";
-import { invoke } from "@/lib/tauri-proxy";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Plus } from "lucide-react";
-import { toast } from "sonner";
-import { McpServerFormFields } from "./McpServerFormFields";
-import type { ClaudeCodeMcpServer } from "@/types/cc-mcp";
+import { useState } from 'react';
+import { invoke } from '@tauri-apps/api/core';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Plus } from 'lucide-react';
+import { toast } from 'sonner';
+import { McpServerFormFields } from './McpServerFormFields';
+import type { ClaudeCodeMcpServer } from '@/types/cc/cc-mcp';
 
-type ServerType = "stdio" | "http" | "sse";
+type ServerType = 'stdio' | 'http' | 'sse';
 
 interface McpAddServerFormProps {
   workingDir: string;
@@ -22,64 +22,64 @@ export function McpAddServerForm({
   onServerAdded,
   onCancel,
 }: McpAddServerFormProps) {
-  const [newServerName, setNewServerName] = useState("");
-  const [newServerType, setNewServerType] = useState<ServerType>("stdio");
-  const [newCommand, setNewCommand] = useState("");
-  const [newArgs, setNewArgs] = useState("");
-  const [newUrl, setNewUrl] = useState("");
-  const [newEnv, setNewEnv] = useState("");
+  const [newServerName, setNewServerName] = useState('');
+  const [newServerType, setNewServerType] = useState<ServerType>('stdio');
+  const [newCommand, setNewCommand] = useState('');
+  const [newArgs, setNewArgs] = useState('');
+  const [newUrl, setNewUrl] = useState('');
+  const [newEnv, setNewEnv] = useState('');
 
   const handleAddServer = async () => {
     if (!newServerName.trim()) {
-      toast.error("Server name is required");
+      toast.error('Server name is required');
       return;
     }
 
     if (existingServers.some((s) => s.name === newServerName)) {
-      toast.error("Server name already exists");
+      toast.error('Server name already exists');
       return;
     }
 
     let request: any = {
       name: newServerName,
       type: newServerType,
-      scope: "local", // Default to local when adding from UI
+      scope: 'local', // Default to local when adding from UI
     };
 
     try {
-      if (newServerType === "stdio") {
+      if (newServerType === 'stdio') {
         if (!newCommand.trim()) {
-          toast.error("Command is required for stdio servers");
+          toast.error('Command is required for stdio servers');
           return;
         }
 
         request.command = newCommand;
-        request.args = newArgs ? newArgs.split(" ").filter((a) => a.trim()) : undefined;
+        request.args = newArgs ? newArgs.split(' ').filter((a) => a.trim()) : undefined;
 
         if (newEnv.trim()) {
           request.env = JSON.parse(newEnv);
         }
       } else {
         if (!newUrl.trim()) {
-          toast.error("URL is required for HTTP/SSE servers");
+          toast.error('URL is required for HTTP/SSE servers');
           return;
         }
 
         request.url = newUrl;
       }
 
-      await invoke("cc_mcp_add", { request, workingDir });
+      await invoke('cc_mcp_add', { request, workingDir });
 
       // Reset form and refresh
-      setNewServerName("");
-      setNewCommand("");
-      setNewArgs("");
-      setNewUrl("");
-      setNewEnv("");
+      setNewServerName('');
+      setNewCommand('');
+      setNewArgs('');
+      setNewUrl('');
+      setNewEnv('');
       onServerAdded();
       toast.success(`Server "${newServerName}" added successfully`);
     } catch (error) {
-      toast.error("Failed to add server or invalid environment JSON format");
+      toast.error('Failed to add server or invalid environment JSON format');
     }
   };
 
@@ -107,7 +107,7 @@ export function McpAddServerForm({
             className="flex-1"
             disabled={
               !newServerName.trim() ||
-              (newServerType === "stdio" ? !newCommand.trim() : !newUrl.trim())
+              (newServerType === 'stdio' ? !newCommand.trim() : !newUrl.trim())
             }
           >
             <Plus className="h-4 w-4 mr-2" />
@@ -123,4 +123,3 @@ export function McpAddServerForm({
     </Card>
   );
 }
-

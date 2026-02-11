@@ -1,5 +1,5 @@
 use crate::state::WatchState;
-use notify::{recommended_watcher, Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
+use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher, recommended_watcher};
 use serde::Serialize;
 use std::path::{Path, PathBuf};
 use tauri::{AppHandle, Emitter, State};
@@ -87,7 +87,6 @@ pub async fn start_watch_directory(
 
 #[tauri::command]
 pub async fn stop_watch_directory(
-    _app: AppHandle,
     state: State<'_, WatchState>,
     folder_path: String,
 ) -> Result<(), String> {

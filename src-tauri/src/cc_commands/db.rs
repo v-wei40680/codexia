@@ -39,9 +39,9 @@ impl SessionDB {
     }
 
     pub fn is_scanned(&self, file_path: &str) -> Result<bool> {
-        let mut stmt = self.conn.prepare(
-            "SELECT COUNT(*) FROM sessions WHERE file_path = ?1"
-        )?;
+        let mut stmt = self
+            .conn
+            .prepare("SELECT COUNT(*) FROM sessions WHERE file_path = ?1")?;
         let count: i64 = stmt.query_row([file_path], |row| row.get(0))?;
         Ok(count > 0)
     }
@@ -64,7 +64,7 @@ impl SessionDB {
 
     pub fn get_all_sessions(&self) -> Result<Vec<SessionData>> {
         let mut stmt = self.conn.prepare(
-            "SELECT session_id, project, display, timestamp FROM sessions ORDER BY timestamp DESC"
+            "SELECT session_id, project, display, timestamp FROM sessions ORDER BY timestamp DESC",
         )?;
 
         let sessions = stmt.query_map([], |row| {

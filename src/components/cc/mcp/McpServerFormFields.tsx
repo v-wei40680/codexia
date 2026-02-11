@@ -1,9 +1,15 @@
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
-type ServerType = "stdio" | "http" | "sse";
+type ServerType = 'stdio' | 'http' | 'sse';
 
 interface McpServerFormFieldsProps {
   serverType: ServerType;
@@ -35,8 +41,8 @@ export function McpServerFormFields({
   env,
   onEnvChange,
   onTypeChange,
-  namePlaceholder = "my-mcp-server",
-  envLabel = "Environment Variables (JSON, optional)",
+  namePlaceholder = 'my-mcp-server',
+  envLabel = 'Environment Variables (JSON, optional)',
 }: McpServerFormFieldsProps) {
   return (
     <>
@@ -64,7 +70,7 @@ export function McpServerFormFields({
         </Select>
       </div>
 
-      {serverType === "stdio" ? (
+      {serverType === 'stdio' ? (
         <>
           <div className="space-y-2">
             <Label className="text-xs">Command</Label>
@@ -109,4 +115,3 @@ export function McpServerFormFields({
     </>
   );
 }
-

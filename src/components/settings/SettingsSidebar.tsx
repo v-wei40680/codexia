@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { Button } from '@/components/ui/button';
 
 interface SettingsSidebarProps {
   activeSection: string;
@@ -6,27 +6,23 @@ interface SettingsSidebarProps {
 }
 
 const SECTIONS = [
-  { id: "login", label: "Codex login" },
-  { id: "rateLimit", label: "Codex rate limit" },
-  { id: "promptOptimizer", label: "Prompt Optimizer" },
-  { id: "exclude", label: "Exclude Folders" },
-  { id: "remoteAccess", label: "Remote Access" },
-  { id: "gitWorktree", label: "Git Worktree" },
-  { id: "appearance", label: "Appearance" },
-  { id: "quote", label: "Quote Filters" },
-  { id: "analytics", label: "Analytics" }
+  { id: 'login', label: 'Codex login' },
+  { id: 'rateLimit', label: 'Codex rate limit' },
+  { id: 'promptOptimizer', label: 'Prompt Optimizer' },
+  { id: 'exclude', label: 'Exclude Folders' },
+  { id: 'gitWorktree', label: 'Git Worktree' },
+  { id: 'appearance', label: 'Appearance' },
+  { id: 'quote', label: 'Quote Filters' },
+  { id: 'analytics', label: 'Analytics' },
 ];
 
-export default function SettingsSidebar({
-  activeSection,
-  onSectionChange,
-}: SettingsSidebarProps) {
+export default function SettingsSidebar({ activeSection, onSectionChange }: SettingsSidebarProps) {
   return (
     <div className="w-64 border-r bg-muted/30 px-4 space-y-2">
       {SECTIONS.map((section) => (
         <Button
           key={section.id}
-          variant={activeSection === section.id ? "default" : "ghost"}
+          variant={activeSection === section.id ? 'default' : 'ghost'}
           className="w-full justify-start"
           onClick={() => onSectionChange(section.id)}
         >

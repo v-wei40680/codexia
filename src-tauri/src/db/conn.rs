@@ -1,0 +1,65 @@
+use rusqlite::Connection;
+use std::path::PathBuf;
+
+/// Get the path to the SQLite database
+fn get_db_path() -> Result<PathBuf, String> {
+    let home_dir = dirs::home_dir().ok_or("Could not get home directory")?;
+    let codexia_dir = home_dir.join(".codexia");
+    std::fs::create_dir_all(&codexia_dir)
+        .map_err(|e| format!("Failed to create .codexia directory: {}", e))?;
+    Ok(codexia_dir.join("cache.db"))
+}
+
+/// Get a database connection and ensure tables exist
+pub(crate) fn get_connection() -> Result<Connection, String> {
+    let db_path = get_db_path()?;
+    let conn = Connection::open(db_path).map_err(|e| format!("Failed to open database: {}", e))?;
+
+    init_tables(&conn)?;
+    Ok(conn)
+}
+
+/// Initialize database tables
+fn init_tables(conn: &Connection) -> Result<(), String> {
+    init_notes_table(conn)?;
+    Ok(())
+}
+
+/// Create notes table and indexes
+fn init_notes_table(conn: &Connection) -> Result<(), String> {
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS notes (
+            id TEXT PRIMARY KEY,
+            user_id TEXT,
+            title TEXT NOT NULL,
+            content TEXT NOT NULL,
+            tags TEXT,
+            is_favorited BOOLEAN NOT NULL DEFAULT 0,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            synced_at TEXT
+        )",
+        [],
+    )
+    .map_err(|e| format!("Failed to create notes table: {}", e))?;
+
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_notes_user_id ON notes(user_id)",
+        [],
+    )
+    .map_err(|e| format!("Failed to create notes user_id index: {}", e))?;
+
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_notes_updated_at ON notes(updated_at DESC)",
+        [],
+    )
+    .map_err(|e| format!("Failed to create notes updated_at index: {}", e))?;
+
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_notes_synced ON notes(synced_at)",
+        [],
+    )
+    .map_err(|e| format!("Failed to create notes synced_at index: {}", e))?;
+
+    Ok(())
+}

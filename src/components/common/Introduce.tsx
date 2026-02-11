@@ -3,16 +3,12 @@ import {
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
-} from "@/components/ui/accordion";
-import { Button } from "../ui/button";
-import { open } from "@tauri-apps/plugin-shell";
-import { ExternalLink, Github, Twitter } from "lucide-react";
-import { SimpleGitWorktreeSettings } from "../settings/GitWorktreeSettings";
-import { Switch } from "../ui/switch";
-import { useSettingsStore } from "@/stores/settings";
-import { useTranslation } from "react-i18next";
-import { CodexAuth } from "@/components/settings";
-import { invoke } from "@/lib/tauri-proxy";
+} from '@/components/ui/accordion';
+import { SimpleGitWorktreeSettings } from '../settings/GitWorktreeSettings';
+import { Switch } from '@/components/ui/switch';
+import { useSettingsStore } from '@/stores/settings';
+import { Button } from '@/components/ui/button';
+import { Github, Twitter } from 'lucide-react';
 
 export function Introduce() {
   const {
@@ -21,47 +17,18 @@ export function Introduce() {
     preventSleepDuringTasks,
     setPreventSleepDuringTasks,
   } = useSettingsStore();
-  const { t } = useTranslation();
-
-  const handleNewWindow = async () => {
-    try {
-      await invoke("create_new_window");
-    } catch (error) {
-      console.error("Failed to create new window:", error);
-    }
-  };
 
   return (
-    <Accordion
-      type="single"
-      collapsible
-      className="w-full px-2 sm:px-4"
-      defaultValue="item-2"
-    >
-      <AccordionItem value="item-1">
-        <AccordionTrigger className="text-sm sm:text-base">ChatGPT Auth</AccordionTrigger>
-        <AccordionContent>
-          <CodexAuth />
-        </AccordionContent>
-      </AccordionItem>
+    <Accordion type="single" collapsible className="w-full px-2 sm:px-4" defaultValue="item-2">
       <AccordionItem value="item-2">
-        <AccordionTrigger className="text-sm sm:text-base">Settings</AccordionTrigger>
+        <AccordionTrigger className="text-sm sm:text-base">Task</AccordionTrigger>
         <AccordionContent className="flex flex-col gap-3 sm:gap-4 text-balance">
-          <div className="flex flex-col sm:flex-row justify-between gap-3">
-            <span className="flex flex-col sm:flex-row gap-2 flex-wrap">
-              <Button onClick={handleNewWindow} title={t("header.openNewWindow")} size="sm" className="justify-center sm:justify-start">
-                <ExternalLink className="h-4 w-4" />
-                <span className="ml-2">{t("header.openNewWindow")}</span>
-              </Button>
-            </span>
-          </div>
           <SimpleGitWorktreeSettings />
           <div className="flex items-start justify-between gap-2 sm:gap-4 rounded-md border p-3 sm:p-4">
             <div className="flex-1 min-w-0">
               <p className="text-xs sm:text-sm font-medium">Task completion beep</p>
               <p className="text-xs text-muted-foreground">
-                Play a short tone when tasks finish so you can focus away from
-                the screen.
+                Play a short tone when tasks finish so you can focus away from the screen.
               </p>
             </div>
             <Switch
@@ -74,8 +41,7 @@ export function Introduce() {
             <div className="flex-1 min-w-0">
               <p className="text-xs sm:text-sm font-medium">Keep system awake</p>
               <p className="text-xs text-muted-foreground">
-                Prevent the computer from sleeping while active tasks run to
-                avoid interruptions.
+                Prevent the computer from sleeping while active tasks run to avoid interruptions.
               </p>
             </div>
             <Switch
@@ -87,12 +53,12 @@ export function Introduce() {
         </AccordionContent>
       </AccordionItem>
       <AccordionItem value="item-3">
-        <AccordionTrigger className="text-sm sm:text-base">Keep in touch and community</AccordionTrigger>
+        <AccordionTrigger className="text-sm sm:text-base">
+          Keep in touch and community
+        </AccordionTrigger>
         <AccordionContent className="flex flex-wrap gap-2 text-balance">
           <Button
-            onClick={() =>
-              open("https://github.com/milisp/codexia/discussions")
-            }
+            onClick={() => open('https://github.com/milisp/codexia/discussions')}
             size="sm"
             className="flex-1 min-w-[120px]"
           >
@@ -100,27 +66,41 @@ export function Introduce() {
             <span className="ml-2">Discussion</span>
           </Button>
           <Button
-            onClick={() =>
-              open("https://github.com/milisp/codexia/issues")
-            }
+            onClick={() => open('https://github.com/milisp/codexia/issues')}
             size="sm"
             className="flex-1 min-w-[100px]"
           >
             <Github className="h-4 w-4" />
             <span className="ml-2">Bug</span>
           </Button>
-          <Button onClick={() => open("https://discord.gg/zAjtD4kf5K")} size="sm" className="flex-shrink-0">
+          <Button
+            onClick={() => open('https://discord.gg/zAjtD4kf5K')}
+            size="sm"
+            className="flex-shrink-0"
+          >
             <img src="/discord.svg" height={16} width={16} alt="Discord" />
           </Button>
-          <Button onClick={() => open("https://x.com/lisp_mi")} size="sm" className="flex-1 min-w-[100px]">
+          <Button
+            onClick={() => open('https://x.com/lisp_mi')}
+            size="sm"
+            className="flex-1 min-w-[100px]"
+          >
             <Twitter className="h-4 w-4" />
             <span className="ml-2">lisp_mi</span>
           </Button>
-          <Button onClick={() => open("https://www.reddit.com/r/codexia/")} size="sm" className="flex-1 min-w-[120px]">
+          <Button
+            onClick={() => open('https://www.reddit.com/r/codexia/')}
+            size="sm"
+            className="flex-1 min-w-[120px]"
+          >
             <img src="/reddit.svg" height={16} width={16} alt="Reddit" />
             <span className="ml-2">r/codexia</span>
           </Button>
-          <Button onClick={() => open("https://www.reddit.com/r/codex/")} size="sm" className="flex-1 min-w-[110px]">
+          <Button
+            onClick={() => open('https://www.reddit.com/r/codex/')}
+            size="sm"
+            className="flex-1 min-w-[110px]"
+          >
             <img src="/reddit.svg" height={16} width={16} alt="Reddit" />
             <span className="ml-2">r/codex</span>
           </Button>

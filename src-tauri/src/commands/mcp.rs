@@ -1,9 +1,11 @@
+use crate::codex::config::mcp::McpServerConfig;
 use serde_json::Value as JsonValue;
 use std::collections::HashMap;
-use crate::codex;
 use tauri::command;
 
-use crate::cc_commands::mcp::{ClaudeCodeMcpServer, cc_mcp_add, cc_mcp_enable, cc_mcp_disable, cc_mcp_list, cc_mcp_remove};
+use crate::cc_commands::mcp::{
+    ClaudeCodeMcpServer, cc_mcp_add, cc_mcp_disable, cc_mcp_enable, cc_mcp_list, cc_mcp_remove,
+};
 use crate::codex_commands;
 
 /// Unified command to add MCP server for either Codex or CC
@@ -17,7 +19,7 @@ pub async fn unified_add_mcp_server(
 ) -> Result<(), String> {
     match client_name.as_str() {
         "codex" => {
-            let config: codex::v1::McpServerConfig = serde_json::from_value(server_config)
+            let config: McpServerConfig = serde_json::from_value(server_config)
                 .map_err(|e| format!("Failed to parse Codex MCP config: {}", e))?;
             codex_commands::add_mcp_server(server_name, config).await
         }
@@ -31,8 +33,14 @@ pub async fn unified_add_mcp_server(
                     .and_then(|v| v.as_str())
                     .unwrap_or("stdio")
                     .to_string(),
-                url: server_config.get("url").and_then(|v| v.as_str()).map(String::from),
-                command: server_config.get("command").and_then(|v| v.as_str()).map(String::from),
+                url: server_config
+                    .get("url")
+                    .and_then(|v| v.as_str())
+                    .map(String::from),
+                command: server_config
+                    .get("command")
+                    .and_then(|v| v.as_str())
+                    .map(String::from),
                 args: server_config.get("args").and_then(|v| {
                     v.as_array().map(|arr| {
                         arr.iter()
@@ -66,9 +74,7 @@ pub async fn unified_enable_mcp_server(
     server_name: String,
 ) -> Result<(), String> {
     match client_name.as_str() {
-        "codex" => {
-            codex_commands::set_mcp_server_enabled(server_name, true).await
-        }
+        "codex" => codex_commands::set_mcp_server_enabled(server_name, true).await,
         "cc" => {
             let working_dir = path.ok_or("CC requires a project path")?;
             cc_mcp_enable(server_name, working_dir).await.map(|_| ())
@@ -85,9 +91,7 @@ pub async fn unified_disable_mcp_server(
     server_name: String,
 ) -> Result<(), String> {
     match client_name.as_str() {
-        "codex" => {
-            codex_commands::set_mcp_server_enabled(server_name, false).await
-        }
+        "codex" => codex_commands::set_mcp_server_enabled(server_name, false).await,
         "cc" => {
             let working_dir = path.ok_or("CC requires a project path")?;
             cc_mcp_disable(server_name, working_dir).await.map(|_| ())
@@ -105,13 +109,13 @@ pub async fn unified_remove_mcp_server(
     scope: Option<String>,
 ) -> Result<(), String> {
     match client_name.as_str() {
-        "codex" => {
-            codex_commands::delete_mcp_server(server_name).await
-        }
+        "codex" => codex_commands::delete_mcp_server(server_name).await,
         "cc" => {
             let working_dir = path.ok_or("CC requires a project path")?;
             let scope = scope.ok_or("CC requires a scope for removal")?;
-            cc_mcp_remove(server_name, working_dir, scope).await.map(|_| ())
+            cc_mcp_remove(server_name, working_dir, scope)
+                .await
+                .map(|_| ())
         }
         _ => Err(format!("Unknown client: {}", client_name)),
     }

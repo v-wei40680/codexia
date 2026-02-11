@@ -10,7 +10,8 @@ pub fn get_projects() -> Result<Vec<String>, String> {
     let data: serde_json::Value = serde_json::from_str(&content)
         .map_err(|e| format!("Failed to parse .claude.json: {}", e))?;
 
-    let projects = data.get("projects")
+    let projects = data
+        .get("projects")
         .and_then(|p| p.as_object())
         .ok_or("No projects found in .claude.json")?;
 

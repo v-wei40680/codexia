@@ -1,200 +1,623 @@
-import { invoke } from "@tauri-apps/api/core";
-import { open } from "@tauri-apps/plugin-dialog";
 import type {
-  AppSettings,
-  WorkspaceInfo,
-  WorkspaceSettings,
-} from "@/types/codex-v2";
+  ModelListParams,
+  ModelListResponse,
+  ThreadStartParams,
+  ThreadStartResponse,
+  ThreadResumeParams,
+  ThreadResumeResponse,
+  TurnStartParams,
+  TurnStartResponse,
+  TurnInterruptParams,
+  ThreadListParams,
+  ThreadListResponse,
+  SkillsListResponse,
+  LoginAccountParams,
+  CancelLoginAccountParams,
+  GetAccountParams,
+  LoginAccountResponse,
+  CancelLoginAccountResponse,
+  LogoutAccountResponse,
+  GetAccountResponse,
+  ReviewStartParams,
+  ReviewStartResponse,
+  GetAccountRateLimitsResponse,
+  ToolRequestUserInputResponse,
+} from '@/bindings/v2';
 import type {
-  GitFileDiff,
-  GitFileStatus,
-  GitHubIssuesResponse,
-  GitLogResponse,
-  ReviewTarget,
-} from "@/types/codex-v2";
+  FuzzyFileSearchParams,
+  FuzzyFileSearchResponse,
+  LoginChatGptResponse,
+  ThreadId,
+  RequestId,
+} from '@/bindings';
+import type { CommandExecutionApprovalDecision, FileChangeApprovalDecision } from '@/bindings/v2';
+import { buildUrl, isTauri } from '@/hooks/runtime';
+import { toast } from '@/components/ui/use-toast';
 
-export async function pickWorkspacePath(): Promise<string | null> {
-  const selection = await open({ directory: true, multiple: false });
-  if (!selection || Array.isArray(selection)) {
-    return null;
+export type MarketplaceSkillItem = {
+  name: string;
+  description?: string | null;
+  license?: string | null;
+  skillMdPath: string;
+  sourceDirPath: string;
+  installed: boolean;
+};
+
+export type InstalledSkillItem = {
+  name: string;
+  path: string;
+  skillMdPath?: string | null;
+  description?: string | null;
+};
+
+export type SkillScope = 'user' | 'project';
+export type SkillAgent = 'codex' | 'cc';
+
+async function invokeTauri<T>(command: string, payload?: Record<string, unknown>): Promise<T> {
+  const { invoke } = await import('@tauri-apps/api/core');
+  return invoke<T>(command, payload);
+}
+
+async function getJson<T>(path: string): Promise<T> {
+  const response = await fetch(buildUrl(path), {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  if (!response.ok) {
+    const message = `Request failed: ${response.status}`;
+    toast({
+      title: 'Request failed',
+      description: message,
+      variant: 'destructive',
+    });
+    return Promise.reject(new Error(message));
   }
-  return selection;
+
+  return (await response.json()) as T;
 }
 
-export async function listWorkspaces(): Promise<WorkspaceInfo[]> {
-  return invoke<WorkspaceInfo[]>("list_workspaces");
+async function postJson<T>(path: string, body?: unknown): Promise<T> {
+  const response = await fetch(buildUrl(path), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (!response.ok) {
+    const message = `Request failed: ${response.status}`;
+    toast({
+      title: 'Request failed',
+      description: message,
+      variant: 'destructive',
+    });
+    return Promise.reject(new Error(message));
+  }
+
+  return (await response.json()) as T;
 }
 
-export async function addWorkspace(
-  path: string,
-  codex_bin: string | null,
-): Promise<WorkspaceInfo> {
-  return invoke<WorkspaceInfo>("add_workspace", { path, codex_bin });
+async function postNoContent(path: string, body?: unknown): Promise<void> {
+  const response = await fetch(buildUrl(path), {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+
+  if (!response.ok) {
+    const message = `Request failed: ${response.status}`;
+    toast({
+      title: 'Request failed',
+      description: message,
+      variant: 'destructive',
+    });
+    return Promise.reject(new Error(message));
+  }
 }
 
-export async function addWorktree(
-  parentId: string,
-  branch: string,
-): Promise<WorkspaceInfo> {
-  return invoke<WorkspaceInfo>("add_worktree", { parentId, branch });
+export async function listModels() {
+  const params: ModelListParams = {
+    cursor: null,
+    limit: 100,
+  };
+  if (isTauri()) {
+    return await invokeTauri<ModelListResponse>('model_list', { params });
+  }
+  return await postJson<ModelListResponse>('/api/codex/model/list', params);
 }
 
-export async function updateWorkspaceSettings(
+export async function threadStart(params: ThreadStartParams) {
+  if (isTauri()) {
+    return await invokeTauri<ThreadStartResponse>('start_thread', { params });
+  }
+  return await postJson<ThreadStartResponse>('/api/codex/thread/start', params);
+}
+
+export async function threadResume(params: ThreadResumeParams) {
+  if (isTauri()) {
+    return await invokeTauri<ThreadResumeResponse>('resume_thread', { params });
+  }
+  return await postJson<ThreadResumeResponse>('/api/codex/thread/resume', params);
+}
+
+export async function turnStart(params: TurnStartParams) {
+  if (isTauri()) {
+    return await invokeTauri<TurnStartResponse>('turn_start', { params });
+  }
+  return await postJson<TurnStartResponse>('/api/codex/turn/start', params);
+}
+
+export async function turnInterrupt(params: TurnInterruptParams) {
+  if (isTauri()) {
+    return await invokeTauri('turn_interrupt', { params });
+  }
+  return await postJson('/api/codex/turn/interrupt', params);
+}
+
+export async function threadList(params: ThreadListParams, cwd?: string) {
+  if (isTauri()) {
+    return await invokeTauri<ThreadListResponse>('list_threads', { params, cwd });
+  }
+  return await postJson<ThreadListResponse>('/api/codex/thread/list', { ...params, cwd });
+}
+
+export async function threadListArchived(params: ThreadListParams) {
+  if (isTauri()) {
+    return await invokeTauri<ThreadListResponse>('list_archived_threads', { params });
+  }
+  return await postJson<ThreadListResponse>('/api/codex/thread/list-archived', params);
+}
+
+export async function threadArchive(threadId: ThreadId) {
+  if (isTauri()) {
+    return await invokeTauri('archive_thread', { threadId });
+  }
+  return await postJson('/api/codex/thread/archive', { thread_id: threadId });
+}
+
+export async function skillList(cwd: string) {
+  if (isTauri()) {
+    return await invokeTauri<SkillsListResponse>('skills_list', { cwd });
+  }
+  return await postJson<SkillsListResponse>('/api/codex/skills/list', { cwd });
+}
+
+export async function cloneSkillsRepo(url: string) {
+  if (isTauri()) {
+    return await invokeTauri<string>('clone_skills_repo', { url });
+  }
+  toast({
+    title: 'cloneSkillsRepo is only available in Tauri mode.',
+    variant: 'destructive',
+  });
+  return Promise.reject(new Error('cloneSkillsRepo is only available in Tauri mode.'));
+}
+
+export async function listMarketplaceSkills(
+  selectedAgent: SkillAgent,
+  scope: SkillScope,
+  cwd?: string
+) {
+  if (isTauri()) {
+    return await invokeTauri<Array<MarketplaceSkillItem>>('list_marketplace_skills', {
+      selectedAgent,
+      scope,
+      cwd,
+    });
+  }
+  toast({
+    title: 'listMarketplaceSkills is only available in Tauri mode.',
+    variant: 'destructive',
+  });
+  return Promise.reject(new Error('listMarketplaceSkills is only available in Tauri mode.'));
+}
+
+export async function listInstalledSkills(
+  selectedAgent: SkillAgent,
+  scope: SkillScope,
+  cwd?: string
+) {
+  if (isTauri()) {
+    return await invokeTauri<Array<InstalledSkillItem>>('list_installed_skills', {
+      selectedAgent,
+      scope,
+      cwd,
+    });
+  }
+  toast({
+    title: 'listInstalledSkills is only available in Tauri mode.',
+    variant: 'destructive',
+  });
+  return Promise.reject(new Error('listInstalledSkills is only available in Tauri mode.'));
+}
+
+export async function installMarketplaceSkill(
+  skillMdPath: string,
+  skillName: string,
+  selectedAgent: SkillAgent,
+  scope: SkillScope,
+  cwd?: string
+) {
+  if (isTauri()) {
+    return await invokeTauri<string>('install_marketplace_skill', {
+      skillMdPath,
+      skillName,
+      selectedAgent,
+      scope,
+      cwd,
+    });
+  }
+  toast({
+    title: 'installMarketplaceSkill is only available in Tauri mode.',
+    variant: 'destructive',
+  });
+  return Promise.reject(new Error('installMarketplaceSkill is only available in Tauri mode.'));
+}
+
+export async function uninstallInstalledSkill(
+  skillName: string,
+  selectedAgent: SkillAgent,
+  scope: SkillScope,
+  cwd?: string
+) {
+  if (isTauri()) {
+    return await invokeTauri<string>('uninstall_installed_skill', {
+      skillName,
+      selectedAgent,
+      scope,
+      cwd,
+    });
+  }
+  toast({
+    title: 'uninstallInstalledSkill is only available in Tauri mode.',
+    variant: 'destructive',
+  });
+  return Promise.reject(new Error('uninstallInstalledSkill is only available in Tauri mode.'));
+}
+
+export async function fuzzyFileSearch(params: FuzzyFileSearchParams) {
+  if (isTauri()) {
+    return await invokeTauri<FuzzyFileSearchResponse>('fuzzy_file_search', { params });
+  }
+  return await postJson<FuzzyFileSearchResponse>('/api/codex/search/fuzzy-file', params);
+}
+
+export async function skillsConfigWrite(path: string, enabled: boolean) {
+  if (isTauri()) {
+    return await invokeTauri('skills_config_write', { path, enabled });
+  }
+  return await postJson('/api/codex/skills/config/write', { path, enabled });
+}
+
+export async function loginChatGpt() {
+  if (isTauri()) {
+    return await invokeTauri<LoginChatGptResponse>('login_chatgpt');
+  }
+  toast({
+    title: 'loginChatGpt is only available in Tauri mode.',
+    variant: 'destructive',
+  });
+  return Promise.reject(new Error('loginChatGpt is only available in Tauri mode.'));
+}
+
+export async function getAccount() {
+  return await getAccountWithParams({ refreshToken: false });
+}
+
+export async function getAccountWithParams(params: GetAccountParams) {
+  if (isTauri()) {
+    return await invokeTauri<GetAccountResponse>('get_account', { params });
+  }
+  return await postJson<GetAccountResponse>('/api/codex/account/get', params);
+}
+
+export async function loginAccount(params: LoginAccountParams) {
+  if (isTauri()) {
+    return await invokeTauri<LoginAccountResponse>('login_account', { params });
+  }
+  return await postJson<LoginAccountResponse>('/api/codex/account/login', params);
+}
+
+export async function cancelLoginAccount(params: CancelLoginAccountParams) {
+  if (isTauri()) {
+    return await invokeTauri<CancelLoginAccountResponse>('cancel_login_account', { params });
+  }
+  return await postJson<CancelLoginAccountResponse>('/api/codex/account/login/cancel', params);
+}
+
+export async function logoutAccount() {
+  if (isTauri()) {
+    return await invokeTauri<LogoutAccountResponse>('logout_account');
+  }
+  return await postJson<LogoutAccountResponse>('/api/codex/account/logout');
+}
+
+export async function reviewStart(params: ReviewStartParams) {
+  if (isTauri()) {
+    return await invokeTauri<ReviewStartResponse>('start_review', { params });
+  }
+  return await postJson<ReviewStartResponse>('/api/codex/review/start', params);
+}
+
+export async function getAccountRateLimits() {
+  if (isTauri()) {
+    return await invokeTauri<GetAccountRateLimitsResponse>('account_rate_limits');
+  }
+  return await getJson<GetAccountRateLimitsResponse>('/api/codex/account/rate-limits');
+}
+
+export async function respondToRequestUserInput(
+  requestId: RequestId,
+  response: ToolRequestUserInputResponse
+) {
+  if (isTauri()) {
+    return await invokeTauri('respond_to_request_user_input', { requestId, response });
+  }
+  return await postNoContent('/api/codex/approval/user-input', {
+    request_id: requestId,
+    response,
+  });
+}
+
+export async function respondToCommandExecutionApproval(
+  requestId: RequestId,
+  decision: CommandExecutionApprovalDecision
+) {
+  if (isTauri()) {
+    return await invokeTauri('respond_to_command_execution_approval', { requestId, decision });
+  }
+  return await postNoContent('/api/codex/approval/command-execution', {
+    request_id: requestId,
+    decision,
+  });
+}
+
+export async function respondToFileChangeApproval(
+  requestId: RequestId,
+  decision: FileChangeApprovalDecision
+) {
+  if (isTauri()) {
+    return await invokeTauri('respond_to_file_change_approval', { requestId, decision });
+  }
+  return await postNoContent('/api/codex/approval/file-change', {
+    request_id: requestId,
+    decision,
+  });
+}
+
+export type TauriFileEntry = {
+  name: string;
+  path: string;
+  is_directory: boolean;
+  size: number | null;
+  extension: string | null;
+};
+
+export type GitStatusEntry = {
+  path: string;
+  index_status: string;
+  worktree_status: string;
+};
+
+export type GitStatusResponse = {
+  repo_root: string;
+  entries: GitStatusEntry[];
+};
+
+export type GitFileDiffResponse = {
+  old_content: string;
+  new_content: string;
+  has_changes: boolean;
+};
+
+export type GitFileDiffMetaResponse = {
+  old_bytes: number;
+  new_bytes: number;
+  total_bytes: number;
+};
+
+export async function gitStatus(cwd: string) {
+  if (isTauri()) {
+    return await invokeTauri<GitStatusResponse>('git_status', { cwd });
+  }
+  toast({
+    title: 'gitStatus is only available in Tauri mode.',
+    variant: 'destructive',
+  });
+  return Promise.reject(new Error('gitStatus is only available in Tauri mode.'));
+}
+
+export async function gitFileDiff(cwd: string, filePath: string, staged: boolean) {
+  if (isTauri()) {
+    return await invokeTauri<GitFileDiffResponse>('git_file_diff', { cwd, filePath, staged });
+  }
+  toast({
+    title: 'gitFileDiff is only available in Tauri mode.',
+    variant: 'destructive',
+  });
+  return Promise.reject(new Error('gitFileDiff is only available in Tauri mode.'));
+}
+
+export async function gitFileDiffMeta(cwd: string, filePath: string, staged: boolean) {
+  if (isTauri()) {
+    return await invokeTauri<GitFileDiffMetaResponse>('git_file_diff_meta', {
+      cwd,
+      filePath,
+      staged,
+    });
+  }
+  toast({
+    title: 'gitFileDiffMeta is only available in Tauri mode.',
+    variant: 'destructive',
+  });
+  return Promise.reject(new Error('gitFileDiffMeta is only available in Tauri mode.'));
+}
+
+export async function gitStageFiles(cwd: string, filePaths: string[]) {
+  if (isTauri()) {
+    return await invokeTauri<void>('git_stage_files', { cwd, filePaths });
+  }
+  toast({
+    title: 'gitStageFiles is only available in Tauri mode.',
+    variant: 'destructive',
+  });
+  return Promise.reject(new Error('gitStageFiles is only available in Tauri mode.'));
+}
+
+export async function gitUnstageFiles(cwd: string, filePaths: string[]) {
+  if (isTauri()) {
+    return await invokeTauri<void>('git_unstage_files', { cwd, filePaths });
+  }
+  toast({
+    title: 'gitUnstageFiles is only available in Tauri mode.',
+    variant: 'destructive',
+  });
+  return Promise.reject(new Error('gitUnstageFiles is only available in Tauri mode.'));
+}
+
+export type DbNote = {
+  id: string;
+  user_id: string | null;
+  title: string;
+  content: string;
+  tags: string[] | null;
+  is_favorited: boolean;
+  created_at: string;
+  updated_at: string;
+  synced_at: string | null;
+};
+
+export async function readFile(filePath: string) {
+  if (isTauri()) {
+    return await invokeTauri<string>('read_file', { filePath });
+  }
+  return await postJson<string>('/api/codex/filesystem/read-file', { filePath });
+}
+
+export async function getCodexHome() {
+  if (isTauri()) {
+    return await invokeTauri<string>('codex_home');
+  }
+  return await getJson<string>('/api/codex/filesystem/codex-home');
+}
+
+export async function writeFile(filePath: string, content: string) {
+  if (isTauri()) {
+    await invokeTauri('write_file', { filePath, content });
+    return;
+  }
+  await postNoContent('/api/codex/filesystem/write-file', { filePath, content });
+}
+
+export async function readDirectory(path: string) {
+  if (isTauri()) {
+    return await invokeTauri<TauriFileEntry[]>('read_directory', { path });
+  }
+  return await postJson<TauriFileEntry[]>('/api/codex/filesystem/read-directory', { path });
+}
+
+export async function getDefaultDirectories() {
+  if (isTauri()) {
+    return await invokeTauri<string[]>('get_default_directories');
+  }
+  return await getJson<string[]>('/api/codex/filesystem/default-directories');
+}
+
+export async function canonicalizePath(path: string) {
+  if (isTauri()) {
+    return await invokeTauri<string>('canonicalize_path', { path });
+  }
+  return await postJson<string>('/api/codex/filesystem/canonicalize-path', { path });
+}
+
+export async function deleteFile(filePath: string) {
+  if (isTauri()) {
+    await invokeTauri('delete_file', { filePath });
+    return;
+  }
+  await postNoContent('/api/codex/filesystem/delete-file', { filePath });
+}
+
+export async function createNote(
   id: string,
-  settings: WorkspaceSettings,
-): Promise<WorkspaceInfo> {
-  return invoke<WorkspaceInfo>("update_workspace_settings", { id, settings });
-}
-
-export async function removeWorkspace(id: string): Promise<void> {
-  return invoke("remove_workspace", { id });
-}
-
-export async function removeWorktree(id: string): Promise<void> {
-  return invoke("remove_worktree", { id });
-}
-
-export async function connectWorkspace(id: string): Promise<void> {
-  return invoke("connect_workspace", { id });
-}
-
-export async function startThread(workspaceId: string) {
-  return invoke<any>("start_thread", { workspaceId });
-}
-
-export async function sendUserMessage(
-  workspaceId: string,
-  threadId: string,
-  text: string,
-  options?: {
-    model?: string | null;
-    effort?: string | null;
-    accessMode?: "read-only" | "current" | "full-access";
-  },
+  title: string,
+  content: string,
+  tags?: string[],
+  userId?: string | null
 ) {
-  return invoke("send_user_message_v2", {
-    workspaceId,
-    threadId,
-    text,
-    model: options?.model ?? null,
-    effort: options?.effort ?? null,
-    accessMode: options?.accessMode ?? null,
-  });
-}
-
-export async function interruptTurn(
-  workspaceId: string,
-  threadId: string,
-  turnId: string,
-) {
-  return invoke("turn_interrupt", { workspaceId, threadId, turnId });
-}
-
-export async function startReview(
-  workspaceId: string,
-  threadId: string,
-  target: ReviewTarget,
-  delivery?: "inline" | "detached",
-) {
-  const payload: Record<string, unknown> = { workspaceId, threadId, target };
-  if (delivery) {
-    payload.delivery = delivery;
+  if (isTauri()) {
+    return await invokeTauri<DbNote>('create_note', { id, userId, title, content, tags });
   }
-  return invoke("start_review", payload);
-}
-
-export async function respondToServerRequest(
-  workspaceId: string,
-  requestId: number,
-  decision: "accept" | "decline",
-) {
-  return invoke("respond_to_server_request", {
-    workspaceId,
-    requestId,
-    result: { decision },
+  return await postJson<DbNote>('/api/codex/notes/create', {
+    id,
+    user_id: userId ?? null,
+    title,
+    content,
+    tags: tags ?? null,
   });
 }
 
-export async function getGitStatus(workspace_id: string): Promise<{
-  branchName: string;
-  files: GitFileStatus[];
-  totalAdditions: number;
-  totalDeletions: number;
-}> {
-  return invoke("get_git_status_v2", { workspaceId: workspace_id });
+export async function getNotes(userId?: string | null) {
+  if (isTauri()) {
+    return await invokeTauri<DbNote[]>('get_notes', { userId });
+  }
+  return await postJson<DbNote[]>('/api/codex/notes/list', { user_id: userId ?? null });
 }
 
-export async function getGitDiffs(
-  workspace_id: string,
-): Promise<GitFileDiff[]> {
-  return invoke("get_git_diffs", { workspaceId: workspace_id });
+export async function getNoteById(id: string) {
+  if (isTauri()) {
+    return await invokeTauri<DbNote | null>('get_note_by_id', { id });
+  }
+  return await postJson<DbNote | null>('/api/codex/notes/get', { id });
 }
 
-export async function getGitLog(
-  workspace_id: string,
-  limit = 40,
-): Promise<GitLogResponse> {
-  return invoke("get_git_log", { workspaceId: workspace_id, limit });
-}
-
-export async function getGitRemote(workspace_id: string): Promise<string | null> {
-  return invoke("get_git_remote", { workspaceId: workspace_id });
-}
-
-export async function getGitHubIssues(
-  workspace_id: string,
-): Promise<GitHubIssuesResponse> {
-  return invoke("get_github_issues", { workspaceId: workspace_id });
-}
-
-export async function getModelList(workspaceId: string) {
-  return invoke<any>("model_list", { workspaceId });
-}
-
-export async function getAccountRateLimits(workspaceId: string) {
-  return invoke<any>("account_rate_limits", { workspaceId });
-}
-
-export async function getSkillsList(workspaceId: string) {
-  return invoke<any>("skills_list", { workspaceId });
-}
-
-export async function getAppSettings(): Promise<AppSettings> {
-  return invoke<AppSettings>("get_app_settings");
-}
-
-export async function updateAppSettings(settings: AppSettings): Promise<AppSettings> {
-  return invoke<AppSettings>("update_app_settings", { settings });
-}
-
-export async function getWorkspaceFiles(workspaceId: string) {
-  return invoke<string[]>("list_workspace_files", { workspaceId });
-}
-
-export async function listGitBranches(workspaceId: string) {
-  return invoke<any>("list_git_branches", { workspaceId });
-}
-
-export async function checkoutGitBranch(workspaceId: string, name: string) {
-  return invoke("checkout_git_branch", { workspaceId, name });
-}
-
-export async function createGitBranch(workspaceId: string, name: string) {
-  return invoke("create_git_branch", { workspaceId, name });
-}
-
-export async function listThreads(
-  workspaceId: string,
-  cursor?: string | null,
-  limit?: number | null,
+export async function updateNote(
+  id: string,
+  payload: { title?: string; content?: string; tags?: string[] }
 ) {
-  return invoke<any>("list_threads", { workspaceId, cursor, limit });
+  if (isTauri()) {
+    await invokeTauri('update_note', { id, ...payload });
+    return;
+  }
+  await postNoContent('/api/codex/notes/update', { id, ...payload });
 }
 
-export async function resumeThread(workspaceId: string, threadId: string) {
-  return invoke<any>("resume_thread", { workspaceId, threadId });
+export async function deleteNote(id: string) {
+  if (isTauri()) {
+    await invokeTauri('delete_note', { id });
+    return;
+  }
+  await postNoContent('/api/codex/notes/delete', { id });
 }
 
-export async function archiveThread(workspaceId: string, threadId: string) {
-  return invoke<any>("archive_thread", { workspaceId, threadId });
+export async function toggleFavorite(id: string) {
+  if (isTauri()) {
+    await invokeTauri('toggle_favorite', { id });
+    return;
+  }
+  await postNoContent('/api/codex/notes/toggle-favorite', { id });
+}
+
+export async function threadUnarchive(threadId: ThreadId) {
+  if (isTauri()) {
+    return await invokeTauri('thread_unarchive', { threadId });
+  }
+  return await postJson('/api/codex/thread/unarchive', { thread_id: threadId });
+}
+
+const SESSION_META_STORAGE_KEY = 'codexia.session_meta';
+const SESSION_META_FILE_PATH = '~/.plux/session_meta.json';
+
+export async function readSessionMetaFile(): Promise<string> {
+  if (isTauri()) {
+    return await invokeTauri<string>('read_file', { filePath: SESSION_META_FILE_PATH });
+  }
+  return window.localStorage.getItem(SESSION_META_STORAGE_KEY) ?? '{}';
+}
+
+export async function writeSessionMetaFile(content: string): Promise<void> {
+  if (isTauri()) {
+    return await invokeTauri<void>('write_file', { filePath: SESSION_META_FILE_PATH, content });
+  }
+  window.localStorage.setItem(SESSION_META_STORAGE_KEY, content);
 }

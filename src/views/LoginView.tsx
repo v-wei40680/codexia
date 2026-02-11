@@ -5,7 +5,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import supabase, { isSupabaseConfigured } from '@/lib/supabase';
 import { Badge, Github } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useSettingsStore } from '@/stores/settings/SettingsStore';
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { open } from '@tauri-apps/plugin-shell';
@@ -14,12 +13,10 @@ import { useAuthStore } from '@/stores/useAuthStore';
 export default function AuthPage() {
   const { user } = useAuth();
   const { lastOAuthProvider, setLastOAuthProvider } = useAuthStore();
-  const { windowTitle } = useSettingsStore();
   const [email, setEmail] = useState(() => localStorage.getItem('email') || '');
   const [password, setPassword] = useState('');
   const [loadingForm, setLoadingForm] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
-
 
   // If user is logged in, layout will handle displaying the main app
   if (user) {
@@ -95,7 +92,7 @@ export default function AuthPage() {
 
   return (
     <div className="flex flex-col items-center justify-center h-full text-center">
-      <h1 className="text-3xl font-bold mb-4">Welcome to {windowTitle}</h1>
+      <h1 className="text-3xl font-bold mb-4">Welcome to Codexia</h1>
       <p className="mb-6 text-gray-500 dark:text-gray-400">Sign in to get more</p>
 
       <div className="w-full max-w-sm text-left">

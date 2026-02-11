@@ -1,15 +1,21 @@
-import { useCCStore, PermissionMode } from "@/stores/ccStore";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { Card } from "@/components/ui/card";
-import { X, Server, Package } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Popover } from "@/components/ui/popover";
-import { Checkbox } from "@/components/ui/checkbox";
-import { useState, useEffect } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { CCMCPManager } from "./mcp";
+import { useCCStore, PermissionMode } from '@/stores/ccStore';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { Card } from '@/components/ui/card';
+import { X, Server, Package } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useState, useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/core';
+import { CCMCPManager } from './mcp';
 
 export function CCFooter() {
   const { options, updateOptions } = useCCStore();
@@ -22,14 +28,14 @@ export function CCFooter() {
     const loadSkills = async () => {
       try {
         // Load installed skills
-        const skills = await invoke<string[]>("cc_get_installed_skills");
+        const skills = await invoke<string[]>('cc_get_installed_skills');
         setInstalledSkills(skills);
 
         // Load global settings to get enabled skills
-        const settings = await invoke<any>("cc_get_settings");
+        const settings = await invoke<any>('cc_get_settings');
         setEnabledSkills(settings.enabledSkills || {});
       } catch (error) {
-        console.error("Failed to load skills:", error);
+        console.error('Failed to load skills:', error);
       }
     };
     loadSkills();
@@ -44,11 +50,11 @@ export function CCFooter() {
       setEnabledSkills(newEnabledSkills);
 
       // Update global settings
-      const settings = await invoke<any>("cc_get_settings");
+      const settings = await invoke<any>('cc_get_settings');
       settings.enabledSkills = newEnabledSkills;
-      await invoke("cc_update_settings", { settings });
+      await invoke('cc_update_settings', { settings });
     } catch (error) {
-      console.error("Failed to toggle skill:", error);
+      console.error('Failed to toggle skill:', error);
     }
   };
 
@@ -57,7 +63,6 @@ export function CCFooter() {
   return (
     <Card className="shrink-0 border-t p-3">
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">Permission</Label>
           <Select
@@ -136,24 +141,12 @@ export function CCFooter() {
 
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">Skills (Global)</Label>
-          <Popover
-            open={skillsOpen}
-            onOpenChange={setSkillsOpen}
-            align="end"
-            side="top"
-            className="w-56 p-2"
-            trigger={
-              <Button
-                variant="outline"
-                className="h-8 w-full text-xs justify-between font-normal"
-              >
+          <Popover open={skillsOpen} onOpenChange={setSkillsOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="h-8 w-full text-xs justify-between font-normal">
                 <div className="flex items-center gap-1.5">
                   <Package className="h-3 w-3" />
-                  <span>
-                    {enabledSkillCount > 0
-                      ? `${enabledSkillCount} enabled`
-                      : "None"}
-                  </span>
+                  <span>{enabledSkillCount > 0 ? `${enabledSkillCount} enabled` : 'None'}</span>
                 </div>
                 {enabledSkillCount > 0 && (
                   <X
@@ -162,18 +155,18 @@ export function CCFooter() {
                       e.stopPropagation();
                       setEnabledSkills({});
                       try {
-                        const settings = await invoke<any>("cc_get_settings");
+                        const settings = await invoke<any>('cc_get_settings');
                         settings.enabledSkills = {};
-                        await invoke("cc_update_settings", { settings });
+                        await invoke('cc_update_settings', { settings });
                       } catch (error) {
-                        console.error("Failed to clear skills:", error);
+                        console.error('Failed to clear skills:', error);
                       }
                     }}
                   />
                 )}
               </Button>
-            }
-            content={
+            </PopoverTrigger>
+            <PopoverContent align="end" side="top" className="w-56 p-2">
               <div className="space-y-2">
                 {installedSkills.length === 0 ? (
                   <div className="text-xs text-muted-foreground text-center py-2">
@@ -197,29 +190,21 @@ export function CCFooter() {
                   ))
                 )}
               </div>
-            }
-          />
+            </PopoverContent>
+          </Popover>
         </div>
 
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">MCP Servers</Label>
-          <Popover
-            open={mcpOpen}
-            onOpenChange={setMcpOpen}
-            align="end"
-            side="top"
-            className="w-96 p-3 max-h-96 overflow-y-auto"
-            trigger={
-              <Button
-                variant="outline"
-                className="h-8 w-full text-xs justify-between font-normal"
-              >
+          <Popover open={mcpOpen} onOpenChange={setMcpOpen}>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="h-8 w-full text-xs justify-between font-normal">
                 <div className="flex items-center gap-1.5">
                   <Server className="h-3 w-3" />
                   <span>
                     {options.mcpServers && Object.keys(options.mcpServers).length > 0
                       ? `${Object.keys(options.mcpServers).length} configured`
-                      : "None"}
+                      : 'None'}
                   </span>
                 </div>
                 {options.mcpServers && Object.keys(options.mcpServers).length > 0 && (
@@ -232,8 +217,8 @@ export function CCFooter() {
                   />
                 )}
               </Button>
-            }
-            content={
+            </PopoverTrigger>
+            <PopoverContent align="end" side="top" className="w-96 p-3 max-h-96 overflow-y-auto">
               <CCMCPManager
                 servers={options.mcpServers || {}}
                 onChange={(servers) => {
@@ -242,8 +227,8 @@ export function CCFooter() {
                   });
                 }}
               />
-            }
-          />
+            </PopoverContent>
+          </Popover>
         </div>
       </div>
     </Card>

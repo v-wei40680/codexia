@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
-import { Button } from "@/components/ui/button";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { UsageSummary, calculateUsageSummary } from "@/utils/usageAnalysis";
+import { useState, useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { UsageSummary, calculateUsageSummary } from '@/utils/usageAnalysis';
 import {
   TokenDistributionChart,
   TimelineChart,
@@ -11,50 +11,50 @@ import {
   SummaryCard,
   TokenBreakdownCard,
   MostUsedModelsCard,
-} from "@/components/usage";
-import { LoadingState, ErrorState, EmptyState } from "@/components/usage/common";
-import { formatCurrency, formatNumber, formatTokens } from "@/utils/formater";
+} from '@/components/codex/usage';
+import { LoadingState, ErrorState, EmptyState } from '@/components/codex/usage/common';
+import { formatCurrency, formatNumber, formatTokens } from '@/utils/formater';
 
 const TAB_TRIGGER_CLASS =
-  "data-[state=active]:bg-slate-800 data-[state=active]:text-slate-100 text-slate-400";
+  'data-[state=active]:bg-slate-800 data-[state=active]:text-slate-100 text-slate-400';
 
 const SUMMARY_CARDS = [
   {
-    title: "Total Cost",
-    key: "totalCost",
+    title: 'Total Cost',
+    key: 'totalCost',
     format: formatCurrency,
-    description: "Estimated spending",
-    accent: "text-emerald-400",
+    description: 'Estimated spending',
+    accent: 'text-emerald-400',
   },
   {
-    title: "Total Sessions",
-    key: "totalSessions",
+    title: 'Total Sessions',
+    key: 'totalSessions',
     format: formatNumber,
-    description: "Conversations completed",
-    accent: "text-cyan-400",
+    description: 'Conversations completed',
+    accent: 'text-cyan-400',
   },
   {
-    title: "Total Tokens",
-    key: "totalTokens",
+    title: 'Total Tokens',
+    key: 'totalTokens',
     format: formatTokens,
-    description: "Input + Output tokens",
-    accent: "text-purple-400",
+    description: 'Input + Output tokens',
+    accent: 'text-purple-400',
   },
   {
-    title: "Avg Cost/Session",
-    key: "avgCostPerSession",
+    title: 'Avg Cost/Session',
+    key: 'avgCostPerSession',
     format: formatCurrency,
-    description: "Per conversation",
-    accent: "text-orange-400",
+    description: 'Per conversation',
+    accent: 'text-orange-400',
   },
 ] as const;
 
 const TABS = [
-  { value: "overview", label: "Overview" },
-  { value: "models", label: "By Model" },
-  { value: "projects", label: "By Project" },
-  { value: "timeline", label: "Timeline" },
-  { value: "tokens", label: "Token Breakdown" },
+  { value: 'overview', label: 'Overview' },
+  { value: 'models', label: 'By Model' },
+  { value: 'projects', label: 'By Project' },
+  { value: 'timeline', label: 'Timeline' },
+  { value: 'tokens', label: 'Token Breakdown' },
 ] as const;
 
 export default function UsagePage() {
@@ -62,7 +62,7 @@ export default function UsagePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState('overview');
 
   const loadUsageData = async () => {
     try {
@@ -71,8 +71,8 @@ export default function UsagePage() {
       const data = await calculateUsageSummary();
       setUsageData(data);
     } catch (err) {
-      console.error("Failed to load usage data:", err);
-      setError("Failed to load usage data. Please try again.");
+      console.error('Failed to load usage data:', err);
+      setError('Failed to load usage data. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -102,12 +102,10 @@ export default function UsagePage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-slate-100">Usage Dashboard</h1>
-          <p className="text-slate-400 mt-1">
-            Track your Codex usage and costs
-          </p>
+          <p className="text-slate-400 mt-1">Track your Codex usage and costs</p>
         </div>
         <Button onClick={handleRefresh} disabled={refreshing} variant="outline">
-          {refreshing ? "Refreshing..." : "Refresh"}
+          {refreshing ? 'Refreshing...' : 'Refresh'}
         </Button>
       </div>
 
@@ -117,9 +115,7 @@ export default function UsagePage() {
           <SummaryCard
             key={card.key}
             title={card.title}
-            value={card.format(
-              usageData[card.key as keyof UsageSummary] as number,
-            )}
+            value={card.format(usageData[card.key as keyof UsageSummary] as number)}
             description={card.description}
             accent={card.accent}
           />
@@ -130,11 +126,7 @@ export default function UsagePage() {
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-4">
         <TabsList className="bg-slate-950/50 border-slate-800">
           {TABS.map((tab) => (
-            <TabsTrigger
-              key={tab.value}
-              value={tab.value}
-              className={TAB_TRIGGER_CLASS}
-            >
+            <TabsTrigger key={tab.value} value={tab.value} className={TAB_TRIGGER_CLASS}>
               {tab.label}
             </TabsTrigger>
           ))}
@@ -142,10 +134,7 @@ export default function UsagePage() {
 
         <TabsContent value="overview" className="space-y-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <TokenBreakdownCard
-              usageData={usageData}
-              formatTokens={formatTokens}
-            />
+            <TokenBreakdownCard usageData={usageData} formatTokens={formatTokens} />
             <MostUsedModelsCard
               usageData={usageData}
               formatCurrency={formatCurrency}
@@ -184,10 +173,7 @@ export default function UsagePage() {
         </TabsContent>
 
         <TabsContent value="tokens">
-          <TokenDistributionChart
-            usageData={usageData}
-            formatTokens={formatTokens}
-          />
+          <TokenDistributionChart usageData={usageData} formatTokens={formatTokens} />
         </TabsContent>
       </Tabs>
     </div>

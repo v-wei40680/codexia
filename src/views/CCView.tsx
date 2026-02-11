@@ -1,15 +1,16 @@
-import { useEffect, useState, useRef } from "react";
-import { invoke, listen } from "@/lib/tauri-proxy";
-import { useCCStore, CCMessage as CCMessageType } from "@/stores/ccStore";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { Pencil } from "lucide-react";
-import { CCMessage } from "@/components/cc/CCMessage";
-import { ExamplePrompts } from "@/components/cc/ExamplePrompts";
-import { useCCSessionManager } from "@/hooks/useCCSessionManager";
-import { CCInput } from "@/components/cc/CCInput";
-import { CCScrollControls } from "@/components/cc/CCScrollControls";
-import { useCodexStore } from "@/stores/codex/useCodexStore";
+import { useEffect, useState, useRef } from 'react';
+import { invoke } from '@tauri-apps/api/core';
+import { listen } from '@tauri-apps/api/event';
+import { useCCStore, CCMessage as CCMessageType } from '@/stores/ccStore';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Pencil } from 'lucide-react';
+import { CCMessage } from '@/components/cc/CCMessage';
+import { ExamplePrompts } from '@/components/cc/ExamplePrompts';
+import { useCCSessionManager } from '@/hooks/useCCSessionManager';
+import { CCInput } from '@/components/cc/CCInput';
+import { CCScrollControls } from '@/components/cc/CCScrollControls';
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 
 export default function CCView() {
   const {
@@ -28,10 +29,10 @@ export default function CCView() {
     clearMessages,
     setActiveSessionId,
   } = useCCStore();
-  const { cwd } = useCodexStore();
+  const { cwd } = useWorkspaceStore();
 
   const { handleNewSession } = useCCSessionManager();
-  const [input, setInput] = useState("");
+  const [input, setInput] = useState('');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
   // Clear messages and reset session when directory changes
@@ -55,7 +56,7 @@ export default function CCView() {
       addMessage(message);
 
       // Set loading to false when we receive a Result message
-      if (message.type === "result") {
+      if (message.type === 'result') {
         setLoading(false);
       }
     });
@@ -70,7 +71,7 @@ export default function CCView() {
     if (!textToSend.trim() || isLoading) return;
 
     // Convert slash commands to natural language
-    if (textToSend.startsWith("/")) {
+    if (textToSend.startsWith('/')) {
       const parts = textToSend.slice(1).split(/\s+/, 1);
       const skillName = parts[0];
       const restOfMessage = textToSend.slice(skillName.length + 2).trim();
@@ -94,17 +95,17 @@ export default function CCView() {
 
     // Add user message to store
     addMessage({
-      type: "user",
+      type: 'user',
       text: textToSend,
     });
 
-    setInput("");
+    setInput('');
     setLoading(true);
     setShowExamples(false);
 
     try {
       // Backend will connect automatically on first message if not connected
-      await invoke("cc_send_message", {
+      await invoke('cc_send_message', {
         sessionId: activeSessionId,
         message: textToSend,
       });
@@ -114,14 +115,14 @@ export default function CCView() {
         setConnected(true);
       }
     } catch (error) {
-      console.error("Failed to send message:", error);
+      console.error('Failed to send message:', error);
       setLoading(false);
       addMessage({
-        type: "assistant",
+        type: 'assistant',
         message: {
           content: [
             {
-              type: "text",
+              type: 'text',
               text: `Error: ${error}`,
             },
           ],
@@ -134,11 +135,11 @@ export default function CCView() {
     if (!activeSessionId) return;
 
     try {
-      await invoke("cc_interrupt", {
+      await invoke('cc_interrupt', {
         sessionId: activeSessionId,
       });
     } catch (error) {
-      console.error("Failed to interrupt:", error);
+      console.error('Failed to interrupt:', error);
     } finally {
       setLoading(false);
     }
@@ -146,7 +147,7 @@ export default function CCView() {
 
   const handleExamplePrompt = (prompt: string) => {
     // Append to input instead of replacing
-    setInput((prev) => (prev ? prev + "\n\n" + prompt : prompt));
+    setInput((prev) => (prev ? prev + '\n\n' + prompt : prompt));
     setShowExamples(false);
   };
 
@@ -154,7 +155,7 @@ export default function CCView() {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTo({
         top: 0,
-        behavior: "smooth",
+        behavior: 'smooth',
       });
     }
   };
@@ -163,7 +164,7 @@ export default function CCView() {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTo({
         top: scrollContainerRef.current.scrollHeight,
-        behavior: "smooth",
+        behavior: 'smooth',
       });
     }
   };
@@ -188,7 +189,7 @@ export default function CCView() {
         <div className="ml-auto flex items-center gap-2">
           {activeSessionId && (
             <span className="text-xs text-muted-foreground">
-              {activeSessionId.slice(0, 8)}... | {options.model ?? "auto"}
+              {activeSessionId.slice(0, 8)}... | {options.model ?? 'auto'}
             </span>
           )}
           {isConnected ? (

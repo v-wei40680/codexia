@@ -1,9 +1,15 @@
-import { useEffect, useState } from "react";
-import { invoke } from "@/lib/tauri-proxy";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useFolderStore } from "@/stores/FolderStore";
-import { toast } from "sonner";
+import { useEffect, useState } from 'react';
+import { invoke } from '@tauri-apps/api/core';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { toast } from 'sonner';
+import { useWorkspaceStore } from '@/stores';
 
 interface McpProjectSelectorProps {
   onProjectChange?: () => void;
@@ -11,12 +17,12 @@ interface McpProjectSelectorProps {
 }
 
 export function McpProjectSelector({ onProjectChange, disabled }: McpProjectSelectorProps) {
-  const { currentFolder, setCurrentFolder } = useFolderStore();
+  const { cwd, setCwd } = useWorkspaceStore();
   const [projects, setProjects] = useState<string[]>([]);
 
   const fetchProjects = async () => {
     try {
-      const list = await invoke<string[]>("cc_list_projects");
+      const list = await invoke<string[]>('cc_list_projects');
       setProjects(list);
     } catch (error) {
       toast.error(`Failed to fetch projects: ${error}`);
@@ -27,10 +33,10 @@ export function McpProjectSelector({ onProjectChange, disabled }: McpProjectSele
     fetchProjects();
   }, []);
 
-  const workingDir = currentFolder || "";
+  const workingDir = cwd || '';
 
   const handleProjectChange = async (value: string) => {
-    setCurrentFolder(value);
+    setCwd(value);
     if (onProjectChange) {
       await onProjectChange();
     }
@@ -54,4 +60,3 @@ export function McpProjectSelector({ onProjectChange, disabled }: McpProjectSele
     </div>
   );
 }
-

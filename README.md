@@ -13,8 +13,8 @@ One-click file injection from the File Tree, prompt notepad integration, Git wor
 > [!TIP]
 > ⭐ **Star this repo**, follow **[milisp](https://github.com/milisp)** on GitHub for more projects, and follow **[@lisp_mi](https://x.com/lisp_mi)** on Twitter for updates.
 
-![Home](public/codexia-home.png)
-![Reasoning](public/codexia-reason.png)
+![Home](docs/images//codexia-home.png)
+![Reasoning](docs/images/codexia-reason.png)
 
 ▶️ [Automation demo on Twitter](https://x.com/lisp_mi/status/1966147638266589376)
 
@@ -82,7 +82,7 @@ One-click PDF / XLSX / CSV preview directly from the File Tree
 - Image input via screenshots or image files
 - Toggle Codex built-in OpenAI model (GPT-5, o3, etc.) web search
 - Project-aware assistance
-- Multiple AI providers (OpenAI, openrouter, Custom) ~~(Ollama, Anthropic, Gemini, xAI)~~
+- Multiple AI providers (OpenAI, Ollama)
 
 ### 🗄️ Local Cache (SQLite)
 

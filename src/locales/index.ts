@@ -1,6 +1,6 @@
-import { en } from "./en";
-import { zh } from "./zh";
-import { ja } from "./ja";
+import { en } from './en';
+import { zh } from './zh';
+import { ja } from './ja';
 
 export const localeResources = {
   en: { translation: en },
@@ -11,7 +11,7 @@ export const localeResources = {
 export type AppLocale = keyof typeof localeResources;
 
 export const localeLabels: Record<AppLocale, string> = {
-  en: "English",
-  zh: "中文",
-  ja: "日本語",
+  en: 'English',
+  zh: '中文',
+  ja: '日本語',
 };

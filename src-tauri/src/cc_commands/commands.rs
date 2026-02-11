@@ -1,14 +1,13 @@
-use super::state::CCState;
 use super::db::SessionData;
-use super::types::{CCConnectParams, AgentOptions};
-use super::services::{session_service, message_service, settings_service, skill_service, project_service};
+use super::services::{
+    message_service, project_service, session_service, settings_service, skill_service,
+};
+use super::state::CCState;
+use super::types::{AgentOptions, CCConnectParams};
 use tauri::{AppHandle, Emitter, State};
 
 #[tauri::command]
-pub async fn cc_connect(
-    params: CCConnectParams,
-    state: State<'_, CCState>,
-) -> Result<(), String> {
+pub async fn cc_connect(params: CCConnectParams, state: State<'_, CCState>) -> Result<(), String> {
     session_service::connect(params, &state).await
 }
 
@@ -21,16 +20,12 @@ pub async fn cc_send_message(
 ) -> Result<(), String> {
     let event_name = format!("cc-message:{}", session_id);
 
-    message_service::send_message(
-        &session_id,
-        &message,
-        &state,
-        move |msg| {
-            if let Err(e) = app.emit(&event_name, &msg) {
-                log::error!("Failed to emit message: {}", e);
-            }
-        },
-    ).await
+    message_service::send_message(&session_id, &message, &state, move |msg| {
+        if let Err(e) = app.emit(&event_name, &msg) {
+            log::error!("Failed to emit message: {}", e);
+        }
+    })
+    .await
 }
 
 #[tauri::command]
@@ -65,16 +60,12 @@ pub async fn cc_resume_session(
 ) -> Result<(), String> {
     let event_name = format!("cc-message:{}", session_id);
 
-    session_service::resume_session(
-        session_id,
-        options,
-        &state,
-        move |msg| {
-            if let Err(e) = app.emit(&event_name, &msg) {
-                log::error!("Failed to emit historical message: {}", e);
-            }
-        },
-    ).await
+    session_service::resume_session(session_id, options, &state, move |msg| {
+        if let Err(e) = app.emit(&event_name, &msg) {
+            log::error!("Failed to emit historical message: {}", e);
+        }
+    })
+    .await
 }
 
 #[tauri::command]

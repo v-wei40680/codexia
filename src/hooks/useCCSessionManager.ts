@@ -1,14 +1,14 @@
-import { useState } from "react";
-import { invoke } from "@tauri-apps/api/core";
-import { useCCStore } from "@/stores/ccStore";
-import { useCodexStore } from "@/stores/codex";
+import { useState } from 'react';
+import { invoke } from '@tauri-apps/api/core';
+import { useCCStore } from '@/stores/ccStore';
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 
 /**
  * Custom hook for managing Claude Code sessions
  * Handles session creation, resumption, and selection
  */
 export function useCCSessionManager() {
-  const { cwd } = useCodexStore();
+  const { cwd } = useWorkspaceStore();
   const {
     options,
     setActiveSessionId,
@@ -52,15 +52,20 @@ export function useCCSessionManager() {
       }
 
       // Only include optional fields if they are defined
-      if (options.fallbackModel !== undefined) ClaudeAgentOptions.fallbackModel = options.fallbackModel;
+      if (options.fallbackModel !== undefined)
+        ClaudeAgentOptions.fallbackModel = options.fallbackModel;
       if (options.maxTurns !== undefined) ClaudeAgentOptions.maxTurns = options.maxTurns;
-      if (options.maxBudgetUsd !== undefined) ClaudeAgentOptions.maxBudgetUsd = options.maxBudgetUsd;
-      if (options.maxThinkingTokens !== undefined) ClaudeAgentOptions.maxThinkingTokens = options.maxThinkingTokens;
-      if (options.allowedTools !== undefined) ClaudeAgentOptions.allowedTools = options.allowedTools;
-      if (options.disallowedTools !== undefined) ClaudeAgentOptions.disallowedTools = options.disallowedTools;
+      if (options.maxBudgetUsd !== undefined)
+        ClaudeAgentOptions.maxBudgetUsd = options.maxBudgetUsd;
+      if (options.maxThinkingTokens !== undefined)
+        ClaudeAgentOptions.maxThinkingTokens = options.maxThinkingTokens;
+      if (options.allowedTools !== undefined)
+        ClaudeAgentOptions.allowedTools = options.allowedTools;
+      if (options.disallowedTools !== undefined)
+        ClaudeAgentOptions.disallowedTools = options.disallowedTools;
 
-      console.debug("ClaudeAgentOptions", ClaudeAgentOptions)
-      const newSessionId = await invoke<string>("cc_new_session", {
+      console.debug('ClaudeAgentOptions', ClaudeAgentOptions);
+      const newSessionId = await invoke<string>('cc_new_session', {
         options: ClaudeAgentOptions,
       });
 
@@ -71,11 +76,11 @@ export function useCCSessionManager() {
 
       // Connection will happen automatically when sending the first message
       addMessage({
-        type: "user",
+        type: 'user',
         text: initialMessage,
       });
 
-      await invoke("cc_send_message", {
+      await invoke('cc_send_message', {
         sessionId: newSessionId,
         message: initialMessage,
       });
@@ -83,7 +88,7 @@ export function useCCSessionManager() {
       // Mark as connected after successfully sending message
       setConnected(true);
     } catch (error) {
-      console.error("Failed to create new session:", error);
+      console.error('Failed to create new session:', error);
       setLoading(false);
     } finally {
       setIsLoading(false);
@@ -101,7 +106,7 @@ export function useCCSessionManager() {
       setActiveSessionId(sessionId);
 
       // Wait a tick to ensure the event listener is registered
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
 
       const ClaudeAgentOptions: any = {
         cwd,
@@ -114,14 +119,19 @@ export function useCCSessionManager() {
       }
 
       // Only include optional fields if they are defined
-      if (options.fallbackModel !== undefined) ClaudeAgentOptions.fallbackModel = options.fallbackModel;
+      if (options.fallbackModel !== undefined)
+        ClaudeAgentOptions.fallbackModel = options.fallbackModel;
       if (options.maxTurns !== undefined) ClaudeAgentOptions.maxTurns = options.maxTurns;
-      if (options.maxBudgetUsd !== undefined) ClaudeAgentOptions.maxBudgetUsd = options.maxBudgetUsd;
-      if (options.maxThinkingTokens !== undefined) ClaudeAgentOptions.maxThinkingTokens = options.maxThinkingTokens;
-      if (options.allowedTools !== undefined) ClaudeAgentOptions.allowedTools = options.allowedTools;
-      if (options.disallowedTools !== undefined) ClaudeAgentOptions.disallowedTools = options.disallowedTools;
+      if (options.maxBudgetUsd !== undefined)
+        ClaudeAgentOptions.maxBudgetUsd = options.maxBudgetUsd;
+      if (options.maxThinkingTokens !== undefined)
+        ClaudeAgentOptions.maxThinkingTokens = options.maxThinkingTokens;
+      if (options.allowedTools !== undefined)
+        ClaudeAgentOptions.allowedTools = options.allowedTools;
+      if (options.disallowedTools !== undefined)
+        ClaudeAgentOptions.disallowedTools = options.disallowedTools;
 
-      await invoke("cc_resume_session", {
+      await invoke('cc_resume_session', {
         sessionId,
         options: ClaudeAgentOptions,
       });
@@ -131,7 +141,7 @@ export function useCCSessionManager() {
       setConnected(false);
       setViewingHistory(true);
     } catch (error) {
-      console.error("Failed to resume session:", error);
+      console.error('Failed to resume session:', error);
     } finally {
       setLoading(false);
       setIsLoading(false);

@@ -1,17 +1,14 @@
-use crate::cc_commands::state::CCState;
 use crate::cc_commands::db::{SessionDB, SessionData};
+use crate::cc_commands::state::CCState;
 use claude_agent_sdk_rs::{ClaudeAgentOptions, Message};
-use std::path::PathBuf;
 use std::fs;
 use std::io::{BufRead, BufReader};
+use std::path::PathBuf;
 use uuid;
 
 use super::super::{AgentOptions, CCConnectParams, parse_permission_mode};
 
-pub async fn connect(
-    params: CCConnectParams,
-    state: &CCState,
-) -> Result<(), String> {
+pub async fn connect(params: CCConnectParams, state: &CCState) -> Result<(), String> {
     use std::sync::Arc;
 
     let permission_mode = params
@@ -49,10 +46,7 @@ pub async fn disconnect(session_id: &str, state: &CCState) -> Result<(), String>
     state.remove_client(session_id).await
 }
 
-pub async fn new_session(
-    options: AgentOptions,
-    state: &CCState,
-) -> Result<String, String> {
+pub async fn new_session(options: AgentOptions, state: &CCState) -> Result<String, String> {
     let session_id = uuid::Uuid::new_v4().to_string();
 
     let claude_options = options.to_claude_options(None);
@@ -138,7 +132,9 @@ pub fn get_sessions() -> Result<Vec<SessionData>, String> {
 
     let slash_commands: Vec<&str> = vec!["/ide", "/model", "/status"];
 
-    for entry in fs::read_dir(&projects_dir).map_err(|e| format!("Failed to read projects dir: {}", e))? {
+    for entry in
+        fs::read_dir(&projects_dir).map_err(|e| format!("Failed to read projects dir: {}", e))?
+    {
         let entry = entry.map_err(|e| format!("Failed to read entry: {}", e))?;
         let project_dir = entry.path();
 
@@ -146,8 +142,11 @@ pub fn get_sessions() -> Result<Vec<SessionData>, String> {
             continue;
         }
 
-        for session_entry in fs::read_dir(&project_dir).map_err(|e| format!("Failed to read project dir: {}", e))? {
-            let session_entry = session_entry.map_err(|e| format!("Failed to read session entry: {}", e))?;
+        for session_entry in
+            fs::read_dir(&project_dir).map_err(|e| format!("Failed to read project dir: {}", e))?
+        {
+            let session_entry =
+                session_entry.map_err(|e| format!("Failed to read session entry: {}", e))?;
             let session_path = session_entry.path();
 
             if session_path.extension().and_then(|s| s.to_str()) != Some("jsonl") {
@@ -203,13 +202,15 @@ pub fn get_sessions() -> Result<Vec<SessionData>, String> {
 
                         // Look for first user message
                         if data.get("type").and_then(|t| t.as_str()) == Some("user") {
-                            timestamp = data.get("timestamp")
+                            timestamp = data
+                                .get("timestamp")
                                 .and_then(|t| t.as_str())
                                 .and_then(|t| chrono::DateTime::parse_from_rfc3339(t).ok())
                                 .map(|dt| dt.timestamp())
                                 .unwrap_or(0);
 
-                            if let Some(msg_display) = data.get("message")
+                            if let Some(msg_display) = data
+                                .get("message")
                                 .and_then(|m| m.get("content"))
                                 .and_then(|c| c.as_str())
                             {
@@ -219,7 +220,8 @@ pub fn get_sessions() -> Result<Vec<SessionData>, String> {
                                 }
 
                                 // Extract first line as display
-                                display = msg_display.lines().next().unwrap_or("Untitled").to_string();
+                                display =
+                                    msg_display.lines().next().unwrap_or("Untitled").to_string();
                                 found_user_message = true;
                                 break;
                             }

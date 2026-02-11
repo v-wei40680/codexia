@@ -1,10 +1,10 @@
-use claude_agent_sdk_rs::{ClaudeAgentOptions, PermissionMode};
 use claude_agent_sdk_rs::types::mcp::{
-    McpServers, McpServerConfig, McpStdioServerConfig, McpHttpServerConfig, McpSseServerConfig,
+    McpHttpServerConfig, McpServerConfig, McpServers, McpSseServerConfig, McpStdioServerConfig,
 };
+use claude_agent_sdk_rs::{ClaudeAgentOptions, PermissionMode};
 use serde::{Deserialize, Serialize};
-use std::path::PathBuf;
 use std::collections::HashMap;
+use std::path::PathBuf;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -76,7 +76,8 @@ impl AgentOptions {
     pub fn to_claude_options(&self, resume_id: Option<String>) -> ClaudeAgentOptions {
         use std::sync::Arc;
 
-        let permission_mode = self.permission_mode
+        let permission_mode = self
+            .permission_mode
             .as_ref()
             .and_then(|m| parse_permission_mode(m));
 

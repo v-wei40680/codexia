@@ -10,7 +10,9 @@ pub fn get_installed_skills() -> Result<Vec<String>, String> {
 
     let mut skills = Vec::new();
 
-    for entry in fs::read_dir(&skills_dir).map_err(|e| format!("Failed to read skills dir: {}", e))? {
+    for entry in
+        fs::read_dir(&skills_dir).map_err(|e| format!("Failed to read skills dir: {}", e))?
+    {
         let entry = entry.map_err(|e| format!("Failed to read entry: {}", e))?;
         let path = entry.path();
 

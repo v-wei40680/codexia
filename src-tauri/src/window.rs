@@ -1,21 +1,19 @@
-use tauri::{AppHandle, Manager};
-use tauri_remote_ui::EmitterExt;
+use tauri::{AppHandle, Emitter, Manager};
 
 pub fn show_window(app: &AppHandle, args: Vec<String>) {
     let windows = app.webview_windows();
-    let main_window = windows.values().next().expect("Sorry, no window found");
+    let main_window = match windows.values().next() {
+        Some(window) => window,
+        None => return,
+    };
 
-    main_window
-        .set_focus()
-        .expect("Can't Bring Window to Focus");
+    let _ = main_window.set_focus();
 
-    dbg!(args.clone());
     if args.len() > 1 {
         let url = args[1].clone();
 
-        dbg!(url.clone());
         if url.starts_with("codexia://") {
-            let _ = EmitterExt::emit(main_window, "deep-link-received", url);
+            let _ = main_window.emit("deep-link-received", url);
         }
     }
 }

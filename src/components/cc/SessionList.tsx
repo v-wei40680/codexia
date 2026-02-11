@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { useCodexStore } from '@/stores/codex';
 import { useCCStore } from '@/stores/ccStore';
 import { getSessions, SessionData } from '@/lib/sessions';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
@@ -12,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 
 interface Props {
   onSelectSession?: (sessionId: string) => void;
@@ -21,7 +21,7 @@ export function ClaudeCodeSessionList({ onSelectSession }: Props) {
   const [allSessions, setAllSessions] = useState<SessionData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { cwd } = useCodexStore();
+  const { cwd } = useWorkspaceStore();
   const { activeSessionIds, activeSessionId } = useCCStore();
   const [activeTab, setActiveTab] = useState('current');
   const { toast } = useToast();
@@ -70,7 +70,7 @@ export function ClaudeCodeSessionList({ onSelectSession }: Props) {
     e.stopPropagation();
     navigator.clipboard.writeText(id);
     toast({
-      description: "Session ID copied to clipboard",
+      description: 'Session ID copied to clipboard',
     });
   };
 
@@ -85,36 +85,45 @@ export function ClaudeCodeSessionList({ onSelectSession }: Props) {
     activeSessionIds.includes(s.sessionId)
   );
 
-  const renderSessionList = (sessions: SessionData[], emptyMessage: string, showProject: boolean) => {
+  const renderSessionList = (
+    sessions: SessionData[],
+    emptyMessage: string,
+    showProject: boolean
+  ) => {
     if (sessions.length === 0) {
       return <div className="text-sm text-muted-foreground p-2">{emptyMessage}</div>;
     }
 
     return (
-      <div className="flex flex-col gap-1">
+      <div className="flex min-w-0 max-w-full flex-col gap-1 overflow-x-hidden">
         {sessions.map((session, index) => {
           const isSelected = activeSessionId === session.sessionId;
           const isActive = activeSessionIds.includes(session.sessionId);
           return (
             <div
               key={index}
-              className={`border p-3 rounded-lg cursor-pointer transition-all duration-200 group ${isSelected
-                ? 'border-primary bg-primary/[0.06] dark:bg-primary/[0.15] shadow-sm'
-                : 'border-border/50 hover:border-primary/30 hover:bg-accent/50'
-                }`}
+              className={`group w-full min-w-0 max-w-full overflow-hidden rounded-lg border p-3 transition-all duration-200 cursor-pointer ${
+                isSelected
+                  ? 'border-primary bg-primary/[0.06] dark:bg-primary/[0.15] shadow-sm'
+                  : 'border-border/50 hover:border-primary/30 hover:bg-accent/50'
+              }`}
               onClick={() => handleSessionClick(session)}
             >
-              <div className="flex flex-col gap-1">
-                <div className="flex items-start justify-between gap-2">
-                  <div className={`font-medium text-sm truncate ${isSelected ? 'text-primary' : ''}`}>{session.display}</div>
+              <div className="flex min-w-0 max-w-full flex-col gap-1">
+                <div className="flex min-w-0 max-w-full items-start justify-between gap-2">
+                  <div
+                    className={`min-w-0 max-w-full truncate text-sm font-medium ${isSelected ? 'text-primary' : ''}`}
+                  >
+                    {session.display}
+                  </div>
                 </div>
 
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
+                <div className="flex min-w-0 max-w-full items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-2">
                     {isActive && (
                       <div className="w-2 h-2 rounded-full bg-green-500 shrink-0 shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
                     )}
-                    <div className="text-xs text-muted-foreground">
+                    <div className="min-w-0 truncate text-xs text-muted-foreground">
                       {new Date(session.timestamp * 1000).toLocaleString()}
                     </div>
                   </div>
@@ -140,8 +149,10 @@ export function ClaudeCodeSessionList({ onSelectSession }: Props) {
                 </div>
 
                 {showProject && (
-                  <div className="mt-0.5">
-                    <span className={`truncate px-1.5 py-0.5 rounded text-[10px] font-mono uppercase tracking-wider ${isSelected ? 'bg-primary/10 text-primary/80' : 'bg-accent/50 text-muted-foreground'}`}>
+                  <div className="mt-0.5 min-w-0 max-w-full">
+                    <span
+                      className={`inline-block max-w-full truncate rounded px-1.5 py-0.5 text-[10px] font-mono uppercase tracking-wider ${isSelected ? 'bg-primary/10 text-primary/80' : 'bg-accent/50 text-muted-foreground'}`}
+                    >
                       {session.project.split(/[/\\]/).pop()}
                     </span>
                   </div>
@@ -155,33 +166,43 @@ export function ClaudeCodeSessionList({ onSelectSession }: Props) {
   };
 
   return (
-    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-      <TabsList className="w-full">
-        <TabsTrigger value="current" className="flex items-center gap-2">
-          <Clock className="h-4 w-4" />
-          <span className="text-muted-foreground">({currentProjectSessions.length})</span>
+    <Tabs
+      value={activeTab}
+      onValueChange={setActiveTab}
+      className="w-full min-w-0 max-w-full overflow-x-hidden"
+    >
+      <TabsList className="grid w-full min-w-0 max-w-full grid-cols-3">
+        <TabsTrigger
+          value="current"
+          className="flex min-w-0 items-center gap-1.5 overflow-hidden px-2"
+        >
+          <Clock className="h-4 w-4 shrink-0" />
+          <span className="truncate text-muted-foreground">({currentProjectSessions.length})</span>
         </TabsTrigger>
 
-        <TabsTrigger value="all" className="flex items-center gap-2">
-          <List className="h-4 w-4" />
-          <span className="text-muted-foreground">({allSessions.length})</span>
+        <TabsTrigger value="all" className="flex min-w-0 items-center gap-1.5 overflow-hidden px-2">
+          <List className="h-4 w-4 shrink-0" />
+          <span className="truncate text-muted-foreground">({allSessions.length})</span>
         </TabsTrigger>
 
-        <TabsTrigger value="active" className="flex items-center gap-2">
-          <Activity className="h-4 w-4" />
-          <span className="text-muted-foreground">({activeSessions.length})</span>
+        <TabsTrigger
+          value="active"
+          className="flex min-w-0 items-center gap-1.5 overflow-hidden px-2"
+        >
+          <Activity className="h-4 w-4 shrink-0" />
+          <span className="truncate text-muted-foreground">({activeSessions.length})</span>
         </TabsTrigger>
       </TabsList>
 
-      <TabsContent value="current" className="mt-4">
+      <TabsContent value="current" className="mt-4 w-full min-w-0 max-w-full overflow-x-hidden">
         {renderSessionList(currentProjectSessions, 'No sessions found for this project', false)}
       </TabsContent>
 
-      <TabsContent value="all" className="mt-4">
+      <TabsContent value="all" className="mt-4 w-full min-w-0 max-w-full overflow-x-hidden">
         {renderSessionList(allSessions, 'No sessions found', true)}
       </TabsContent>
 
-      <TabsContent value="active" className="mt-4">
+      <TabsContent value="active" className="mt-4 w-full min-w-0 max-w-full overflow-x-hidden">
         {renderSessionList(activeSessions, 'No active sessions in this project', false)}
       </TabsContent>
     </Tabs>

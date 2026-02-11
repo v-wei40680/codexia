@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogClose,
@@ -9,21 +9,19 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "@/components/ui/dialog";
-import { Cloud } from "lucide-react";
-import supabase from "@/lib/supabase";
-import { Textarea } from "../ui/textarea";
-import { toast } from "sonner";
-import { Label } from "../ui/label";
-import { Input } from "../ui/input";
+} from '@/components/ui/dialog';
+import { Cloud } from 'lucide-react';
+import supabase from '@/lib/supabase';
+import { Textarea } from '../ui/textarea';
+import { toast } from 'sonner';
+import { Label } from '../ui/label';
+import { Input } from '../ui/input';
 
 export function PublishCloudDialog() {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
-  const [statusType, setStatusType] = useState<"success" | "error" | null>(
-    null,
-  );
+  const [statusType, setStatusType] = useState<'success' | 'error' | null>(null);
 
   const resetStatus = () => {
     setStatusMessage(null);
@@ -31,13 +29,13 @@ export function PublishCloudDialog() {
   };
 
   const connect = async (e: React.FormEvent) => {
-    console.log("start submit");
+    console.log('start submit');
     e.preventDefault();
     if (!supabase) {
-      const message = "Cloud publishing is not configured.";
+      const message = 'Cloud publishing is not configured.';
       toast.error(message);
       setStatusMessage(message);
-      setStatusType("error");
+      setStatusType('error');
       return;
     }
 
@@ -46,30 +44,28 @@ export function PublishCloudDialog() {
       resetStatus();
 
       const formData = new FormData(e.currentTarget as HTMLFormElement);
-      const email = formData.get("email") as string | null;
-      const message = formData.get("message") as string | null;
+      const email = formData.get('email') as string | null;
+      const message = formData.get('message') as string | null;
 
-      const { error } = await supabase
-        .from("feedback")
-        .insert([{ email, message }]);
+      const { error } = await supabase.from('feedback').insert([{ email, message }]);
 
       if (error) {
-        const failureMessage = "Failed to submit feedback: " + error.message;
+        const failureMessage = 'Failed to submit feedback: ' + error.message;
         toast.error(failureMessage);
         setStatusMessage(failureMessage);
-        setStatusType("error");
+        setStatusType('error');
       } else {
-        const successMessage = "Feedback submitted successfully!";
+        const successMessage = 'Feedback submitted successfully!';
         toast.success(successMessage);
         setStatusMessage(successMessage);
-        setStatusType("success");
+        setStatusType('success');
       }
     } catch (e) {
-      const fallbackMessage = "An unexpected error occurred.";
+      const fallbackMessage = 'An unexpected error occurred.';
       console.error(e);
       toast.error(fallbackMessage);
       setStatusMessage(fallbackMessage);
-      setStatusType("error");
+      setStatusType('error');
     } finally {
       setIsSubmitting(false);
     }
@@ -93,13 +89,10 @@ export function PublishCloudDialog() {
           <DialogHeader>
             <DialogTitle className="flex gap-2">
               <Cloud />
-              <span className="py-1">
-                Share Your Feedback About Cloud Publishing
-              </span>
+              <span className="py-1">Share Your Feedback About Cloud Publishing</span>
             </DialogTitle>
             <DialogDescription>
-              Let us know your experience or ideas before we roll out full
-              deployment features.
+              Let us know your experience or ideas before we roll out full deployment features.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4">
@@ -114,7 +107,7 @@ export function PublishCloudDialog() {
           {statusMessage && statusType && (
             <p
               role="status"
-              className={`text-sm ${statusType === "success" ? "text-green-600 dark:text-green-400" : "text-destructive"}`}
+              className={`text-sm ${statusType === 'success' ? 'text-green-600 dark:text-green-400' : 'text-destructive'}`}
             >
               {statusMessage}
             </p>
@@ -124,7 +117,7 @@ export function PublishCloudDialog() {
               <Button variant="outline">Cancel</Button>
             </DialogClose>
             <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Submitting..." : "Submit"}
+              {isSubmitting ? 'Submitting...' : 'Submit'}
             </Button>
           </DialogFooter>
         </form>

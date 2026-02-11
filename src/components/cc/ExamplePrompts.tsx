@@ -1,7 +1,22 @@
-import { useNavigationStore } from "@/stores";
-import { Card } from "../ui/card";
-import { Code, FileText, Bug, Sparkles, RefreshCw, TestTube, Rocket, Lightbulb, Search, Wrench, ChevronsDown, ChevronsUp, Sheet, Folder } from "lucide-react";
-import { useState } from "react";
+import { Card } from '@/components/ui/card';
+import { useSettingsStore } from '@/stores/settings';
+import {
+  Code,
+  FileText,
+  Bug,
+  Sparkles,
+  RefreshCw,
+  TestTube,
+  Rocket,
+  Lightbulb,
+  Search,
+  Wrench,
+  ChevronsDown,
+  ChevronsUp,
+  Sheet,
+  Folder,
+} from 'lucide-react';
+import { useState } from 'react';
 
 interface Example {
   icon: React.ReactNode;
@@ -13,80 +28,84 @@ interface Example {
 const EXAMPLES: Example[] = [
   {
     icon: <Code className="h-5 w-5" />,
-    title: "Code Generation",
-    prompt: "Create a React component with TypeScript that displays a list of users with pagination",
-    category: "Create"
+    title: 'Code Generation',
+    prompt:
+      'Create a React component with TypeScript that displays a list of users with pagination',
+    category: 'Create',
   },
   {
     icon: <Bug className="h-5 w-5" />,
-    title: "Debug Code",
-    prompt: "Find and fix any bugs in the current codebase, especially type errors",
-    category: "Fix"
+    title: 'Debug Code',
+    prompt: 'Find and fix any bugs in the current codebase, especially type errors',
+    category: 'Fix',
   },
   {
     icon: <RefreshCw className="h-5 w-5" />,
-    title: "Refactor",
-    prompt: "Refactor this component to use hooks instead of class components and improve code quality",
-    category: "Improve"
+    title: 'Refactor',
+    prompt:
+      'Refactor this component to use hooks instead of class components and improve code quality',
+    category: 'Improve',
   },
   {
     icon: <TestTube className="h-5 w-5" />,
-    title: "Write Tests",
-    prompt: "Generate unit tests for the main functions in this file with full coverage",
-    category: "Test"
+    title: 'Write Tests',
+    prompt: 'Generate unit tests for the main functions in this file with full coverage',
+    category: 'Test',
   },
   {
     icon: <FileText className="h-5 w-5" />,
-    title: "Add Documentation",
-    prompt: "Add JSDoc comments to all functions and create a comprehensive README",
-    category: "Document"
+    title: 'Add Documentation',
+    prompt: 'Add JSDoc comments to all functions and create a comprehensive README',
+    category: 'Document',
   },
   {
     icon: <Sparkles className="h-5 w-5" />,
-    title: "Optimize Performance",
-    prompt: "Analyze and optimize the performance of this React application, focusing on re-renders",
-    category: "Optimize"
+    title: 'Optimize Performance',
+    prompt:
+      'Analyze and optimize the performance of this React application, focusing on re-renders',
+    category: 'Optimize',
   },
   {
     icon: <Search className="h-5 w-5" />,
-    title: "Code Review",
-    prompt: "Review the codebase and suggest improvements for code quality, security, and best practices",
-    category: "Review"
+    title: 'Code Review',
+    prompt:
+      'Review the codebase and suggest improvements for code quality, security, and best practices',
+    category: 'Review',
   },
   {
     icon: <Rocket className="h-5 w-5" />,
-    title: "Add Feature",
-    prompt: "Add a dark mode toggle feature to this application with theme persistence",
-    category: "Feature"
+    title: 'Add Feature',
+    prompt: 'Add a dark mode toggle feature to this application with theme persistence',
+    category: 'Feature',
   },
   {
     icon: <Lightbulb className="h-5 w-5" />,
-    title: "Explain Code",
-    prompt: "Explain how the authentication system works in this codebase",
-    category: "Learn"
+    title: 'Explain Code',
+    prompt: 'Explain how the authentication system works in this codebase',
+    category: 'Learn',
   },
   {
     icon: <Wrench className="h-5 w-5" />,
-    title: "Setup Project",
-    prompt: "Help me set up a new TypeScript + React + Vite project with ESLint and Prettier",
-    category: "Setup"
+    title: 'Setup Project',
+    prompt: 'Help me set up a new TypeScript + React + Vite project with ESLint and Prettier',
+    category: 'Setup',
   },
 ];
 
 const CoworkExamples: Example[] = [
   {
     icon: <Sheet className="h-5 w-5" />,
-    title: "Create a file",
-    prompt: "Create a spreadsheet",
-    category: "Create"
+    title: 'Create a file',
+    prompt: 'Create a spreadsheet',
+    category: 'Create',
   },
   {
     icon: <Folder className="h-5 w-5" />,
-    title: "Organize files",
-    prompt: "Organize files",
-    category: "Organize"
+    title: 'Organize files',
+    prompt: 'Organize files',
+    category: 'Organize',
   },
-]
+];
 
 interface Props {
   onSelectPrompt: (prompt: string) => void;
@@ -94,10 +113,10 @@ interface Props {
 
 export function ExamplePrompts({ onSelectPrompt }: Props) {
   const [isExpanded, setIsExpanded] = useState(false);
-  const { isCoworkMode } = useNavigationStore()
+  const { isCoworkMode } = useSettingsStore();
 
   const toggleAll = () => {
-    setIsExpanded(prev => !prev);
+    setIsExpanded((prev) => !prev);
   };
 
   return (
@@ -108,7 +127,7 @@ export function ExamplePrompts({ onSelectPrompt }: Props) {
           <button
             onClick={toggleAll}
             className="p-1.5 hover:bg-accent rounded transition-colors"
-            aria-label={isExpanded ? "Collapse all" : "Expand all"}
+            aria-label={isExpanded ? 'Collapse all' : 'Expand all'}
           >
             {isExpanded ? (
               <ChevronsUp className="h-5 w-5 text-muted-foreground" />
@@ -117,9 +136,7 @@ export function ExamplePrompts({ onSelectPrompt }: Props) {
             )}
           </button>
         </div>
-        <p className="text-muted-foreground">
-          Select an example below or type your own prompt
-        </p>
+        <p className="text-muted-foreground">Select an example below or type your own prompt</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -131,9 +148,7 @@ export function ExamplePrompts({ onSelectPrompt }: Props) {
           >
             {isExpanded ? (
               <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                  {example.icon}
-                </div>
+                <div className="p-2 rounded-lg bg-primary/10 text-primary">{example.icon}</div>
                 <div className="flex-1 space-y-1">
                   <div className="flex items-center justify-between gap-2">
                     <h3 className="font-semibold text-sm flex-1">{example.title}</h3>
@@ -141,9 +156,7 @@ export function ExamplePrompts({ onSelectPrompt }: Props) {
                       {example.category}
                     </span>
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    {example.prompt}
-                  </p>
+                  <p className="text-xs text-muted-foreground">{example.prompt}</p>
                 </div>
               </div>
             ) : (

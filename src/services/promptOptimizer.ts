@@ -7,13 +7,7 @@ export interface PromptOptimizationPayload {
 }
 
 export async function optimizePromptRequest(payload: PromptOptimizationPayload): Promise<string> {
-  const {
-    prompt,
-    model,
-    provider,
-    apiKey,
-    baseUrl,
-  } = payload;
+  const { prompt, model, provider, apiKey, baseUrl } = payload;
 
   const DEFAULT_BASE_URLS: Record<string, string> = {
     openai: 'https://api.openai.com/v1',

@@ -71,6 +71,29 @@ pub async fn write_file(file_path: String, content: String) -> Result<(), String
 }
 
 #[tauri::command]
+pub async fn delete_file(file_path: String) -> Result<(), String> {
+    let expanded_path = if file_path.starts_with("~/") {
+        let home = dirs::home_dir().ok_or_else(|| "Cannot find home directory".to_string())?;
+        home.join(&file_path[2..])
+    } else {
+        Path::new(&file_path).to_path_buf()
+    };
+
+    if !expanded_path.exists() {
+        return Err("File does not exist".to_string());
+    }
+
+    if expanded_path.is_dir() {
+        return Err("Cannot delete a directory".to_string());
+    }
+
+    match fs::remove_file(&expanded_path) {
+        Ok(()) => Ok(()),
+        Err(e) => Err(format!("Failed to delete file: {}", e)),
+    }
+}
+
+#[tauri::command]
 pub async fn read_text_file_lines(file_path: String) -> Result<Vec<String>, String> {
     let expanded_path = if file_path.starts_with("~/") {
         let home = dirs::home_dir().ok_or_else(|| "Cannot find home directory".to_string())?;

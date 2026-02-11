@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Popover } from '@/components/ui/popover';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import {
   Select,
   SelectContent,
@@ -11,8 +11,8 @@ import {
 } from '@/components/ui/select';
 import { Settings, Slash, CircleStop, Send } from 'lucide-react';
 import { CCFooter } from '@/components/cc/CCFooter';
-import { FolderSelectorCompact } from '@/components/dxt/FolderSelectorCompact';
-import { invoke } from '@/lib/tauri-proxy';
+import { FolderSelectorCompact } from '@/components/features/dxt/FolderSelectorCompact';
+import { invoke } from '@tauri-apps/api/core';
 import { useCCStore, ModelType } from '@/stores/ccStore';
 
 interface CCInputProps {
@@ -76,13 +76,8 @@ export function CCInput({ input, setInput, onSendMessage, onInterrupt }: CCInput
             >
               <Settings className={`h-4 w-4 ${showFooter ? 'text-primary' : ''}`} />
             </Button>
-            <Popover
-              open={showCommands}
-              onOpenChange={setShowCommands}
-              align="start"
-              side="top"
-              className="w-56 p-2"
-              trigger={
+            <Popover open={showCommands} onOpenChange={setShowCommands}>
+              <PopoverTrigger asChild>
                 <Button
                   size="icon"
                   variant="ghost"
@@ -91,8 +86,8 @@ export function CCInput({ input, setInput, onSendMessage, onInterrupt }: CCInput
                 >
                   <Slash className={`h-4 w-4 ${showCommands ? 'text-primary' : ''}`} />
                 </Button>
-              }
-              content={
+              </PopoverTrigger>
+              <PopoverContent align="start" side="top" className="w-56 p-2">
                 <div className="space-y-1">
                   {installedSkills.length === 0 ? (
                     <div className="text-xs text-muted-foreground text-center py-2">
@@ -111,8 +106,8 @@ export function CCInput({ input, setInput, onSendMessage, onInterrupt }: CCInput
                     ))
                   )}
                 </div>
-              }
-            />
+              </PopoverContent>
+            </Popover>
             <FolderSelectorCompact />
           </div>
 

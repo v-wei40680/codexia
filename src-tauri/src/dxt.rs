@@ -1,6 +1,6 @@
 use glob::glob;
-use std::{env, fs};
 use std::io::{Cursor, Read};
+use std::{env, fs};
 use zip::ZipArchive;
 
 const APP_NAME: &str = env!("CARGO_PKG_NAME");
@@ -52,7 +52,9 @@ pub async fn load_manifest(user: String, repo: String) -> Result<serde_json::Val
     async {
         let home = dirs::home_dir().ok_or_else(|| anyhow::anyhow!("Cannot find home directory"))?;
         let manifest_path = home
-            .join(".config").join(APP_NAME).join("dxt")
+            .join(".config")
+            .join(APP_NAME)
+            .join("dxt")
             .join(&user)
             .join(&repo)
             .join("manifest.json");
@@ -112,7 +114,7 @@ pub async fn download_and_extract_manifests() -> Result<(), String> {
     async {
         let home = dirs::home_dir().ok_or_else(|| anyhow::anyhow!("Cannot find home directory"))?;
         let dxt_base_path = home.join(".config").join(APP_NAME).join("dxt");
-        
+
         // Create base directory if it doesn't exist
         if !dxt_base_path.exists() {
             fs::create_dir_all(&dxt_base_path)?;
@@ -121,13 +123,13 @@ pub async fn download_and_extract_manifests() -> Result<(), String> {
         // Download the zip file
         let url = "https://github.com/milisp/awesome-claude-dxt/releases/latest/download/manifests.json.zip";
         let response = reqwest::get(url).await?;
-        
+
         if !response.status().is_success() {
             return Err(anyhow::anyhow!("Failed to download manifests zip: {}", response.status()));
         }
 
         let zip_data = response.bytes().await?;
-        
+
         // Extract the manifests content from the zip file
         let manifests_content = {
             let reader = Cursor::new(zip_data);
@@ -149,7 +151,7 @@ pub async fn download_and_extract_manifests() -> Result<(), String> {
         if let Some(contents) = manifests_content {
             // Parse the JSON array of manifests
             let manifests: serde_json::Value = serde_json::from_str(&contents)?;
-            
+
             if let Some(manifests_array) = manifests.as_array() {
                 // Save each manifest to its own directory structure
                 for manifest in manifests_array {
@@ -159,7 +161,7 @@ pub async fn download_and_extract_manifests() -> Result<(), String> {
                     ) {
                         let manifest_dir = dxt_base_path.join(author).join(name);
                         fs::create_dir_all(&manifest_dir)?;
-                        
+
                         let manifest_path = manifest_dir.join("manifest.json");
                         let manifest_content = serde_json::to_string_pretty(manifest)?;
                         tokio::fs::write(manifest_path, manifest_content).await?;

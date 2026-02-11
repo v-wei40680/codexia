@@ -1,46 +1,35 @@
-mod app_state;
-mod app_types;
 mod cc_commands;
-pub mod codex;
+mod codex;
 mod codex_commands;
 mod commands;
-mod config;
-mod database;
+mod db;
 mod dxt;
-mod error;
 mod filesystem;
-mod services;
+mod git;
 mod sleep;
 mod state;
-mod window;
+mod web_server;
 
-use crate::state::{RemoteAccessState, WatchState};
+use crate::state::WatchState;
 use cc_commands::CCState;
-use codex_commands::CodexState;
 use filesystem::{
     directory_ops::{canonicalize_path, get_default_directories, read_directory, search_files},
-    file_analysis::calculate_file_tokens,
-    file_io::{read_file, read_text_file_lines, write_file},
-    file_parsers::{csv::read_csv_content, pdf::read_pdf_content, xlsx::read_xlsx_content},
-    git_diff::get_git_file_diff,
-    git_status::get_git_status,
-    git_worktree::{
-        apply_reverse_patch, commit_changes_to_worktree, delete_git_worktree, git_commit_changes,
-        prepare_git_worktree,
-    },
+    file_io::{delete_file, read_file, read_text_file_lines, write_file},
+    file_parsers::{pdf::read_pdf_content, xlsx::read_xlsx_content},
     watch::{start_watch_directory, stop_watch_directory},
 };
-use sleep::{allow_sleep, prevent_sleep, SleepState};
+use sleep::{SleepState, allow_sleep, prevent_sleep};
+use std::sync::Arc;
 use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    let mut builder = tauri::Builder::default()
+    let builder = tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_log::Builder::new().build());
-    #[cfg(desktop)]
+    #[cfg(any(windows, target_os = "linux"))]
     {
         builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
             window::show_window(app, argv);
@@ -58,100 +47,42 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
-        .plugin(tauri_remote_ui::init())
-        .manage(CodexState::new())
         .manage(CCState::new())
-        .manage(RemoteAccessState::default())
         .manage(WatchState::new())
         .manage(SleepState::default())
         .invoke_handler(tauri::generate_handler![
-            // Codexia native commands
-            codex_commands::check::check_codex_version,
-            codex_commands::check::check_coder_version,
-            codex_commands::check::get_client_name,
-            codex_commands::check::set_client_name,
-            commands::window::create_new_window,
+            codex::start_thread,
+            codex::resume_thread,
+            codex::list_threads,
+            codex::list_archived_threads,
+            codex::archive_thread,
+            codex::turn_start,
+            codex::turn_interrupt,
+            codex::model_list,
+            codex::account_rate_limits,
+            codex::get_account,
+            codex::login_account,
+            codex::skills_list,
+            codex::skills_config_write,
+            codex::fuzzy_file_search,
+            codex::start_review,
+            codex::respond_to_command_execution_approval,
+            codex::respond_to_file_change_approval,
+            codex::respond_to_request_user_input,
             read_directory,
             get_default_directories,
             search_files,
             canonicalize_path,
-            calculate_file_tokens,
             read_file,
             read_text_file_lines,
             write_file,
+            delete_file,
             read_pdf_content,
-            read_csv_content,
             read_xlsx_content,
-            get_git_file_diff,
-            get_git_status,
-            prepare_git_worktree,
-            git_commit_changes,
-            apply_reverse_patch,
-            delete_git_worktree,
-            commit_changes_to_worktree,
             start_watch_directory,
             stop_watch_directory,
-            codex_commands::read_codex_config,
-            codex_commands::get_project_name,
-            codex_commands::is_version_controlled,
-            codex_commands::set_project_trust,
-            codex_commands::read_mcp_servers,
-            codex_commands::add_mcp_server,
-            codex_commands::delete_mcp_server,
-            codex_commands::set_mcp_server_enabled,
-            codex_commands::read_model_providers,
-            codex_commands::add_or_update_model_provider,
-            codex_commands::delete_model_provider,
-            commands::remote::enable_remote_ui,
-            commands::remote::disable_remote_ui,
-            commands::remote::get_remote_ui_status,
-            codex_commands::send_user_message,
-            codex_commands::turn_start,
-            codex_commands::new_conversation,
-            codex_commands::resume_conversation,
-            codex_commands::interrupt_conversation,
-            codex_commands::respond_exec_command_request,
-            codex_commands::respond_apply_patch_request,
-            codex_commands::get_account,
-            codex_commands::login_account_chatgpt,
-            codex_commands::login_account_api_key,
-            codex_commands::cancel_login_account,
-            codex_commands::logout_account,
-            codex_commands::add_conversation_listener,
-            codex_commands::remove_conversation_listener,
-            codex_commands::get_account_rate_limits,
-            codex_commands::initialize_client,
-            commands::file::delete_file,
-            codex_commands::scan_projects,
-            codex_commands::get_scanned_projects,
-            codex_commands::scan_and_cache_projects,
-            codex_commands::load_project_sessions,
-            codex_commands::update_cache_title,
-            commands::terminal::open_terminal_with_command,
-            codex_commands::update_project_favorites,
-            codex_commands::remove_project_session,
             prevent_sleep,
             allow_sleep,
-            codex_commands::read_token_usage,
-            // Note commands
-            codex_commands::create_note,
-            codex_commands::get_notes,
-            codex_commands::get_note_by_id,
-            codex_commands::update_note,
-            codex_commands::delete_note,
-            codex_commands::toggle_note_favorite,
-            codex_commands::mark_notes_synced,
-            codex_commands::get_unsynced_notes,
-            // Skills commands
-            commands::skill::get_skills,
-            commands::skill::get_skills_for_app,
-            commands::skill::install_skill,
-            commands::skill::install_skill_for_app,
-            commands::skill::uninstall_skill,
-            commands::skill::uninstall_skill_for_app,
-            commands::skill::get_skill_repos,
-            commands::skill::add_skill_repo,
-            commands::skill::remove_skill_repo,
             // CC commands
             cc_commands::cc_connect,
             cc_commands::cc_new_session,
@@ -165,7 +96,6 @@ pub fn run() {
             cc_commands::cc_get_installed_skills,
             cc_commands::cc_get_settings,
             cc_commands::cc_update_settings,
-
             // cc mcp
             cc_commands::cc_mcp_list,
             cc_commands::cc_mcp_get,
@@ -174,72 +104,59 @@ pub fn run() {
             cc_commands::cc_list_projects,
             cc_commands::cc_mcp_disable,
             cc_commands::cc_mcp_enable,
-
-            dxt::load_manifests,
-            dxt::load_manifest,
-            dxt::read_dxt_setting,
-            dxt::save_dxt_setting,
-            dxt::download_and_extract_manifests,
-            dxt::check_manifests_exist,
-
-            // v2 commands
-            crate::codex::v2::settings::get_app_settings,
-            crate::codex::v2::settings::update_app_settings,
-            crate::codex::v2::workspaces::list_workspaces,
-            crate::codex::v2::workspaces::add_workspace,
-            crate::codex::v2::workspaces::add_worktree,
-            crate::codex::v2::workspaces::remove_workspace,
-            crate::codex::v2::workspaces::remove_worktree,
-            crate::codex::v2::workspaces::update_workspace_settings,
-            crate::codex::v2::codex::start_thread,
-            crate::codex::v2::codex::send_user_message_v2,
-            crate::codex::v2::codex::turn_interrupt,
-            crate::codex::v2::codex::start_review,
-            crate::codex::v2::codex::respond_to_server_request,
-            crate::codex::v2::codex::resume_thread,
-            crate::codex::v2::codex::list_threads,
-            crate::codex::v2::codex::archive_thread,
-            crate::codex::v2::workspaces::connect_workspace,
-            crate::codex::v2::git::get_git_status_v2,
-            crate::codex::v2::git::get_git_diffs,
-            crate::codex::v2::git::get_git_log,
-            crate::codex::v2::git::get_git_remote,
-            crate::codex::v2::git::get_github_issues,
-            crate::codex::v2::workspaces::list_workspace_files,
-            crate::codex::v2::git::list_git_branches,
-            crate::codex::v2::git::checkout_git_branch,
-            crate::codex::v2::git::create_git_branch,
-            crate::codex::v2::codex::model_list,
-            crate::codex::v2::codex::account_rate_limits,
-            crate::codex::v2::codex::skills_list,
-
             // Unified MCP commands (routes to Codex or CC based on client_name)
             commands::mcp::unified_add_mcp_server,
             commands::mcp::unified_remove_mcp_server,
             commands::mcp::unified_enable_mcp_server,
             commands::mcp::unified_disable_mcp_server,
             commands::mcp::unified_read_mcp_config,
+            commands::skills::clone_skills_repo,
+            commands::skills::list_marketplace_skills,
+            commands::skills::list_installed_skills,
+            commands::skills::install_marketplace_skill,
+            commands::skills::uninstall_installed_skill,
+            commands::notes::create_note,
+            commands::notes::get_notes,
+            commands::notes::get_note_by_id,
+            commands::notes::update_note,
+            commands::notes::delete_note,
+            commands::notes::toggle_favorite,
+            commands::notes::mark_notes_synced,
+            commands::notes::get_unsynced_notes,
+            commands::git::git_status,
+            commands::git::git_file_diff,
+            commands::git::git_file_diff_meta,
+            commands::git::git_stage_files,
+            commands::git::git_unstage_files,
+            codex::utils::codex_home,
+            commands::usage::read_token_usage,
+            dxt::load_manifests,
+            dxt::load_manifest,
+            dxt::read_dxt_setting,
+            dxt::save_dxt_setting,
+            dxt::download_and_extract_manifests,
+            dxt::check_manifests_exist,
         ])
         .setup(|app| {
-            // Initialize Skills database
-            let db = database::Database::init()
-                .expect("Failed to initialize skills database");
-            let db_arc = std::sync::Arc::new(db);
+            let app_handle = app.handle().clone();
+            let init_result = tauri::async_runtime::block_on(async {
+                let event_sink: Arc<dyn codex::EventSink> =
+                    Arc::new(codex::TauriEventSink::new(app_handle));
+                let codex_client = codex::connect_codex(Arc::clone(&event_sink)).await?;
+                codex::initialize_codex(&codex_client, Arc::clone(&event_sink)).await?;
+                Ok::<_, String>((codex_client, event_sink))
+            });
 
-            // Initialize default skill repositories
-            if let Err(e) = db_arc.init_default_skill_repos() {
-                log::warn!("Failed to initialize default skill repos: {}", e);
-            }
-
-            app.manage(app_state::AppState::new(db_arc));
-            app.manage(crate::codex::v2::state::AppState::load(&app.handle()));
-
-            // Setup event bridge between codex-client and Tauri
-            let codex_state = app.state::<CodexState>();
-            codex_commands::setup_event_bridge(
-                app.handle().clone(),
-                codex_state.client_state.clone(),
-            );
+            let (codex_client, event_sink) = match init_result {
+                Ok(value) => value,
+                Err(err) => {
+                    return Err(std::io::Error::other(err).into());
+                }
+            };
+            app.handle().manage(codex::AppState {
+                codex: codex_client,
+            });
+            codex::start_history_scanner(event_sink);
 
             #[cfg(debug_assertions)]
             {
@@ -270,4 +187,12 @@ pub fn run() {
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+pub fn start_web_server(port: u16) {
+    tauri::async_runtime::block_on(async move {
+        if let Err(err) = web_server::start_web_server(port).await {
+            eprintln!("Failed to start web server: {}", err);
+        }
+    });
 }

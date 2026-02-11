@@ -9,7 +9,7 @@ interface EditorState {
   // Theme settings
   isDarkTheme: boolean;
   setIsDarkTheme: (isDark: boolean) => void;
-  
+
   // Search state
   searchTerm: string;
   searchResults: number[];
@@ -19,7 +19,7 @@ interface EditorState {
   setSearchResults: (results: number[]) => void;
   setCurrentSearchIndex: (index: number) => void;
   setShowSearch: (show: boolean) => void;
-  
+
   // Editor preferences
   showLineNumbers: boolean;
   fontSize: number;
@@ -27,12 +27,12 @@ interface EditorState {
   setShowLineNumbers: (show: boolean) => void;
   setFontSize: (size: number) => void;
   setTabSize: (size: number) => void;
-  
+
   // Cursor position tracking
   cursorPositions: Map<string, CursorPosition>;
   setCursorPosition: (filePath: string, position: CursorPosition) => void;
   getCursorPosition: (filePath: string) => CursorPosition | null;
-  
+
   // Reset functions
   resetSearch: () => void;
 }
@@ -41,7 +41,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   // Theme settings
   isDarkTheme: false,
   setIsDarkTheme: (isDark) => set({ isDarkTheme: isDark }),
-  
+
   // Search state
   searchTerm: '',
   searchResults: [],
@@ -51,7 +51,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setSearchResults: (results) => set({ searchResults: results }),
   setCurrentSearchIndex: (index) => set({ currentSearchIndex: index }),
   setShowSearch: (show) => set({ showSearch: show }),
-  
+
   // Editor preferences
   showLineNumbers: true,
   fontSize: 14,
@@ -59,7 +59,7 @@ export const useEditorStore = create<EditorState>((set, get) => ({
   setShowLineNumbers: (show) => set({ showLineNumbers: show }),
   setFontSize: (size) => set({ fontSize: size }),
   setTabSize: (size) => set({ tabSize: size }),
-  
+
   // Cursor position tracking
   cursorPositions: new Map(),
   setCursorPosition: (filePath, position) => {
@@ -72,12 +72,13 @@ export const useEditorStore = create<EditorState>((set, get) => ({
     const state = get();
     return state.cursorPositions.get(filePath) || null;
   },
-  
+
   // Reset functions
-  resetSearch: () => set({ 
-    searchTerm: '', 
-    searchResults: [], 
-    currentSearchIndex: -1, 
-    showSearch: false 
-  }),
+  resetSearch: () =>
+    set({
+      searchTerm: '',
+      searchResults: [],
+      currentSearchIndex: -1,
+      showSearch: false,
+    }),
 }));

@@ -1,13 +1,13 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import type { CCMessage } from "@/types/cc-messages";
-import type { CCMcpServers } from "@/types/cc-mcp";
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import type { CCMessage } from '@/types/cc/cc-messages';
+import type { CCMcpServers } from '@/types/cc/cc-mcp';
 
-export type PermissionMode = "default" | "acceptEdits" | "plan" | "bypassPermissions";
-export type ModelType = "sonnet" | "haiku" | "opus";
+export type PermissionMode = 'default' | 'acceptEdits' | 'plan' | 'bypassPermissions';
+export type ModelType = 'sonnet' | 'haiku' | 'opus';
 
 // Re-export message types for convenience
-export type { CCMessage } from "@/types/cc-messages";
+export type { CCMessage } from '@/types/cc/cc-messages';
 
 export interface CCPluginConfig {
   path: string;
@@ -62,7 +62,7 @@ export const useCCStore = create<CCStoreState>()(
       messages: [],
       options: {
         model: undefined,
-        permissionMode: "default",
+        permissionMode: 'default',
       },
       isConnected: false,
       isLoading: false,
@@ -70,23 +70,26 @@ export const useCCStore = create<CCStoreState>()(
       showFooter: true,
       isViewingHistory: false,
 
-      setActiveSessionId: (id) => set((state) => {
-        const newIds = id && !state.activeSessionIds.includes(id)
-          ? [...state.activeSessionIds, id]
-          : state.activeSessionIds;
-        return { activeSessionId: id, activeSessionIds: newIds };
-      }),
-      addActiveSessionId: (id) => set((state) => ({
-        activeSessionIds: state.activeSessionIds.includes(id)
-          ? state.activeSessionIds
-          : [...state.activeSessionIds, id]
-      })),
-      removeActiveSessionId: (id) => set((state) => ({
-        activeSessionIds: state.activeSessionIds.filter(sid => sid !== id),
-        activeSessionId: state.activeSessionId === id ? null : state.activeSessionId
-      })),
-      addMessage: (message) =>
-        set((state) => ({ messages: [...state.messages, message] })),
+      setActiveSessionId: (id) =>
+        set((state) => {
+          const newIds =
+            id && !state.activeSessionIds.includes(id)
+              ? [...state.activeSessionIds, id]
+              : state.activeSessionIds;
+          return { activeSessionId: id, activeSessionIds: newIds };
+        }),
+      addActiveSessionId: (id) =>
+        set((state) => ({
+          activeSessionIds: state.activeSessionIds.includes(id)
+            ? state.activeSessionIds
+            : [...state.activeSessionIds, id],
+        })),
+      removeActiveSessionId: (id) =>
+        set((state) => ({
+          activeSessionIds: state.activeSessionIds.filter((sid) => sid !== id),
+          activeSessionId: state.activeSessionId === id ? null : state.activeSessionId,
+        })),
+      addMessage: (message) => set((state) => ({ messages: [...state.messages, message] })),
       setMessages: (messages) => set({ messages }),
       updateOptions: (newOptions) =>
         set((state) => ({
@@ -100,7 +103,7 @@ export const useCCStore = create<CCStoreState>()(
       clearMessages: () => set({ messages: [] }),
     }),
     {
-      name: "cc-store",
+      name: 'cc-store',
       partialize: (state) => ({
         options: state.options,
         showFooter: state.showFooter,

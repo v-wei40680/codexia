@@ -1,6 +1,5 @@
-pub mod file;
+pub mod git;
 pub mod mcp;
-pub mod remote;
-pub mod window;
-pub mod terminal;
-pub mod skill;
+pub mod notes;
+pub mod skills;
+pub mod usage;

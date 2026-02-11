@@ -14,8 +14,9 @@
 
 ## Common Commands
 - `bun tauri dev` - read the backend output
-- `bun run build` - test frontend
+- `bun run build` - test frontend if frontend change
 - `bunx --bun shadcn@latest add <dep>` - add shadcn dep
+- `cargo check` at src-tauri if rust code change
 - only `cargo build` when I ask
 - Don't run `cargo fmt`
 
@@ -25,4 +26,10 @@
 - `src/hooks/` - Custom hooks and stores
 - use `@/hooks` `@/types` etc.
 
-- use `import { invoke } from "@/lib/tauri-proxy"` instead `import { invoke } from "@tauri-apps/api/core"` because remote server
+## web server
+
+- new tauri command add a api to `src-tauri/src/web_server/handlers.rs` 
+- invoke add to `src/services/tauri.ts`
+
+## cwd
+cwd mean current working dir

@@ -1,5 +1,5 @@
+pub mod message_service;
+pub mod project_service;
 pub mod session_service;
 pub mod settings_service;
 pub mod skill_service;
-pub mod project_service;
-pub mod message_service;

@@ -8,10 +8,3 @@ pub struct FileEntry {
     pub size: Option<u64>,
     pub extension: Option<String>,
 }
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct GitDiff {
-    pub original_content: String,
-    pub current_content: String,
-    pub has_changes: bool,
-}

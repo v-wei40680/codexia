@@ -1,5 +1,5 @@
 export function getErrorMessage(error: unknown): string {
-  if (typeof error === "string") {
+  if (typeof error === 'string') {
     return error;
   }
 
@@ -10,7 +10,7 @@ export function getErrorMessage(error: unknown): string {
   try {
     return JSON.stringify(error);
   } catch (jsonError) {
-    console.error("Failed to stringify error:", jsonError);
+    console.error('Failed to stringify error:', jsonError);
     return String(error);
   }
 }

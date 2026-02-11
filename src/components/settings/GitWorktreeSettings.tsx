@@ -1,6 +1,6 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
-import { useSettingsStore } from "@/stores/settings/SettingsStore";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Switch } from '@/components/ui/switch';
+import { useSettingsStore } from '@/stores/settings/useSettingsStore';
 
 export function GitWorktreeSettings() {
   const { autoCommitGitWorktree, setAutoCommitGitWorktree } = useSettingsStore();
@@ -18,14 +18,11 @@ export function GitWorktreeSettings() {
           <div>
             <p className="text-sm font-medium">Auto-commit to worktrees</p>
             <p className="text-xs text-muted-foreground">
-              When enabled, task completion events will prepare a conversation-specific git worktree,
-              copy changes, and create a commit under <code>~/.codexia/worktrees</code>.
+              When enabled, task completion events will prepare a conversation-specific git
+              worktree, copy changes, and create a commit under <code>~/.codexia/worktrees</code>.
             </p>
           </div>
-          <Switch
-            checked={autoCommitGitWorktree}
-            onCheckedChange={setAutoCommitGitWorktree}
-          />
+          <Switch checked={autoCommitGitWorktree} onCheckedChange={setAutoCommitGitWorktree} />
         </div>
         <p className="text-xs text-muted-foreground">
           Disable this if you prefer to manage git commits manually or operate on repositories that
@@ -48,11 +45,7 @@ export function SimpleGitWorktreeSettings() {
           copy changes, and create a commit under <code>~/.codexia/worktrees</code>.
         </p>
       </div>
-      <Switch
-        checked={autoCommitGitWorktree}
-        onCheckedChange={setAutoCommitGitWorktree}
-      />
+      <Switch checked={autoCommitGitWorktree} onCheckedChange={setAutoCommitGitWorktree} />
     </div>
   );
 }
-

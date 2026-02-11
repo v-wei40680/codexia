@@ -256,26 +256,26 @@
   body {
     @apply bg-background text-foreground;
   }
-  
+
   /* Custom scrollbar for webkit browsers */
   ::-webkit-scrollbar {
     width: 6px;
     height: 6px;
   }
-  
+
   ::-webkit-scrollbar-track {
     background: transparent;
   }
-  
+
   ::-webkit-scrollbar-thumb {
     background: hsl(var(--muted-foreground) / 0.3);
     border-radius: 3px;
   }
-  
+
   ::-webkit-scrollbar-thumb:hover {
     background: hsl(var(--muted-foreground) / 0.5);
   }
-  
+
   /* For Firefox */
   * {
     scrollbar-width: thin;
@@ -404,4 +404,94 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+/* Git diff viewer */
+.git-diff-table {
+  --diff-gutter-insert-background-color: rgba(46, 160, 67, 0.18);
+  --diff-gutter-delete-background-color: rgba(248, 81, 73, 0.18);
+  --diff-code-insert-background-color: rgba(46, 160, 67, 0.15);
+  --diff-code-delete-background-color: rgba(248, 81, 73, 0.15);
+  --diff-code-insert-edit-background-color: rgba(46, 160, 67, 0.28);
+  --diff-code-delete-edit-background-color: rgba(248, 81, 73, 0.28);
+  --diff-omit-gutter-line-color: rgba(59, 130, 246, 0.8);
+}
+
+.dark .git-diff-table {
+  --diff-gutter-insert-background-color: rgba(46, 160, 67, 0.28);
+  --diff-gutter-delete-background-color: rgba(248, 81, 73, 0.28);
+  --diff-code-insert-background-color: rgba(46, 160, 67, 0.24);
+  --diff-code-delete-background-color: rgba(248, 81, 73, 0.24);
+  --diff-code-insert-edit-background-color: rgba(46, 160, 67, 0.36);
+  --diff-code-delete-edit-background-color: rgba(248, 81, 73, 0.36);
+}
+
+.git-diff-table .diff-gutter {
+  font-size: 11px;
+  color: hsl(var(--muted-foreground));
+}
+
+.git-diff-table.diff-unified col.diff-gutter-col:first-child {
+  display: none;
+}
+
+.git-diff-table.diff-unified td.diff-gutter:first-child {
+  display: none;
+}
+
+.git-diff-decoration .diff-decoration-content,
+.git-diff-decoration .diff-decoration-gutter {
+  background: hsl(var(--muted) / 0.5);
+}
+
+.git-diff-decoration .diff-decoration-content {
+  padding: 0;
+}
+
+.git-diff-fold-row {
+  display: grid;
+  grid-template-columns: 7ch minmax(0, 1fr);
+  align-items: center;
+}
+
+.git-diff-fold-gutter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  padding: 2px 1ch 2px 0;
+  justify-self: end;
+}
+
+.git-diff-fold-icon-button {
+  height: 14px;
+  width: 14px;
+  border-radius: 4px;
+  border: 0;
+  color: hsl(var(--muted-foreground));
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.git-diff-fold-icon-button:hover {
+  background: hsl(var(--accent) / 0.8);
+  color: hsl(var(--accent-foreground));
+}
+
+.git-diff-fold-content {
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  color: rgb(37 99 235);
+  font-size: 12px;
+  line-height: 1.8;
+  padding: 0 10px;
+}
+
+.git-diff-fold-content:hover {
+  text-decoration: underline;
 }

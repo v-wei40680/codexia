@@ -1,0 +1,482 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { KeyboardEvent, MouseEvent } from 'react';
+import { Menu, MenuItem } from '@tauri-apps/api/menu';
+import { Archive, Pin } from 'lucide-react';
+import { useThreadFilter } from '@/hooks/codex/useThreadFilter';
+import { codexService } from '@/services/codexService';
+import { useCodexStore, useThreadListStore } from '@/stores/codex';
+import { deleteFile, readSessionMetaFile, threadList, writeSessionMetaFile } from '@/services/tauri';
+import type { ThreadListParams } from '@/bindings/v2';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { formatThreadAge } from '@/utils/formatThreadAge';
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
+import type { ThreadListItem } from '@/types/codex/ThreadListItem';
+import { useLayoutStore } from '@/stores';
+
+type SessionMetaEntry = {
+  text?: string;
+  pinned_at_ms?: number | null;
+};
+
+interface ThreadListProps {
+  cwdOverride?: string;
+}
+
+function normalizeThreadItem(thread: any): ThreadListItem {
+  const ts = thread.ts ?? thread.createdAt ?? thread.updatedAt ?? 0;
+  return {
+    id: thread.id,
+    preview: thread.preview ?? '',
+    cwd: thread.cwd ?? '',
+    path: thread.path ?? '',
+    source: thread.source ?? '',
+    ts,
+  };
+}
+
+export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
+  const { cwd, historyMode, setCwd } = useWorkspaceStore();
+  const { setView } = useLayoutStore();
+  const { threads, currentThreadId, threadListNextCursor } = useCodexStore();
+  const { searchTerm, sortKey } = useThreadListStore();
+  const isProjectScoped = !!cwdOverride;
+  const listCwd = cwdOverride ?? cwd;
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [scopedThreads, setScopedThreads] = useState<ThreadListItem[]>([]);
+  const [scopedNextCursor, setScopedNextCursor] = useState<string | null>(null);
+  const [sessionMeta, setSessionMeta] = useState<Record<string, SessionMetaEntry>>({});
+  const [renameThreadId, setRenameThreadId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState('');
+  const sourceThreads = isProjectScoped ? scopedThreads : threads;
+  const nextCursor = isProjectScoped ? scopedNextCursor : threadListNextCursor;
+  const mergedThreads = useMemo(
+    () =>
+      sourceThreads.map((thread) => ({
+        ...thread,
+        preview: sessionMeta[thread.id]?.text ?? thread.preview,
+        pinnedAtMs: sessionMeta[thread.id]?.pinned_at_ms ?? null,
+      })),
+    [sessionMeta, sourceThreads]
+  );
+  const filteredThreads = useThreadFilter(mergedThreads, searchTerm);
+  const sortedThreads = useMemo(() => {
+    return [...filteredThreads].sort((a, b) => {
+      const aPinned = a.pinnedAtMs ?? -1;
+      const bPinned = b.pinnedAtMs ?? -1;
+      if (aPinned !== bPinned) {
+        return bPinned - aPinned;
+      }
+      return b.ts - a.ts;
+    });
+  }, [filteredThreads]);
+  const loadSessionMeta = useCallback(async () => {
+    try {
+      const raw = await readSessionMetaFile();
+      const parsed = JSON.parse(raw) as Record<string, SessionMetaEntry>;
+      if (parsed && typeof parsed === 'object') {
+        setSessionMeta(parsed);
+      } else {
+        setSessionMeta({});
+      }
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      const normalized = message.toLowerCase();
+      if (
+        normalized.includes('no such file or directory') ||
+        normalized.includes('os error 2') ||
+        normalized.includes('file does not exist')
+      ) {
+        setSessionMeta({});
+      } else {
+        console.error('Failed to load session meta:', err);
+      }
+    }
+  }, []);
+  const writeSessionMeta = useCallback(async (nextMeta: Record<string, SessionMetaEntry>) => {
+    await writeSessionMetaFile(JSON.stringify(nextMeta, null, 2));
+    setSessionMeta(nextMeta);
+  }, []);
+
+  useEffect(() => {
+    void loadSessionMeta();
+  }, [loadSessionMeta]);
+
+  useEffect(() => {
+    if (!isProjectScoped) {
+      return;
+    }
+    let cancelled = false;
+    const loadScopedThreads = async () => {
+      try {
+        const params: ThreadListParams = {
+          cursor: null,
+          limit: 3,
+          modelProviders: null,
+          sortKey,
+          archived: false,
+          sourceKinds: null,
+        };
+        const response = await threadList(params, listCwd);
+        if (cancelled) {
+          return;
+        }
+        const loadedThreads = response.data.map((t) => normalizeThreadItem(t));
+        const next =
+          (response as { nextCursor?: string | null }).nextCursor ??
+          (response as { next_cursor?: string | null }).next_cursor ??
+          null;
+        setScopedThreads(loadedThreads);
+        setScopedNextCursor(next);
+      } catch (error) {
+        if (!cancelled) {
+          console.error('Failed to load scoped thread list:', error);
+        }
+      }
+    };
+    void loadScopedThreads();
+    return () => {
+      cancelled = true;
+    };
+  }, [isProjectScoped, listCwd, sortKey]);
+
+  const handleSelectThread = useCallback(
+    async (threadId: string) => {
+      if (threadId === currentThreadId) {
+        return;
+      }
+      if (listCwd && listCwd !== cwd) {
+        setCwd(listCwd);
+      }
+      await codexService.setCurrentThread(threadId, { resume: !historyMode });
+    },
+    [currentThreadId, cwd, historyMode, listCwd, setCwd]
+  );
+
+  const handleTogglePin = useCallback(
+    async (threadId: string) => {
+      const meta = sessionMeta[threadId];
+      const isPinned = !!meta?.pinned_at_ms;
+      const nextMeta = { ...sessionMeta };
+      if (isPinned) {
+        if (nextMeta[threadId]) {
+          const { text } = nextMeta[threadId];
+          if (text) {
+            nextMeta[threadId] = { text, pinned_at_ms: null };
+          } else {
+            delete nextMeta[threadId];
+          }
+        }
+      } else {
+        nextMeta[threadId] = {
+          ...(nextMeta[threadId] ?? {}),
+          pinned_at_ms: Date.now(),
+        };
+      }
+      await writeSessionMeta(nextMeta);
+    },
+    [sessionMeta, writeSessionMeta]
+  );
+
+  const handleArchiveThread = useCallback(
+    async (threadId: string) => {
+      await codexService.archiveThread(threadId);
+      if (isProjectScoped) {
+        const params: ThreadListParams = {
+          cursor: null,
+          limit: 20,
+          modelProviders: null,
+          sortKey,
+          archived: false,
+          sourceKinds: null,
+        };
+        const response = await threadList(params, listCwd);
+        const loadedThreads = response.data.map((t) => normalizeThreadItem(t));
+        const next =
+          (response as { nextCursor?: string | null }).nextCursor ??
+          (response as { next_cursor?: string | null }).next_cursor ??
+          null;
+        setScopedThreads(loadedThreads);
+        setScopedNextCursor(next);
+      } else {
+        await codexService.loadThreads(cwd, false, sortKey);
+      }
+    },
+    [cwd, isProjectScoped, listCwd, sortKey]
+  );
+
+  const handleDeleteThreadByPath = useCallback(
+    async (threadId: string, threadPath: string) => {
+      if (!threadPath) {
+        return;
+      }
+
+      await deleteFile(threadPath);
+
+      if (sessionMeta[threadId]) {
+        const nextMeta = { ...sessionMeta };
+        delete nextMeta[threadId];
+        await writeSessionMeta(nextMeta);
+      }
+
+      if (currentThreadId === threadId) {
+        await codexService.setCurrentThread(null, { resume: false });
+      }
+
+      if (isProjectScoped) {
+        const params: ThreadListParams = {
+          cursor: null,
+          limit: 20,
+          modelProviders: null,
+          sortKey,
+          archived: false,
+          sourceKinds: null,
+        };
+        const response = await threadList(params, listCwd);
+        const loadedThreads = response.data.map((t) => normalizeThreadItem(t));
+        const next =
+          (response as { nextCursor?: string | null }).nextCursor ??
+          (response as { next_cursor?: string | null }).next_cursor ??
+          null;
+        setScopedThreads(loadedThreads);
+        setScopedNextCursor(next);
+      } else {
+        await codexService.loadThreads(cwd, false, sortKey);
+      }
+    },
+    [
+      currentThreadId,
+      cwd,
+      isProjectScoped,
+      listCwd,
+      sessionMeta,
+      sortKey,
+      writeSessionMeta,
+    ]
+  );
+
+  const handleLoadMore = useCallback(async () => {
+    if (!nextCursor || isLoadingMore) {
+      return;
+    }
+    setIsLoadingMore(true);
+    try {
+      if (isProjectScoped) {
+        const params: ThreadListParams = {
+          cursor: nextCursor,
+          limit: 20,
+          modelProviders: null,
+          sortKey,
+          archived: false,
+          sourceKinds: null,
+        };
+        const response = await threadList(params, listCwd);
+        const loadedThreads = response.data.map((t) => normalizeThreadItem(t));
+        const next =
+          (response as { nextCursor?: string | null }).nextCursor ??
+          (response as { next_cursor?: string | null }).next_cursor ??
+          null;
+        setScopedThreads((prev) => {
+          const seen = new Set(prev.map((thread) => thread.id));
+          const merged = [...prev];
+          for (const thread of loadedThreads) {
+            if (!seen.has(thread.id)) {
+              seen.add(thread.id);
+              merged.push(thread);
+            }
+          }
+          return merged;
+        });
+        setScopedNextCursor(next);
+      } else {
+        await codexService.loadMoreThreads(cwd, sortKey);
+      }
+    } finally {
+      setIsLoadingMore(false);
+    }
+  }, [cwd, isLoadingMore, isProjectScoped, listCwd, nextCursor, sortKey]);
+
+  const handleThreadContextMenu = useCallback(
+    async (event: MouseEvent, threadId: string) => {
+      event.preventDefault();
+      const meta = sessionMeta[threadId];
+      const isPinned = !!meta?.pinned_at_ms;
+      const matchedThread = mergedThreads.find((t) => t.id === threadId);
+      const displayName = meta?.text ?? matchedThread?.preview ?? '';
+      const threadPath = matchedThread?.path ?? '';
+      const menu = await Menu.new({
+        items: [
+          await MenuItem.new({
+            text: 'Rename',
+            action: async () => {
+              setRenameThreadId(threadId);
+              setRenameValue(displayName);
+            },
+          }),
+          await MenuItem.new({
+            text: isPinned ? 'Unpin' : 'Pin',
+            action: async () => {
+              await handleTogglePin(threadId);
+            },
+          }),
+          await MenuItem.new({
+            text: 'Archive',
+            action: async () => {
+              await handleArchiveThread(threadId);
+            },
+          }),
+          await MenuItem.new({
+            text: 'Delete',
+            action: async () => {
+              await handleDeleteThreadByPath(threadId, threadPath);
+            },
+          }),
+          await MenuItem.new({
+            text: 'Copy Id',
+            action: async () => {
+              await navigator.clipboard.writeText(threadId);
+            },
+          }),
+        ],
+      });
+      await menu.popup();
+    },
+    [handleArchiveThread, handleDeleteThreadByPath, handleTogglePin, mergedThreads, sessionMeta]
+  );
+
+  const handleRowKeyDown = useCallback(
+    (event: KeyboardEvent<HTMLDivElement>, threadId: string) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        void handleSelectThread(threadId);
+      }
+    },
+    [handleSelectThread]
+  );
+
+  const handleRenameSubmit = useCallback(async () => {
+    if (!renameThreadId) {
+      return;
+    }
+    const trimmed = renameValue.trim();
+    const nextMeta = { ...sessionMeta };
+    if (!trimmed) {
+      if (nextMeta[renameThreadId]) {
+        const { pinned_at_ms } = nextMeta[renameThreadId];
+        if (pinned_at_ms) {
+          nextMeta[renameThreadId] = { pinned_at_ms };
+        } else {
+          delete nextMeta[renameThreadId];
+        }
+      }
+    } else {
+      nextMeta[renameThreadId] = {
+        ...(nextMeta[renameThreadId] ?? {}),
+        text: trimmed,
+      };
+    }
+    await writeSessionMeta(nextMeta);
+    setRenameThreadId(null);
+  }, [renameThreadId, renameValue, sessionMeta, writeSessionMeta]);
+
+  return (
+    <div className="flex min-h-0 flex-1 flex-col pr-2">
+      <div className="min-h-0 flex-1">
+        {sortedThreads.map((thread) => (
+          <div
+            key={thread.id}
+            onClick={() => {
+              handleSelectThread(thread.id);
+              setView('codex');
+            }}
+            onKeyDown={(event) => handleRowKeyDown(event, thread.id)}
+            onContextMenu={(event) => handleThreadContextMenu(event, thread.id)}
+            role="button"
+            tabIndex={0}
+            className={`group relative grid grid-cols-[0.5rem_1fr_auto] items-center gap-3 w-full text-left p-2 rounded-lg transition-colors ${
+              currentThreadId === thread.id ? 'bg-zinc-700/50' : 'hover:bg-zinc-800/30'
+            }`}
+          >
+            <div className="relative h-6">
+              <button
+                type="button"
+                aria-label={thread.pinnedAtMs ? 'Unpin thread' : 'Pin thread'}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  void handleTogglePin(thread.id);
+                }}
+                className={`absolute left-0 top-1/2 -translate-y-1/2 inline-flex items-center justify-center h-6 w-6 rounded hover:bg-accent/50 transition-colors ${
+                  thread.pinnedAtMs ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                } ${thread.pinnedAtMs ? 'text-foreground' : 'text-muted-foreground/40'}`}
+              >
+                <Pin className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="text-sm font-medium truncate min-w-0 text-inherit">
+              {thread.preview}
+            </div>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground whitespace-nowrap">
+              <span className="group-hover:hidden">{formatThreadAge(thread.ts)}</span>
+            </div>
+            <button
+              type="button"
+              aria-label="Archive thread"
+              onClick={(event) => {
+                event.stopPropagation();
+                void handleArchiveThread(thread.id);
+              }}
+              className="absolute right-0 inline-flex items-center justify-center h-6 w-6 rounded hover:bg-accent/50 transition-colors opacity-0 group-hover:opacity-100 text-muted-foreground"
+            >
+              <Archive className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        ))}
+        {filteredThreads.length === 0 && (
+          <div className="text-center text-sm text-sidebar-foreground/50 py-8 px-4">
+            {searchTerm ? 'No matching tasks.' : 'No tasks yet.'}
+          </div>
+        )}
+      </div>
+      {nextCursor ? (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleLoadMore}
+          disabled={isLoadingMore}
+          className="justify-start"
+        >
+          {isLoadingMore ? 'Loading more…' : 'Load more'}
+        </Button>
+      ) : null}
+      <Dialog
+        open={!!renameThreadId}
+        onOpenChange={(open) => (!open ? setRenameThreadId(null) : null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Rename thread</DialogTitle>
+          </DialogHeader>
+          <Input
+            value={renameValue}
+            onChange={(event) => setRenameValue(event.target.value)}
+            placeholder="Thread name"
+            autoFocus
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setRenameThreadId(null)}>
+              Cancel
+            </Button>
+            <Button onClick={handleRenameSubmit}>Save</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
