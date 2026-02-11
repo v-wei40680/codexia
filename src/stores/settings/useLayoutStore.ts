@@ -19,6 +19,8 @@ interface LayoutStore {
   isRightPanelOpen: boolean;
   toggleRightPanel: () => void;
   setRightPanelOpen: (open: boolean) => void;
+  rightPanelSize: number;
+  setRightPanelSize: (size: number) => void;
   view: viewType;
   setView: (view: viewType) => void;
   activeSidebarTab: 'codex' | 'cc' | 'explorer';
@@ -38,6 +40,8 @@ export const useLayoutStore = create<LayoutStore>()(
       isRightPanelOpen: false,
       toggleRightPanel: () => set((state) => ({ isRightPanelOpen: !state.isRightPanelOpen })),
       setRightPanelOpen: (open) => set({ isRightPanelOpen: open }),
+      rightPanelSize: 45,
+      setRightPanelSize: (size) => set({ rightPanelSize: size }),
       view: 'codex',
       setView: (view) => set({ view: view }),
       activeSidebarTab: 'codex',

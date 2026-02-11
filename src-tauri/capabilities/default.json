@@ -18,6 +18,38 @@
     "dialog:allow-message",
     "process:default",
     "shell:default",
+    {
+      "identifier": "shell:allow-spawn",
+      "allow": [
+        {
+          "name": "zsh",
+          "cmd": "/bin/zsh",
+          "args": true
+        },
+        {
+          "name": "bash",
+          "cmd": "/bin/bash",
+          "args": true
+        },
+        {
+          "name": "sh",
+          "cmd": "/bin/sh",
+          "args": true
+        },
+        {
+          "name": "fish",
+          "cmd": "/usr/bin/fish",
+          "args": true
+        },
+        {
+          "name": "pwsh",
+          "cmd": "pwsh",
+          "args": true
+        }
+      ]
+    },
+    "shell:allow-stdin-write",
+    "shell:allow-kill",
     "screenshots:default",
     "log:default",
     "deep-link:default"

@@ -475,6 +475,60 @@ export async function gitUnstageFiles(cwd: string, filePaths: string[]) {
   return Promise.reject(new Error('gitUnstageFiles is only available in Tauri mode.'));
 }
 
+export type TerminalStartResponse = {
+  session_id: string;
+  shell: string;
+};
+
+export async function terminalStart(cwd?: string | null, cols?: number, rows?: number) {
+  if (isTauri()) {
+    return await invokeTauri<TerminalStartResponse>('terminal_start', { cwd, cols, rows });
+  }
+  toast({
+    title: 'terminalStart is only available in Tauri mode.',
+    variant: 'destructive',
+  });
+  return Promise.reject(new Error('terminalStart is only available in Tauri mode.'));
+}
+
+export async function terminalWrite(sessionId: string, data: string) {
+  if (isTauri()) {
+    await invokeTauri<void>('terminal_write', { params: { session_id: sessionId, data } });
+    return;
+  }
+  toast({
+    title: 'terminalWrite is only available in Tauri mode.',
+    variant: 'destructive',
+  });
+  return Promise.reject(new Error('terminalWrite is only available in Tauri mode.'));
+}
+
+export async function terminalResize(sessionId: string, cols: number, rows: number) {
+  if (isTauri()) {
+    await invokeTauri<void>('terminal_resize', {
+      params: { session_id: sessionId, cols, rows },
+    });
+    return;
+  }
+  toast({
+    title: 'terminalResize is only available in Tauri mode.',
+    variant: 'destructive',
+  });
+  return Promise.reject(new Error('terminalResize is only available in Tauri mode.'));
+}
+
+export async function terminalStop(sessionId: string) {
+  if (isTauri()) {
+    await invokeTauri<void>('terminal_stop', { params: { session_id: sessionId } });
+    return;
+  }
+  toast({
+    title: 'terminalStop is only available in Tauri mode.',
+    variant: 'destructive',
+  });
+  return Promise.reject(new Error('terminalStop is only available in Tauri mode.'));
+}
+
 export type DbNote = {
   id: string;
   user_id: string | null;

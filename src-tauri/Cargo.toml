@@ -73,6 +73,7 @@ notify = "6"
 nosleep = "0.2.1"
 axum = { version = "0.8", features = ["ws", "json"] }
 tower-http = { version = "0.5", features = ["cors", "fs"] }
+portable-pty = "0.9"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 tauri = { version = "2", features = ["macos-private-api"] }

@@ -15,12 +15,23 @@ import { MarketplaceView } from '@/views/MarketplaceView';
 import AgentsView from '@/views/AgentsView';
 import LoginView from '@/views/LoginView';
 import { AutoMateView } from '../features/AutoMateView';
+import { BottomTerminal } from '@/components/terminal/BottomTerminal';
 
 export function AppLayout() {
   const MIN_SIDEBAR_WIDTH = 220;
   const MAX_SIDEBAR_WIDTH = 480;
-  const { isSidebarOpen, setSidebarOpen, isRightPanelOpen, setRightPanelOpen, view, setView } =
-    useLayoutStore();
+  const MIN_RIGHT_PANEL_SIZE = 22;
+  const MAX_RIGHT_PANEL_SIZE = 75;
+  const {
+    isSidebarOpen,
+    setSidebarOpen,
+    isRightPanelOpen,
+    setRightPanelOpen,
+    rightPanelSize,
+    setRightPanelSize,
+    view,
+    setView,
+  } = useLayoutStore();
   const { historyMode } = useWorkspaceStore();
   const rightPanelRef = useRef<ImperativePanelHandle>(null);
   const sidebarPanelRef = useRef<ImperativePanelHandle>(null);
@@ -28,6 +39,7 @@ export function AppLayout() {
   const [sidebarPercent, setSidebarPercent] = useState(22);
   const [sidebarWidth, setSidebarWidth] = useState(320);
   const [layoutWidth, setLayoutWidth] = useState(0);
+  const [isTerminalOpen, setIsTerminalOpen] = useState(false);
 
   const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
   const getMinSidebarPercent = (width: number) =>
@@ -69,17 +81,28 @@ export function AppLayout() {
   }, [historyMode, setView, view]);
 
   useEffect(() => {
+    if (view !== 'codex' && view !== 'cc') {
+      setIsTerminalOpen(false);
+    }
+  }, [view]);
+
+  useEffect(() => {
     const panel = rightPanelRef.current;
     if (!panel) {
       return;
     }
 
     if (isRightPanelOpen) {
+      const nextRightPanelSize = clamp(rightPanelSize, MIN_RIGHT_PANEL_SIZE, MAX_RIGHT_PANEL_SIZE);
+      panel.resize(nextRightPanelSize);
       panel.expand();
+      if (nextRightPanelSize !== rightPanelSize) {
+        setRightPanelSize(nextRightPanelSize);
+      }
     } else {
       panel.collapse();
     }
-  }, [isRightPanelOpen]);
+  }, [isRightPanelOpen, rightPanelSize, setRightPanelSize]);
 
   useEffect(() => {
     const panel = sidebarPanelRef.current;
@@ -128,6 +151,13 @@ export function AppLayout() {
     setSidebarWidth(Math.round((width * nextPercent) / 100));
   };
 
+  const handleRightPanelResize = (size: number) => {
+    const nextSize = clamp(size, MIN_RIGHT_PANEL_SIZE, MAX_RIGHT_PANEL_SIZE);
+    if (nextSize !== rightPanelSize) {
+      setRightPanelSize(nextSize);
+    }
+  };
+
   return (
     <div ref={layoutRef} className="h-screen w-screen overflow-x-hidden">
       {view === 'settings' ? (
@@ -167,23 +197,32 @@ export function AppLayout() {
                 >
                   <ResizablePanel defaultSize={isRightPanelOpen ? 32 : 100} minSize={25}>
                     <div className="flex flex-col min-w-0 h-full">
-                      <MainHeader />
-                      {view === 'agents' && <AgentsView />}
-                      {view === 'automate' && <AutoMateView />}
-                      {view === 'codex' && <ChatInterface />}
-                      {view === 'history' && <History />}
-                      {view === 'login' && <LoginView />}
-                      {view === 'marketplace' && <MarketplaceView />}
-                      {view === 'usage' && <UsageView />}
-                      {view === 'cc' && <CCView />}
+                      <MainHeader
+                        isTerminalOpen={isTerminalOpen}
+                        onToggleTerminal={() => setIsTerminalOpen((prev) => !prev)}
+                      />
+                      <div className="min-h-0 flex-1">
+                        {view === 'agents' && <AgentsView />}
+                        {view === 'automate' && <AutoMateView />}
+                        {view === 'codex' && <ChatInterface />}
+                        {view === 'history' && <History />}
+                        {view === 'login' && <LoginView />}
+                        {view === 'marketplace' && <MarketplaceView />}
+                        {view === 'usage' && <UsageView />}
+                        {view === 'cc' && <CCView />}
+                      </div>
+                      {(view === 'codex' || view === 'cc') && (
+                        <BottomTerminal open={isTerminalOpen} onOpenChange={setIsTerminalOpen} />
+                      )}
                     </div>
                   </ResizablePanel>
                   <ResizableHandle withHandle />
                   <ResizablePanel
                     ref={rightPanelRef}
-                    defaultSize={isRightPanelOpen ? 68 : 0}
-                    minSize={22}
-                    maxSize={75}
+                    defaultSize={isRightPanelOpen ? rightPanelSize : 0}
+                    minSize={MIN_RIGHT_PANEL_SIZE}
+                    maxSize={MAX_RIGHT_PANEL_SIZE}
+                    onResize={handleRightPanelResize}
                     collapsible
                     collapsedSize={0}
                     onCollapse={() => setRightPanelOpen(false)}

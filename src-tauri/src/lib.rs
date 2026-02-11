@@ -14,6 +14,7 @@ mod window;
 
 use crate::state::WatchState;
 use cc_commands::CCState;
+use commands::terminal::TerminalState;
 use filesystem::{
     directory_ops::{canonicalize_path, get_default_directories, read_directory, search_files},
     file_io::{delete_file, read_file, read_text_file_lines, write_file},
@@ -49,6 +50,7 @@ pub fn run() {
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(CCState::new())
         .manage(WatchState::new())
+        .manage(TerminalState::default())
         .manage(SleepState::default())
         .invoke_handler(tauri::generate_handler![
             codex::start_thread,
@@ -128,6 +130,10 @@ pub fn run() {
             commands::git::git_file_diff_meta,
             commands::git::git_stage_files,
             commands::git::git_unstage_files,
+            commands::terminal::terminal_start,
+            commands::terminal::terminal_write,
+            commands::terminal::terminal_resize,
+            commands::terminal::terminal_stop,
             codex::utils::codex_home,
             commands::usage::read_token_usage,
             dxt::load_manifests,

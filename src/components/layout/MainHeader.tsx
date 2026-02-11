@@ -1,4 +1,4 @@
-import { History, PanelLeft, PanelRight, SquarePen } from 'lucide-react';
+import { History, PanelLeft, PanelRight, SquarePen, Terminal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { codexService } from '@/services/codexService';
 import { ProjectSelector } from '@/components/ProjectSelector';
@@ -6,12 +6,18 @@ import { useLayoutStore } from '@/stores';
 import { useCodexStore, useCurrentThread } from '@/stores/codex';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 
-export function MainHeader() {
-  const { isRightPanelOpen, toggleRightPanel, isSidebarOpen, setSidebarOpen, setView } =
+type MainHeaderProps = {
+  isTerminalOpen: boolean;
+  onToggleTerminal: () => void;
+};
+
+export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps) {
+  const { isRightPanelOpen, toggleRightPanel, isSidebarOpen, setSidebarOpen, setView, view } =
     useLayoutStore();
   const { historyMode, setHistoryMode, selectedAgent } = useWorkspaceStore();
   const { currentThreadId, activeThreadIds } = useCodexStore();
   const currentThread = useCurrentThread();
+  const showTerminalButton = view === 'codex' || view === 'cc';
 
   const handleNewThread = async () => {
     await codexService.setCurrentThread(null);
@@ -60,6 +66,16 @@ export function MainHeader() {
         <ProjectSelector />
       </div>
       <div className="flex items-center gap-2">
+        {showTerminalButton && (
+          <Button
+            variant={isTerminalOpen ? 'secondary' : 'ghost'}
+            size="icon"
+            onClick={onToggleTerminal}
+            title={isTerminalOpen ? 'Hide terminal' : 'Show terminal'}
+          >
+            <Terminal />
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="icon"
