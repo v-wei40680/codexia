@@ -9,6 +9,8 @@ mod git;
 mod sleep;
 mod state;
 mod web_server;
+#[cfg(any(windows, target_os = "linux"))]
+mod window;
 
 use crate::state::WatchState;
 use cc_commands::CCState;
