@@ -9,7 +9,7 @@ mod git;
 mod sleep;
 mod state;
 mod web_server;
-#[cfg(any(windows, target_os = "linux"))]
+#[cfg(desktop)]
 mod window;
 
 use crate::state::WatchState;
@@ -31,12 +31,10 @@ pub fn run() {
         .plugin(tauri_plugin_opener::init())
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_log::Builder::new().build());
-    #[cfg(any(windows, target_os = "linux"))]
-    {
-        builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
-            window::show_window(app, argv);
-        }));
-    }
+    #[cfg(desktop)]
+    let builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
+        window::show_window(app, argv);
+    }));
 
     builder
         .plugin(tauri_plugin_deep_link::init())
