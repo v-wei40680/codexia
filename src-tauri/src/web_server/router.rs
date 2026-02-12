@@ -13,7 +13,7 @@ use super::{
         api_fuzzy_file_search, api_get_account, api_get_default_directories, api_get_note_by_id,
         api_get_notes, api_list_archived_threads, api_list_threads, api_login_account,
         api_logout_account, api_model_list, api_model_list_post, api_read_directory, api_read_file,
-        api_respond_command_execution_approval, api_respond_file_change_approval,
+        api_respond_command_execution_approval, api_respond_file_change_approval, api_search_files,
         api_respond_user_input, api_resume_thread, api_skills_list, api_start_review,
         api_start_thread, api_toggle_favorite, api_turn_interrupt, api_turn_start, api_update_note,
         api_write_file, health_check,
@@ -106,6 +106,7 @@ pub(crate) fn create_router(state: WebServerState) -> Router {
             "/api/codex/filesystem/canonicalize-path",
             post(api_canonicalize_path),
         )
+        .route("/api/codex/filesystem/search-files", post(api_search_files))
         .route("/api/codex/filesystem/codex-home", get(api_codex_home))
         .route("/api/codex/filesystem/read-file", post(api_read_file))
         .route("/api/codex/filesystem/write-file", post(api_write_file))

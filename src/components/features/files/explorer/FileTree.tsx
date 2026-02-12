@@ -5,8 +5,14 @@ import { useSettingsStore } from '@/stores/settings';
 import { useLayoutStore, useWorkspaceStore } from '@/stores';
 import { useInputStore } from '@/stores';
 import { Button } from '@/components/ui/button';
-import { canonicalizePath, readDirectory } from '@/services/tauri';
+import {
+  canonicalizePath,
+  readDirectory,
+  searchFiles,
+  type TauriFileEntry,
+} from '@/services/tauri';
 import { getFilename } from '@/utils/getFilename';
+import { FileTreeHeader } from './FileTreeHeader';
 
 type FileNode = {
   name: string;
@@ -40,12 +46,86 @@ const normalizeName = (name: string) => name.replace(/^\.+/, '').toLowerCase();
 const shouldSkipEntry = (name: string, hiddenSet: Set<string>) =>
   name === '.git' || hiddenSet.has(normalizeName(name));
 
+const buildSearchTree = (rootNode: FileNode, matches: TauriFileEntry[]): FileNode => {
+  const pathSeparator = rootNode.path.includes('\\') ? '\\' : '/';
+  const treeRoot: FileNode = {
+    name: rootNode.name,
+    path: rootNode.path,
+    kind: 'dir',
+    children: [],
+  };
+  const nodeMap = new Map<string, FileNode>([[treeRoot.path, treeRoot]]);
+
+  for (const match of matches) {
+    if (!match.path.startsWith(rootNode.path)) {
+      continue;
+    }
+
+    const relativePath = match.path.slice(rootNode.path.length).replace(/^[/\\]/, '');
+    if (!relativePath) {
+      continue;
+    }
+
+    const segments = relativePath.split(/[/\\]+/).filter(Boolean);
+    if (segments.length === 0) {
+      continue;
+    }
+
+    let currentPath = rootNode.path;
+    let parent = treeRoot;
+
+    for (let i = 0; i < segments.length; i += 1) {
+      const segment = segments[i];
+      const isLeaf = i === segments.length - 1;
+      currentPath = `${currentPath}${currentPath.endsWith(pathSeparator) ? '' : pathSeparator}${segment}`;
+
+      const existingNode = nodeMap.get(currentPath);
+      if (existingNode) {
+        parent = existingNode;
+        continue;
+      }
+
+      const childNode: FileNode = {
+        name: segment,
+        path: isLeaf ? match.path : currentPath,
+        kind: isLeaf ? (match.is_directory ? 'dir' : 'file') : 'dir',
+        children: isLeaf && !match.is_directory ? undefined : [],
+      };
+
+      if (!parent.children) {
+        parent.children = [];
+      }
+      parent.children.push(childNode);
+      nodeMap.set(currentPath, childNode);
+      parent = childNode;
+    }
+  }
+
+  const sortTree = (node: FileNode): FileNode => {
+    if (!node.children) {
+      return node;
+    }
+
+    return {
+      ...node,
+      children: sortNodes(node.children).map((child) => sortTree(child)),
+    };
+  };
+
+  return sortTree(treeRoot);
+};
+
 export function FileTree({ folder, onFileSelect }: FileTreeProps) {
   const [root, setRoot] = useState<FileNode | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [loadingNodes, setLoadingNodes] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  const [filterText, setFilterText] = useState('');
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [searchMatches, setSearchMatches] = useState<TauriFileEntry[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
   const { hiddenNames } = useSettingsStore();
   const { setRightPanelOpen, setActiveRightPanelTab } = useLayoutStore();
   const { setSelectedFilePath } = useWorkspaceStore();
@@ -75,6 +155,14 @@ export function FileTree({ folder, onFileSelect }: FileTreeProps) {
     let isActive = true;
 
     const load = async () => {
+      if (!folder) {
+        if (isActive) {
+          setRoot(null);
+          setExpanded(new Set());
+        }
+        return;
+      }
+
       setLoading(true);
       setError(null);
       try {
@@ -98,17 +186,80 @@ export function FileTree({ folder, onFileSelect }: FileTreeProps) {
       }
     };
 
-    if (folder) {
-      load();
-    } else {
-      setRoot(null);
-      setExpanded(new Set());
-    }
+    void load();
 
     return () => {
       isActive = false;
     };
-  }, [folder, listDir]);
+  }, [folder, listDir, refreshKey]);
+
+  useEffect(() => {
+    setFilterText('');
+    setSearchError(null);
+    setSearchMatches([]);
+  }, [folder]);
+
+  const normalizedFilterText = filterText.trim().toLowerCase();
+  const isSearching = normalizedFilterText.length > 0;
+
+  useEffect(() => {
+    let isActive = true;
+
+    if (!isSearching || !folder) {
+      setSearching(false);
+      setSearchError(null);
+      setSearchMatches([]);
+      return () => {
+        isActive = false;
+      };
+    }
+
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      setSearchError(null);
+
+      try {
+        const searchRoot = root?.path ?? (await canonicalizePath(folder));
+        const matches = await searchFiles({
+          root: searchRoot,
+          query: normalizedFilterText,
+          excludeFolders: hiddenNames,
+          maxResults: 2000,
+        });
+
+        if (isActive) {
+          setSearchMatches(matches);
+        }
+      } catch (err) {
+        if (isActive) {
+          const message = err instanceof Error ? err.message : String(err);
+          setSearchError(message || 'Search failed.');
+          setSearchMatches([]);
+        }
+      } finally {
+        if (isActive) {
+          setSearching(false);
+        }
+      }
+    }, 200);
+
+    return () => {
+      isActive = false;
+      clearTimeout(timer);
+    };
+  }, [folder, hiddenNames, isSearching, normalizedFilterText, root?.path]);
+
+  const displayRoot = useMemo(() => {
+    if (!root) {
+      return null;
+    }
+
+    if (!isSearching) {
+      return root;
+    }
+
+    return buildSearchTree(root, searchMatches);
+  }, [isSearching, root, searchMatches]);
 
   const toggle = (path: string) => {
     setExpanded((prev) => {
@@ -166,7 +317,7 @@ export function FileTree({ folder, onFileSelect }: FileTreeProps) {
         : node.path;
     const isDir = node.kind === 'dir';
     const isRoot = root?.path === node.path;
-    const isExpanded = expanded.has(node.path);
+    const isExpanded = isSearching ? true : expanded.has(node.path);
     const isLoadingChildren = loadingNodes.has(node.path);
     const extension = getExtension(node.name);
     const iconStyle =
@@ -243,11 +394,7 @@ export function FileTree({ folder, onFileSelect }: FileTreeProps) {
             ) : null}
           </div>
         </div>
-        {isDir &&
-          isExpanded &&
-          node.children
-            ?.filter((child) => !shouldSkipEntry(child.name, hiddenSet))
-            .map((child) => renderNode(child, depth + 1))}
+        {isDir && isExpanded && node.children?.map((child) => renderNode(child, depth + 1))}
       </div>
     );
   };
@@ -257,20 +404,67 @@ export function FileTree({ folder, onFileSelect }: FileTreeProps) {
   }
 
   if (loading) {
-    return <div className="text-sm text-muted-foreground">Loading files...</div>;
+    return (
+      <div className="space-y-2">
+        <FileTreeHeader
+          currentFolder={folder}
+          filterText={filterText}
+          onFilterTextChange={setFilterText}
+          onRefresh={() => setRefreshKey((prev) => prev + 1)}
+        />
+        <div className="text-sm text-muted-foreground">Loading files...</div>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="text-sm text-destructive">{error}</div>;
+    return (
+      <div className="space-y-2">
+        <FileTreeHeader
+          currentFolder={folder}
+          filterText={filterText}
+          onFilterTextChange={setFilterText}
+          onRefresh={() => setRefreshKey((prev) => prev + 1)}
+        />
+        <div className="text-sm text-destructive">{error}</div>
+      </div>
+    );
   }
 
-  if (!root) {
-    return <div className="text-sm text-muted-foreground">No files found.</div>;
+  if (!displayRoot) {
+    return (
+      <div className="space-y-2">
+        <FileTreeHeader
+          currentFolder={folder}
+          filterText={filterText}
+          onFilterTextChange={setFilterText}
+          onRefresh={() => setRefreshKey((prev) => prev + 1)}
+        />
+        <div className="text-sm text-muted-foreground">No files found.</div>
+      </div>
+    );
   }
+
+  const hasSearchResults = (displayRoot.children?.length ?? 0) > 0;
 
   return (
-    <div className="space-y-1 max-h-full min-w-0 max-w-full overflow-y-auto overflow-x-auto">
-      {renderNode(root, 0)}
+    <div className="max-h-full min-w-0 max-w-full overflow-y-auto overflow-x-auto">
+      <FileTreeHeader
+        currentFolder={folder}
+        filterText={filterText}
+        onFilterTextChange={setFilterText}
+        onRefresh={() => setRefreshKey((prev) => prev + 1)}
+      />
+      {isSearching && searching ? (
+        <div className="text-sm text-muted-foreground">Searching...</div>
+      ) : null}
+      {isSearching && searchError ? (
+        <div className="text-sm text-destructive">{searchError}</div>
+      ) : null}
+      {isSearching && !searching && !searchError && !hasSearchResults ? (
+        <div className="text-sm text-muted-foreground">No matching files or folders.</div>
+      ) : null}
+      {(!isSearching || hasSearchResults) && <div className="space-y-1">{renderNode(displayRoot, 0)}</div>}
     </div>
   );
 }

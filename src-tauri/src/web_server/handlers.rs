@@ -18,7 +18,7 @@ use crate::db::{
     toggle_favorite as db_toggle_favorite, update_note as db_update_note,
 };
 use crate::filesystem::{
-    directory_ops::{canonicalize_path, get_default_directories, read_directory},
+    directory_ops::{canonicalize_path, get_default_directories, read_directory, search_files},
     file_io::{delete_file, read_file, write_file},
     file_types::FileEntry,
 };
@@ -74,6 +74,16 @@ pub(super) struct FilesystemWriteFileParams {
     #[serde(rename = "filePath")]
     file_path: String,
     content: String,
+}
+
+#[derive(Deserialize)]
+pub(super) struct FilesystemSearchFilesParams {
+    root: String,
+    query: String,
+    #[serde(default, rename = "exclude_folders", alias = "excludeFolders")]
+    exclude_folders: Vec<String>,
+    #[serde(default, rename = "max_results", alias = "maxResults")]
+    max_results: Option<usize>,
 }
 
 #[derive(Deserialize)]
@@ -421,6 +431,20 @@ pub(super) async fn api_canonicalize_path(
         .await
         .map_err(to_error_response)?;
     Ok(Json(path))
+}
+
+pub(super) async fn api_search_files(
+    Json(params): Json<FilesystemSearchFilesParams>,
+) -> Result<Json<Vec<FileEntry>>, ErrorResponse> {
+    let entries = search_files(
+        params.root,
+        params.query,
+        params.exclude_folders,
+        params.max_results,
+    )
+    .await
+    .map_err(to_error_response)?;
+    Ok(Json(entries))
 }
 
 pub(super) async fn api_read_file(

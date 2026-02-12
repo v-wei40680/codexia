@@ -598,6 +598,23 @@ export async function getDefaultDirectories() {
   return await getJson<string[]>('/api/codex/filesystem/default-directories');
 }
 
+export async function searchFiles(params: {
+  root: string;
+  query: string;
+  excludeFolders: string[];
+  maxResults?: number;
+}) {
+  if (isTauri()) {
+    return await invokeTauri<TauriFileEntry[]>('search_files', params);
+  }
+  return await postJson<TauriFileEntry[]>('/api/codex/filesystem/search-files', {
+    root: params.root,
+    query: params.query,
+    exclude_folders: params.excludeFolders,
+    max_results: params.maxResults,
+  });
+}
+
 export async function canonicalizePath(path: string) {
   if (isTauri()) {
     return await invokeTauri<string>('canonicalize_path', { path });

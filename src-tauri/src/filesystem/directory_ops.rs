@@ -3,6 +3,19 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use walkdir::{DirEntry, WalkDir};
 
+fn normalize_name(name: &str) -> String {
+    name.trim_start_matches('.').to_lowercase()
+}
+
+/// Determine if we should skip descending into a directory based on the exclude list.
+fn should_skip_dir(entry: &DirEntry, excluded_names: &std::collections::HashSet<String>) -> bool {
+    if let Some(name) = entry.file_name().to_str() {
+        excluded_names.contains(&normalize_name(name))
+    } else {
+        false
+    }
+}
+
 #[tauri::command]
 pub async fn read_directory(path: String) -> Result<Vec<FileEntry>, String> {
     let expanded_path = if path.starts_with("~/") {
@@ -86,16 +99,6 @@ pub async fn get_default_directories() -> Result<Vec<String>, String> {
     Ok(default_dirs)
 }
 
-/// Determine if we should skip descending into a directory based on the exclude list.
-fn should_skip_dir(entry: &DirEntry, exclude_folders: &[String]) -> bool {
-    if let Some(name) = entry.file_name().to_str() {
-        // Exact folder name match (e.g. "node_modules", ".git")
-        exclude_folders.iter().any(|ex| ex == name)
-    } else {
-        false
-    }
-}
-
 #[tauri::command]
 pub async fn search_files(
     root: String,
@@ -118,12 +121,18 @@ pub async fn search_files(
     let lc_query = query.to_lowercase();
     // Reasonable default limit
     let limit = max_results.unwrap_or(2000);
+    let mut excluded_names = exclude_folders
+        .into_iter()
+        .map(|name| name.trim_start_matches('.').to_lowercase())
+        .collect::<std::collections::HashSet<_>>();
+    excluded_names.insert("git".to_string());
 
     let mut results: Vec<FileEntry> = Vec::new();
 
     let walker = WalkDir::new(&expanded_root)
+        .follow_links(false)
         .into_iter()
-        .filter_entry(|e| !e.path_is_symlink() && !should_skip_dir(e, &exclude_folders));
+        .filter_entry(|entry| !entry.path_is_symlink() && !should_skip_dir(entry, &excluded_names));
 
     for entry in walker {
         let entry = match entry {
@@ -136,6 +145,10 @@ pub async fn search_files(
             Some(n) => n,
             None => continue,
         };
+
+        if excluded_names.contains(&normalize_name(file_name)) {
+            continue;
+        }
 
         // Match folders and files by name (case-insensitive)
         if file_name.to_lowercase().contains(&lc_query) {
@@ -166,6 +179,12 @@ pub async fn search_files(
             }
         }
     }
+
+    results.sort_by(|a, b| match (a.is_directory, b.is_directory) {
+        (true, false) => std::cmp::Ordering::Less,
+        (false, true) => std::cmp::Ordering::Greater,
+        _ => a.path.to_lowercase().cmp(&b.path.to_lowercase()),
+    });
 
     Ok(results)
 }

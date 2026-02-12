@@ -7,10 +7,7 @@ interface FileTreeHeaderProps {
   currentFolder?: string;
   filterText: string;
   onFilterTextChange: (text: string) => void;
-  showFilter: boolean;
-  onToggleFilter: () => void;
   onRefresh: () => void;
-  excludeFolders: string[];
 }
 
 export function FileTreeHeader({
@@ -35,7 +32,7 @@ export function FileTreeHeader({
   };
 
   return (
-    <div>
+    <div className="space-y-2 pb-1">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-1">
           <Folder className="w-4 h-4 text-blue-500" />
@@ -62,6 +59,7 @@ export function FileTreeHeader({
             size="icon"
             className="h-6 w-6"
             onClick={() => setShowSearchInput(!showSearchInput)}
+            title={showSearchInput ? 'Hide search' : 'Search files or folders'}
           >
             <Search className="w-3 h-3" />
           </Button>
