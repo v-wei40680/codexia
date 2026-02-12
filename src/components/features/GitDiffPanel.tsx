@@ -16,6 +16,13 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -35,6 +42,7 @@ import {
 import { useGitWatch } from '@/hooks/useGitWatch';
 
 type DiffSection = 'staged' | 'unstaged';
+type DiffSource = 'uncommitted' | 'latest-turn';
 
 type TreeNode = TreeFolderNode | TreeFileNode;
 
@@ -164,6 +172,7 @@ export function GitDiffPanel({ cwd, isActive }: GitDiffPanelProps) {
   const [wordWrapEnabled, setWordWrapEnabled] = useState(false);
   const [filterText, setFilterText] = useState('');
   const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
+  const [diffSource, setDiffSource] = useState<DiffSource>('uncommitted');
 
   const refreshGitStatus = useCallback(async () => {
     if (!cwd) return;
@@ -410,68 +419,38 @@ export function GitDiffPanel({ cwd, isActive }: GitDiffPanelProps) {
   return (
     <div className="h-full min-h-0 flex overflow-hidden">
       <div className="flex-1 min-w-0 min-h-0 flex flex-col">
-        <div className="px-3 py-2 border-b border-white/10 flex items-center justify-between gap-2">
-          <div className="text-xs text-muted-foreground min-w-0">
-            {selectedDiffPath ? (
-              <span className="font-mono truncate block" title={selectedDiffPath}>
-                {selectedDiffPath}
-              </span>
-            ) : (
-              <span>Select a file to preview diff</span>
-            )}
-          </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            <div className="flex items-center gap-1 rounded-md border border-white/10 bg-background/60 p-1">
-              <Button
-                size="sm"
-                variant={selectedDiffSection === 'unstaged' ? 'default' : 'ghost'}
-                className="h-7 px-2 text-xs"
-                onClick={() => setSelectedDiffSection('unstaged')}
-              >
-                Unstaged ({unstagedEntries.length})
-              </Button>
-              <Button
-                size="sm"
-                variant={selectedDiffSection === 'staged' ? 'default' : 'ghost'}
-                className="h-7 px-2 text-xs"
-                onClick={() => setSelectedDiffSection('staged')}
-              >
-                Staged ({stagedEntries.length})
-              </Button>
-            </div>
-            <Button
-              variant={showFileTree ? 'secondary' : 'ghost'}
-              size="icon-sm"
-              onClick={() => setShowFileTree((value) => !value)}
-              aria-label={showFileTree ? 'Hide file tree' : 'Show file tree'}
-              title={showFileTree ? 'Hide file tree' : 'Show file tree'}
+        <div className="px-3 py-2 border-b border-white/10 flex items-center gap-2">
+          <div className="w-[220px] shrink-0">
+            <Select
+              value={diffSource}
+              onValueChange={(value) => setDiffSource(value as DiffSource)}
             >
-              {showFileTree ? <FolderOpen className="h-4 w-4" /> : <Folder className="h-4 w-4" />}
-            </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon-sm"
-                  aria-label="Diff panel menu"
-                  title="Diff panel menu"
-                >
-                  <Menu className="h-4 w-4" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={refreshGitStatus} disabled={!cwd || gitLoading}>
-                  <RefreshCw className="h-4 w-4" /> Refresh
-                </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setWordWrapEnabled((value) => !value)}>
-                  {wordWrapEnabled ? 'Disable word wrap' : 'Enable word wrap'}
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="uncommitted">uncommitted changes</SelectItem>
+                <SelectItem value="latest-turn">latest turn changes</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </div>
         <div className="flex-1 min-h-0 overflow-auto">
           <div className="p-3">
+            <div className="mb-3 text-xs text-muted-foreground min-w-0">
+              {selectedDiffPath ? (
+                <span className="font-mono truncate block" title={selectedDiffPath}>
+                  {selectedDiffPath}
+                </span>
+              ) : (
+                <span>Select a file to preview diff</span>
+              )}
+            </div>
+            {diffSource === 'latest-turn' && (
+              <div className="mb-3 rounded border border-dashed border-border p-2 text-xs text-muted-foreground">
+                Latest turn changes view is not available yet. Showing uncommitted file set.
+              </div>
+            )}
             {!selectedDiffPath && (
               <div className="text-sm text-muted-foreground">No file selected</div>
             )}
@@ -540,34 +519,85 @@ export function GitDiffPanel({ cwd, isActive }: GitDiffPanelProps) {
         </div>
       </div>
 
-      {showFileTree && (
-        <div className="w-64 min-w-[220px] min-h-0 border-l border-white/10 flex flex-col">
-          <div className="px-3 py-2 border-b border-white/10">
-            <Input
-              value={filterText}
-              onChange={(event) => setFilterText(event.target.value)}
-              placeholder="Filter filename or folder..."
-              className="h-8 text-xs"
-            />
+      <div className="w-64 min-w-[220px] min-h-0 border-l border-white/10 flex flex-col">
+        <div className="px-3 py-2 border-b border-white/10 flex items-center justify-end gap-1.5 shrink-0">
+          <div className="flex items-center gap-1 rounded-md border border-white/10 bg-background/60 p-1">
+            <Button
+              size="sm"
+              variant={selectedDiffSection === 'unstaged' ? 'default' : 'ghost'}
+              className="h-7 px-2 text-xs"
+              onClick={() => setSelectedDiffSection('unstaged')}
+            >
+              Unstaged ({unstagedEntries.length})
+            </Button>
+            <Button
+              size="sm"
+              variant={selectedDiffSection === 'staged' ? 'default' : 'ghost'}
+              className="h-7 px-2 text-xs"
+              onClick={() => setSelectedDiffSection('staged')}
+            >
+              Staged ({stagedEntries.length})
+            </Button>
           </div>
-
-          <div className="flex-1 min-h-0 overflow-auto">
-            <div className="p-2 space-y-1">
-              {gitError && (
-                <div className="text-xs text-destructive rounded border border-destructive/30 p-2">
-                  {gitError}
-                </div>
-              )}
-              {filteredEntries.length === 0 && (
-                <div className="px-2 py-3 text-xs text-muted-foreground">
-                  No files matched current filter.
-                </div>
-              )}
-              {fileTree.map((node) => renderTreeNode(node, 0))}
-            </div>
-          </div>
+          <Button
+            variant={showFileTree ? 'secondary' : 'ghost'}
+            size="icon-sm"
+            onClick={() => setShowFileTree((value) => !value)}
+            aria-label={showFileTree ? 'Hide file tree' : 'Show file tree'}
+            title={showFileTree ? 'Hide file tree' : 'Show file tree'}
+          >
+            {showFileTree ? <FolderOpen className="h-4 w-4" /> : <Folder className="h-4 w-4" />}
+          </Button>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon-sm" aria-label="Diff panel menu" title="Diff panel menu">
+                <Menu className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={refreshGitStatus} disabled={!cwd || gitLoading}>
+                <RefreshCw className="h-4 w-4" /> Refresh
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setWordWrapEnabled((value) => !value)}>
+                {wordWrapEnabled ? 'Disable word wrap' : 'Enable word wrap'}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
-      )}
+
+        {showFileTree && (
+          <>
+            <div className="px-3 py-2 border-b border-white/10">
+              <Input
+                value={filterText}
+                onChange={(event) => setFilterText(event.target.value)}
+                placeholder="Filter filename or folder..."
+                className="h-8 text-xs"
+              />
+            </div>
+            <div className="flex-1 min-h-0 overflow-auto">
+              <div className="p-2 space-y-1">
+                {gitError && (
+                  <div className="text-xs text-destructive rounded border border-destructive/30 p-2">
+                    {gitError}
+                  </div>
+                )}
+                {filteredEntries.length === 0 && (
+                  <div className="px-2 py-3 text-xs text-muted-foreground">
+                    No files matched current filter.
+                  </div>
+                )}
+                {fileTree.map((node) => renderTreeNode(node, 0))}
+              </div>
+            </div>
+          </>
+        )}
+        {!showFileTree && (
+          <div className="px-3 py-2 border-b border-white/10">
+            <div className="text-xs text-muted-foreground">File tree hidden</div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
