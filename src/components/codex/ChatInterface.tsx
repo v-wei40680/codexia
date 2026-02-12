@@ -15,6 +15,8 @@ import type { ServerNotification } from '@/bindings';
 import { useSettingsStore } from '@/stores/settings';
 import type { GetAccountResponse } from '@/bindings/v2';
 import { Quotes } from '../features/Quotes';
+import { toast } from '@/components/ui/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
 
 export function ChatInterface() {
   const { currentThreadId, currentTurnId, events, inputFocusTrigger } = useCodexStore();
@@ -192,11 +194,20 @@ export function ChatInterface() {
                 targetThreadId = thread.id;
               } catch (error) {
                 console.error('Failed to start thread:', error);
+                toast.error('Failed to start thread', {
+                  description: getErrorMessage(error),
+                });
                 return;
               }
             }
-
-            await codexService.turnStart(targetThreadId, message, images);
+            try {
+              await codexService.turnStart(targetThreadId, message, images);
+            } catch (error) {
+              console.error('Failed to send message:', error);
+              toast.error('Failed to send message', {
+                description: getErrorMessage(error),
+              });
+            }
           }}
           onStop={async () => {
             if (!currentThreadId || !currentTurnId) return;

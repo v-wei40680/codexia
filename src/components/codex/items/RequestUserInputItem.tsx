@@ -11,6 +11,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useRequestUserInputStore } from '@/stores/codex';
+import { useConfigStore } from '@/stores/codex/useConfigStore';
 import { codexService } from '@/services/codexService';
 
 type RequestUserInputItemProps = {
@@ -19,6 +20,7 @@ type RequestUserInputItemProps = {
 
 export function RequestUserInputItem({ currentThreadId }: RequestUserInputItemProps) {
   const { pendingRequests, respondToRequest } = useRequestUserInputStore();
+  const { setCollaborationMode } = useConfigStore();
 
   const currentRequest = useMemo(
     () => pendingRequests.find((request) => request.threadId === currentThreadId) ?? null,
@@ -51,27 +53,36 @@ export function RequestUserInputItem({ currentThreadId }: RequestUserInputItemPr
     return null;
   }
 
-  const missingAnswer = currentRequest.questions.some((question) => {
-    const value = answers[question.id];
-    if (!value) {
-      return true;
-    }
-    if (value === '__other__') {
-      return !otherAnswers[question.id]?.trim();
-    }
-    return false;
-  });
+  const hasMissingAnswer = (
+    nextAnswers: Record<string, string>,
+    nextOtherAnswers: Record<string, string>
+  ) =>
+    currentRequest.questions.some((question) => {
+      const value = nextAnswers[question.id];
+      if (!value) {
+        return true;
+      }
+      if (value === '__other__') {
+        return !nextOtherAnswers[question.id]?.trim();
+      }
+      return false;
+    });
 
-  const handleSubmit = async () => {
-    if (missingAnswer || submitting) return;
+  const missingAnswer = hasMissingAnswer(answers, otherAnswers);
+
+  const handleSubmit = async (
+    nextAnswers: Record<string, string> = answers,
+    nextOtherAnswers: Record<string, string> = otherAnswers
+  ) => {
+    if (hasMissingAnswer(nextAnswers, nextOtherAnswers) || submitting) return;
     setSubmitting(true);
     try {
       const response = {
         answers: Object.fromEntries(
           currentRequest.questions.map((question) => {
-            const selected = answers[question.id];
+            const selected = nextAnswers[question.id];
             const resolved =
-              selected === '__other__' ? otherAnswers[question.id]?.trim() : selected;
+              selected === '__other__' ? nextOtherAnswers[question.id]?.trim() : selected;
             return [question.id, { answers: [resolved ?? ''] }];
           })
         ),
@@ -79,7 +90,8 @@ export function RequestUserInputItem({ currentThreadId }: RequestUserInputItemPr
       await respondToRequest(currentRequest.requestId, response);
 
       if (currentRequest.threadId) {
-        await codexService.turnStart(currentRequest.threadId, 'Implement the plan.');
+        setCollaborationMode('default');
+        await codexService.turnStart(currentRequest.threadId, 'Implement the plan and patch.', [], 'default');
       }
     } catch (error) {
       console.error('Failed to submit request_user_input response:', error);
@@ -115,9 +127,19 @@ export function RequestUserInputItem({ currentThreadId }: RequestUserInputItemPr
                   <Select
                     value={value}
                     onValueChange={(nextValue) => {
-                      setAnswers((prev) => ({ ...prev, [question.id]: nextValue }));
+                      const nextAnswers = { ...answers, [question.id]: nextValue };
+                      const nextOtherAnswers =
+                        nextValue !== '__other__'
+                          ? { ...otherAnswers, [question.id]: '' }
+                          : otherAnswers;
+
+                      setAnswers(nextAnswers);
                       if (nextValue !== '__other__') {
-                        setOtherAnswers((prev) => ({ ...prev, [question.id]: '' }));
+                        setOtherAnswers(nextOtherAnswers);
+                      }
+
+                      if (nextValue !== '__other__' && !hasMissingAnswer(nextAnswers, nextOtherAnswers)) {
+                        void handleSubmit(nextAnswers, nextOtherAnswers);
                       }
                     }}
                   >
@@ -170,7 +192,7 @@ export function RequestUserInputItem({ currentThreadId }: RequestUserInputItemPr
       </div>
 
       <div className="flex flex-col sm:flex-row gap-2">
-        <Button onClick={handleSubmit} disabled={missingAnswer || submitting}>
+        <Button onClick={() => void handleSubmit()} disabled={missingAnswer || submitting}>
           Submit
         </Button>
       </div>

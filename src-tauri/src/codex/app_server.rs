@@ -75,24 +75,6 @@ pub async fn connect_codex(event_sink: Arc<dyn EventSink>) -> Result<Arc<CodexAp
     let codex_bin =
         discover_codex_command().ok_or_else(|| "Unable to locate codex binary".to_string())?;
 
-    #[cfg(target_os = "windows")]
-    let mut command = {
-        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
-
-        let mut cmd = Command::new("powershell.exe");
-        cmd.arg("-NoLogo")
-            .arg("-NoProfile")
-            .arg("-NonInteractive")
-            .arg("-ExecutionPolicy")
-            .arg("Bypass")
-            .arg("-Command")
-            .arg("$codex = $args[0]; & $codex app-server")
-            .arg(codex_bin);
-        cmd.creation_flags(CREATE_NO_WINDOW);
-        cmd
-    };
-
-    #[cfg(not(target_os = "windows"))]
     let mut command = {
         let mut cmd = Command::new(codex_bin);
         cmd.arg("app-server");
@@ -240,7 +222,10 @@ pub async fn initialize_codex(
             "name": "codexia",
             "title": "Codexia",
             "version": env!("CARGO_PKG_VERSION")
-        }
+        },
+        "capabilities": {
+            "experimentalApi": true
+        },
     });
 
     let result = codex.send_request("initialize", params).await?;

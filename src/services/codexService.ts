@@ -1,4 +1,4 @@
-import { CollaborationMode, FuzzyFileSearchParams } from '@/bindings';
+import { CollaborationMode, FuzzyFileSearchParams, ModeKind } from '@/bindings';
 import {
   threadStart,
   threadResume,
@@ -27,6 +27,7 @@ import type { ThreadListItem } from '@/types/codex/ThreadListItem';
 import { useCodexStore, useConfigStore } from '@/stores/codex';
 import { useWorkspaceStore } from '@/stores';
 import { convertThreadHistoryToEvents } from '@/utils/threadHistoryConverter';
+import { getErrorMessage } from '@/utils/errorUtils';
 
 const sandboxModeToPolicy = (mode: SandboxMode): SandboxPolicy => {
   const fullReadOnlyAccess: ReadOnlyAccess = { type: 'fullAccess' };
@@ -63,6 +64,9 @@ const generateThreadWorktreeKey = (): string => {
   }
   return `thread-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 };
+
+const isExperimentalRawEventsCapabilityError = (error: unknown): boolean =>
+  getErrorMessage(error).includes('experimentalRawEvents requires experimentalApi capability');
 
 export const codexService = {
   normalizeThreadItem(thread: any): ThreadListItem {
@@ -218,8 +222,20 @@ export const codexService = {
         ephemeral: null,
         experimentalRawEvents: true,
       };
+      let response;
+      try {
+        response = await threadStart(params);
+      } catch (error) {
+        if (!isExperimentalRawEventsCapabilityError(error)) {
+          throw error;
+        }
 
-      const response = await threadStart(params);
+        // Fallback for servers that do not expose experimental API capability.
+        response = await threadStart({
+          ...params,
+          experimentalRawEvents: false,
+        });
+      }
       const thread = codexService.normalizeThreadItem(response.thread);
 
       set((state) => ({
@@ -283,7 +299,12 @@ export const codexService = {
     }
   },
 
-  async turnStart(threadId: string, input: string, images: string[] = []) {
+  async turnStart(
+    threadId: string,
+    input: string,
+    images: string[] = [],
+    collaborationModeOverride?: ModeKind
+  ) {
     const set = useCodexStore.setState;
     try {
       const userInputs: UserInput[] = [];
@@ -304,7 +325,7 @@ export const codexService = {
       const { model, reasoningEffort, collaborationMode, approvalPolicy, sandbox, personality } =
         useConfigStore.getState();
       const selectedCollaborationMode: CollaborationMode = {
-        mode: collaborationMode,
+        mode: collaborationModeOverride ?? collaborationMode,
         settings: {
           model,
           reasoning_effort: reasoningEffort ?? null,

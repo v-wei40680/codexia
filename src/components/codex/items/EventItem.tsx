@@ -111,7 +111,8 @@ export const renderEvent = (event: ServerNotification, context?: RenderEventCont
           return null;
         case 'fileChange':
           return renderFileChanges(item.changes);
-
+        case 'plan':
+          return <Markdown value={item.text} />
         case 'enteredReviewMode':
         case 'exitedReviewMode':
           return null;
@@ -154,6 +155,7 @@ export const renderEvent = (event: ServerNotification, context?: RenderEventCont
     case 'thread/tokenUsage/updated':
     case 'item/reasoning/summaryPartAdded':
     case 'item/reasoning/summaryTextDelta':
+    case 'item/plan/delta':
     case 'item/fileChange/outputDelta':
     case 'turn/diff/updated':
     case 'rawResponseItem/completed':
