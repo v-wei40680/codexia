@@ -21,6 +21,7 @@ import type {
   ReviewStartParams,
   SandboxMode,
   SandboxPolicy,
+  ReadOnlyAccess,
 } from '@/bindings/v2';
 import type { ThreadListItem } from '@/types/codex/ThreadListItem';
 import { useCodexStore, useConfigStore } from '@/stores/codex';
@@ -28,13 +29,15 @@ import { useWorkspaceStore } from '@/stores';
 import { convertThreadHistoryToEvents } from '@/utils/threadHistoryConverter';
 
 const sandboxModeToPolicy = (mode: SandboxMode): SandboxPolicy => {
+  const fullReadOnlyAccess: ReadOnlyAccess = { type: 'fullAccess' };
   switch (mode) {
     case 'read-only':
-      return { type: 'readOnly' };
+      return { type: 'readOnly', access: fullReadOnlyAccess };
     case 'workspace-write':
       return {
         type: 'workspaceWrite',
         writableRoots: [],
+        readOnlyAccess: fullReadOnlyAccess,
         networkAccess: false,
         excludeTmpdirEnvVar: false,
         excludeSlashTmp: false,
