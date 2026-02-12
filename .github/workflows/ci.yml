@@ -9,15 +9,6 @@ on:
       - ".github/workflows/ci.yml"
       - "src/**"
       - "src-tauri/src/**"
-      - "src-tauri/capabilities/**"
-      - "src-tauri/icons/**"
-      - "src-tauri/Cargo.toml"
-      - "src-tauri/Cargo.lock"
-      - "src-tauri/tauri.conf.json"
-      - "src-tauri/build.rs"
-      - "codex-client/**"
-      - "codex-bindings/**"
-      - "Cargo.toml"
       - "package.json"
   pull_request:
     branches:
@@ -25,16 +16,8 @@ on:
     paths:
       - "src/**"
       - "src-tauri/src/**"
-      - "src-tauri/capabilities/**"
-      - "src-tauri/icons/**"
-      - "src-tauri/Cargo.toml"
-      - "src-tauri/Cargo.lock"
-      - "src-tauri/tauri.conf.json"
-      - "src-tauri/build.rs"
-      - "codex-client/**"
-      - "codex-bindings/**"
-      - "Cargo.toml"
       - "package.json"
+  workflow_dispatch:
 
 env:
   VITE_REDIRECT_URL: ${{ secrets.VITE_REDIRECT_URL }}
