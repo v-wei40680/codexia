@@ -89,7 +89,7 @@ pub async fn connect_codex(event_sink: Arc<dyn EventSink>) -> Result<Arc<CodexAp
             .arg("-ExecutionPolicy")
             .arg("Bypass")
             .arg("-Command")
-            .arg(command)
+            .arg(command);
         cmd.creation_flags(CREATE_NO_WINDOW);
         cmd
     };
