@@ -416,6 +416,16 @@ export type GitFileDiffMetaResponse = {
   total_bytes: number;
 };
 
+export type GitDiffStatsCounts = {
+  additions: number;
+  deletions: number;
+};
+
+export type GitDiffStatsResponse = {
+  staged: GitDiffStatsCounts;
+  unstaged: GitDiffStatsCounts;
+};
+
 export async function gitStatus(cwd: string) {
   if (isTauri()) {
     return await invokeTauri<GitStatusResponse>('git_status', { cwd });
@@ -451,6 +461,17 @@ export async function gitFileDiffMeta(cwd: string, filePath: string, staged: boo
     variant: 'destructive',
   });
   return Promise.reject(new Error('gitFileDiffMeta is only available in Tauri mode.'));
+}
+
+export async function gitDiffStats(cwd: string) {
+  if (isTauri()) {
+    return await invokeTauri<GitDiffStatsResponse>('git_diff_stats', { cwd });
+  }
+  toast({
+    title: 'gitDiffStats is only available in Tauri mode.',
+    variant: 'destructive',
+  });
+  return Promise.reject(new Error('gitDiffStats is only available in Tauri mode.'));
 }
 
 export async function gitStageFiles(cwd: string, filePaths: string[]) {

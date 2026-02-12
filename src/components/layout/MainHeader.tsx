@@ -1,4 +1,5 @@
-import { History, PanelLeft, PanelRight, SquarePen, Terminal } from 'lucide-react';
+import { useCallback, useEffect } from 'react';
+import { Diff, History, PanelLeft, SquarePen, Terminal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { codexService } from '@/services/codexService';
 import { ProjectSelector } from '@/components/ProjectSelector';
@@ -6,6 +7,9 @@ import { useLayoutStore } from '@/stores';
 import { useCodexStore, useCurrentThread } from '@/stores/codex';
 import { useCCSessionManager } from '@/hooks/useCCSessionManager';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
+import { GitStatsIndicator } from '@/components/features/GitStatsIndicator';
+import { useGitStatsStore } from '@/stores/useGitStatsStore';
+import { useGitWatch } from '@/hooks/useGitWatch';
 
 type MainHeaderProps = {
   isTerminalOpen: boolean;
@@ -15,11 +19,24 @@ type MainHeaderProps = {
 export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps) {
   const { isRightPanelOpen, toggleRightPanel, isSidebarOpen, setSidebarOpen, setView, view } =
     useLayoutStore();
-  const { historyMode, setHistoryMode, selectedAgent } = useWorkspaceStore();
+  const { historyMode, setHistoryMode, selectedAgent, cwd } = useWorkspaceStore();
   const { handleNewSession } = useCCSessionManager();
   const { currentThreadId, activeThreadIds } = useCodexStore();
+  const { refreshStats } = useGitStatsStore();
   const currentThread = useCurrentThread();
   const showTerminalButton = view === 'codex' || view === 'cc';
+
+  const refreshGitStats = useCallback(() => {
+    if (!cwd) return;
+    void refreshStats(cwd);
+  }, [cwd, refreshStats]);
+
+  useEffect(() => {
+    if (!cwd) return;
+    refreshGitStats();
+  }, [cwd, refreshGitStats]);
+
+  useGitWatch(cwd || null, refreshGitStats, Boolean(cwd));
 
   const handleNewThread = async () => {
     if (selectedAgent === 'cc') {
@@ -73,6 +90,7 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
         <ProjectSelector />
       </div>
       <div className="flex items-center gap-2">
+
         {showTerminalButton && (
           <Button
             variant={isTerminalOpen ? 'secondary' : 'ghost'}
@@ -83,13 +101,16 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
             <Terminal />
           </Button>
         )}
+        {/* Git statistics indicator */}
         <Button
           variant="ghost"
-          size="icon"
+          size="sm"
           onClick={toggleRightPanel}
           title={isRightPanelOpen ? 'Hide right panel' : 'Show right panel'}
+          className="rounded-md border"
         >
-          <PanelRight />
+          <Diff />
+          <GitStatsIndicator />
         </Button>
       </div>
     </div>

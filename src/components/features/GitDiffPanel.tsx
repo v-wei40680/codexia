@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { createTwoFilesPatch } from 'diff';
 import { DiffModeEnum, DiffView } from '@git-diff-view/react';
 import '@git-diff-view/react/styles/diff-view-pure.css';
@@ -32,6 +32,7 @@ import {
   type GitStatusEntry,
   type GitStatusResponse,
 } from '@/services/tauri';
+import { useGitWatch } from '@/hooks/useGitWatch';
 
 type DiffSection = 'staged' | 'unstaged';
 
@@ -164,7 +165,7 @@ export function GitDiffPanel({ cwd, isActive }: GitDiffPanelProps) {
   const [filterText, setFilterText] = useState('');
   const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
 
-  const refreshGitStatus = async () => {
+  const refreshGitStatus = useCallback(async () => {
     if (!cwd) return;
     setGitLoading(true);
     setGitError(null);
@@ -178,12 +179,15 @@ export function GitDiffPanel({ cwd, isActive }: GitDiffPanelProps) {
     } finally {
       setGitLoading(false);
     }
-  };
+  }, [cwd]);
+
+  // Watch .git/index for changes and auto-refresh
+  useGitWatch(cwd, refreshGitStatus, isActive);
 
   useEffect(() => {
     if (!isActive || !cwd) return;
     refreshGitStatus();
-  }, [isActive, cwd]);
+  }, [isActive, cwd, refreshGitStatus]);
 
   const stagedEntries = useMemo(
     () =>

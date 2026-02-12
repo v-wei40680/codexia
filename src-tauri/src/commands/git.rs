@@ -3,6 +3,7 @@ use serde::Serialize;
 use std::collections::BTreeMap;
 use std::ops::ControlFlow;
 use std::path::Path;
+use std::process::Command;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct GitStatusEntry {
@@ -29,6 +30,18 @@ pub struct GitFileDiffMetaResponse {
     pub old_bytes: usize,
     pub new_bytes: usize,
     pub total_bytes: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Default)]
+pub struct GitDiffStatsCounts {
+    pub additions: usize,
+    pub deletions: usize,
+}
+
+#[derive(Debug, Clone, Serialize, Default)]
+pub struct GitDiffStatsResponse {
+    pub staged: GitDiffStatsCounts,
+    pub unstaged: GitDiffStatsCounts,
 }
 
 fn open_repo(cwd: &str) -> Result<gix::Repository, String> {
@@ -252,6 +265,43 @@ fn stat_for_worktree_path(repo: &gix::Repository, relative_path: &str) -> gix::i
     gix::index::entry::Stat::from_fs(&metadata).unwrap_or_default()
 }
 
+fn parse_numstat_totals(output: &str) -> GitDiffStatsCounts {
+    let mut counts = GitDiffStatsCounts::default();
+    for line in output.lines() {
+        let mut parts = line.split('\t');
+        let additions = parts.next().unwrap_or("0");
+        let deletions = parts.next().unwrap_or("0");
+        let Some(_) = parts.next() else {
+            continue;
+        };
+        if let Ok(value) = additions.parse::<usize>() {
+            counts.additions = counts.additions.saturating_add(value);
+        }
+        if let Ok(value) = deletions.parse::<usize>() {
+            counts.deletions = counts.deletions.saturating_add(value);
+        }
+    }
+    counts
+}
+
+fn run_git_numstat(cwd: &str, args: &[&str]) -> Result<GitDiffStatsCounts, String> {
+    let output = Command::new("git")
+        .current_dir(cwd)
+        .args(args)
+        .output()
+        .map_err(|err| format!("Failed to execute git {:?}: {err}", args))?;
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        return Err(format!(
+            "git {:?} failed with status {}: {}",
+            args,
+            output.status,
+            stderr
+        ));
+    }
+    Ok(parse_numstat_totals(&String::from_utf8_lossy(&output.stdout)))
+}
+
 #[tauri::command]
 pub async fn git_status(cwd: String) -> Result<GitStatusResponse, String> {
     let repo = open_repo(&cwd)?;
@@ -398,6 +448,13 @@ pub async fn git_file_diff_meta(
         new_bytes,
         total_bytes: old_bytes.saturating_add(new_bytes),
     })
+}
+
+#[tauri::command]
+pub async fn git_diff_stats(cwd: String) -> Result<GitDiffStatsResponse, String> {
+    let staged = run_git_numstat(&cwd, &["diff", "--cached", "--numstat"])?;
+    let unstaged = run_git_numstat(&cwd, &["diff", "--numstat"])?;
+    Ok(GitDiffStatsResponse { staged, unstaged })
 }
 
 #[tauri::command]
