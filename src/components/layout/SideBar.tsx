@@ -1,4 +1,5 @@
 import {
+  BookOpen,
   ChevronRight,
   FolderPlus,
   ListFilter,
@@ -177,11 +178,10 @@ export function SideBar() {
                   className="rounded-lg border border-sidebar-border bg-sidebar/30"
                 >
                   <div
-                    className={`flex items-center gap-1 rounded-t-lg px-2 py-1.5 text-xs transition-colors ${
-                      cwd === project
-                        ? 'bg-accent text-foreground'
-                        : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
-                    }`}
+                    className={`flex items-center gap-1 rounded-t-lg px-2 py-1.5 text-xs transition-colors ${cwd === project
+                      ? 'bg-accent text-foreground'
+                      : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                      }`}
                     title={project}
                   >
                     <CollapsibleTrigger className="flex min-w-0 flex-1 items-center gap-1 text-left">
@@ -246,10 +246,11 @@ export function SideBar() {
         </ScrollArea>
       </div>
 
-      <div className="min-h-0 min-w-0 max-w-full overflow-x-hidden flex flex-col gap-2">
-        <div className="shrink-0">
-          <UserInfo />
-        </div>
+      <div className="min-h-0 min-w-0 max-w-full overflow-x-hidden flex justify-between items-center gap-2">
+        <UserInfo />
+        <Button variant="ghost" size="icon" title="open learn view" onClick={() => { setView('learn'); }}>
+          <BookOpen />
+        </Button>
       </div>
     </div>
   );

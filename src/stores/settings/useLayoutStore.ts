@@ -7,6 +7,7 @@ export type viewType =
   | 'automate'
   | 'agents'
   | 'history'
+  | 'learn'
   | 'login'
   | 'marketplace'
   | 'settings'

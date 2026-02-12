@@ -16,6 +16,7 @@ import AgentsView from '@/views/AgentsView';
 import LoginView from '@/views/LoginView';
 import { AutoMateView } from '../features/AutoMateView';
 import { BottomTerminal } from '@/components/terminal/BottomTerminal';
+import { LearnView } from '@/views/LearnView';
 
 export function AppLayout() {
   const MIN_SIDEBAR_WIDTH = 220;
@@ -206,6 +207,7 @@ export function AppLayout() {
                         {view === 'automate' && <AutoMateView />}
                         {view === 'codex' && <ChatInterface />}
                         {view === 'history' && <History />}
+                        {view === 'learn' && <LearnView />}
                         {view === 'login' && <LoginView />}
                         {view === 'marketplace' && <MarketplaceView />}
                         {view === 'usage' && <UsageView />}
