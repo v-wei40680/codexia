@@ -1,10 +1,12 @@
 import { useApprovalStore } from '@/stores/codex';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, ChevronDown, ChevronUp } from 'lucide-react';
+import { useState } from 'react';
 
 export function ApprovalItem() {
   const { currentApproval, pendingApprovals, respondToApproval } = useApprovalStore();
+  const [showDetails, setShowDetails] = useState(false);
 
   if (!currentApproval) return null;
 
@@ -47,116 +49,126 @@ export function ApprovalItem() {
 
   return (
     <div className="rounded-md border bg-background p-4 space-y-4">
-      <div className="flex items-center gap-2">
-        <AlertTriangle className="w-4 h-4 text-warning" />
-        <span className="font-medium">Approval Required</span>
-        {pendingApprovals.length > 1 && (
-          <Badge variant="secondary">{pendingApprovals.length} pending</Badge>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <AlertTriangle className="w-4 h-4 text-warning" />
+          <span className="font-medium">Approval Required</span>
+          {pendingApprovals.length > 1 && (
+            <Badge variant="secondary">{pendingApprovals.length} pending</Badge>
+          )}
+        </div>
+        {(currentApproval.reason ||
+          (currentApproval.type === 'commandExecution' &&
+            (currentApproval.commandActions?.length ?? 0) > 0)) && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowDetails(!showDetails)}
+            className="h-7"
+          >
+            {showDetails ? (
+              <>
+                <ChevronUp className="w-4 h-4 mr-1" />
+                Hide Details
+              </>
+            ) : (
+              <>
+                <ChevronDown className="w-4 h-4 mr-1" />
+                Show Details
+              </>
+            )}
+          </Button>
         )}
       </div>
-      <div className="text-sm text-muted-foreground">
-        {isCommandExecution
-          ? 'The agent wants to execute a command'
-          : 'The agent wants to change files'}
-      </div>
 
+      {/* Main info - always visible */}
       <div className="grid gap-3 text-sm">
-        {currentApproval.reason && (
-          <div>
-            <div className="font-medium">Reason:</div>
-            <div className="text-muted-foreground p-2 bg-muted rounded">
-              {currentApproval.reason}
-            </div>
-          </div>
-        )}
-
         {currentApproval.type === 'commandExecution' && currentApproval.command && (
           <div>
-            <div className="font-medium">Command:</div>
-            <div className="text-muted-foreground p-2 bg-muted rounded font-mono break-all">
+            <div className="font-medium mb-1">Command:</div>
+            <div className="text-muted-foreground p-2 bg-muted rounded font-mono text-xs break-all">
               {currentApproval.command}
             </div>
           </div>
         )}
 
-        {currentApproval.type === 'commandExecution' && currentApproval.cwd && (
+        {currentApproval.type === 'fileChange' && currentApproval.grantRoot && (
           <div>
-            <div className="font-medium">Working Directory:</div>
-            <div className="text-muted-foreground p-2 bg-muted rounded font-mono break-all">
-              {currentApproval.cwd}
+            <div className="font-medium mb-1">File Access Request:</div>
+            <div className="text-muted-foreground p-2 bg-muted rounded">
+              <div className="text-xs mb-1">
+                Allow file writes under:
+              </div>
+              <div className="font-mono text-xs break-all">{currentApproval.grantRoot}</div>
             </div>
           </div>
         )}
-
-        {currentApproval.type === 'commandExecution' &&
-          currentApproval.commandActions &&
-          currentApproval.commandActions.length > 0 && (
-            <div>
-              <div className="font-medium">Command Actions:</div>
-              <div className="space-y-2">
-                {currentApproval.commandActions.map((action, idx) => (
-                  <div key={idx} className="text-muted-foreground p-2 bg-muted rounded">
-                    <div className="font-medium text-foreground">
-                      {action.type === 'read' && `Read: ${action.name}`}
-                      {action.type === 'listFiles' && 'List Files'}
-                      {action.type === 'search' && 'Search'}
-                      {action.type === 'unknown' && 'Unknown Action'}
-                    </div>
-                    {action.type === 'read' && (
-                      <div className="text-xs mt-1">Path: {action.path}</div>
-                    )}
-                    {action.type === 'listFiles' && action.path && (
-                      <div className="text-xs mt-1">Path: {action.path}</div>
-                    )}
-                    {action.type === 'search' && (
-                      <>
-                        {action.query && <div className="text-xs mt-1">Query: {action.query}</div>}
-                        {action.path && <div className="text-xs">Path: {action.path}</div>}
-                      </>
-                    )}
-                    <div className="text-xs mt-1 font-mono">{action.command}</div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
 
         {currentApproval.type === 'commandExecution' &&
           currentApproval.proposedExecpolicyAmendment && (
             <div>
-              <div className="font-medium">Proposed Policy Amendment:</div>
-              <div className="text-muted-foreground p-2 bg-muted rounded">
-                <div className="text-xs mb-1">
-                  Allowing this will permit similar commands without approval:
-                </div>
-                <div className="font-mono text-xs break-all">
-                  {currentApproval.proposedExecpolicyAmendment.join(' ')}
-                </div>
+              <div className="font-medium mb-1 flex items-center gap-2">
+                <span>Policy Amendment</span>
+                <Badge variant="secondary" className="text-xs">Will skip future approvals</Badge>
+              </div>
+              <div className="text-muted-foreground p-2 bg-muted rounded font-mono text-xs break-all">
+                {currentApproval.proposedExecpolicyAmendment.join(' ')}
+              </div>
+            </div>
+          )}
+      </div>
+
+      {/* Collapsible details */}
+      {showDetails && (
+        <div className="grid gap-3 text-sm pt-2 border-t">
+          {currentApproval.reason && (
+            <div>
+              <div className="font-medium mb-1">Reason:</div>
+              <div className="text-muted-foreground p-2 bg-muted rounded text-xs">
+                {currentApproval.reason}
               </div>
             </div>
           )}
 
-        {currentApproval.type === 'fileChange' && currentApproval.grantRoot && (
-          <div>
-            <div className="font-medium">Grant Root Access:</div>
-            <div className="text-muted-foreground p-2 bg-muted rounded">
-              <div className="text-xs mb-1">
-                This will allow file writes under this directory for the session:
+          {currentApproval.type === 'commandExecution' &&
+            currentApproval.commandActions &&
+            currentApproval.commandActions.length > 0 && (
+              <div>
+                <div className="font-medium mb-1">Actions Summary:</div>
+                <div className="space-y-1">
+                  {currentApproval.commandActions.map((action, idx) => (
+                    <div key={idx} className="text-muted-foreground p-2 bg-muted rounded text-xs">
+                      <div className="font-medium text-foreground">
+                        {action.type === 'read' && `📖 Read: ${action.name}`}
+                        {action.type === 'listFiles' && '📁 List Files'}
+                        {action.type === 'search' && '🔍 Search'}
+                        {action.type === 'unknown' && '❓ Unknown Action'}
+                      </div>
+                      {action.type === 'read' && action.path && (
+                        <div className="mt-1 font-mono opacity-70">{action.path}</div>
+                      )}
+                      {action.type === 'search' && action.query && (
+                        <div className="mt-1">Query: {action.query}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="font-mono break-all">{currentApproval.grantRoot}</div>
-            </div>
-          </div>
-        )}
-      </div>
+            )}
+        </div>
+      )}
 
-      <div className="flex flex-col sm:flex-row gap-2">
-        <Button variant="outline" onClick={handleDecline}>
+      {/* Action buttons */}
+      <div className="flex flex-col sm:flex-row gap-2 pt-2">
+        <Button variant="outline" onClick={handleDecline} className="flex-1">
           Decline
         </Button>
-        <Button variant="secondary" onClick={handleApproveForSession}>
+        <Button variant="secondary" onClick={handleApproveForSession} className="flex-1">
           Approve for Session
         </Button>
-        <Button onClick={handleApprove}>Approve Once</Button>
+        <Button onClick={handleApprove} className="flex-1">
+          Approve Once
+        </Button>
       </div>
     </div>
   );

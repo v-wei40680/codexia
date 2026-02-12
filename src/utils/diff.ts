@@ -2,6 +2,11 @@ export type DiffCountLine = {
   type: 'add' | 'remove' | 'normal';
 };
 
+export type UnifiedFileDiff = {
+  path: string;
+  diff: string;
+};
+
 type GetDiffCountsInput = {
   unifiedDiff?: string;
   normalizedUnified?: string;
@@ -24,6 +29,7 @@ export function getDiffCounts({
     let added = 0;
     let removed = 0;
     const lines = resolvedUnified.split('\n');
+
     for (const line of lines) {
       if (shouldSkipUnifiedCountLine(line)) continue;
       if (line.startsWith('+')) {
@@ -32,6 +38,7 @@ export function getDiffCounts({
       }
       if (line.startsWith('-')) removed += 1;
     }
+
     return { addedCount: added, removedCount: removed };
   }
 
@@ -47,6 +54,61 @@ export function getDiffCounts({
 export function normalizeUnifiedDiff(value?: string): string {
   if (!value) return '';
   return value.replace(/^```diff\n?|```$/g, '');
+}
+
+export function splitUnifiedDiffByFile(value?: string): UnifiedFileDiff[] {
+  const normalized = normalizeUnifiedDiff(value);
+  if (!normalized.trim()) return [];
+
+  const lines = normalized.split('\n');
+  const chunks: string[][] = [];
+  let currentChunk: string[] = [];
+
+  const pushChunk = () => {
+    if (currentChunk.length > 0) {
+      chunks.push(currentChunk);
+      currentChunk = [];
+    }
+  };
+
+  for (const line of lines) {
+    if (line.startsWith('diff --git ') && currentChunk.length > 0) {
+      pushChunk();
+    }
+    currentChunk.push(line);
+  }
+  pushChunk();
+
+  return chunks.map((chunk) => {
+    const diff = chunk.join('\n');
+    const path = extractDiffPath(chunk);
+    return { path, diff };
+  });
+}
+
+function extractDiffPath(lines: string[]): string {
+  const diffGit = lines.find((line) => line.startsWith('diff --git '));
+  if (diffGit) {
+    const match = diffGit.match(/^diff --git a\/(.+?) b\/(.+)$/);
+    if (match) {
+      const preferred = match[2] !== '/dev/null' ? match[2] : match[1];
+      return preferred.replace(/^([ab])\//, '');
+    }
+  }
+
+  const plusLine = lines.find((line) => line.startsWith('+++ '));
+  if (plusLine) {
+    const plusPath = plusLine.replace(/^\+\+\+\s+/, '').replace(/^([ab])\//, '');
+    if (plusPath !== '/dev/null') return plusPath;
+  }
+
+  const minusLine = lines.find((line) => line.startsWith('--- '));
+  if (minusLine) {
+    const minusPath = minusLine.replace(/^---\s+/, '').replace(/^([ab])\//, '');
+    if (minusPath !== '/dev/null') return minusPath;
+  }
+
+  return '';
 }
 
 const shouldSkipUnifiedCountLine = (line: string) =>

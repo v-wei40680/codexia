@@ -83,6 +83,7 @@ export function ChatInterface() {
     type: 'event' | 'reasoningSummaryDelta';
     event?: ServerNotification;
     text?: string;
+    sourceIndex?: number;
   }> = [];
   let pendingSummary: {
     key: string;
@@ -139,6 +140,7 @@ export function ChatInterface() {
       key: `event-${index}`,
       type: 'event',
       event,
+      sourceIndex: index,
     });
   });
   flushPendingSummary();
@@ -154,7 +156,12 @@ export function ChatInterface() {
                   {taskDetail !== 'steps' && <Markdown value={entry.text ?? ''} inline />}
                 </div>
               ) : (
-                <div key={entry.key}>{renderEvent(entry.event as ServerNotification)}</div>
+                <div key={entry.key}>
+                  {renderEvent(entry.event as ServerNotification, {
+                    events: currentThreadEvents,
+                    eventIndex: entry.sourceIndex,
+                  })}
+                </div>
               )
             )}
             <ApprovalItem />

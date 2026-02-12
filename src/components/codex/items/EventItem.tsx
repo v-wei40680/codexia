@@ -1,18 +1,21 @@
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Markdown } from '@/components/Markdown';
 import { CommandAction, FileUpdateChange } from '@/bindings/v2';
 import type { ServerNotification } from '@/bindings';
+import { Markdown } from '@/components/Markdown';
 import { TurnPlan } from './TurnPlan';
-import { DiffViewer } from '../../features/DiffViewer';
 import { UserMessageItem } from './UserMessageItem';
-import { getFilename } from '@/utils/getFilename';
-import { ChevronRight } from 'lucide-react';
-import { getDiffCounts } from '@/utils/diff';
 import { CommandActionItem } from './CommandActionItem';
-import { useState } from 'react';
+import { IndividualFileChanges } from './IndividualFileChanges';
+import { SummaryFileChanges } from './SummaryFileChanges';
+import {
+  aggregateFileChanges,
+  aggregateTurnChangesFromContext,
+  getChangeCounts,
+  getDiffViewerProps,
+  type RenderEventContext,
+} from './fileChangeLogic';
 
-export const renderEvent = (event: ServerNotification) => {
+export const renderEvent = (event: ServerNotification, context?: RenderEventContext) => {
   const fileChangeMap = {
     add: 'Created',
     delete: 'Deleted',
@@ -20,7 +23,12 @@ export const renderEvent = (event: ServerNotification) => {
   };
 
   const renderFileChanges = (changes: FileUpdateChange[]) => (
-    <FileChanges changes={changes} fileChangeMap={fileChangeMap} />
+    <IndividualFileChanges
+      changes={changes}
+      fileChangeMap={fileChangeMap}
+      getChangeCounts={getChangeCounts}
+      getDiffViewerProps={getDiffViewerProps}
+    />
   );
   switch (event.method) {
     case 'error':
@@ -89,18 +97,16 @@ export const renderEvent = (event: ServerNotification) => {
           turnItem.type === 'fileChange' && turnItem.changes.length > 0
       );
 
-      if (fileChangeItems.length === 0) return null;
+      const aggregatedChanges =
+        fileChangeItems.length > 0
+          ? aggregateFileChanges(fileChangeItems.flatMap((it) => it.changes))
+          : aggregateTurnChangesFromContext(event.params.turn.id, context);
+
+      if (aggregatedChanges.length === 0) return null;
 
       return (
-        <div>
-          <div className="flex border rounded-md p-2">{fileChangeItems.length} file changes</div>
-          {fileChangeItems.map((fileChangeItem) => (
-            <div key={fileChangeItem.id}>
-              {fileChangeItem.changes.map((c) => (
-                <DiffViewer unifiedDiff={c.diff} className="mt-2 max-h-64" />
-              ))}
-            </div>
-          ))}
+        <div className="space-y-2">
+          <SummaryFileChanges changes={aggregatedChanges} getDiffViewerProps={getDiffViewerProps} />
         </div>
       );
     case 'turn/plan/updated':
@@ -109,10 +115,7 @@ export const renderEvent = (event: ServerNotification) => {
     case 'item/reasoning/summaryPartAdded':
     case 'item/reasoning/summaryTextDelta':
     case 'item/fileChange/outputDelta':
-      return null;
-    case 'turn/diff/updated': {
-      return <DiffViewer unifiedDiff={event.params.diff} className="max-h-64" />;
-    }
+    case 'turn/diff/updated':
     case 'rawResponseItem/completed':
     case 'item/commandExecution/outputDelta':
     case 'item/commandExecution/terminalInteraction':
@@ -132,66 +135,4 @@ export const renderEvent = (event: ServerNotification) => {
         </>
       );
   }
-};
-
-const FileChanges = ({
-  changes,
-  fileChangeMap,
-}: {
-  changes: FileUpdateChange[];
-  fileChangeMap: Record<FileUpdateChange['kind']['type'], string>;
-}) => {
-  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(new Set());
-
-  const toggle = (key: string) => {
-    setExpandedKeys((prev) => {
-      const next = new Set(prev);
-      if (next.has(key)) {
-        next.delete(key);
-      } else {
-        next.add(key);
-      }
-      return next;
-    });
-  };
-
-  return (
-    <div>
-      {changes.map((c, i) => {
-        const key = `${c.path}-${i}`;
-        const isExpanded = expandedKeys.has(key);
-
-        return (
-          <div key={key}>
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" className="h-auto px-1 text-sm" onClick={() => toggle(key)}>
-                {fileChangeMap[c.kind.type]}
-              </Button>
-              <Markdown value={`[${getFilename(c.path)}](${c.path})`} />
-              <span className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-                {(() => {
-                  const { addedCount, removedCount } = getDiffCounts({
-                    unifiedDiff: c.diff,
-                    diffLines: [],
-                  });
-                  return (
-                    <>
-                      <span className="text-green-600 dark:text-green-400">+{addedCount}</span>
-                      <span className="text-red-600 dark:text-red-400">-{removedCount}</span>
-                    </>
-                  );
-                })()}
-              </span>
-              <Button size="icon" variant="ghost" onClick={() => toggle(key)}>
-                <ChevronRight
-                  className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
-                />
-              </Button>
-            </div>
-            {isExpanded && <DiffViewer unifiedDiff={c.diff} className="mt-2 max-h-64" />}
-          </div>
-        );
-      })}
-    </div>
-  );
 };

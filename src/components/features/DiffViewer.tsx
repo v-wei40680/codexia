@@ -9,6 +9,7 @@ interface DiffViewerProps {
   original?: string;
   current?: string;
   unifiedDiff?: string;
+  displayPath?: string;
   defaultCollapsed?: boolean;
   className?: string;
 }
@@ -33,6 +34,7 @@ export function DiffViewer({
   original = '',
   current = '',
   unifiedDiff,
+  displayPath,
   defaultCollapsed = true,
   className,
 }: DiffViewerProps) {
@@ -191,10 +193,10 @@ export function DiffViewer({
     >
       <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-gray-200/70 bg-gray-50/70 px-3 py-2 dark:border-gray-800/70 dark:bg-gray-900/60">
         <div className="flex items-center gap-3 min-w-0">
-          {unifiedPath ? (
+          {displayPath || unifiedPath ? (
             <div className="flex items-center gap-2 min-w-0">
               <span className="truncate text-sm font-medium text-gray-700 dark:text-gray-200">
-                {unifiedPath}
+                {displayPath || unifiedPath}
               </span>
               <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                 <span className="text-green-600 dark:text-green-400">+{addedCount}</span>
