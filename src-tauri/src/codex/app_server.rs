@@ -75,12 +75,16 @@ pub async fn connect_codex(event_sink: Arc<dyn EventSink>) -> Result<Arc<CodexAp
     let codex_bin =
         discover_codex_command().ok_or_else(|| "Unable to locate codex binary".to_string())?;
 
+    eprintln!("Found codex binary at: {:?}", codex_bin);
+
     #[cfg(target_os = "windows")]
     let mut command = {
         const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
         let codex_bin = codex_bin.to_string_lossy().replace('\'', "''");
         let command = format!("& '{}' app-server", codex_bin);
+        
+        eprintln!("Windows PowerShell command: {}", command);
 
         let mut cmd = Command::new("powershell.exe");
         cmd.arg("-NoLogo")
@@ -105,7 +109,12 @@ pub async fn connect_codex(event_sink: Arc<dyn EventSink>) -> Result<Arc<CodexAp
     command.stdout(std::process::Stdio::piped());
     command.stderr(std::process::Stdio::piped());
 
-    let mut child = command.spawn().map_err(|e| e.to_string())?;
+    let mut child = command.spawn().map_err(|e| {
+        let err_msg = format!("Failed to spawn codex process: {}", e);
+        eprintln!("{}", err_msg);
+        err_msg
+    })?;
+    
     let stdin = child.stdin.take().ok_or("missing stdin")?;
     let stdout = child.stdout.take().ok_or("missing stdout")?;
     let stderr = child.stderr.take().ok_or("missing stderr")?;
@@ -114,6 +123,38 @@ pub async fn connect_codex(event_sink: Arc<dyn EventSink>) -> Result<Arc<CodexAp
         stdin: Mutex::new(stdin),
         pending: Mutex::new(HashMap::new()),
         next_id: AtomicU64::new(1),
+    });
+
+    // Spawn child process monitor task
+    let event_sink_monitor = Arc::clone(&event_sink);
+    tauri::async_runtime::spawn(async move {
+        match child.wait().await {
+            Ok(status) => {
+                let exit_info = if let Some(code) = status.code() {
+                    format!("Codex process exited with code: {}", code)
+                } else {
+                    "Codex process was terminated by signal".to_string()
+                };
+                eprintln!("{}", exit_info);
+                event_sink_monitor.emit(
+                    "codex:notification",
+                    serde_json::json!({
+                        "method": "codex/processExited",
+                        "params": { "message": exit_info }
+                    }),
+                );
+            }
+            Err(err) => {
+                eprintln!("Error waiting for codex process: {}", err);
+                event_sink_monitor.emit(
+                    "codex:notification",
+                    serde_json::json!({
+                        "method": "codex/processError",
+                        "params": { "error": err.to_string() }
+                    }),
+                );
+            }
+        }
     });
 
     // Spawn stdout reader task
@@ -219,6 +260,7 @@ pub async fn connect_codex(event_sink: Arc<dyn EventSink>) -> Result<Arc<CodexAp
             if line.trim().is_empty() {
                 continue;
             }
+            eprintln!("codex stderr: {}", line);
             println!("codex:notification (stderr): {}", line);
             event_sink_clone.emit(
                 "codex:notification",
@@ -228,6 +270,7 @@ pub async fn connect_codex(event_sink: Arc<dyn EventSink>) -> Result<Arc<CodexAp
                 }),
             );
         }
+        eprintln!("codex stderr stream closed");
     });
 
     Ok(client)
@@ -242,7 +285,10 @@ pub async fn initialize_codex(
             "name": "codexia",
             "title": "Codexia",
             "version": env!("CARGO_PKG_VERSION")
-        }
+        },
+        "capabilities": {
+            "experimentalApi": true
+        },
     });
 
     let result = codex.send_request("initialize", params).await?;
