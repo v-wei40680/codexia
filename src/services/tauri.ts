@@ -426,6 +426,12 @@ export type GitDiffStatsResponse = {
   unstaged: GitDiffStatsCounts;
 };
 
+export type GitPrepareThreadWorktreeResponse = {
+  repo_root: string;
+  worktree_path: string;
+  existed: boolean;
+};
+
 export async function gitStatus(cwd: string) {
   if (isTauri()) {
     return await invokeTauri<GitStatusResponse>('git_status', { cwd });
@@ -494,6 +500,20 @@ export async function gitUnstageFiles(cwd: string, filePaths: string[]) {
     variant: 'destructive',
   });
   return Promise.reject(new Error('gitUnstageFiles is only available in Tauri mode.'));
+}
+
+export async function gitPrepareThreadWorktree(cwd: string, threadKey: string) {
+  if (isTauri()) {
+    return await invokeTauri<GitPrepareThreadWorktreeResponse>('git_prepare_thread_worktree', {
+      cwd,
+      threadKey,
+    });
+  }
+  toast({
+    title: 'gitPrepareThreadWorktree is only available in Tauri mode.',
+    variant: 'destructive',
+  });
+  return Promise.reject(new Error('gitPrepareThreadWorktree is only available in Tauri mode.'));
 }
 
 export type TerminalStartResponse = {

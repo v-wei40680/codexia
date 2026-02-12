@@ -3,6 +3,8 @@ import { persist } from 'zustand/middleware';
 import type { SandboxMode, AskForApproval } from '@/bindings/v2';
 import type { ReasoningEffort, Personality, ModeKind } from '@/bindings';
 
+export type ThreadCwdMode = 'local' | 'worktree';
+
 export interface ConfigStore {
   sandbox: SandboxMode;
   approvalPolicy: AskForApproval;
@@ -11,12 +13,14 @@ export interface ConfigStore {
   model: string;
   personality: Personality | null;
   collaborationMode: ModeKind;
+  threadCwdMode: ThreadCwdMode;
   setModel: (model: string) => void;
   setAccessMode: (sandbox: SandboxMode) => void;
   setReasoningEffort: (effort: ReasoningEffort) => void;
   setWebSearch: (webSearchRequest: boolean) => void;
   setPersonality: (personality: Personality | null) => void;
   setCollaborationMode: (mode: ModeKind) => void;
+  setThreadCwdMode: (mode: ThreadCwdMode) => void;
 }
 
 export const SANDBOX_APPROVAL_MAP: Record<SandboxMode, AskForApproval> = {
@@ -35,6 +39,7 @@ export const useConfigStore = create<ConfigStore>()(
       model: '',
       personality: 'friendly',
       collaborationMode: 'default',
+      threadCwdMode: 'local',
       setModel: (model: string) => {
         set({ model });
       },
@@ -58,6 +63,10 @@ export const useConfigStore = create<ConfigStore>()(
 
       setCollaborationMode: (mode: ModeKind) => {
         set({ collaborationMode: mode });
+      },
+
+      setThreadCwdMode: (mode: ThreadCwdMode) => {
+        set({ threadCwdMode: mode });
       },
     }),
     {

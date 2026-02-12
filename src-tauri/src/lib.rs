@@ -131,6 +131,7 @@ pub fn run() {
             commands::git::git_diff_stats,
             commands::git::git_stage_files,
             commands::git::git_unstage_files,
+            commands::git::git_prepare_thread_worktree,
             commands::terminal::terminal_start,
             commands::terminal::terminal_write,
             commands::terminal::terminal_resize,

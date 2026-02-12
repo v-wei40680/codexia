@@ -11,6 +11,7 @@ use super::utils::{
 use notify::{RecommendedWatcher, RecursiveMode, Watcher};
 use serde::{Deserialize, Serialize};
 use serde_json::{Value, json};
+use std::collections::HashMap;
 use walkdir::WalkDir;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -135,8 +136,22 @@ pub fn list_threads_payload(params: Value, cwd: Option<&str>) -> io::Result<Valu
     };
 
     if let Some(cwd) = cwd {
-        if !cwd.trim().is_empty() {
-            entries.retain(|entry| entry.cwd == cwd);
+        let filter_cwd = cwd.trim();
+        if !filter_cwd.is_empty() {
+            let filter_repo_root = repo_root_for_path(filter_cwd);
+            let mut entry_repo_roots: HashMap<String, Option<String>> = HashMap::new();
+            entries.retain(|entry| {
+                if entry.cwd == filter_cwd {
+                    return true;
+                }
+                let entry_root = entry_repo_roots
+                    .entry(entry.cwd.clone())
+                    .or_insert_with(|| repo_root_for_path(&entry.cwd));
+                match (&filter_repo_root, entry_root) {
+                    (Some(filter_root), Some(entry_root)) => filter_root == entry_root,
+                    _ => false,
+                }
+            });
         }
     }
 
@@ -237,6 +252,12 @@ fn scan_and_emit(event_sink: &dyn EventSink) -> io::Result<()> {
     event_sink.emit("thread/list-updated", payload);
 
     Ok(())
+}
+
+fn repo_root_for_path(path: &str) -> Option<String> {
+    let repo = gix::discover(path).ok()?;
+    let root = repo.workdir()?;
+    Some(root.to_string_lossy().to_string())
 }
 
 fn scan_sessions() -> io::Result<Vec<HistoryEntry>> {

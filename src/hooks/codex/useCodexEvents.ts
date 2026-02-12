@@ -71,6 +71,18 @@ export function useCodexEvents(enabled = true) {
         }
 
         if (threadId) {
+          if (payload.method === 'thread/started' && 'params' in payload && payload.params) {
+            const startedThread = (payload.params as any).thread;
+            const startedThreadId = startedThread?.id;
+            const startedThreadCwd = startedThread?.cwd;
+            if (startedThreadId && startedThreadCwd) {
+              useCodexStore.setState((state) => ({
+                threads: state.threads.map((thread) =>
+                  thread.id === startedThreadId ? { ...thread, cwd: startedThreadCwd } : thread
+                ),
+              }));
+            }
+          }
           addEvent(threadId, payload);
         } else {
           if (payload.method !== 'account/rateLimits/updated') {
@@ -86,5 +98,5 @@ export function useCodexEvents(enabled = true) {
         unlisteners.forEach((unlisten) => unlisten());
       });
     };
-  }, [addEvent, addApproval, enabled]);
+  }, [addEvent, addApproval, addRequest, enabled]);
 }

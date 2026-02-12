@@ -2,7 +2,7 @@ use gix::bstr::{BStr, BString, ByteSlice};
 use serde::Serialize;
 use std::collections::BTreeMap;
 use std::ops::ControlFlow;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
 #[derive(Debug, Clone, Serialize)]
@@ -42,6 +42,13 @@ pub struct GitDiffStatsCounts {
 pub struct GitDiffStatsResponse {
     pub staged: GitDiffStatsCounts,
     pub unstaged: GitDiffStatsCounts,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct GitPrepareThreadWorktreeResponse {
+    pub repo_root: String,
+    pub worktree_path: String,
+    pub existed: bool,
 }
 
 fn open_repo(cwd: &str) -> Result<gix::Repository, String> {
@@ -300,6 +307,77 @@ fn run_git_numstat(cwd: &str, args: &[&str]) -> Result<GitDiffStatsCounts, Strin
         ));
     }
     Ok(parse_numstat_totals(&String::from_utf8_lossy(&output.stdout)))
+}
+
+fn sanitize_worktree_key(input: &str) -> String {
+    let mut out = String::with_capacity(input.len());
+    for ch in input.chars() {
+        if ch.is_ascii_alphanumeric() || ch == '-' || ch == '_' {
+            out.push(ch);
+        } else {
+            out.push('-');
+        }
+    }
+    let trimmed = out.trim_matches('-');
+    if trimmed.is_empty() {
+        "thread".to_string()
+    } else {
+        trimmed.to_string()
+    }
+}
+
+fn repo_root_path(repo: &gix::Repository) -> Result<PathBuf, String> {
+    repo.workdir()
+        .map(|path| path.to_path_buf())
+        .ok_or_else(|| "This git repository has no worktree".to_string())
+}
+
+#[tauri::command]
+pub async fn git_prepare_thread_worktree(
+    cwd: String,
+    thread_key: String,
+) -> Result<GitPrepareThreadWorktreeResponse, String> {
+    let repo = open_repo(&cwd)?;
+    let repo_root = repo_root_path(&repo)?;
+    let safe_key = sanitize_worktree_key(&thread_key);
+    let worktrees_dir = repo_root.join(".codexia").join("worktrees");
+    std::fs::create_dir_all(&worktrees_dir)
+        .map_err(|err| format!("Failed to create worktrees directory: {err}"))?;
+
+    let worktree_path = worktrees_dir.join(safe_key);
+    let repo_root_str = repo_root.to_string_lossy().to_string();
+    let worktree_path_str = worktree_path.to_string_lossy().to_string();
+
+    if worktree_path.join(".git").exists() || gix::discover(&worktree_path).is_ok() {
+        return Ok(GitPrepareThreadWorktreeResponse {
+            repo_root: repo_root_str,
+            worktree_path: worktree_path_str,
+            existed: true,
+        });
+    }
+
+    let output = Command::new("git")
+        .arg("-C")
+        .arg(&repo_root)
+        .args(["worktree", "add", "--detach"])
+        .arg(&worktree_path)
+        .arg("HEAD")
+        .output()
+        .map_err(|err| format!("Failed to execute git worktree add: {err}"))?;
+
+    if !output.status.success() {
+        let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
+        return Err(format!(
+            "git worktree add failed with status {}: {}",
+            output.status, stderr
+        ));
+    }
+
+    Ok(GitPrepareThreadWorktreeResponse {
+        repo_root: repo_root_str,
+        worktree_path: worktree_path_str,
+        existed: false,
+    })
 }
 
 #[tauri::command]

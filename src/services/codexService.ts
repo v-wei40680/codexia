@@ -12,6 +12,7 @@ import {
   loginChatGpt as tauriLoginChatGpt,
   getAccount as tauriGetAccount,
   reviewStart,
+  gitPrepareThreadWorktree,
 } from './tauri';
 import type {
   ThreadStartParams,
@@ -41,6 +42,23 @@ const sandboxModeToPolicy = (mode: SandboxMode): SandboxPolicy => {
     case 'danger-full-access':
       return { type: 'dangerFullAccess' };
   }
+};
+
+const resolveThreadCwd = (threadId: string): string | null => {
+  const { threads } = useCodexStore.getState();
+  const item = threads.find((thread) => thread.id === threadId);
+  if (!item) {
+    return null;
+  }
+  const cwd = item.cwd?.trim();
+  return cwd ? cwd : null;
+};
+
+const generateThreadWorktreeKey = (): string => {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `thread-${crypto.randomUUID()}`;
+  }
+  return `thread-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 };
 
 export const codexService = {
@@ -165,11 +183,21 @@ export const codexService = {
     try {
       const { model, approvalPolicy, sandbox, reasoningEffort, personality } =
         useConfigStore.getState();
+      const { threadCwdMode } = useConfigStore.getState();
       const { cwd } = useWorkspaceStore.getState();
+      let threadCwd = cwd;
+      if (threadCwdMode === 'worktree' && cwd.trim()) {
+        try {
+          const prepared = await gitPrepareThreadWorktree(cwd, generateThreadWorktreeKey());
+          threadCwd = prepared.worktree_path;
+        } catch (error) {
+          console.warn('[CodexService] Failed to prepare thread worktree, fallback to workspace cwd', error);
+        }
+      }
       const params: ThreadStartParams = {
         model: model,
         modelProvider: 'openai',
-        cwd: cwd,
+        cwd: threadCwd,
         approvalPolicy: approvalPolicy,
         sandbox: sandbox,
         baseInstructions: null,
@@ -212,13 +240,14 @@ export const codexService = {
     const { activeThreadIds, events } = useCodexStore.getState();
     try {
       const { personality } = useConfigStore.getState();
+      const resumeCwd = resolveThreadCwd(threadId);
       const response = await threadResume({
         threadId,
         history: null,
         path: null,
         model: null,
         modelProvider: null,
-        cwd: null,
+        cwd: resumeCwd,
         approvalPolicy: null,
         sandbox: null,
         config: null,
@@ -229,12 +258,16 @@ export const codexService = {
       console.log(response.thread.turns);
 
       const historicalEvents = convertThreadHistoryToEvents(response.thread);
+      const normalized = codexService.normalizeThreadItem(response.thread);
 
       set((state) => ({
         currentThreadId: threadId,
         activeThreadIds: activeThreadIds.includes(threadId)
           ? activeThreadIds
           : [...activeThreadIds, threadId],
+        threads: state.threads.some((thread) => thread.id === threadId)
+          ? state.threads.map((thread) => (thread.id === threadId ? normalized : thread))
+          : [normalized, ...state.threads],
         events: {
           ...events,
           [threadId]: historicalEvents,
@@ -279,7 +312,7 @@ export const codexService = {
       const response = await turnStart({
         threadId,
         input: userInputs,
-        cwd: null,
+        cwd: resolveThreadCwd(threadId),
         approvalPolicy,
         sandboxPolicy: sandboxModeToPolicy(sandbox),
         model: model || null,
