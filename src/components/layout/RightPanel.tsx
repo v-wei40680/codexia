@@ -5,7 +5,7 @@ import { useLayoutStore } from '@/stores/settings';
 import { NoteView } from '@/components/features/notes';
 import { useWorkspaceStore } from '@/stores';
 import { FileViewer } from '@/components/features/files';
-import { GitDiffPanel } from '@/components/features/GitDiffPanel';
+import { GitDiffPanel } from '@/components/features/git';
 import { WebPreview } from '../features/web-preview/WebPreview';
 import { detectWebFramework } from '../features/web-preview/webFrameworkDetection';
 

@@ -1,0 +1,1 @@
+export { GitDiffPanel } from './GitDiffPanel';
