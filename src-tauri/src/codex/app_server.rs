@@ -79,6 +79,9 @@ pub async fn connect_codex(event_sink: Arc<dyn EventSink>) -> Result<Arc<CodexAp
     let mut command = {
         const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
+        let codex_bin = codex_bin.to_string_lossy().replace('\'', "''");
+        let command = format!("& '{}' app-server", codex_bin);
+
         let mut cmd = Command::new("powershell.exe");
         cmd.arg("-NoLogo")
             .arg("-NoProfile")
@@ -86,8 +89,7 @@ pub async fn connect_codex(event_sink: Arc<dyn EventSink>) -> Result<Arc<CodexAp
             .arg("-ExecutionPolicy")
             .arg("Bypass")
             .arg("-Command")
-            .arg("$codex = $args[0]; & $codex app-server")
-            .arg(codex_bin);
+            .arg(command)
         cmd.creation_flags(CREATE_NO_WINDOW);
         cmd
     };
