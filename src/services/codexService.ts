@@ -20,6 +20,7 @@ import type {
   ReviewStartParams,
   SandboxMode,
   SandboxPolicy,
+  ReadOnlyAccess,
 } from '@/bindings/v2';
 import type { ThreadListItem } from '@/types/codex/ThreadListItem';
 import { useCodexStore, useConfigStore } from '@/stores/codex';
