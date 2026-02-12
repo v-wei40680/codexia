@@ -257,7 +257,6 @@ export function InputArea({
           }}
           placeholder="Ask anything..."
           className="min-h-[60px] max-h-[200px] w-full resize-none border-0 shadow-none focus-visible:ring-0 bg-transparent py-4 text-base"
-          disabled={isProcessing}
         />
         <div className="flex justify-between items-center p-0 pl-3 bg-muted/20 rounded-b-xl">
           <div className="flex items-center">{children}</div>
