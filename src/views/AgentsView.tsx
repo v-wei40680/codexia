@@ -115,7 +115,7 @@ export default function AgentsView() {
     <div className="flex h-full flex-col">
       <div className="flex flex-col border-b">
         {/* Tabs for Agent and Instruction Type */}
-        <div className="px-6 pt-4 pb-2">
+        <div className="p-2">
           <div className="flex items-center gap-4">
             <Tabs value={currentAgent} onValueChange={handleAgentChange} className="w-auto">
               <TabsList>
@@ -137,14 +137,8 @@ export default function AgentsView() {
         </div>
 
         {/* File path and Save button */}
-        <div className="flex items-center justify-between px-6 pb-4">
-          <div>
-            <p className="text-xs font-semibold tracking-wider text-muted-foreground">{filePath}</p>
-            <span className="text-sm">
-              Editing {currentInstructionType === 'system' ? 'system' : 'project'} instructions
-              {` (${currentAgent})`}
-            </span>
-          </div>
+        <div className="flex items-center justify-between px-2">
+          <p className="text-xs font-semibold tracking-wider text-muted-foreground">{filePath}</p>
           <Button onClick={handleSave} disabled={loading || saving} variant="secondary">
             {saving ? 'Saving…' : 'Save'}
           </Button>

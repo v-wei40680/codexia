@@ -13,9 +13,34 @@ interface MarkdownProps {
   inline?: boolean;
 }
 
+const WINDOWS_DRIVE_PATTERN = /^[a-z]:[\\/]/i;
+
+function isAbsolutePath(path: string) {
+  return (
+    path.startsWith('/') ||
+    path.startsWith('\\') ||
+    path.startsWith('\\\\') ||
+    WINDOWS_DRIVE_PATTERN.test(path)
+  );
+}
+
+function normalizeFileLinkPath(path: string, cwd: string) {
+  if (!path) {
+    return path;
+  }
+  if (isAbsolutePath(path) || !cwd) {
+    return path;
+  }
+
+  const separator = cwd.includes('\\') && !cwd.includes('/') ? '\\' : '/';
+  const cleanCwd = cwd.replace(/[\\/]+$/, '');
+  const cleanPath = path.replace(/^[.][/\\]/, '').replace(/^[\\/]+/, '');
+  return `${cleanCwd}${separator}${cleanPath}`;
+}
+
 export const Markdown = memo<MarkdownProps>(({ value, className = '', inline = false }) => {
   const { resolvedTheme } = useThemeContext();
-  const { setSelectedFilePath } = useWorkspaceStore();
+  const { cwd, setSelectedFilePath } = useWorkspaceStore();
   const { setActiveRightPanelTab, setRightPanelOpen } = useLayoutStore();
 
   const components = useMemo(
@@ -56,7 +81,7 @@ export const Markdown = memo<MarkdownProps>(({ value, className = '', inline = f
                   candidatePath = decodeURIComponent(hrefPath.replace(/^file:\/\//i, ''));
                 }
 
-                const resolvedPath = candidatePath;
+                const resolvedPath = normalizeFileLinkPath(candidatePath, cwd);
                 setSelectedFilePath(resolvedPath);
                 setRightPanelOpen(true);
                 setActiveRightPanelTab('files');
@@ -71,7 +96,7 @@ export const Markdown = memo<MarkdownProps>(({ value, className = '', inline = f
         );
       },
     }),
-    [setActiveRightPanelTab, setRightPanelOpen, setSelectedFilePath]
+    [cwd, setActiveRightPanelTab, setRightPanelOpen, setSelectedFilePath]
   );
 
   return (
