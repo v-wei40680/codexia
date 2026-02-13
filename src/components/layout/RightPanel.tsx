@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Chrome, Files, GitBranch, StickyNote } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { useLayoutStore } from '@/stores/settings';
 import { NoteView } from '@/components/features/notes';
 import { useWorkspaceStore } from '@/stores';
@@ -43,26 +42,6 @@ export function RightPanel() {
         onValueChange={(value) => setActiveRightPanelTab(value as typeof activeRightPanelTab)}
         className="flex flex-col h-full min-h-0 gap-0"
       >
-        <div
-          className="flex items-center justify-between h-11 px-3 border-b border-white/10"
-          data-tauri-drag-region
-        >
-          <TabsList className="h-9 bg-transparent">
-            <TabsTrigger value="diff" className="h-8 w-9 px-0" title="Diff">
-              <GitBranch className="h-4 w-4" />
-            </TabsTrigger>
-            <TabsTrigger value="note" className="h-8 w-9 px-0" title="Notes">
-              <StickyNote className="h-4 w-4" />
-            </TabsTrigger>
-            <TabsTrigger value="files" className="h-8 w-9 px-0" title="Files">
-              <Files className="h-4 w-4" />
-            </TabsTrigger>
-            <TabsTrigger value="webpreview" className="h-8 w-9 px-0" title="Web Preview">
-              <Chrome className="h-4 w-4" />
-            </TabsTrigger>
-          </TabsList>
-        </div>
-
         <div className="flex-1 min-h-0 flex overflow-hidden">
           <div className="flex-1 min-w-0 min-h-0 overflow-hidden">
             <TabsContent

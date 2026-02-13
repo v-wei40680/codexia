@@ -153,6 +153,9 @@ export function AppLayout() {
   };
 
   const handleRightPanelResize = (size: number) => {
+    if (!isRightPanelOpen || size <= 0) {
+      return;
+    }
     const nextSize = clamp(size, MIN_RIGHT_PANEL_SIZE, MAX_RIGHT_PANEL_SIZE);
     if (nextSize !== rightPanelSize) {
       setRightPanelSize(nextSize);
@@ -192,16 +195,16 @@ export function AppLayout() {
             <ResizableHandle className="w-2 -ml-1 bg-transparent hover:bg-border/60 cursor-col-resize" />
             <ResizablePanel defaultSize={100 - sidebarPercent} minSize={50}>
               <main className="bg-background relative flex w-full flex-1 flex-col min-w-0 h-full">
+                <MainHeader
+                  isTerminalOpen={isTerminalOpen}
+                  onToggleTerminal={() => setIsTerminalOpen((prev) => !prev)}
+                />
                 <ResizablePanelGroup
                   direction="horizontal"
-                  className="flex h-full min-h-0 min-w-0 w-full flex-1"
+                  className="flex min-h-0 min-w-0 w-full flex-1"
                 >
                   <ResizablePanel defaultSize={isRightPanelOpen ? 32 : 100} minSize={25}>
                     <div className="flex flex-col min-w-0 h-full">
-                      <MainHeader
-                        isTerminalOpen={isTerminalOpen}
-                        onToggleTerminal={() => setIsTerminalOpen((prev) => !prev)}
-                      />
                       <div className="min-h-0 flex-1">
                         {view === 'agents' && <AgentsView />}
                         {view === 'automate' && <AutoMateView />}

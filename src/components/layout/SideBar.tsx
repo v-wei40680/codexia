@@ -36,6 +36,7 @@ export function SideBar() {
     isSidebarOpen,
     setSidebarOpen,
     setView,
+    view,
     activeSidebarTab,
     setActiveSidebarTab,
     setActiveRightPanelTab,
@@ -107,7 +108,7 @@ export function SideBar() {
   }, [addProject]);
 
   return (
-    <div className="flex h-full w-[var(--sidebar-width)] min-w-[var(--sidebar-width)] max-w-[var(--sidebar-width)] flex-col border-r border-sidebar-border">
+    <div className="flex h-full w-[var(--sidebar-width)] min-w-[var(--sidebar-width)] max-w-[var(--sidebar-width)] flex-col border-r border-sidebar-border bg-zinc-100/95 dark:bg-zinc-900/95">
       <div className="gap-1 p-2 flex flex-col">
         <div className="flex items-center gap-2 pl-20" data-tauri-drag-region>
           <Button
@@ -144,7 +145,11 @@ export function SideBar() {
           <Button
             variant="ghost"
             size="sm"
-            className="justify-start gap-2 h-8"
+            className={`h-8 justify-start gap-2 rounded-md border ${
+              view === 'automate'
+                ? 'border-border bg-accent/70 text-foreground'
+                : 'border-transparent hover:border-border/60'
+            }`}
             onClick={() => setView('automate')}
           >
             <Terminal className="h-4 w-4" />
@@ -153,7 +158,11 @@ export function SideBar() {
           <Button
             variant="ghost"
             size="sm"
-            className="justify-start gap-2 h-8"
+            className={`h-8 justify-start gap-2 rounded-md border ${
+              view === 'marketplace'
+                ? 'border-border bg-accent/70 text-foreground'
+                : 'border-transparent hover:border-border/60'
+            }`}
             onClick={() => setView('marketplace')}
           >
             <Package /> Skills | MCP | Prompt
@@ -362,7 +371,19 @@ export function SideBar() {
 
       <div className="min-h-0 min-w-0 max-w-full overflow-x-hidden flex justify-between items-center gap-2">
         <UserInfo />
-        <Button variant="ghost" size="icon" title="open learn view" onClick={() => { setView('learn'); }}>
+        <Button
+          variant="ghost"
+          size="icon"
+          title="open learn view"
+          className={`rounded-md border ${
+            view === 'learn'
+              ? 'border-border bg-accent/70 text-foreground'
+              : 'border-transparent hover:border-border/60'
+          }`}
+          onClick={() => {
+            setView('learn');
+          }}
+        >
           <BookOpen />
         </Button>
       </div>
