@@ -9,7 +9,7 @@ import {
   SquarePen,
   Terminal,
 } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
 import { useLayoutStore } from '@/stores';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,8 @@ import { ClaudeCodeSessionList } from '../cc/SessionList';
 import { FileTree } from '../features/files/explorer';
 import { UpdateButton } from '../features/UpdateButton';
 import { getFilename } from '@/utils/getFilename';
+import { getSessions, SessionData } from '@/lib/sessions';
+import { useCCStore } from '@/stores/ccStore';
 
 export function SideBar() {
   const { cwd, setCwd, selectedAgent, setSelectedAgent, projects, addProject, setInstructionType } =
@@ -42,9 +44,45 @@ export function SideBar() {
   } = useLayoutStore();
   const { searchTerm, setSearchTerm, handleNewThread, handleMenu } = useThreadList();
   const { handleSessionSelect, handleNewSession } = useCCSessionManager();
+  const { activeSessionId } = useCCStore();
   const { hasUpdate, startUpdate } = useUpdater({ enabled: true });
   const [expandedProjects, setExpandedProjects] = useState<Record<string, boolean>>({});
+  const [ccSessions, setCcSessions] = useState<SessionData[]>([]);
+  const [ccLoading, setCcLoading] = useState(false);
+  const [ccError, setCcError] = useState<string | null>(null);
   const sortedProjects = useMemo(() => projects, [projects]);
+
+  useEffect(() => {
+    if (activeSidebarTab !== 'cc') {
+      return;
+    }
+    let cancelled = false;
+
+    const loadSessions = async () => {
+      setCcLoading(true);
+      setCcError(null);
+      try {
+        const sessions = await getSessions();
+        if (!cancelled) {
+          setCcSessions(sessions);
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : 'Failed to load sessions';
+        if (!cancelled) {
+          setCcError(message);
+        }
+      } finally {
+        if (!cancelled) {
+          setCcLoading(false);
+        }
+      }
+    };
+
+    void loadSessions();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeSidebarTab, activeSessionId]);
 
   const handleCreateNew = useCallback(async () => {
     if (selectedAgent === 'cc') {
@@ -228,8 +266,84 @@ export function SideBar() {
             </div>
           )}
           {activeSidebarTab === 'cc' && (
-            <div className="w-full min-w-0 max-w-full overflow-x-hidden">
-              <ClaudeCodeSessionList onSelectSession={handleSessionSelect} />
+            <div className="flex min-h-0 w-full flex-col gap-2 px-2 pb-2">
+              {ccLoading && (
+                <div className="rounded-lg border border-sidebar-border bg-sidebar/30 px-3 py-3 text-xs text-muted-foreground">
+                  Loading sessions...
+                </div>
+              )}
+              {ccError && (
+                <div className="rounded-lg border border-destructive/30 bg-destructive/10 px-3 py-3 text-xs text-destructive">
+                  Error: {ccError}
+                </div>
+              )}
+              {!ccLoading &&
+                !ccError &&
+                sortedProjects.map((project) => (
+                  <Collapsible
+                    key={project}
+                    open={expandedProjects[project] ?? true}
+                    onOpenChange={(open) =>
+                      setExpandedProjects((prev) => ({ ...prev, [project]: open }))
+                    }
+                    className="rounded-lg border border-sidebar-border bg-sidebar/30"
+                  >
+                    <div
+                      className={`flex items-center gap-1 rounded-t-lg px-2 py-1.5 text-xs transition-colors ${cwd === project
+                        ? 'bg-accent text-foreground'
+                        : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                        }`}
+                      title={project}
+                    >
+                      <CollapsibleTrigger className="flex min-w-0 flex-1 items-center gap-1 text-left">
+                        <ChevronRight
+                          className={`h-3.5 w-3.5 shrink-0 transition-transform ${(expandedProjects[project] ?? true) ? 'rotate-90' : ''}`}
+                        />
+                        <span className="truncate font-medium">{getFilename(project) || project}</span>
+                      </CollapsibleTrigger>
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
+                        title={`Set Agent Instructions`}
+                        onClick={() => {
+                          setCwd(project);
+                          setView('agents');
+                          setInstructionType('project');
+                        }}
+                        className="shrink-0"
+                      >
+                        <ScrollText />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
+                        title={`Start new session in ${getFilename(project) || project}`}
+                        onClick={async () => {
+                          setSelectedAgent('cc');
+                          setActiveSidebarTab('cc');
+                          setView('cc');
+                          setCwd(project);
+                          await handleNewSession();
+                        }}
+                        className="shrink-0"
+                      >
+                        <SquarePen />
+                      </Button>
+                    </div>
+                    <CollapsibleContent className="border-t border-sidebar-border px-1 pb-1 pt-1">
+                      <ClaudeCodeSessionList
+                        project={project}
+                        sessions={ccSessions}
+                        onSelectSession={handleSessionSelect}
+                      />
+                    </CollapsibleContent>
+                  </Collapsible>
+                ))}
+              {!ccLoading && !ccError && sortedProjects.length === 0 && (
+                <div className="rounded-lg border border-sidebar-border bg-sidebar/30 px-3 py-3 text-xs text-muted-foreground">
+                  No projects yet.
+                </div>
+              )}
             </div>
           )}
           {activeSidebarTab === 'explorer' && (
