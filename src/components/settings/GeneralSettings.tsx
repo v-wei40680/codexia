@@ -14,7 +14,6 @@ import { LanguageSelector } from './LanguageSelector';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
 import { Introduce } from '../common/Introduce';
-import { RateLimitSettings } from './RateLimitSettings';
 
 const ACCENT_OPTIONS: Array<{ value: Accent; label: string; colorClass: string }> = [
   { value: 'black', label: 'Noir', colorClass: 'bg-slate-800' },
@@ -34,7 +33,6 @@ export function GeneralSettings() {
 
   return (
     <div className="space-y-6">
-      <RateLimitSettings />
       <section className="space-y-3">
         <h3 className="text-sm font-medium px-1">Appearance</h3>
         <Card>
