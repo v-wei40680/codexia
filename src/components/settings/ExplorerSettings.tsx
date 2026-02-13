@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,7 +8,6 @@ import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { X } from 'lucide-react';
 import { useSettingsStore } from '@/stores/settings';
-import { emit } from '@tauri-apps/api/event';
 
 export function ExplorerSettings() {
   const {
@@ -22,10 +21,6 @@ export function ExplorerSettings() {
   const [draftHiddenNames, setDraftHiddenNames] = useState('');
   const hasHiddenNames = hiddenNames.length > 0;
   const placeholder = useMemo(() => hiddenNames.join(', '), [hiddenNames]);
-
-  useEffect(() => {
-    void emit('settings:show-explorer', { showExplorer });
-  }, [showExplorer]);
 
   const handleHiddenNamesSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
