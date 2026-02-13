@@ -1,19 +1,10 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import { Sun, Moon, Monitor } from 'lucide-react';
 import { useThemeStore, type Theme, type Accent } from '@/stores/settings';
-import { useSettingsStore, type TaskDetail } from '@/stores/settings';
 import { LanguageSelector } from './LanguageSelector';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
-import { Introduce } from '../common/Introduce';
 
 const ACCENT_OPTIONS: Array<{ value: Accent; label: string; colorClass: string }> = [
   { value: 'black', label: 'Noir', colorClass: 'bg-slate-800' },
@@ -27,8 +18,6 @@ const ACCENT_OPTIONS: Array<{ value: Accent; label: string; colorClass: string }
 export function GeneralSettings() {
   const { theme, setTheme, accent, setAccent } = useThemeStore();
   const handleThemeChange = (value: string) => setTheme(value as Theme);
-  const { taskDetail, setTaskDetail } = useSettingsStore();
-  const handleTaskDetailChange = (value: string) => setTaskDetail(value as TaskDetail);
   const { t } = useTranslation();
 
   return (
@@ -96,26 +85,6 @@ export function GeneralSettings() {
             </div>
             <div className="h-px bg-border" />
             <LanguageSelector />
-            <div className="h-px bg-border" />
-            <div className="flex items-center justify-between">
-              <div className="space-y-0.5">
-                <div className="text-sm font-medium">Task detail</div>
-                <div className="text-xs text-muted-foreground">
-                  Choose how much command output to show in tasks.
-                </div>
-              </div>
-              <Select defaultValue={taskDetail} onValueChange={handleTaskDetailChange}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="steps">Steps</SelectItem>
-                  <SelectItem value="stepsWithCommand">Steps with code commands</SelectItem>
-                  <SelectItem value="stepsWithOutput">Steps with code output</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <Introduce />
           </CardContent>
         </Card>
       </section>

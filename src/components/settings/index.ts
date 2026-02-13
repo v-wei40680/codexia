@@ -1,4 +1,3 @@
-export { RateLimitSettings } from './RateLimitSettings';
 export * from './codex';
 export * from './ExplorerSettings';
 export * from './GeneralSettings';

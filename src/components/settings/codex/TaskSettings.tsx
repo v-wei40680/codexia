@@ -1,29 +1,49 @@
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from '@/components/ui/accordion';
-import { SimpleGitWorktreeSettings } from '../settings/GitWorktreeSettings';
 import { Switch } from '@/components/ui/switch';
-import { useSettingsStore } from '@/stores/settings';
+import { useSettingsStore, type TaskDetail } from '@/stores/settings';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Github, Twitter } from 'lucide-react';
 
-export function Introduce() {
+export function TaskSettings() {
   const {
     enableTaskCompleteBeep,
     setEnableTaskCompleteBeep,
     preventSleepDuringTasks,
     setPreventSleepDuringTasks,
+    taskDetail,
+    setTaskDetail,
   } = useSettingsStore();
+  const handleTaskDetailChange = (value: string) => setTaskDetail(value as TaskDetail);
 
   return (
-    <Accordion type="single" collapsible className="w-full px-2 sm:px-4" defaultValue="item-2">
-      <AccordionItem value="item-2">
-        <AccordionTrigger className="text-sm sm:text-base">Task</AccordionTrigger>
-        <AccordionContent className="flex flex-col gap-3 sm:gap-4 text-balance">
-          <SimpleGitWorktreeSettings />
+    <div className="w-full px-2 sm:px-4 space-y-6">
+      <section className="space-y-3">
+        <h3 className="text-sm sm:text-base font-medium">Task</h3>
+        <div className="flex flex-col gap-3 sm:gap-4 text-balance">
+          <div className="flex items-center justify-between gap-3 rounded-md border p-3 sm:p-4">
+            <div className="space-y-0.5">
+              <p className="text-xs sm:text-sm font-medium">Task detail</p>
+              <p className="text-xs text-muted-foreground">
+                Choose how much command output to show in tasks.
+              </p>
+            </div>
+            <Select defaultValue={taskDetail} onValueChange={handleTaskDetailChange}>
+              <SelectTrigger className="w-[220px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="steps">Steps</SelectItem>
+                <SelectItem value="stepsWithCommand">Steps with code commands</SelectItem>
+                <SelectItem value="stepsWithOutput">Steps with code output</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <div className="flex items-start justify-between gap-2 sm:gap-4 rounded-md border p-3 sm:p-4">
             <div className="flex-1 min-w-0">
               <p className="text-xs sm:text-sm font-medium">Task completion beep</p>
@@ -50,13 +70,11 @@ export function Introduce() {
               className="flex-shrink-0"
             />
           </div>
-        </AccordionContent>
-      </AccordionItem>
-      <AccordionItem value="item-3">
-        <AccordionTrigger className="text-sm sm:text-base">
-          Keep in touch and community
-        </AccordionTrigger>
-        <AccordionContent className="flex flex-wrap gap-2 text-balance">
+        </div>
+      </section>
+      <section className="space-y-3">
+        <h3 className="text-sm sm:text-base font-medium">Keep in touch and community</h3>
+        <div className="flex flex-wrap gap-2 text-balance">
           <Button
             onClick={() => open('https://github.com/milisp/codexia/discussions')}
             size="sm"
@@ -104,8 +122,8 @@ export function Introduce() {
             <img src="/reddit.svg" height={16} width={16} alt="Reddit" />
             <span className="ml-2">r/codex</span>
           </Button>
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
+        </div>
+      </section>
+    </div>
   );
 }

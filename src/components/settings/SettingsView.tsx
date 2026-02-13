@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronDown, ChevronLeft } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
@@ -10,6 +10,7 @@ import {
 } from '@/components/ui/sidebar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { GeneralSettings } from './GeneralSettings';
 import { ExplorerSettings } from './ExplorerSettings';
 import { useLayoutStore } from '@/stores/settings';
@@ -17,7 +18,7 @@ import { ConfigSettings, ArchivedThreadSettings, PersonalizationSettings } from 
 import { CodexAuth } from '../codex/CodexAuth';
 import { QuoteSettings } from './QuoteSettings';
 import { ProjectsSettings } from './ProjectsSettings';
-import { RateLimitSettings } from './RateLimitSettings';
+import { RateLimitSettings, TaskSettings } from './codex';
 
 type SettingsSection =
   | 'general'
@@ -27,11 +28,28 @@ type SettingsSection =
   | 'personalization'
   | 'archived'
   | 'explorer'
-  | 'quote';
+  | 'quote'
+  | 'task';
+
+const codexSections = ['codexauth', 'task', 'config', 'personalization', 'archived'] as const;
+const topLevelSections = ['general', 'projects', 'explorer', 'quote'] as const;
+
+const sectionLabel: Record<SettingsSection, string> = {
+  general: 'General',
+  projects: 'Projects',
+  codexauth: 'Codex auth',
+  config: 'Configuration',
+  personalization: 'Personalization',
+  archived: 'Archived threads',
+  explorer: 'Explorer',
+  quote: 'Quote',
+  task: 'Task',
+};
 
 export function SettingsView() {
   const { setView } = useLayoutStore();
   const [activeSection, setActiveSection] = useState<SettingsSection>('general');
+  const [codexOpen, setCodexOpen] = useState(true);
 
   return (
     <SidebarProvider
@@ -61,39 +79,50 @@ export function SettingsView() {
         <SidebarContent className="min-h-0 min-w-0 max-w-full overflow-x-hidden">
           <ScrollArea className="flex-1 min-h-0 min-w-0 max-w-full overflow-x-hidden">
             <ul className="space-y-1 px-2 text-sm">
-              {(
-                [
-                  'general',
-                  'projects',
-                  'codexauth',
-                  'config',
-                  'personalization',
-                  'archived',
-                  'explorer',
-                  'quote',
-                ] as const
-              ).map((section) => (
+              {topLevelSections.map((section) => (
                 <li key={section}>
                   <button
                     type="button"
                     onClick={() => setActiveSection(section)}
-                    className={`w-full rounded-lg px-3 py-2 text-left transition-colors ${
-                      activeSection === section
-                        ? 'bg-accent text-foreground'
-                        : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
-                    }`}
+                    className={`w-full rounded-lg px-3 py-2 text-left transition-colors ${activeSection === section
+                      ? 'bg-accent text-foreground'
+                      : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                      }`}
                   >
-                    {section === 'general' && 'General'}
-                    {section === 'projects' && 'Projects'}
-                    {section === 'codexauth' && 'Codex auth'}
-                    {section === 'config' && 'Configuration'}
-                    {section === 'personalization' && 'Personalization'}
-                    {section === 'archived' && 'Archived threads'}
-                    {section === 'explorer' && 'Explorer'}
-                    {section === 'quote' && 'Quote'}
+                    {sectionLabel[section]}
                   </button>
                 </li>
               ))}
+              <li>
+                <Collapsible open={codexOpen} onOpenChange={setCodexOpen}>
+                  <CollapsibleTrigger asChild>
+                    <button
+                      type="button"
+                      className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-left text-muted-foreground transition-colors hover:bg-accent/50 hover:text-foreground"
+                    >
+                      <span>Codex</span>
+                      <ChevronDown
+                        className={`h-4 w-4 transition-transform ${codexOpen ? 'rotate-180' : ''}`}
+                      />
+                    </button>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent className="space-y-1 pt-1">
+                    {codexSections.map((section) => (
+                      <button
+                        key={section}
+                        type="button"
+                        onClick={() => setActiveSection(section)}
+                        className={`w-full rounded-lg px-6 py-2 text-left transition-colors ${activeSection === section
+                          ? 'bg-accent text-foreground'
+                          : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                          }`}
+                      >
+                        {sectionLabel[section]}
+                      </button>
+                    ))}
+                  </CollapsibleContent>
+                </Collapsible>
+              </li>
             </ul>
           </ScrollArea>
         </SidebarContent>
@@ -113,6 +142,7 @@ export function SettingsView() {
             {activeSection === 'archived' && <ArchivedThreadSettings />}
             {activeSection === 'explorer' && <ExplorerSettings />}
             {activeSection === 'quote' && <QuoteSettings />}
+            {activeSection === 'task' && <TaskSettings />}
           </div>
         </div>
       </SidebarInset>
