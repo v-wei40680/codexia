@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export type TaskDetail = 'steps' | 'stepsWithCommand' | 'stepsWithOutput';
+export type TaskCompleteBeepMode = 'never' | 'unfocused' | 'always';
 
 export interface SettingState {
   isCoworkMode: boolean;
@@ -17,13 +18,17 @@ export interface SettingState {
   setTaskDetail: (taskDetail: TaskDetail) => void;
   autoCommitGitWorktree: boolean;
   setAutoCommitGitWorktree: (enabled: boolean) => void;
-  enableTaskCompleteBeep: boolean;
-  setEnableTaskCompleteBeep: (enabled: boolean) => void;
+  enableTaskCompleteBeep: TaskCompleteBeepMode;
+  setEnableTaskCompleteBeep: (mode: TaskCompleteBeepMode) => void;
   preventSleepDuringTasks: boolean;
   setPreventSleepDuringTasks: (enabled: boolean) => void;
   enabledQuoteCategories: string[];
   setEnabledQuoteCategories: (categories: string[]) => void;
 }
+
+type LegacySettingState = {
+  enableTaskCompleteBeep?: boolean | TaskCompleteBeepMode;
+};
 
 const DEFAULT_HIDDEN_NAMES = [
   'node_modules',
@@ -58,7 +63,7 @@ export const useSettingsStore = create<SettingState>()(
       setShowExplorer: (showExplorer: boolean) => set({ showExplorer }),
       setTaskDetail: (taskDetail: TaskDetail) => set({ taskDetail }),
       autoCommitGitWorktree: true,
-      enableTaskCompleteBeep: true,
+      enableTaskCompleteBeep: 'always',
       preventSleepDuringTasks: true,
       enabledQuoteCategories: [
         'economics',
@@ -71,13 +76,32 @@ export const useSettingsStore = create<SettingState>()(
         'programming',
       ],
       setAutoCommitGitWorktree: (enabled: boolean) => set({ autoCommitGitWorktree: enabled }),
-      setEnableTaskCompleteBeep: (enabled: boolean) => set({ enableTaskCompleteBeep: enabled }),
+      setEnableTaskCompleteBeep: (mode: TaskCompleteBeepMode) =>
+        set({ enableTaskCompleteBeep: mode }),
       setPreventSleepDuringTasks: (enabled: boolean) => set({ preventSleepDuringTasks: enabled }),
       setEnabledQuoteCategories: (categories: string[]) =>
         set({ enabledQuoteCategories: categories }),
     }),
     {
       name: 'settings-storage',
+      version: 2,
+      migrate: (persistedState, version) => {
+        if (!persistedState) {
+          return persistedState;
+        }
+
+        if (version < 2) {
+          const state = persistedState as LegacySettingState & Record<string, unknown>;
+          if (typeof state.enableTaskCompleteBeep === 'boolean') {
+            return {
+              ...state,
+              enableTaskCompleteBeep: state.enableTaskCompleteBeep ? 'always' : 'never',
+            };
+          }
+        }
+
+        return persistedState;
+      },
     }
   )
 );

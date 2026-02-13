@@ -1,5 +1,5 @@
 import { Switch } from '@/components/ui/switch';
-import { useSettingsStore, type TaskDetail } from '@/stores/settings';
+import { useSettingsStore, type TaskCompleteBeepMode, type TaskDetail } from '@/stores/settings';
 import { Button } from '@/components/ui/button';
 import {
   Select,
@@ -20,6 +20,8 @@ export function TaskSettings() {
     setTaskDetail,
   } = useSettingsStore();
   const handleTaskDetailChange = (value: string) => setTaskDetail(value as TaskDetail);
+  const handleTaskCompleteBeepChange = (value: string) =>
+    setEnableTaskCompleteBeep(value as TaskCompleteBeepMode);
 
   return (
     <div className="w-full px-2 sm:px-4 space-y-6">
@@ -51,11 +53,16 @@ export function TaskSettings() {
                 Play a short tone when tasks finish so you can focus away from the screen.
               </p>
             </div>
-            <Switch
-              checked={enableTaskCompleteBeep}
-              onCheckedChange={setEnableTaskCompleteBeep}
-              className="flex-shrink-0"
-            />
+            <Select value={enableTaskCompleteBeep} onValueChange={handleTaskCompleteBeepChange}>
+              <SelectTrigger className="w-[220px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="never">Never</SelectItem>
+                <SelectItem value="unfocused">Only when unfocused</SelectItem>
+                <SelectItem value="always">Always</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
           <div className="flex items-start justify-between gap-2 sm:gap-4 rounded-md border p-3 sm:p-4">
             <div className="flex-1 min-w-0">

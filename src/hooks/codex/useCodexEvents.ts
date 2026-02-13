@@ -7,12 +7,31 @@ import {
   type ApprovalRequest,
   type RequestUserInputRequest,
 } from '@/stores/codex';
+import { useLayoutStore, useSettingsStore } from '@/stores/settings';
 import type { ServerNotification } from '@/bindings/ServerNotification';
+import { playBeep } from '@/utils/beep';
+import { allowSleep, preventSleep } from '@/services/tauri';
+
+function shouldPlayCompletionBeep(
+  mode: 'never' | 'unfocused' | 'always',
+  isChatInterfaceActive: boolean
+) {
+  if (mode === 'never') {
+    return false;
+  }
+  if (mode === 'always') {
+    return true;
+  }
+  return document.hidden || !document.hasFocus() || !isChatInterfaceActive;
+}
 
 export function useCodexEvents(enabled = true) {
   const { addEvent } = useCodexStore();
   const { addApproval } = useApprovalStore();
   const { addRequest } = useRequestUserInputStore();
+  const taskCompleteBeepMode = useSettingsStore((state) => state.enableTaskCompleteBeep);
+  const preventSleepDuringTasks = useSettingsStore((state) => state.preventSleepDuringTasks);
+  const isChatInterfaceActive = useLayoutStore((state) => state.view === 'codex');
 
   useEffect(() => {
     if (!enabled) {
@@ -83,6 +102,33 @@ export function useCodexEvents(enabled = true) {
               }));
             }
           }
+
+          if (preventSleepDuringTasks && payload.method === 'turn/started') {
+            void preventSleep(threadId).catch((error) => {
+              console.warn('[useCodexEvents] preventSleep failed:', error);
+            });
+          }
+
+          if (payload.method === 'turn/completed') {
+            void allowSleep(threadId).catch((error) => {
+              console.warn('[useCodexEvents] allowSleep failed:', error);
+            });
+
+            const turnStatus = (payload.params as any)?.turn?.status;
+            if (
+              turnStatus === 'completed' &&
+              shouldPlayCompletionBeep(taskCompleteBeepMode, isChatInterfaceActive)
+            ) {
+              playBeep();
+            }
+          }
+
+          if (payload.method === 'error') {
+            void allowSleep(threadId).catch((error) => {
+              console.warn('[useCodexEvents] allowSleep failed:', error);
+            });
+          }
+
           addEvent(threadId, payload);
         } else {
           if (payload.method !== 'account/rateLimits/updated') {
@@ -98,5 +144,13 @@ export function useCodexEvents(enabled = true) {
         unlisteners.forEach((unlisten) => unlisten());
       });
     };
-  }, [addEvent, addApproval, addRequest, enabled]);
+  }, [
+    addEvent,
+    addApproval,
+    addRequest,
+    enabled,
+    taskCompleteBeepMode,
+    preventSleepDuringTasks,
+    isChatInterfaceActive,
+  ]);
 }

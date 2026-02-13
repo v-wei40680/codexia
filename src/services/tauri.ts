@@ -385,6 +385,20 @@ export async function respondToFileChangeApproval(
   });
 }
 
+export async function preventSleep(conversationId?: string | null) {
+  if (isTauri()) {
+    return await invokeTauri<void>('prevent_sleep', { conversationId: conversationId ?? null });
+  }
+  return;
+}
+
+export async function allowSleep(conversationId?: string | null) {
+  if (isTauri()) {
+    return await invokeTauri<void>('allow_sleep', { conversationId: conversationId ?? null });
+  }
+  return;
+}
+
 export type TauriFileEntry = {
   name: string;
   path: string;
