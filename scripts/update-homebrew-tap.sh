@@ -5,45 +5,60 @@ if [ -z "${GITHUB_TOKEN:-}" ]; then
   echo "GITHUB_TOKEN is not set"
   exit 1
 fi
+
+# Fetch the latest release information
 curl -f -L \
   -H "Authorization: Bearer ${GITHUB_TOKEN}" \
   -H "Accept: application/vnd.github+json" \
   "https://api.github.com/repos/milisp/codexia/releases/latest" > release.json
-RELEASE_JSON="release.json"
 
-if [ ! -f "$RELEASE_JSON" ]; then
-  echo "Error: $RELEASE_JSON not found. Please ensure it exists."
+if [ ! -f "release.json" ]; then
+  echo "Error: release.json not found. Please ensure it exists."
   exit 1
 fi
 
-VERSION=$(jq -r '.tag_name' "$RELEASE_JSON")
-
-git clone https://x-access-token:${GITHUB_TOKEN}@github.com/milisp/homebrew-codexia.git
-cd homebrew-codexia
+# Extract version
+VERSION=$(jq -r '.tag_name' release.json)
 
 # Extract SHAs from release.json
-# content is like "sha256:..." so we cut the prefix
-ARM_SHA=$(jq -r '.assets[] | select(.name | contains("aarch64")) | .digest' "$RELEASE_JSON" | cut -d: -f2)
-INTEL_SHA=$(jq -r '.assets[] | select(.name | contains("x64")) | .digest' "$RELEASE_JSON" | cut -d: -f2)
+# The digest field format is "sha256:..." so we cut the prefix
+ARM_SHA=$(jq -r '.assets[] | select(.name | contains("aarch64") and endswith(".dmg")) | .digest' release.json | cut -d: -f2)
+INTEL_SHA=$(jq -r '.assets[] | select(.name | contains("x64") and endswith(".dmg")) | .digest' release.json | cut -d: -f2)
 
 if [ -z "$ARM_SHA" ] || [ -z "$INTEL_SHA" ]; then
-  echo "Error: Could not extract SHAs from $RELEASE_JSON"
+  echo "Error: Could not extract SHAs from release.json"
+  echo "ARM SHA: $ARM_SHA"
+  echo "Intel SHA: $INTEL_SHA"
   exit 1
 fi
 
 echo "Updating to version $VERSION"
-echo "Intel SHA: $INTEL_SHA"
-echo "ARM SHA: $ARM_SHA"
+echo "Intel SHA256: $INTEL_SHA"
+echo "ARM SHA256: $ARM_SHA"
 
-# Determine the file to update. Prefer Casks/codexia.rb, fallback to scripts/codexia.rb if user hinted at that structure
+# Clone the Homebrew tap repository
+git clone https://x-access-token:${GITHUB_TOKEN}@github.com/milisp/homebrew-codexia.git
+cd homebrew-codexia
+
+# Determine the file to update
 TARGET_FILE="Casks/codexia.rb"
 
-sed -i '' "s/version \".*\"/version \"${VERSION}\"/" "$TARGET_FILE"
-sed -i '' "/on_intel do/,/end/ s/sha256 \".*\"/sha256 \"${INTEL_SHA}\"/" "$TARGET_FILE"
-sed -i '' "/on_arm do/,/end/ s/sha256 \".*\"/sha256 \"${ARM_SHA}\"/" "$TARGET_FILE"
+if [ ! -f "$TARGET_FILE" ]; then
+  echo "Error: $TARGET_FILE not found in homebrew-codexia repo"
+  exit 1
+fi
 
+# Update version and SHA256 values
+# Note: Using Linux-compatible sed syntax (without empty string after -i)
+sed -i "s/version \".*\"/version \"${VERSION}\"/" "$TARGET_FILE"
+sed -i "/on_intel do/,/end/ s/sha256 \".*\"/sha256 \"${INTEL_SHA}\"/" "$TARGET_FILE"
+sed -i "/on_arm do/,/end/ s/sha256 \".*\"/sha256 \"${ARM_SHA}\"/" "$TARGET_FILE"
+
+# Commit and push changes
 git config user.name "github-actions[bot]"
 git config user.email "github-actions[bot]@users.noreply.github.com"
 git add "$TARGET_FILE"
-git commit -m "chore(cask): bump homebrew tap codexia to v${VERSION}"
+git commit -m "chore(cask): bump codexia to ${VERSION}"
 git push
+
+echo "Successfully updated Homebrew tap to ${VERSION}"
