@@ -37,7 +37,7 @@ export function FileViewer({ filePath, addToNotepad }: FileViewerProps) {
   const [diskChanged, setDiskChanged] = useState(false);
   const prevWatchedDirRef = useRef<string | null>(null);
   const [canonicalFile, setCanonicalFile] = useState<string | null>(null);
-  const { theme } = useThemeContext();
+  const { resolvedTheme } = useThemeContext();
   const { setInputValue } = useInputStore();
 
   const getFileExtension = () => {
@@ -255,10 +255,10 @@ export function FileViewer({ filePath, addToNotepad }: FileViewerProps) {
 
   return (
     <div
-      className={`flex flex-col h-full border-l min-w-0 ${theme === 'dark' ? 'border-border' : 'border-gray-200'}`}
+      className={`flex flex-col h-full border-l min-w-0 ${resolvedTheme === 'dark' ? 'border-border' : 'border-gray-200'}`}
     >
       <div
-        className={`flex items-center justify-between p-3 border-b ${theme === 'dark' ? 'border-border bg-card' : 'border-gray-200 bg-gray-50'}`}
+        className={`flex items-center justify-between p-3 border-b ${resolvedTheme === 'dark' ? 'border-border bg-card' : 'border-gray-200 bg-gray-50'}`}
       >
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-sm font-medium truncate" title={filePath}>
@@ -267,7 +267,7 @@ export function FileViewer({ filePath, addToNotepad }: FileViewerProps) {
         </div>
         <div className="flex items-center gap-1">
           {selectedText && (
-            <span className={`text-xs mr-2 ${theme === 'dark' ? 'text-primary' : 'text-blue-600'}`}>
+            <span className={`text-xs mr-2 ${resolvedTheme === 'dark' ? 'text-primary' : 'text-blue-600'}`}>
               {selectedText.length} chars selected
             </span>
           )}
@@ -336,7 +336,7 @@ export function FileViewer({ filePath, addToNotepad }: FileViewerProps) {
       <div className="flex-1 overflow-hidden">
         {diskChanged && (
           <div
-            className={`px-3 py-2 text-xs flex items-center justify-between ${theme === 'dark' ? 'bg-amber-950 text-amber-300' : 'bg-amber-50 text-amber-800'}`}
+            className={`px-3 py-2 text-xs flex items-center justify-between ${resolvedTheme === 'dark' ? 'bg-amber-950 text-amber-300' : 'bg-amber-50 text-amber-800'}`}
           >
             <span>File changed on disk.</span>
             <div className="space-x-2">
@@ -356,13 +356,13 @@ export function FileViewer({ filePath, addToNotepad }: FileViewerProps) {
         )}
         {loading ? (
           <div
-            className={`p-4 text-center ${theme === 'dark' ? 'text-muted-foreground' : 'text-gray-500'}`}
+            className={`p-4 text-center ${resolvedTheme === 'dark' ? 'text-muted-foreground' : 'text-gray-500'}`}
           >
             Loading file...
           </div>
         ) : error ? (
           <div
-            className={`p-4 text-center ${theme === 'dark' ? 'text-destructive' : 'text-red-500'}`}
+            className={`p-4 text-center ${resolvedTheme === 'dark' ? 'text-destructive' : 'text-red-500'}`}
           >
             {error}
           </div>
@@ -378,10 +378,10 @@ export function FileViewer({ filePath, addToNotepad }: FileViewerProps) {
                 </div>
               ) : (
                 <div
-                  className={`p-8 text-center ${theme === 'dark' ? 'text-muted-foreground' : 'text-gray-500'}`}
+                  className={`p-8 text-center ${resolvedTheme === 'dark' ? 'text-muted-foreground' : 'text-gray-500'}`}
                 >
                   <GitBranch
-                    className={`w-12 h-12 mx-auto mb-4 ${theme === 'dark' ? 'text-muted-foreground/50' : 'text-gray-300'}`}
+                    className={`w-12 h-12 mx-auto mb-4 ${resolvedTheme === 'dark' ? 'text-muted-foreground/50' : 'text-gray-300'}`}
                   />
                   <p className="text-lg font-medium mb-2">No changes detected</p>
                   <p className="text-sm">This file is identical to the version in git HEAD</p>
@@ -407,10 +407,10 @@ export function FileViewer({ filePath, addToNotepad }: FileViewerProps) {
                 />
                 {isLargeFile && !showFullContent && (
                   <div
-                    className={`p-4 text-center border-t ${theme === 'dark' ? 'border-border bg-card' : 'border-gray-200 bg-gray-50'}`}
+                    className={`p-4 text-center border-t ${resolvedTheme === 'dark' ? 'border-border bg-card' : 'border-gray-200 bg-gray-50'}`}
                   >
                     <p
-                      className={`text-sm mb-2 ${theme === 'dark' ? 'text-muted-foreground' : 'text-gray-600'}`}
+                      className={`text-sm mb-2 ${resolvedTheme === 'dark' ? 'text-muted-foreground' : 'text-gray-600'}`}
                     >
                       Showing first {MAX_LINES} lines of {content.split('\n').length} total lines
                     </p>

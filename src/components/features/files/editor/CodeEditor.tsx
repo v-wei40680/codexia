@@ -66,7 +66,7 @@ export function CodeEditor({
   const editorContainerRef = useRef<HTMLDivElement>(null);
 
   // Zustand stores
-  const { theme } = useThemeContext();
+  const { resolvedTheme } = useThemeContext();
   const {
     showLineNumbers,
     fontSize,
@@ -356,12 +356,18 @@ export function CodeEditor({
   }, [selection]);
 
   const currentContent = editedContent;
+  const aceTheme = resolvedTheme === 'dark' ? 'monokai' : 'github';
+
+  useEffect(() => {
+    if (!aceEditor || typeof aceEditor.setTheme !== 'function') return;
+    aceEditor.setTheme(`ace/theme/${aceTheme}`);
+  }, [aceEditor, aceTheme]);
 
   return (
     <div className={`flex flex-col h-full ${className}`}>
       {/* Toolbar */}
       <div
-        className={`flex items-center gap-1 p-2 border-b ${theme === 'dark' ? 'border-border bg-card' : 'border-gray-200 bg-gray-50'}`}
+        className={`flex items-center gap-1 p-2 border-b ${resolvedTheme === 'dark' ? 'border-border bg-card' : 'border-gray-200 bg-gray-50'}`}
       >
         {!isReadOnly && isEditableFile && (
           <Button
@@ -390,10 +396,10 @@ export function CodeEditor({
       {/* Search Bar */}
       {showSearch && (
         <div
-          className={`flex items-center gap-2 p-2 border-b ${theme === 'dark' ? 'border-border bg-card' : 'border-gray-200 bg-gray-50'}`}
+          className={`flex items-center gap-2 p-2 border-b ${resolvedTheme === 'dark' ? 'border-border bg-card' : 'border-gray-200 bg-gray-50'}`}
         >
           <Search
-            className={`w-4 h-4 ${theme === 'dark' ? 'text-muted-foreground' : 'text-gray-400'}`}
+            className={`w-4 h-4 ${resolvedTheme === 'dark' ? 'text-muted-foreground' : 'text-gray-400'}`}
           />
           <Input
             type="text"
@@ -418,7 +424,7 @@ export function CodeEditor({
           {searchResults.length > 0 && (
             <div className="flex items-center gap-1">
               <span
-                className={`text-xs ${theme === 'dark' ? 'text-muted-foreground' : 'text-gray-600'}`}
+                className={`text-xs ${resolvedTheme === 'dark' ? 'text-muted-foreground' : 'text-gray-600'}`}
               >
                 {currentSearchIndex + 1} of {searchResults.length}
               </span>
@@ -461,7 +467,7 @@ export function CodeEditor({
           <div
             data-floating-selection-toolbar
             className={`absolute z-10 flex items-center gap-1 p-1 rounded shadow-lg border ${
-              theme === 'dark' ? 'bg-card border-border' : 'bg-white border-gray-200'
+              resolvedTheme === 'dark' ? 'bg-card border-border' : 'bg-white border-gray-200'
             }`}
             style={{
               left: selection.position.x,
@@ -502,7 +508,7 @@ export function CodeEditor({
 
         <AceEditor
           mode={getAceMode}
-          theme={theme === 'dark' ? 'monokai' : 'github'}
+          theme={aceTheme}
           value={currentContent}
           readOnly={isReadOnly || !isEditableFile}
           fontSize={fontSize}
