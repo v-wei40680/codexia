@@ -59,7 +59,13 @@ pub fn codex_home() -> PathBuf {
         .unwrap_or_else(|| PathBuf::from(".codex"))
 }
 
-pub fn plux_history_path() -> PathBuf {
+pub fn codexia_history_path() -> PathBuf {
+    dirs::home_dir()
+        .map(|home| home.join(".codexia").join("history.jsonl"))
+        .unwrap_or_else(|| PathBuf::from(".codexia/history.jsonl"))
+}
+
+pub fn legacy_plux_history_path() -> PathBuf {
     dirs::home_dir()
         .map(|home| home.join(".plux").join("history.jsonl"))
         .unwrap_or_else(|| PathBuf::from(".plux/history.jsonl"))
