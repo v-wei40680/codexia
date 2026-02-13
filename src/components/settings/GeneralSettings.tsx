@@ -1,6 +1,7 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Sun, Moon, Monitor } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Sun, Moon, Monitor, Github, Twitter } from 'lucide-react';
 import { useThemeStore, type Theme, type Accent } from '@/stores/settings';
 import { LanguageSelector } from './LanguageSelector';
 import { cn } from '@/lib/utils';
@@ -87,6 +88,58 @@ export function GeneralSettings() {
             <LanguageSelector />
           </CardContent>
         </Card>
+      </section>
+      <section className="space-y-3">
+        <h3 className="text-sm font-medium px-1">Keep in touch and community</h3>
+        <div className="flex flex-wrap gap-2 text-balance">
+          <Button
+            onClick={() => open('https://github.com/milisp/codexia/discussions')}
+            size="sm"
+            className="flex-1 min-w-[120px]"
+          >
+            <Github className="h-4 w-4" />
+            <span className="ml-2">Discussion</span>
+          </Button>
+          <Button
+            onClick={() => open('https://github.com/milisp/codexia/issues')}
+            size="sm"
+            className="flex-1 min-w-[100px]"
+          >
+            <Github className="h-4 w-4" />
+            <span className="ml-2">Bug</span>
+          </Button>
+          <Button
+            onClick={() => open('https://discord.gg/zAjtD4kf5K')}
+            size="sm"
+            className="flex-shrink-0"
+          >
+            <img src="/discord.svg" height={16} width={16} alt="Discord" />
+          </Button>
+          <Button
+            onClick={() => open('https://x.com/lisp_mi')}
+            size="sm"
+            className="flex-1 min-w-[100px]"
+          >
+            <Twitter className="h-4 w-4" />
+            <span className="ml-2">lisp_mi</span>
+          </Button>
+          <Button
+            onClick={() => open('https://www.reddit.com/r/codexia/')}
+            size="sm"
+            className="flex-1 min-w-[120px]"
+          >
+            <img src="/reddit.svg" height={16} width={16} alt="Reddit" />
+            <span className="ml-2">r/codexia</span>
+          </Button>
+          <Button
+            onClick={() => open('https://www.reddit.com/r/codex/')}
+            size="sm"
+            className="flex-1 min-w-[110px]"
+          >
+            <img src="/reddit.svg" height={16} width={16} alt="Reddit" />
+            <span className="ml-2">r/codex</span>
+          </Button>
+        </div>
       </section>
     </div>
   );
