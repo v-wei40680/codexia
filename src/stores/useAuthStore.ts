@@ -18,6 +18,7 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: 'auth-store',
+      version: 2,
       partialize: (state) => ({
         lastOAuthProvider: state.lastOAuthProvider,
       }),

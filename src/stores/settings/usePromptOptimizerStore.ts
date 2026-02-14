@@ -21,6 +21,7 @@ export const usePromptOptimizerStore = create<PromptOptimizerState>()(
     }),
     {
       name: 'prompt-optimizer',
+      version: 2,
     }
   )
 );

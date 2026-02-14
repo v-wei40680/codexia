@@ -23,6 +23,7 @@ export const useInputStore = create<InputStore>()(
     }),
     {
       name: 'input-storage',
+      version: 2,
     }
   )
 );

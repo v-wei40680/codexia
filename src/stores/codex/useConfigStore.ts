@@ -71,6 +71,7 @@ export const useConfigStore = create<ConfigStore>()(
     }),
     {
       name: 'codex-config-storage',
+      version: 2,
     }
   )
 );

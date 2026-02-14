@@ -24,6 +24,7 @@ export const useThreadListStore = create<ThreadListState>()(
     }),
     {
       name: 'thread-list-storage',
+      version: 2,
     }
   )
 );

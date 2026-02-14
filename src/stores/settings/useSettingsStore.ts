@@ -84,7 +84,7 @@ export const useSettingsStore = create<SettingState>()(
     }),
     {
       name: 'settings-storage',
-      version: 2,
+      version: 3,
       migrate: (persistedState, version) => {
         if (!persistedState) {
           return persistedState;

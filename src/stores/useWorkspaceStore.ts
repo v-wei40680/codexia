@@ -68,6 +68,7 @@ export const useWorkspaceStore = create(
     }),
     {
       name: 'workspace-store',
+      version: 2,
     }
   )
 );

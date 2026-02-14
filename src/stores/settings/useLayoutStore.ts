@@ -54,6 +54,7 @@ export const useLayoutStore = create<LayoutStore>()(
     }),
     {
       name: 'layout-storage',
+      version: 2,
     }
   )
 );

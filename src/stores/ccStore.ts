@@ -104,6 +104,7 @@ export const useCCStore = create<CCStoreState>()(
     }),
     {
       name: 'cc-store',
+      version: 2,
       partialize: (state) => ({
         options: state.options,
         showFooter: state.showFooter,

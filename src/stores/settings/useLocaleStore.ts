@@ -15,6 +15,7 @@ export const useLocaleStore = create<LocaleState>()(
     }),
     {
       name: 'locale-storage',
+      version: 2,
     }
   )
 );
