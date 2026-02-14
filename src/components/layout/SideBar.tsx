@@ -117,7 +117,7 @@ export function SideBar() {
             className="h-7 w-7"
             onClick={() => setSidebarOpen(!isSidebarOpen)}
           >
-            <PanelLeft />
+            <PanelLeft className="h-4 w-4" />
           </Button>
           <UpdateButton
             isDev={import.meta.env.DEV}
@@ -125,31 +125,28 @@ export function SideBar() {
             onUpdate={startUpdate}
           />
         </div>
-        <div className="flex items-center gap-2">
-          <Input
-            placeholder="Search threads..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="h-8"
-          />
-        </div>
-        <div className="flex flex-col gap-1 px-1">
+        <Input
+          placeholder="Search threads..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="h-8"
+        />
+        <div className="flex flex-col">
           <Button
             variant="ghost"
             onClick={handleCreateNew}
             size="sm"
-            className="justify-start gap-2 h-8"
+            className="h-8 justify-start gap-1.5 pl-1 pr-2 has-[>svg]:pl-1"
           >
-            <SquarePen /> {selectedAgent === 'cc' ? 'New Session' : 'New Thread'}
+            <SquarePen className="h-4 w-4" /> {selectedAgent === 'cc' ? 'New Session' : 'New Thread'}
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            className={`h-8 justify-start gap-2 rounded-md border ${
-              view === 'automate'
-                ? 'border-border bg-accent/70 text-foreground'
-                : 'border-transparent hover:border-border/60'
-            }`}
+            className={`h-8 justify-start gap-1.5 rounded-md border pl-1 pr-2 has-[>svg]:pl-1 ${view === 'automate'
+              ? 'border-border bg-accent/70 text-foreground'
+              : 'border-transparent hover:border-border/60'
+              }`}
             onClick={() => setView('automate')}
           >
             <Terminal className="h-4 w-4" />
@@ -158,21 +155,21 @@ export function SideBar() {
           <Button
             variant="ghost"
             size="sm"
-            className={`h-8 justify-start gap-2 rounded-md border ${
-              view === 'marketplace'
-                ? 'border-border bg-accent/70 text-foreground'
-                : 'border-transparent hover:border-border/60'
-            }`}
+            className={`h-8 justify-start gap-1.5 rounded-md border pl-1 pr-2 has-[>svg]:pl-1 ${view === 'marketplace'
+              ? 'border-border bg-accent/70 text-foreground'
+              : 'border-transparent hover:border-border/60'
+              }`}
             onClick={() => setView('marketplace')}
           >
-            <Package /> Skills | MCP | Prompt
+            <Package className="h-4 w-4" /> Skills | MCP | Prompt
           </Button>
         </div>
         <span className="flex justify-between">
           <span className="flex">
             <Button
               variant="ghost"
-              className={`${activeSidebarTab === 'codex' ? 'bg-accent' : ''}`}
+              size="sm"
+              className={`h-8 px-2 ${activeSidebarTab === 'codex' ? 'bg-accent' : ''}`}
               onClick={() => {
                 setSelectedAgent('codex');
                 setActiveSidebarTab('codex');
@@ -182,7 +179,8 @@ export function SideBar() {
             </Button>
             <Button
               variant="ghost"
-              className={`${activeSidebarTab === 'cc' ? 'bg-accent' : ''}`}
+              size="sm"
+              className={`h-8 px-2 ${activeSidebarTab === 'cc' ? 'bg-accent' : ''}`}
               onClick={() => {
                 setSelectedAgent('cc');
                 setActiveSidebarTab('cc');
@@ -192,7 +190,8 @@ export function SideBar() {
             </Button>
             <Button
               variant="ghost"
-              className={`${activeSidebarTab === 'explorer' ? 'bg-accent' : ''}`}
+              size="sm"
+              className={`h-8 px-2 ${activeSidebarTab === 'explorer' ? 'bg-accent' : ''}`}
               onClick={() => {
                 setActiveSidebarTab('explorer');
               }}
@@ -201,11 +200,11 @@ export function SideBar() {
             </Button>
           </span>
           <span className="flex">
-            <Button variant="ghost" size="icon" title="Add new project" onClick={handleAddProject}>
-              <FolderPlus />
+            <Button variant="ghost" size="icon" className="h-8 w-8" title="Add new project" onClick={handleAddProject}>
+              <FolderPlus className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" title="Filter threads" onClick={handleMenu}>
-              <ListFilter />
+            <Button variant="ghost" size="icon" className="h-8 w-8" title="Filter threads" onClick={handleMenu}>
+              <ListFilter className="h-4 w-4" />
             </Button>
           </span>
         </span>
@@ -374,17 +373,13 @@ export function SideBar() {
         <Button
           variant="ghost"
           size="icon"
+          className="h-8 w-8"
           title="open learn view"
-          className={`rounded-md border ${
-            view === 'learn'
-              ? 'border-border bg-accent/70 text-foreground'
-              : 'border-transparent hover:border-border/60'
-          }`}
           onClick={() => {
             setView('learn');
           }}
         >
-          <BookOpen />
+          <BookOpen className="h-4 w-4" />
         </Button>
       </div>
     </div>
