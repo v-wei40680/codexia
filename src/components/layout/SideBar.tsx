@@ -136,14 +136,14 @@ export function SideBar() {
             variant="ghost"
             onClick={handleCreateNew}
             size="sm"
-            className="h-8 justify-start gap-1.5 pl-1 pr-2 has-[>svg]:pl-1"
+            className="h-8 justify-start gap-1.5 pl-0 pr-2 has-[>svg]:pl-0"
           >
             <SquarePen className="h-4 w-4" /> {selectedAgent === 'cc' ? 'New Session' : 'New Thread'}
           </Button>
           <Button
             variant="ghost"
             size="sm"
-            className={`h-8 justify-start gap-1.5 rounded-md border pl-1 pr-2 has-[>svg]:pl-1 ${view === 'automate'
+            className={`h-8 justify-start gap-1.5 rounded-md border pl-0 pr-2 has-[>svg]:pl-0 ${view === 'automate'
               ? 'border-border bg-accent/70 text-foreground'
               : 'border-transparent hover:border-border/60'
               }`}
@@ -155,7 +155,7 @@ export function SideBar() {
           <Button
             variant="ghost"
             size="sm"
-            className={`h-8 justify-start gap-1.5 rounded-md border pl-1 pr-2 has-[>svg]:pl-1 ${view === 'marketplace'
+            className={`h-8 justify-start gap-1.5 rounded-md border pl-0 pr-2 has-[>svg]:pl-0 ${view === 'marketplace'
               ? 'border-border bg-accent/70 text-foreground'
               : 'border-transparent hover:border-border/60'
               }`}
@@ -261,7 +261,7 @@ export function SideBar() {
                       <SquarePen />
                     </Button>
                   </div>
-                  <CollapsibleContent className="border-t border-sidebar-border px-1 pb-1 pt-1">
+                  <CollapsibleContent>
                     <ThreadList cwdOverride={project} />
                   </CollapsibleContent>
                 </Collapsible>
@@ -274,7 +274,7 @@ export function SideBar() {
             </div>
           )}
           {activeSidebarTab === 'cc' && (
-            <div className="flex min-h-0 w-full flex-col gap-2 px-2 pb-2">
+            <div className="flex min-h-0 w-full flex-col">
               {ccLoading && (
                 <div className="rounded-lg border border-sidebar-border bg-sidebar/30 px-3 py-3 text-xs text-muted-foreground">
                   Loading sessions...
@@ -338,7 +338,7 @@ export function SideBar() {
                         <SquarePen />
                       </Button>
                     </div>
-                    <CollapsibleContent className="border-t border-sidebar-border px-1 pb-1 pt-1">
+                    <CollapsibleContent>
                       <ClaudeCodeSessionList
                         project={project}
                         sessions={ccSessions}
