@@ -17,8 +17,8 @@ if [ ! -f "release.json" ]; then
   exit 1
 fi
 
-# Extract version
-VERSION=$(jq -r '.tag_name' release.json)
+# Extract version and remove leading "v" (e.g. v1.2.3 -> 1.2.3)
+VERSION=$(jq -r '.tag_name' release.json | sed 's/^v//')
 
 # Extract SHAs from release.json
 # The digest field format is "sha256:..." so we cut the prefix
