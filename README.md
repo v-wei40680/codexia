@@ -135,8 +135,23 @@ This is the fastest way to get started with Codexia:
 
 ### Remote control
 
+Download codexia-web or build from source code then
+
+#### start web server
+
+```sh
+codexia --web
 ```
-Menu → Remote access -> start
+
+#### Linux/Macos 
+```
+bash scripts/package-web.sh
+```
+
+#### Windows
+
+```
+scripts/package-web.bat
 ```
 
 ### Others
