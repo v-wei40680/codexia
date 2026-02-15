@@ -212,7 +212,7 @@ export function InputArea({
   };
 
   return (
-    <div className="p-4 bg-background">
+    <div className="px-4 bg-background">
       {showFileSearch && (
         <FileSearchPopover
           ref={fileSearchRef}
