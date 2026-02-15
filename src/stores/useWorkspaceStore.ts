@@ -25,6 +25,8 @@ interface WorkspaceStore {
   projects: string[];
   setProjects: (projects: string[]) => void;
   addProject: (project: string) => void;
+  removeProject: (project: string) => void;
+  addProjectAndSelect: (project: string) => void;
   projectSort: ProjectSortKey;
   setProjectSort: (sortKey: ProjectSortKey) => void;
   historyMode: boolean;
@@ -39,7 +41,7 @@ interface WorkspaceStore {
 
 export const useWorkspaceStore = create(
   persist<WorkspaceStore>(
-    (set) => ({
+    (set, get) => ({
       selectedAgent: 'codex',
       setSelectedAgent: (agent) => set({ selectedAgent: agent }),
       projects: [],
@@ -50,9 +52,24 @@ export const useWorkspaceStore = create(
           if (!trimmed || state.projects.includes(trimmed)) {
             return state;
           }
-          set({ cwd: trimmed });
           return { projects: [...state.projects, trimmed] };
         }),
+      removeProject: (project) =>
+        set((state) => ({
+          projects: state.projects.filter((p) => p !== project),
+          // If removing current cwd, clear it
+          cwd: state.cwd === project ? '' : state.cwd,
+        })),
+      addProjectAndSelect: (project) => {
+        const trimmed = project.trim();
+        const state = get();
+        if (trimmed && !state.projects.includes(trimmed)) {
+          set({
+            projects: [...state.projects, trimmed],
+            cwd: trimmed,
+          });
+        }
+      },
       projectSort: 'added_desc',
       setProjectSort: (sortKey) => set({ projectSort: sortKey }),
       historyMode: false,
