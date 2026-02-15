@@ -1,11 +1,11 @@
 import type { Dispatch, SetStateAction } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Trash2, Edit } from 'lucide-react';
 import { McpServerConfig } from '@/types';
 import { toast } from 'sonner';
+import { unifiedDisableMcpServer, unifiedEnableMcpServer, unifiedRemoveMcpServer } from '@/services';
 
 export const getServerProtocol = (config: McpServerConfig): 'stdio' | 'http' | 'sse' =>
   config.type ?? 'stdio';
@@ -30,7 +30,7 @@ export function McpServerCard({
 
   const handleDeleteServer = async () => {
     try {
-      await invoke('delete_mcp_server', { name });
+      await unifiedRemoveMcpServer({ clientName: 'codex', serverName: name });
       await loadServers();
     } catch (error) {
       console.error('Failed to delete MCP server:', error);
@@ -40,7 +40,11 @@ export function McpServerCard({
 
   const handleToggleServerEnabled = async (enabled: boolean) => {
     try {
-      await invoke('set_mcp_server_enabled', { name, enabled });
+      if (enabled) {
+        await unifiedEnableMcpServer({ clientName: 'codex', serverName: name });
+      } else {
+        await unifiedDisableMcpServer({ clientName: 'codex', serverName: name });
+      }
       setServers((prev) => {
         const server = prev[name];
         if (!server) {

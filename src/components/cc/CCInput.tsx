@@ -12,8 +12,8 @@ import {
 import { Settings, Slash, CircleStop, Send } from 'lucide-react';
 import { CCFooter } from '@/components/cc/CCFooter';
 import { FolderSelectorCompact } from '@/components/features/dxt/FolderSelectorCompact';
-import { invoke } from '@tauri-apps/api/core';
 import { useCCStore, ModelType } from '@/stores/ccStore';
+import { ccGetInstalledSkills } from '@/services';
 
 interface CCInputProps {
   input: string;
@@ -31,7 +31,7 @@ export function CCInput({ input, setInput, onSendMessage, onInterrupt }: CCInput
   useEffect(() => {
     const loadSkills = async () => {
       try {
-        const skills = await invoke<string[]>('cc_get_installed_skills');
+        const skills = await ccGetInstalledSkills();
         setInstalledSkills(skills);
       } catch (error) {
         console.error('Failed to load installed skills:', error);

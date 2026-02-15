@@ -1,4 +1,3 @@
-import { invoke } from '@tauri-apps/api/core';
 import { useEffect, useState, useMemo } from 'react';
 import { Dot, Funnel } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
@@ -13,6 +12,7 @@ import { aggregateMessages } from './aggregateMessages';
 import { PlanDisplay, SimplePlanStep } from './PlanDisplay';
 import { HistoryFilters, createInitialFilterState } from './HistoryFilters';
 import { Markdown } from '@/components/Markdown';
+import { readTextFileLines } from '@/services';
 
 export function History() {
   const currentThread = useCurrentThread();
@@ -34,9 +34,7 @@ export function History() {
 
     const readConversation = async () => {
       try {
-        const lines = await invoke<string[]>('read_text_file_lines', {
-          filePath: currentPath,
-        });
+        const lines = await readTextFileLines(currentPath);
         let messages: RawMessage[] = [];
         let payload: Record<string, any> = {};
         for await (const line of lines) {

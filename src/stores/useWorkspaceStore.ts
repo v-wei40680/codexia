@@ -50,7 +50,7 @@ export const useWorkspaceStore = create(
           if (!trimmed || state.projects.includes(trimmed)) {
             return state;
           }
-          set({ cwd: project });
+          set({ cwd: trimmed });
           return { projects: [...state.projects, trimmed] };
         }),
       projectSort: 'added_desc',

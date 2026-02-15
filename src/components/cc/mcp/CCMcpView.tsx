@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, RefreshCw } from 'lucide-react';
@@ -10,6 +9,7 @@ import { McpServerCard } from '@/components/cc/mcp/McpServerCard';
 import { McpAddServerForm } from '@/components/cc/mcp/McpAddServerForm';
 import { McpProjectSelector } from '@/components/cc/mcp/McpProjectSelector';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
+import { ccMcpList } from '@/services';
 
 export default function CCMcpView() {
   const { cwd } = useWorkspaceStore();
@@ -23,7 +23,7 @@ export default function CCMcpView() {
     if (!workingDir) return;
     setIsLoading(true);
     try {
-      const list = await invoke<ClaudeCodeMcpServer[]>('cc_mcp_list', { workingDir });
+      const list = await ccMcpList<ClaudeCodeMcpServer[]>(workingDir);
       setServers(list);
     } catch (error) {
       toast.error(`Failed to fetch MCP servers: ${error}`);

@@ -1,5 +1,5 @@
 import { TokenUsage } from '@/bindings/TokenUsage';
-import { invoke } from '@tauri-apps/api/core';
+import { readTokenUsage } from '@/services';
 
 export interface NewSessionData {
   rolloutPath: string;
@@ -68,7 +68,7 @@ function calculateTokenCost(usage: TokenUsage, model: string): number {
 }
 
 export async function calculateUsageSummary(): Promise<UsageSummary> {
-  const newSessionDataArray = await invoke<NewSessionData[]>('read_token_usage');
+  const newSessionDataArray = await readTokenUsage<NewSessionData[]>();
   const sessionMetrics: SessionMetrics[] = [];
 
   // Process all session data

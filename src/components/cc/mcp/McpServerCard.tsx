@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,6 +6,7 @@ import { Save, X, Trash2, Edit, Power, PowerOff } from 'lucide-react';
 import type { ClaudeCodeMcpServer } from '@/types/cc/cc-mcp';
 import { toast } from 'sonner';
 import { McpServerFormFields } from './McpServerFormFields';
+import { ccMcpAdd, ccMcpDisable, ccMcpEnable, ccMcpRemove } from '@/services';
 
 type ServerType = 'stdio' | 'http' | 'sse';
 
@@ -79,10 +79,10 @@ export function McpServerCard({ server, workingDir, onServerUpdated }: McpServer
       }
 
       if (server.name !== editName) {
-        await invoke('cc_mcp_remove', { name: server.name, workingDir });
+        await ccMcpRemove(server.name, workingDir);
       }
 
-      await invoke('cc_mcp_add', { request, workingDir });
+      await ccMcpAdd(request, workingDir);
 
       setIsEditing(false);
       onServerUpdated();
@@ -98,7 +98,7 @@ export function McpServerCard({ server, workingDir, onServerUpdated }: McpServer
 
   const handleDeleteServer = async () => {
     try {
-      await invoke('cc_mcp_remove', { name: server.name, workingDir });
+      await ccMcpRemove(server.name, workingDir);
       onServerUpdated();
       toast.success(`Server "${server.name}" deleted`);
     } catch (error) {
@@ -109,9 +109,9 @@ export function McpServerCard({ server, workingDir, onServerUpdated }: McpServer
   const handleToggleServer = async () => {
     try {
       if (server.enabled === false) {
-        await invoke('cc_mcp_enable', { name: server.name, workingDir });
+        await ccMcpEnable(server.name, workingDir);
       } else {
-        await invoke('cc_mcp_disable', { name: server.name, workingDir });
+        await ccMcpDisable(server.name, workingDir);
       }
       onServerUpdated();
       toast.success(`Server "${server.name}" ${server.enabled === false ? 'enabled' : 'disabled'}`);

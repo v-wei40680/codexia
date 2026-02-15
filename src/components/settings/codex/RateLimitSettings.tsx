@@ -1,10 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { invoke } from '@tauri-apps/api/core';
 import type { GetAccountRateLimitsResponse } from '@/bindings/v2/GetAccountRateLimitsResponse';
 import type { RateLimitWindow } from '@/bindings/v2/RateLimitWindow';
 import { cn } from '@/lib/utils';
 import { Cell, Pie, PieChart } from 'recharts';
+import { getAccountRateLimits } from '@/services';
 
 function getRemainingPercent(window: RateLimitWindow | null) {
   const usedPercent = window ? Number(window.usedPercent ?? 0) : 0;
@@ -99,7 +99,7 @@ export function RateLimitSettings({ className }: RateLimitSettingsProps) {
 
   const fetchRateLimits = useCallback(async () => {
     try {
-      const response = await invoke<GetAccountRateLimitsResponse>('account_rate_limits');
+      const response = await getAccountRateLimits();
       setRateLimits(response);
     } catch {
       // Keep UI minimal: silently ignore fetch errors and keep fallback values.

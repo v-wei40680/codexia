@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import type { UnlistenFn } from '@tauri-apps/api/event';
 import { listen } from '@tauri-apps/api/event';
 import { Button } from '@/components/ui/button';
@@ -10,6 +9,16 @@ import { useThemeContext } from '@/contexts/ThemeContext';
 import { useInputStore } from '@/stores';
 import { getErrorMessage } from '@/utils/errorUtils';
 import { getFilename } from '@/utils/getFilename';
+import {
+  canonicalizePath,
+  getGitFileDiff,
+  readFile,
+  readPdfContent,
+  readXlsxContent,
+  startWatchDirectory,
+  stopWatchDirectory,
+  writeFile,
+} from '@/services';
 
 interface FileViewerProps {
   filePath: string;
@@ -57,17 +66,13 @@ export function FileViewer({ filePath, addToNotepad }: FileViewerProps) {
 
       switch (extension) {
         case 'pdf':
-          fileContent = await invoke<string>('read_pdf_content', {
-            filePath,
-          });
+          fileContent = await readPdfContent(filePath);
           break;
         case 'xlsx':
-          fileContent = await invoke<string>('read_xlsx_content', {
-            filePath,
-          });
+          fileContent = await readXlsxContent(filePath);
           break;
         default:
-          fileContent = await invoke<string>('read_file', { filePath });
+          fileContent = await readFile(filePath);
           break;
       }
 
@@ -93,7 +98,7 @@ export function FileViewer({ filePath, addToNotepad }: FileViewerProps) {
     loadFile();
     (async () => {
       try {
-        const c = await invoke<string>('canonicalize_path', { path: filePath });
+        const c = await canonicalizePath(filePath);
         setCanonicalFile(c);
       } catch {
         setCanonicalFile(filePath);
@@ -110,7 +115,7 @@ export function FileViewer({ filePath, addToNotepad }: FileViewerProps) {
 
     setDiffLoading(true);
     try {
-      const diff = await invoke<GitDiff>('get_git_file_diff', { filePath });
+      const diff = await getGitFileDiff<GitDiff>(filePath);
       setGitDiff(diff);
     } catch (err) {
       console.error('Failed to load git diff:', err);
@@ -146,10 +151,7 @@ export function FileViewer({ filePath, addToNotepad }: FileViewerProps) {
     if (!filePath) return;
 
     try {
-      await invoke('write_file', {
-        filePath,
-        content: newContent,
-      });
+      await writeFile(filePath, newContent);
       setContent(newContent);
       setCurrentContent(newContent);
     } catch (err) {
@@ -206,14 +208,14 @@ export function FileViewer({ filePath, addToNotepad }: FileViewerProps) {
       : filePath;
     const start = async () => {
       try {
-        await invoke('start_watch_directory', { folderPath: parentDir });
+        await startWatchDirectory(parentDir);
       } catch {}
     };
     const stopPrev = async () => {
       const prev = prevWatchedDirRef.current;
       if (prev && prev !== parentDir) {
         try {
-          await invoke('stop_watch_directory', { folderPath: prev });
+          await stopWatchDirectory(prev);
         } catch {}
       }
     };
@@ -223,7 +225,7 @@ export function FileViewer({ filePath, addToNotepad }: FileViewerProps) {
     return () => {
       (async () => {
         try {
-          await invoke('stop_watch_directory', { folderPath: parentDir });
+          await stopWatchDirectory(parentDir);
         } catch {}
       })();
     };

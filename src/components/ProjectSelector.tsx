@@ -17,6 +17,7 @@ import {
 } from '@/services/tauri';
 import { getFilename } from '@/utils/getFilename';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
+import { isTauri } from '@/hooks/runtime';
 import {
   Check,
   ChevronRight,
@@ -24,6 +25,7 @@ import {
   FileText,
   Film,
   Folder,
+  FolderPlus,
   FolderOpen,
   Home,
   Image,
@@ -99,7 +101,7 @@ function getQuickAccessIcon(folderName: string): LucideIcon {
 }
 
 export function ProjectSelector() {
-  const { cwd, setCwd, projects } = useWorkspaceStore();
+  const { cwd, setCwd, projects, addProject } = useWorkspaceStore();
   const [open, setOpen] = useState(false);
   const [currentPath, setCurrentPath] = useState('');
   const [defaultDirs, setDefaultDirs] = useState<string[]>([]);
@@ -107,6 +109,7 @@ export function ProjectSelector() {
   const [isLoading, setIsLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const tauriMode = isTauri();
 
   const directoryEntries = useMemo(
     () =>
@@ -184,6 +187,9 @@ export function ProjectSelector() {
     void loadDirectory(path);
   }
 
+  const canAddCurrentPath =
+    currentPath.trim().length > 0 && !projects.includes(currentPath.trim());
+
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
@@ -244,6 +250,15 @@ export function ProjectSelector() {
                     <Check className="h-4 w-4" />
                     <span className="truncate">{currentPath || 'No folder selected'}</span>
                   </CommandItem>
+                  {!tauriMode && (
+                    <CommandItem
+                      onSelect={() => addProject(currentPath)}
+                      disabled={!canAddCurrentPath}
+                    >
+                      <FolderPlus className="h-4 w-4" />
+                      <span>{canAddCurrentPath ? 'Add to workspace' : 'Already in workspace'}</span>
+                    </CommandItem>
+                  )}
                   <CommandItem
                     onSelect={() => {
                       const parent = getParentPath(currentPath);

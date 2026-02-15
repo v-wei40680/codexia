@@ -2,10 +2,10 @@ import { useEffect, useMemo, useState } from 'react';
 import MDEditor from '@uiw/react-md-editor';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { invoke } from '@tauri-apps/api/core';
 import { getErrorMessage } from '@/utils/errorUtils';
 import { useThemeContext } from '@/contexts/ThemeContext';
 import { useWorkspaceStore } from '@/stores';
+import { readFile, writeFile } from '@/services';
 
 const CODEX_INSTRUCTIONS_FILE_NAME = 'AGENTS.md';
 const CC_INSTRUCTIONS_FILE_NAME = 'CLAUDE.md';
@@ -61,7 +61,7 @@ export default function AgentsView() {
 
     (async () => {
       try {
-        const instructions = await invoke<string>('read_file', { filePath });
+        const instructions = await readFile(filePath);
         if (active) {
           setContent(instructions);
         }
@@ -94,7 +94,7 @@ export default function AgentsView() {
     setError(null);
     setStatusMessage(null);
     try {
-      await invoke('write_file', { filePath, content });
+      await writeFile(filePath, content);
       setStatusMessage('Changes saved.');
     } catch (err) {
       setError(getErrorMessage(err));

@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { Label } from '@/components/ui/label';
 import {
   Select,
@@ -10,6 +9,7 @@ import {
 } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { useWorkspaceStore } from '@/stores';
+import { ccListProjects } from '@/services';
 
 interface McpProjectSelectorProps {
   onProjectChange?: () => void;
@@ -22,7 +22,7 @@ export function McpProjectSelector({ onProjectChange, disabled }: McpProjectSele
 
   const fetchProjects = async () => {
     try {
-      const list = await invoke<string[]>('cc_list_projects');
+      const list = await ccListProjects();
       setProjects(list);
     } catch (error) {
       toast.error(`Failed to fetch projects: ${error}`);

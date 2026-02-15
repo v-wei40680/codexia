@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { readFile } from '@/services';
 
 export interface WebFrameworkInfo {
   framework:
@@ -20,7 +20,7 @@ export async function detectWebFramework(projectPath: string): Promise<WebFramew
   try {
     // Read package.json to detect framework
     const packageJsonPath = `${projectPath}/package.json`;
-    const packageJsonContent = await invoke<string>('read_file', { filePath: packageJsonPath });
+    const packageJsonContent = await readFile(packageJsonPath);
     const packageJson = JSON.parse(packageJsonContent);
 
     const dependencies = {

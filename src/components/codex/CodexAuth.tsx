@@ -11,11 +11,11 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { invoke } from '@tauri-apps/api/core';
 import type { AccountLoginCompletedNotification } from '@/bindings/v2';
-import { GetAccountResponse, LoginAccountResponse } from '@/bindings/v2';
+import { GetAccountResponse } from '@/bindings/v2';
 import type { ServerNotification } from '@/bindings/ServerNotification';
 import { open } from '@tauri-apps/plugin-shell';
+import { getAccountWithParams, loginAccount } from '@/services';
 
 const REFRESH_LABEL = 'Refresh account';
 const REFRESH_FORCE_LABEL = 'Force refresh';
@@ -47,10 +47,8 @@ export function CodexAuth() {
   const refreshAccount = useCallback(
     (force: boolean) =>
       runAction(force ? REFRESH_FORCE_LABEL : REFRESH_LABEL, async () => {
-        const response = await invoke<GetAccountResponse>('get_account', {
-          params: {
-            refreshToken: force,
-          },
+        const response = await getAccountWithParams({
+          refreshToken: force,
         });
         setAccount(response);
       }),
@@ -59,10 +57,8 @@ export function CodexAuth() {
 
   const startChatLogin = useCallback(() => {
     runAction(LOGIN_LABEL, async () => {
-      const response = await invoke<LoginAccountResponse>('login_account', {
-        params: {
-          type: 'chatgpt',
-        },
+      const response = await loginAccount({
+        type: 'chatgpt',
       });
       if (response.type === 'chatgpt') {
         await open(response.authUrl);

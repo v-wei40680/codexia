@@ -2,8 +2,8 @@ import { Plus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { McpServerConfig } from '@/types';
-import { invoke } from '@tauri-apps/api/core';
 import { toast } from 'sonner';
+import { unifiedAddMcpServer } from '@/services';
 
 interface DefaultMcpServersProps {
   servers: Record<string, McpServerConfig>;
@@ -34,7 +34,11 @@ export function DefaultMcpServers({ servers, onServerAdded }: DefaultMcpServersP
 
   const handleAddDefaultServer = async (defaultServer: (typeof defaultServers)[0]) => {
     try {
-      await invoke('add_mcp_server', { name: defaultServer.name, config: defaultServer.config });
+      await unifiedAddMcpServer({
+        clientName: 'codex',
+        serverName: defaultServer.name,
+        serverConfig: defaultServer.config,
+      });
       onServerAdded();
     } catch (error) {
       console.error('Failed to add default MCP server:', error);

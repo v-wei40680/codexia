@@ -1,6 +1,7 @@
 mod handlers;
 mod router;
 mod server;
+mod terminal;
 mod types;
 mod websocket;
 

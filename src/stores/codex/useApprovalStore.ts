@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { invoke } from '@tauri-apps/api/core';
 import type {
   CommandExecutionApprovalDecision,
   CommandExecutionRequestApprovalParams,
@@ -7,6 +6,7 @@ import type {
   FileChangeRequestApprovalParams,
 } from '@/bindings/v2';
 import { RequestId } from '@/bindings';
+import { respondToCommandExecutionApproval, respondToFileChangeApproval } from '@/services';
 
 export type ApprovalRequest =
   | (CommandExecutionRequestApprovalParams & {
@@ -49,15 +49,12 @@ export const useApprovalStore = create<ApprovalStore>((set, _get) => ({
   respondToApproval: async (requestId, isCommandExecution, decision) => {
     try {
       if (isCommandExecution) {
-        await invoke('respond_to_command_execution_approval', {
-          requestId: requestId,
-          decision: decision as CommandExecutionApprovalDecision,
-        });
+        await respondToCommandExecutionApproval(
+          requestId,
+          decision as CommandExecutionApprovalDecision
+        );
       } else {
-        await invoke('respond_to_file_change_approval', {
-          requestId: requestId,
-          decision: decision as FileChangeApprovalDecision,
-        });
+        await respondToFileChangeApproval(requestId, decision as FileChangeApprovalDecision);
       }
 
       // Remove from pending

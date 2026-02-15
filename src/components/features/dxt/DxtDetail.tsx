@@ -3,7 +3,6 @@ import { UserConfigForm, Footer, ToolPrompt } from '@/components/features/dxt';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { DxtManifestSchema } from './schemas';
-import { invoke } from '@tauri-apps/api/core';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
 import { MCPConfigType } from '@/types/cc/cc-mcp';
@@ -17,6 +16,14 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { AgentType, useWorkspaceStore } from '@/stores';
+import {
+  loadManifest,
+  unifiedAddMcpServer,
+  unifiedDisableMcpServer,
+  unifiedEnableMcpServer,
+  unifiedReadMcpConfig,
+  unifiedRemoveMcpServer,
+} from '@/services';
 
 // Helper function to validate URLs
 function isValidUrl(url: any): boolean {
@@ -157,7 +164,7 @@ export default function DxtDetail({
     console.log('Loading manifest for:', { user, repo });
     setLoading(true);
 
-    invoke<any>('load_manifest', { user, repo })
+    loadManifest(user, repo)
       .then((found) => {
         console.log('Manifest loaded:', found);
         if (found) {
@@ -213,6 +220,7 @@ export default function DxtDetail({
   }
 
   async function addMcpConfig() {
+    if (!manifest) return;
     const mergedConfig = getMergedMcpConfig();
 
     // For Codex, path is always undefined (uses ~/.codex/config.toml)
@@ -220,13 +228,13 @@ export default function DxtDetail({
     const _item = {
       clientName: selectedAgent,
       path: selectedAgent === 'codex' ? undefined : cwd,
-      serverName: manifest?.name,
+      serverName: manifest.name,
       serverConfig: mergedConfig,
       scope: selectedAgent === 'cc' ? selectedScope : undefined,
     };
     console.log(_item);
     try {
-      await invoke('unified_add_mcp_server', _item);
+      await unifiedAddMcpServer(_item);
       // Trigger refresh
       checkInstallation();
     } catch (e) {
@@ -240,11 +248,11 @@ export default function DxtDetail({
     const configPath = selectedAgent === 'codex' ? undefined : cwd;
 
     try {
-      await invoke('unified_remove_mcp_server', {
+      await unifiedRemoveMcpServer({
         clientName: selectedAgent,
         path: configPath,
         serverName: manifest.name,
-        scope: selectedAgent === 'cc' ? installedScope : undefined,
+        scope: selectedAgent === 'cc' ? installedScope ?? undefined : undefined,
       });
       // Trigger refresh
       checkInstallation();
@@ -262,12 +270,10 @@ export default function DxtDetail({
       return;
     }
 
-    invoke<MCPConfigType>('unified_read_mcp_config', {
-      clientName: selectedAgent,
-      path: configPath,
-    })
+    unifiedReadMcpConfig(selectedAgent, configPath)
       .then((savedData) => {
-        const serverConfig = savedData.mcpServers?.[manifest.name];
+        const typedSavedData = savedData as MCPConfigType;
+        const serverConfig = typedSavedData.mcpServers?.[manifest.name];
         const hasServer = !!serverConfig;
         setIsInstalled(hasServer);
         if (hasServer && serverConfig) {
@@ -286,9 +292,10 @@ export default function DxtDetail({
       });
   }
   async function changeStatus(checked: boolean) {
+    if (!manifest) return;
     setEnabled(checked);
     const mergedConfig = getMergedMcpConfig();
-    const mcpServerConfig = { [manifest?.name as string]: mergedConfig };
+    const mcpServerConfig = { [manifest.name]: mergedConfig };
     console.log(mcpServerConfig);
 
     // For Codex, path is always undefined (uses ~/.codex/config.toml)
@@ -296,19 +303,19 @@ export default function DxtDetail({
     const configPath = selectedAgent === 'codex' ? undefined : cwd;
 
     if (checked) {
-      invoke('unified_disable_mcp_server', {
+      unifiedDisableMcpServer({
         clientName: selectedAgent,
         path: configPath,
-        serverName: manifest?.name,
+        serverName: manifest.name,
       });
     } else {
       const _serverItem = {
         clientName: selectedAgent,
         path: configPath,
-        serverName: manifest?.name,
+        serverName: manifest.name,
       };
       try {
-        await invoke('unified_enable_mcp_server', _serverItem);
+        await unifiedEnableMcpServer(_serverItem);
       } catch (error) {}
     }
   }

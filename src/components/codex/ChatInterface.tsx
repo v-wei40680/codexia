@@ -1,5 +1,4 @@
 import { useRef, useEffect, useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { useCodexStore } from '@/stores/codex';
 import { useInputStore } from '@/stores';
 import { codexService } from '@/services/codexService';
@@ -13,10 +12,10 @@ import { Tips } from '@/components/Tips';
 import { CodexAuth } from './CodexAuth';
 import type { ServerNotification } from '@/bindings';
 import { useSettingsStore } from '@/stores/settings';
-import type { GetAccountResponse } from '@/bindings/v2';
 import { Quotes } from '../features/Quotes';
 import { toast } from '@/components/ui/use-toast';
 import { getErrorMessage } from '@/utils/errorUtils';
+import { getAccountWithParams } from '@/services';
 
 export function ChatInterface() {
   const { currentThreadId, currentTurnId, events, inputFocusTrigger } = useCodexStore();
@@ -57,10 +56,8 @@ export function ChatInterface() {
 
     const loadAccount = async () => {
       try {
-        const response = await invoke<GetAccountResponse>('get_account', {
-          params: {
-            refreshToken: false,
-          },
+        const response = await getAccountWithParams({
+          refreshToken: false,
         });
         if (isMounted) {
           setHasAccount(Boolean(response.account));

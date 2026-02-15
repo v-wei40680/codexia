@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Plus, Save, X } from 'lucide-react';
@@ -12,6 +11,11 @@ import {
   McpServerCard,
   getServerProtocol,
 } from '@/components/features/mcp';
+import {
+  unifiedAddMcpServer,
+  unifiedReadMcpConfig,
+  unifiedRemoveMcpServer,
+} from '@/services';
 
 export function CodexMcpView() {
   const [servers, setServers] = useState<Record<string, McpServerConfig>>({});
@@ -36,8 +40,8 @@ export function CodexMcpView() {
 
   const loadServers = async () => {
     try {
-      const mcpServers = await invoke<Record<string, McpServerConfig>>('read_mcp_servers');
-      setServers(mcpServers);
+      const config = await unifiedReadMcpConfig('codex');
+      setServers((config.mcpServers as Record<string, McpServerConfig> | undefined) ?? {});
     } catch (error) {
       console.error('Failed to load MCP servers:', error);
     }
@@ -75,7 +79,11 @@ export function CodexMcpView() {
         };
       }
 
-      await invoke('add_mcp_server', { name: newServerName, config });
+      await unifiedAddMcpServer({
+        clientName: 'codex',
+        serverName: newServerName,
+        serverConfig: config,
+      });
 
       setNewServerName('');
       setCommandConfig({ command: '', args: '', env: '' });
@@ -137,8 +145,15 @@ export function CodexMcpView() {
         };
       }
 
-      await invoke('delete_mcp_server', { name: editingServer });
-      await invoke('add_mcp_server', { name: editConfig.name, config });
+      await unifiedRemoveMcpServer({
+        clientName: 'codex',
+        serverName: editingServer,
+      });
+      await unifiedAddMcpServer({
+        clientName: 'codex',
+        serverName: editConfig.name,
+        serverConfig: config,
+      });
 
       setEditingServer(null);
       setEditConfig(null);

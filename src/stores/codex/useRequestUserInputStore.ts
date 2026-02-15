@@ -1,7 +1,7 @@
 import { create } from 'zustand';
-import { invoke } from '@tauri-apps/api/core';
 import type { ToolRequestUserInputQuestion, ToolRequestUserInputResponse } from '@/bindings/v2';
 import type { RequestId } from '@/bindings';
+import { respondToRequestUserInput } from '@/services';
 
 export type RequestUserInputRequest = {
   requestId: RequestId;
@@ -30,10 +30,7 @@ export const useRequestUserInputStore = create<RequestUserInputStore>((set) => (
   },
   respondToRequest: async (requestId, response) => {
     try {
-      await invoke('respond_to_request_user_input', {
-        requestId,
-        response,
-      });
+      await respondToRequestUserInput(requestId, response);
       set((state) => {
         const pending = state.pendingRequests.filter((r) => r.requestId !== requestId);
         return {

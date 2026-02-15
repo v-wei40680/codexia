@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { ccGetProjects, ccGetSessions } from '@/services';
 
 export interface SessionData {
   project: string;
@@ -9,7 +9,7 @@ export interface SessionData {
 
 export async function getProjects(): Promise<string[]> {
   try {
-    return await invoke<string[]>('cc_get_projects');
+    return await ccGetProjects();
   } catch (err) {
     console.debug('Failed to get projects:', err);
     return [];
@@ -21,7 +21,7 @@ export async function getProjects(): Promise<string[]> {
  */
 export async function getSessions(): Promise<SessionData[]> {
   try {
-    return await invoke<SessionData[]>('cc_get_sessions');
+    return await ccGetSessions<SessionData[]>();
   } catch (err) {
     console.debug('Failed to get sessions:', err);
     return [];

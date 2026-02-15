@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { useCCStore, CCMessage as CCMessageType } from '@/stores/ccStore';
 import { Button } from '@/components/ui/button';
@@ -11,6 +10,7 @@ import { useCCSessionManager } from '@/hooks/useCCSessionManager';
 import { CCInput } from '@/components/cc/CCInput';
 import { CCScrollControls } from '@/components/cc/CCScrollControls';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
+import { ccInterrupt, ccSendMessage } from '@/services';
 
 export default function CCView() {
   const {
@@ -105,10 +105,7 @@ export default function CCView() {
 
     try {
       // Backend will connect automatically on first message if not connected
-      await invoke('cc_send_message', {
-        sessionId: activeSessionId,
-        message: textToSend,
-      });
+      await ccSendMessage(activeSessionId, textToSend);
 
       // Mark as connected after successfully sending message
       if (!isConnected) {
@@ -135,9 +132,7 @@ export default function CCView() {
     if (!activeSessionId) return;
 
     try {
-      await invoke('cc_interrupt', {
-        sessionId: activeSessionId,
-      });
+      await ccInterrupt(activeSessionId);
     } catch (error) {
       console.error('Failed to interrupt:', error);
     } finally {

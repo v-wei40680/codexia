@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { McpServerFormFields } from './McpServerFormFields';
 import type { ClaudeCodeMcpServer } from '@/types/cc/cc-mcp';
+import { ccMcpAdd } from '@/services';
 
 type ServerType = 'stdio' | 'http' | 'sse';
 
@@ -68,7 +68,7 @@ export function McpAddServerForm({
         request.url = newUrl;
       }
 
-      await invoke('cc_mcp_add', { request, workingDir });
+      await ccMcpAdd(request, workingDir);
 
       // Reset form and refresh
       setNewServerName('');

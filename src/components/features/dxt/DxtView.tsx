@@ -3,10 +3,14 @@ import { DxtManifestSchema } from './schemas';
 import DxtDetail from './DxtDetail';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
-import { invoke } from '@tauri-apps/api/core';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { X, Search, RotateCcw } from 'lucide-react';
+import {
+  checkManifestsExist,
+  downloadAndExtractManifests,
+  loadManifests as loadDxtManifests,
+} from '@/services';
 
 // Utility to normalize manifest data
 function normalizeManifest(obj: any, index: number) {
@@ -135,12 +139,12 @@ export default function DxtView() {
     setLoading(true);
     try {
       // Check if manifests exist locally
-      const manifestsExist = await invoke<boolean>('check_manifests_exist');
+      const manifestsExist = await checkManifestsExist();
 
       if (!manifestsExist) {
         console.log('No manifests found locally, downloading...');
         // Download and extract manifests if they don't exist
-        await invoke('download_and_extract_manifests');
+        await downloadAndExtractManifests();
       }
 
       // Load manifests
@@ -154,7 +158,7 @@ export default function DxtView() {
 
   async function loadManifests() {
     try {
-      const result = await invoke<any[]>('load_manifests');
+      const result = (await loadDxtManifests()) as any[];
       const normalized = result.map((manifest, index) => normalizeManifest(manifest, index));
 
       // Parse each manifest individually and filter out invalid ones
@@ -193,7 +197,7 @@ export default function DxtView() {
       await loadManifests();
     } else {
       try {
-        const result = await invoke<any[]>('load_manifests');
+        const result = (await loadDxtManifests()) as any[];
         const filtered = result.filter(
           (manifest) =>
             manifest.name?.toLowerCase().includes(search.toLowerCase()) ||

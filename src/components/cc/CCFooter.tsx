@@ -14,8 +14,8 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useState, useEffect } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { CCMCPManager } from './mcp';
+import { ccGetInstalledSkills, ccGetSettings, ccUpdateSettings } from '@/services';
 
 export function CCFooter() {
   const { options, updateOptions } = useCCStore();
@@ -28,11 +28,11 @@ export function CCFooter() {
     const loadSkills = async () => {
       try {
         // Load installed skills
-        const skills = await invoke<string[]>('cc_get_installed_skills');
+        const skills = await ccGetInstalledSkills();
         setInstalledSkills(skills);
 
         // Load global settings to get enabled skills
-        const settings = await invoke<any>('cc_get_settings');
+        const settings = await ccGetSettings<any>();
         setEnabledSkills(settings.enabledSkills || {});
       } catch (error) {
         console.error('Failed to load skills:', error);
@@ -50,9 +50,9 @@ export function CCFooter() {
       setEnabledSkills(newEnabledSkills);
 
       // Update global settings
-      const settings = await invoke<any>('cc_get_settings');
+      const settings = await ccGetSettings<any>();
       settings.enabledSkills = newEnabledSkills;
-      await invoke('cc_update_settings', { settings });
+      await ccUpdateSettings(settings);
     } catch (error) {
       console.error('Failed to toggle skill:', error);
     }
@@ -155,9 +155,9 @@ export function CCFooter() {
                       e.stopPropagation();
                       setEnabledSkills({});
                       try {
-                        const settings = await invoke<any>('cc_get_settings');
+                        const settings = await ccGetSettings<any>();
                         settings.enabledSkills = {};
-                        await invoke('cc_update_settings', { settings });
+                        await ccUpdateSettings(settings);
                       } catch (error) {
                         console.error('Failed to clear skills:', error);
                       }

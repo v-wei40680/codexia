@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { invoke } from '@tauri-apps/api/core';
 import { useCCStore } from '@/stores/ccStore';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
+import { ccNewSession, ccResumeSession, ccSendMessage } from '@/services';
 
 /**
  * Custom hook for managing Claude Code sessions
@@ -65,9 +65,7 @@ export function useCCSessionManager() {
         ClaudeAgentOptions.disallowedTools = options.disallowedTools;
 
       console.debug('ClaudeAgentOptions', ClaudeAgentOptions);
-      const newSessionId = await invoke<string>('cc_new_session', {
-        options: ClaudeAgentOptions,
-      });
+      const newSessionId = await ccNewSession(ClaudeAgentOptions);
 
       setActiveSessionId(newSessionId);
       setMessages([]);
@@ -80,10 +78,7 @@ export function useCCSessionManager() {
         text: initialMessage,
       });
 
-      await invoke('cc_send_message', {
-        sessionId: newSessionId,
-        message: initialMessage,
-      });
+      await ccSendMessage(newSessionId, initialMessage);
 
       // Mark as connected after successfully sending message
       setConnected(true);
@@ -131,10 +126,7 @@ export function useCCSessionManager() {
       if (options.disallowedTools !== undefined)
         ClaudeAgentOptions.disallowedTools = options.disallowedTools;
 
-      await invoke('cc_resume_session', {
-        sessionId,
-        options: ClaudeAgentOptions,
-      });
+      await ccResumeSession(sessionId, ClaudeAgentOptions);
 
       // Session history loaded, but not connected yet
       // Connection will happen when user sends first message
