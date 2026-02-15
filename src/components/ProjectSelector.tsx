@@ -138,12 +138,13 @@ export function ProjectSelector() {
   const { cwd, setCwd, projects, addProject, removeProject } = useWorkspaceStore();
   const [open, setOpen] = useState(false);
   const [currentPath, setCurrentPath] = useState('');
-  const [defaultDirs, setDefaultDirs] = useState<QuickAccessDir[]>([]);
+  const [homeDir, setHomeDir] = useState('');
   const [entries, setEntries] = useState<TauriFileEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [search, setSearch] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [showBrowse, setShowBrowse] = useState(false);
+  const defaultDirs = useMemo(() => buildQuickAccessDirs(homeDir), [homeDir]);
 
   const directoryEntries = useMemo(
     () =>
@@ -194,8 +195,7 @@ export function ProjectSelector() {
     const setup = async () => {
       try {
         const home = await getHomeDirectory();
-        const quickAccessDirs = buildQuickAccessDirs(home);
-        setDefaultDirs(quickAccessDirs);
+        setHomeDir(home);
         const startPath = cwd || home;
         if (startPath) {
           await loadDirectory(startPath);
@@ -240,11 +240,12 @@ export function ProjectSelector() {
     }
   }
 
-  function toggleProjectInWorkspace(path: string) {
+  async function toggleProjectInWorkspace(path: string) {
     if (projects.includes(path)) {
       removeProject(path);
     } else {
       addProject(path);
+      await selectCwd(path);
     }
   }
 
@@ -335,7 +336,7 @@ export function ProjectSelector() {
                                 title={inWorkspace ? "Remove from workspace" : "Add to workspace"}
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  toggleProjectInWorkspace(entry.path);
+                                  void toggleProjectInWorkspace(entry.path);
                                 }}
                               >
                                 {inWorkspace ? (
@@ -343,18 +344,6 @@ export function ProjectSelector() {
                                 ) : (
                                   <StarOff className="h-4 w-4 text-muted-foreground" />
                                 )}
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-7 w-7 flex-shrink-0"
-                                title="Select as working directory"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  void selectCwd(entry.path);
-                                }}
-                              >
-                                <Check className="h-4 w-4 text-muted-foreground" />
                               </Button>
                             </div>
                           </CommandItem>
