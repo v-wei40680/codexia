@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { codexService } from '@/services/codexService';
 import {
   canonicalizePath,
-  getDefaultDirectories,
+  getHomeDirectory,
   readDirectory,
   type TauriFileEntry,
 } from '@/services/tauri';
@@ -53,6 +53,21 @@ function getParentPath(path: string) {
 function getQuickAccessName(path: string) {
   const normalized = path.replace(/[\\/]+$/, '');
   return getFilename(normalized) || path;
+}
+
+function joinPath(basePath: string, segment: string) {
+  const separator = basePath.includes('\\') && !basePath.includes('/') ? '\\' : '/';
+  const normalized = basePath.replace(/[\\/]+$/, '');
+  return `${normalized}${separator}${segment}`;
+}
+
+function buildQuickAccessDirs(home: string) {
+  if (!home) {
+    return [];
+  }
+
+  const quickAccessNames = ['Documents', 'Downloads', 'Pictures', 'Movies', 'Music', 'Desktop'];
+  return [home, ...quickAccessNames.map((name) => joinPath(home, name))];
 }
 
 function getQuickAccessIcon(folderName: string): LucideIcon {
@@ -138,15 +153,16 @@ export function ProjectSelector() {
     setSearch('');
     const setup = async () => {
       try {
-        const dirs = await getDefaultDirectories();
-        setDefaultDirs(dirs);
-        const startPath = cwd || dirs[0];
+        const home = await getHomeDirectory();
+        const quickAccessDirs = buildQuickAccessDirs(home);
+        setDefaultDirs(quickAccessDirs);
+        const startPath = cwd || home;
         if (startPath) {
           await loadDirectory(startPath);
         }
       } catch (e) {
         console.error('Failed to initialize directory picker:', e);
-        setError('Unable to load default directories');
+        setError('Unable to load home directory');
       }
     };
     void setup();

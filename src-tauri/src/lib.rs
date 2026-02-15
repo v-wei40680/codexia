@@ -16,7 +16,7 @@ use crate::state::WatchState;
 use cc_commands::CCState;
 use commands::terminal::TerminalState;
 use filesystem::{
-    directory_ops::{canonicalize_path, get_default_directories, read_directory, search_files},
+    directory_ops::{canonicalize_path, get_home_directory, read_directory, search_files},
     file_io::{delete_file, read_file, read_text_file_lines, write_file},
     file_parsers::{pdf::read_pdf_content, xlsx::read_xlsx_content},
     watch::{start_watch_directory, stop_watch_directory},
@@ -72,7 +72,7 @@ pub fn run() {
             codex::respond_to_file_change_approval,
             codex::respond_to_request_user_input,
             read_directory,
-            get_default_directories,
+            get_home_directory,
             search_files,
             canonicalize_path,
             read_file,

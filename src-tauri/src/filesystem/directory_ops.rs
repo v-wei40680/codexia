@@ -84,19 +84,9 @@ pub async fn read_directory(path: String) -> Result<Vec<FileEntry>, String> {
 }
 
 #[tauri::command]
-pub async fn get_default_directories() -> Result<Vec<String>, String> {
+pub async fn get_home_directory() -> Result<String, String> {
     let home = dirs::home_dir().ok_or_else(|| "Cannot find home directory".to_string())?;
-
-    let default_dirs = vec![
-        home.to_string_lossy().to_string(),
-        home.join("Documents").to_string_lossy().to_string(),
-        home.join("Downloads").to_string_lossy().to_string(),
-        home.join("Pictures").to_string_lossy().to_string(),
-        home.join("Movies").to_string_lossy().to_string(),
-        home.join("Music").to_string_lossy().to_string(),
-    ];
-
-    Ok(default_dirs)
+    Ok(home.to_string_lossy().to_string())
 }
 
 #[tauri::command]

@@ -10,7 +10,7 @@ use super::{
     handlers::{
         api_account_rate_limits, api_archive_thread, api_cancel_login_account,
         api_canonicalize_path, api_codex_home, api_create_note, api_delete_file, api_delete_note,
-        api_fuzzy_file_search, api_get_account, api_get_default_directories, api_get_note_by_id,
+        api_fuzzy_file_search, api_get_account, api_get_home_directory, api_get_note_by_id,
         api_get_notes, api_list_archived_threads, api_list_threads, api_login_account,
         api_logout_account, api_model_list, api_model_list_post, api_read_directory, api_read_file,
         api_respond_command_execution_approval, api_respond_file_change_approval, api_search_files,
@@ -99,8 +99,8 @@ pub(crate) fn create_router(state: WebServerState) -> Router {
             post(api_read_directory),
         )
         .route(
-            "/api/codex/filesystem/default-directories",
-            get(api_get_default_directories),
+            "/api/codex/filesystem/home-directory",
+            get(api_get_home_directory),
         )
         .route(
             "/api/codex/filesystem/canonicalize-path",

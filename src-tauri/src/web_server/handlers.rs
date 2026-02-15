@@ -18,7 +18,7 @@ use crate::db::{
     toggle_favorite as db_toggle_favorite, update_note as db_update_note,
 };
 use crate::filesystem::{
-    directory_ops::{canonicalize_path, get_default_directories, read_directory, search_files},
+    directory_ops::{canonicalize_path, get_home_directory, read_directory, search_files},
     file_io::{delete_file, read_file, write_file},
     file_types::FileEntry,
 };
@@ -419,9 +419,9 @@ pub(super) async fn api_read_directory(
     Ok(Json(entries))
 }
 
-pub(super) async fn api_get_default_directories() -> Result<Json<Vec<String>>, ErrorResponse> {
-    let dirs = get_default_directories().await.map_err(to_error_response)?;
-    Ok(Json(dirs))
+pub(super) async fn api_get_home_directory() -> Result<Json<String>, ErrorResponse> {
+    let home = get_home_directory().await.map_err(to_error_response)?;
+    Ok(Json(home))
 }
 
 pub(super) async fn api_canonicalize_path(

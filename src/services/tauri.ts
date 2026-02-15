@@ -625,11 +625,11 @@ export async function readDirectory(path: string) {
   return await postJson<TauriFileEntry[]>('/api/codex/filesystem/read-directory', { path });
 }
 
-export async function getDefaultDirectories() {
+export async function getHomeDirectory() {
   if (isTauri()) {
-    return await invokeTauri<string[]>('get_default_directories');
+    return await invokeTauri<string>('get_home_directory');
   }
-  return await getJson<string[]>('/api/codex/filesystem/default-directories');
+  return await getJson<string>('/api/codex/filesystem/home-directory');
 }
 
 export async function searchFiles(params: {
