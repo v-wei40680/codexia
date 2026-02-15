@@ -23,7 +23,6 @@ import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useCCSessionManager } from '@/hooks/useCCSessionManager';
 import { useUpdater } from '@/hooks/useUpdater';
 import { ClaudeCodeSessionList } from '../cc/SessionList';
-import { FileTree } from '../features/files/explorer';
 import { UpdateButton } from '../features/UpdateButton';
 import { getFilename } from '@/utils/getFilename';
 import { getSessions, SessionData } from '@/lib/sessions';
@@ -39,9 +38,6 @@ export function SideBar() {
     view,
     activeSidebarTab,
     setActiveSidebarTab,
-    setActiveRightPanelTab,
-    activeRightPanelTab,
-    setRightPanelOpen,
   } = useLayoutStore();
   const { searchTerm, setSearchTerm, handleNewThread, handleMenu } = useThreadList();
   const { handleSessionSelect, handleNewSession } = useCCSessionManager();
@@ -84,6 +80,12 @@ export function SideBar() {
       cancelled = true;
     };
   }, [activeSidebarTab, activeSessionId]);
+
+  useEffect(() => {
+    if (activeSidebarTab === 'explorer') {
+      setActiveSidebarTab(selectedAgent === 'cc' ? 'cc' : 'codex');
+    }
+  }, [activeSidebarTab, selectedAgent, setActiveSidebarTab]);
 
   const handleCreateNew = useCallback(async () => {
     if (selectedAgent === 'cc') {
@@ -187,16 +189,6 @@ export function SideBar() {
               }}
             >
               cc
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`h-8 px-2 ${activeSidebarTab === 'explorer' ? 'bg-accent' : ''}`}
-              onClick={() => {
-                setActiveSidebarTab('explorer');
-              }}
-            >
-              Files
             </Button>
           </span>
           <span className="flex">
@@ -353,17 +345,6 @@ export function SideBar() {
                 </div>
               )}
             </div>
-          )}
-          {activeSidebarTab === 'explorer' && (
-            <FileTree
-              folder={cwd}
-              onFileSelect={() => {
-                setRightPanelOpen(true);
-                if (activeRightPanelTab !== 'files') {
-                  setActiveRightPanelTab('files');
-                }
-              }}
-            />
           )}
         </ScrollArea>
       </div>

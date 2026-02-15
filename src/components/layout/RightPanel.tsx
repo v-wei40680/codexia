@@ -5,6 +5,7 @@ import { NoteView } from '@/components/features/notes';
 import { useWorkspaceStore } from '@/stores';
 import { FileViewer } from '@/components/features/files';
 import { GitDiffPanel } from '@/components/features/git';
+import { FileTree } from '@/components/features/files/explorer';
 import { WebPreview } from '../features/web-preview/WebPreview';
 import { detectWebFramework } from '../features/web-preview/webFrameworkDetection';
 
@@ -63,11 +64,20 @@ export function RightPanel() {
               value="files"
               className="h-full min-h-0 m-0 overflow-hidden data-[state=inactive]:hidden"
             >
-              {selectedFilePath ? (
-                <FileViewer filePath={selectedFilePath} />
-              ) : (
-                'Select a file to view'
-              )}
+              <div className="flex h-full min-h-0 overflow-hidden">
+                <div className="h-full w-64 min-w-64 border-r border-border bg-sidebar/20">
+                  <FileTree folder={cwd} />
+                </div>
+                <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
+                  {selectedFilePath ? (
+                    <FileViewer filePath={selectedFilePath} />
+                  ) : (
+                    <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                      Select a file to view
+                    </div>
+                  )}
+                </div>
+              </div>
             </TabsContent>
             <TabsContent
               value="webpreview"

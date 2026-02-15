@@ -359,40 +359,57 @@ export function FileTree({ folder, onFileSelect }: FileTreeProps) {
           style={{ paddingLeft: depth * 12 }}
         >
           {isDir ? (
-            isExpanded ? (
-              <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
-            ) : (
-              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
-            )
+            <span className="relative h-4 w-4 shrink-0">
+              {isExpanded ? (
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              ) : (
+                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              )}
+              {!isRoot ? (
+                <Button
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    appendInputValue(`[${node.name}](${relativePath})`);
+                  }}
+                  variant="ghost"
+                  size="icon"
+                  title={`Insert ${node.name}`}
+                  className="absolute inset-0 h-4 w-4 min-h-0 min-w-0 rounded-sm border border-border bg-background p-0 text-foreground opacity-0 transition-opacity group-hover/file-row:opacity-100"
+                  aria-label={`Insert ${node.name}`}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </Button>
+              ) : null}
+            </span>
           ) : (
             <span className="w-4" />
           )}
           {!isDir && (
-            <span className="h-4 w-4 shrink-0">
+            <span className="relative h-4 w-4 shrink-0">
               <FileIcon extension={extension} {...iconStyle} />
+              {!isRoot ? (
+                <Button
+                  onClick={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    appendInputValue(`[${node.name}](${relativePath})`);
+                  }}
+                  variant="ghost"
+                  size="icon"
+                  title={`Insert ${node.name}`}
+                  className="absolute inset-0 h-4 w-4 min-h-0 min-w-0 rounded-none p-0 text-muted-foreground opacity-0 transition-opacity group-hover/file-row:opacity-100"
+                  aria-label={`Insert ${node.name}`}
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </Button>
+              ) : null}
             </span>
           )}
           <span className="whitespace-nowrap">{node.name}</span>
-          <div className="ml-auto flex items-center gap-2">
-            {isDir && isLoadingChildren ? (
-              <span className="text-xs text-muted-foreground">Loading...</span>
-            ) : null}
-            {!isRoot ? (
-              <Button
-                onClick={(event) => {
-                  event.preventDefault();
-                  event.stopPropagation();
-                  appendInputValue(relativePath);
-                }}
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 shrink-0 text-muted-foreground opacity-0 group-hover/file-row:opacity-100 transition-opacity"
-                aria-label={`Insert ${node.name}`}
-              >
-                <Plus className="h-4 w-4" />
-              </Button>
-            ) : null}
-          </div>
+          {isDir && isLoadingChildren ? (
+            <span className="ml-auto text-xs text-muted-foreground">Loading...</span>
+          ) : null}
         </div>
         {isDir && isExpanded && node.children?.map((child) => renderNode(child, depth + 1))}
       </div>
@@ -445,7 +462,8 @@ export function FileTree({ folder, onFileSelect }: FileTreeProps) {
     );
   }
 
-  const hasSearchResults = (displayRoot.children?.length ?? 0) > 0;
+  const visibleNodes = displayRoot.children ?? [];
+  const hasSearchResults = visibleNodes.length > 0;
 
   return (
     <div className="max-h-full min-w-0 max-w-full overflow-y-auto overflow-x-auto">
@@ -464,7 +482,9 @@ export function FileTree({ folder, onFileSelect }: FileTreeProps) {
       {isSearching && !searching && !searchError && !hasSearchResults ? (
         <div className="text-sm text-muted-foreground">No matching files or folders.</div>
       ) : null}
-      {(!isSearching || hasSearchResults) && <div className="space-y-1">{renderNode(displayRoot, 0)}</div>}
+      {(!isSearching || hasSearchResults) && (
+        <div className="space-y-1">{visibleNodes.map((child) => renderNode(child, 0))}</div>
+      )}
     </div>
   );
 }
