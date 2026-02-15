@@ -72,6 +72,7 @@ pub struct AppState {
 }
 
 pub async fn connect_codex(event_sink: Arc<dyn EventSink>) -> Result<Arc<CodexAppServer>, String> {
+    log::info!("Connecting to codex app-server");
     let codex_bin =
         discover_codex_command().ok_or_else(|| "Unable to locate codex binary".to_string())?;
 
@@ -95,6 +96,7 @@ pub async fn connect_codex(event_sink: Arc<dyn EventSink>) -> Result<Arc<CodexAp
         pending: Mutex::new(HashMap::new()),
         next_id: AtomicU64::new(1),
     });
+    log::info!("Connected to codex app-server");
 
     // Spawn stdout reader task
     let client_clone = Arc::clone(&client);
@@ -109,7 +111,7 @@ pub async fn connect_codex(event_sink: Arc<dyn EventSink>) -> Result<Arc<CodexAp
             let value: Value = match serde_json::from_str(&line) {
                 Ok(v) => v,
                 Err(err) => {
-                    println!("codex:notification (parseError): {:?}", err);
+                    log::warn!("codex:notification (parseError): {:?}", err);
                     event_sink_clone.emit(
                         "codex:notification",
                         serde_json::json!({
@@ -171,7 +173,7 @@ pub async fn connect_codex(event_sink: Arc<dyn EventSink>) -> Result<Arc<CodexAp
                                     | "thread/tokenUsage/updated"
                                     | "account/rateLimits/updated"
                             ) {
-                                println!(
+                                log::info!(
                                     "codex:notification: {}",
                                     serde_json::to_string(&server_notification).unwrap_or_default()
                                 );
@@ -181,7 +183,7 @@ pub async fn connect_codex(event_sink: Arc<dyn EventSink>) -> Result<Arc<CodexAp
                                     event_sink_clone.emit("codex:notification", payload);
                                 }
                                 Err(err) => {
-                                    println!("codex:notification (serializeError): {:?}", err);
+                                    log::warn!("codex:notification (serializeError): {:?}", err);
                                 }
                             }
                         }
@@ -199,7 +201,7 @@ pub async fn connect_codex(event_sink: Arc<dyn EventSink>) -> Result<Arc<CodexAp
             if line.trim().is_empty() {
                 continue;
             }
-            println!("codex:notification (stderr): {}", line);
+            log::warn!("codex:notification (stderr): {}", line);
             event_sink_clone.emit(
                 "codex:notification",
                 serde_json::json!({
@@ -217,6 +219,7 @@ pub async fn initialize_codex(
     codex: &CodexAppServer,
     event_sink: Arc<dyn EventSink>,
 ) -> Result<(), String> {
+    log::info!("Initializing codex app-server session");
     let params = serde_json::json!({
         "clientInfo": {
             "name": "codexia",
@@ -229,10 +232,10 @@ pub async fn initialize_codex(
     });
 
     let result = codex.send_request("initialize", params).await?;
-    println!("Codex initialized successfully: {:?}", result);
+    log::info!("Codex initialized successfully: {:?}", result);
 
     if let Err(err) = codex.send_notification("initialized", None).await {
-        eprintln!("Failed to send initialized notification: {}", err);
+        log::error!("Failed to send initialized notification: {}", err);
     }
 
     event_sink.emit(

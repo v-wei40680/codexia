@@ -200,7 +200,7 @@ pub fn run() {
 pub fn start_web_server(port: u16) {
     tauri::async_runtime::block_on(async move {
         if let Err(err) = web_server::start_web_server(port).await {
-            eprintln!("Failed to start web server: {}", err);
+            log::error!("Failed to start web server: {}", err);
         }
     });
 }
