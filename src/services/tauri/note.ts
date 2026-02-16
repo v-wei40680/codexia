@@ -59,3 +59,18 @@ export async function toggleFavorite(id: string) {
   }
   await postNoContent('/api/notes/toggle-favorite', { id });
 }
+
+export async function markNotesSynced(ids: string[]) {
+  if (isTauri()) {
+    await invokeTauri('mark_notes_synced', { ids });
+    return;
+  }
+  await postNoContent('/api/notes/mark-synced', { ids });
+}
+
+export async function getUnsyncedNotes(userId?: string | null) {
+  if (isTauri()) {
+    return await invokeTauri<DbNote[]>('get_unsynced_notes', { userId });
+  }
+  return await postJson<DbNote[]>('/api/notes/unsynced', { user_id: userId ?? null });
+}

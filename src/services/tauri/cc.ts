@@ -1,4 +1,4 @@
-import { invokeTauri, isTauri, postNoContent, postJson, getJson, toast } from './shared';
+import { invokeTauri, isTauri, postNoContent, postJson, getJson } from './shared';
 
 export async function ccNewSession(options: Record<string, unknown>) {
   if (isTauri()) {
@@ -75,45 +75,36 @@ export async function ccMcpAdd(request: unknown, workingDir: string) {
     await invokeTauri('cc_mcp_add', { request, workingDir });
     return;
   }
-  toast({
-    title: 'ccMcpAdd is only available in Tauri mode.',
-    variant: 'destructive',
-  });
-  return Promise.reject(new Error('ccMcpAdd is only available in Tauri mode.'));
+  await postJson('/api/cc/mcp/add', { request, working_dir: workingDir });
 }
 
 export async function ccMcpList<T = unknown>(workingDir: string) {
   if (isTauri()) {
     return await invokeTauri<T>('cc_mcp_list', { workingDir });
   }
-  toast({
-    title: 'ccMcpList is only available in Tauri mode.',
-    variant: 'destructive',
-  });
-  return Promise.reject(new Error('ccMcpList is only available in Tauri mode.'));
+  return await postJson<T>('/api/cc/mcp/list', { working_dir: workingDir });
+}
+
+export async function ccMcpGet<T = unknown>(name: string, workingDir: string) {
+  if (isTauri()) {
+    return await invokeTauri<T>('cc_mcp_get', { name, workingDir });
+  }
+  return await postJson<T>('/api/cc/mcp/get', { name, working_dir: workingDir });
 }
 
 export async function ccListProjects() {
   if (isTauri()) {
     return await invokeTauri<string[]>('cc_list_projects');
   }
-  toast({
-    title: 'ccListProjects is only available in Tauri mode.',
-    variant: 'destructive',
-  });
-  return Promise.reject(new Error('ccListProjects is only available in Tauri mode.'));
+  return await getJson<string[]>('/api/cc/mcp/projects');
 }
 
-export async function ccMcpRemove(name: string, workingDir: string) {
+export async function ccMcpRemove(name: string, workingDir: string, scope = 'local') {
   if (isTauri()) {
-    await invokeTauri('cc_mcp_remove', { name, workingDir });
+    await invokeTauri('cc_mcp_remove', { name, workingDir, scope });
     return;
   }
-  toast({
-    title: 'ccMcpRemove is only available in Tauri mode.',
-    variant: 'destructive',
-  });
-  return Promise.reject(new Error('ccMcpRemove is only available in Tauri mode.'));
+  await postJson('/api/cc/mcp/remove', { name, working_dir: workingDir, scope });
 }
 
 export async function ccMcpEnable(name: string, workingDir: string) {
@@ -121,11 +112,7 @@ export async function ccMcpEnable(name: string, workingDir: string) {
     await invokeTauri('cc_mcp_enable', { name, workingDir });
     return;
   }
-  toast({
-    title: 'ccMcpEnable is only available in Tauri mode.',
-    variant: 'destructive',
-  });
-  return Promise.reject(new Error('ccMcpEnable is only available in Tauri mode.'));
+  await postJson('/api/cc/mcp/enable', { name, working_dir: workingDir });
 }
 
 export async function ccMcpDisable(name: string, workingDir: string) {
@@ -133,9 +120,5 @@ export async function ccMcpDisable(name: string, workingDir: string) {
     await invokeTauri('cc_mcp_disable', { name, workingDir });
     return;
   }
-  toast({
-    title: 'ccMcpDisable is only available in Tauri mode.',
-    variant: 'destructive',
-  });
-  return Promise.reject(new Error('ccMcpDisable is only available in Tauri mode.'));
+  await postJson('/api/cc/mcp/disable', { name, working_dir: workingDir });
 }

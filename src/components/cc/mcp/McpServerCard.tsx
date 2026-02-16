@@ -79,7 +79,7 @@ export function McpServerCard({ server, workingDir, onServerUpdated }: McpServer
       }
 
       if (server.name !== editName) {
-        await ccMcpRemove(server.name, workingDir);
+        await ccMcpRemove(server.name, workingDir, server.scope);
       }
 
       await ccMcpAdd(request, workingDir);
@@ -98,7 +98,7 @@ export function McpServerCard({ server, workingDir, onServerUpdated }: McpServer
 
   const handleDeleteServer = async () => {
     try {
-      await ccMcpRemove(server.name, workingDir);
+      await ccMcpRemove(server.name, workingDir, server.scope);
       onServerUpdated();
       toast.success(`Server "${server.name}" deleted`);
     } catch (error) {

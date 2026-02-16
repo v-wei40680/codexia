@@ -7,6 +7,7 @@ use super::{router::create_router, types::WebServerState};
 use crate::cc_commands::CCState;
 use crate::codex::scan::start_history_scanner;
 use crate::codex::{AppState, EventSink, WebSocketEventSink, connect_codex, initialize_codex};
+use crate::sleep::SleepState;
 use crate::web_server::filesystem_watch::WebWatchState;
 
 pub async fn start_web_server_with_events(
@@ -21,6 +22,7 @@ pub async fn start_web_server_with_events(
     let state = WebServerState {
         codex_state,
         cc_state,
+        sleep_state: Arc::new(SleepState::default()),
         terminal_state: Arc::new(super::terminal::WebTerminalState::default()),
         fs_watch_state: Arc::new(WebWatchState::default()),
         event_tx,

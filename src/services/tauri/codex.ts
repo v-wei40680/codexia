@@ -202,12 +202,14 @@ export async function preventSleep(conversationId?: string | null) {
   if (isTauri()) {
     return await invokeTauri<void>('prevent_sleep', { conversationId: conversationId ?? null });
   }
+  await postNoContent('/api/sleep/prevent', { conversation_id: conversationId ?? null });
 }
 
 export async function allowSleep(conversationId?: string | null) {
   if (isTauri()) {
     return await invokeTauri<void>('allow_sleep', { conversationId: conversationId ?? null });
   }
+  await postNoContent('/api/sleep/allow', { conversation_id: conversationId ?? null });
 }
 
 export async function readTokenUsage<T = unknown>() {

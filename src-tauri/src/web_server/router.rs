@@ -8,23 +8,31 @@ use tower_http::services::{ServeDir, ServeFile};
 
 use super::{
     handlers::{
-        api_account_rate_limits, api_archive_thread, api_canonicalize_path,
+        api_account_rate_limits, api_allow_sleep, api_archive_thread, api_canonicalize_path,
+        api_cc_list_projects, api_cc_mcp_add, api_cc_mcp_disable, api_cc_mcp_enable,
+        api_cc_mcp_get, api_cc_mcp_list, api_cc_mcp_remove,
         api_cc_connect, api_cc_disconnect, api_cc_get_installed_skills, api_cc_get_projects,
         api_cc_get_sessions, api_cc_get_settings, api_cc_interrupt, api_cc_list_sessions,
         api_cc_new_session, api_cc_resume_session, api_cc_send_message, api_cc_update_settings,
         api_check_manifests_exist, api_codex_home, api_create_note, api_delete_file,
         api_delete_note, api_download_and_extract_manifests, api_fuzzy_file_search,
         api_get_account, api_get_home_directory, api_get_note_by_id, api_get_notes,
+        api_get_unsynced_notes,
         api_git_diff_stats, api_git_file_diff, api_git_file_diff_meta,
         api_git_prepare_thread_worktree, api_git_stage_files, api_git_status,
         api_git_unstage_files,
         api_list_archived_threads, api_list_threads, api_load_manifest, api_load_manifests,
+        api_mark_notes_synced, api_prevent_sleep,
         api_login_account, api_model_list, api_model_list_post, api_read_directory, api_read_file,
+        api_read_dxt_setting,
         api_read_pdf_content, api_read_text_file_lines, api_read_token_usage,
         api_read_xlsx_content, api_respond_command_execution_approval,
         api_respond_file_change_approval, api_respond_user_input, api_resume_thread,
+        api_save_dxt_setting,
         api_search_files, api_skills_config_write, api_skills_list, api_start_review,
         api_start_thread, api_start_watch_file, api_start_watch_path, api_stop_watch_file,
+        api_skills_clone_repo, api_skills_install_marketplace, api_skills_list_installed,
+        api_skills_list_marketplace, api_skills_uninstall_installed,
         api_stop_watch_path, api_terminal_resize, api_terminal_start, api_terminal_stop,
         api_terminal_write, api_toggle_favorite, api_turn_interrupt, api_turn_start,
         api_unified_add_mcp_server, api_unified_disable_mcp_server,
@@ -131,6 +139,19 @@ pub(crate) fn create_router(state: WebServerState) -> Router {
         .route("/api/notes/update", post(api_update_note))
         .route("/api/notes/delete", post(api_delete_note))
         .route("/api/notes/toggle-favorite", post(api_toggle_favorite))
+        .route("/api/notes/mark-synced", post(api_mark_notes_synced))
+        .route("/api/notes/unsynced", post(api_get_unsynced_notes))
+        .route("/api/skills/list-marketplace", post(api_skills_list_marketplace))
+        .route("/api/skills/list-installed", post(api_skills_list_installed))
+        .route(
+            "/api/skills/install-marketplace",
+            post(api_skills_install_marketplace),
+        )
+        .route(
+            "/api/skills/uninstall-installed",
+            post(api_skills_uninstall_installed),
+        )
+        .route("/api/skills/clone-repo", post(api_skills_clone_repo))
         .route("/api/codex/mcp/read", post(api_unified_read_mcp_config))
         .route("/api/codex/mcp/add", post(api_unified_add_mcp_server))
         .route("/api/codex/mcp/remove", post(api_unified_remove_mcp_server))
@@ -140,6 +161,8 @@ pub(crate) fn create_router(state: WebServerState) -> Router {
         .route("/api/dxt/manifest", post(api_load_manifest))
         .route("/api/dxt/manifests/exist", get(api_check_manifests_exist))
         .route("/api/dxt/manifests/download", post(api_download_and_extract_manifests))
+        .route("/api/dxt/setting/read", post(api_read_dxt_setting))
+        .route("/api/dxt/setting/save", post(api_save_dxt_setting))
         .route(
             "/api/git/prepare-thread-worktree",
             post(api_git_prepare_thread_worktree),
@@ -162,6 +185,15 @@ pub(crate) fn create_router(state: WebServerState) -> Router {
         .route("/api/cc/installed-skills", get(api_cc_get_installed_skills))
         .route("/api/cc/settings", get(api_cc_get_settings).post(api_cc_update_settings))
         .route("/api/cc/sessions", get(api_cc_get_sessions))
+        .route("/api/cc/mcp/list", post(api_cc_mcp_list))
+        .route("/api/cc/mcp/get", post(api_cc_mcp_get))
+        .route("/api/cc/mcp/add", post(api_cc_mcp_add))
+        .route("/api/cc/mcp/remove", post(api_cc_mcp_remove))
+        .route("/api/cc/mcp/disable", post(api_cc_mcp_disable))
+        .route("/api/cc/mcp/enable", post(api_cc_mcp_enable))
+        .route("/api/cc/mcp/projects", get(api_cc_list_projects))
+        .route("/api/sleep/prevent", post(api_prevent_sleep))
+        .route("/api/sleep/allow", post(api_allow_sleep))
         .fallback_service(static_site)
         .layer(
             CorsLayer::new()

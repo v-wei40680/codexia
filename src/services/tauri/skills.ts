@@ -8,7 +8,6 @@ import {
   invokeTauri,
   isTauri,
   postJson,
-  toast,
 } from './shared';
 
 export async function skillList(cwd: string) {
@@ -22,11 +21,7 @@ export async function cloneSkillsRepo(url: string) {
   if (isTauri()) {
     return await invokeTauri<string>('clone_skills_repo', { url });
   }
-  toast({
-    title: 'cloneSkillsRepo is only available in Tauri mode.',
-    variant: 'destructive',
-  });
-  return Promise.reject(new Error('cloneSkillsRepo is only available in Tauri mode.'));
+  return await postJson<string>('/api/skills/clone-repo', { url });
 }
 
 export async function listMarketplaceSkills(
@@ -41,11 +36,11 @@ export async function listMarketplaceSkills(
       cwd,
     });
   }
-  toast({
-    title: 'listMarketplaceSkills is only available in Tauri mode.',
-    variant: 'destructive',
+  return await postJson<Array<MarketplaceSkillItem>>('/api/skills/list-marketplace', {
+    selected_agent: selectedAgent,
+    scope,
+    cwd,
   });
-  return Promise.reject(new Error('listMarketplaceSkills is only available in Tauri mode.'));
 }
 
 export async function listInstalledSkills(
@@ -60,11 +55,11 @@ export async function listInstalledSkills(
       cwd,
     });
   }
-  toast({
-    title: 'listInstalledSkills is only available in Tauri mode.',
-    variant: 'destructive',
+  return await postJson<Array<InstalledSkillItem>>('/api/skills/list-installed', {
+    selected_agent: selectedAgent,
+    scope,
+    cwd,
   });
-  return Promise.reject(new Error('listInstalledSkills is only available in Tauri mode.'));
 }
 
 export async function installMarketplaceSkill(
@@ -83,11 +78,13 @@ export async function installMarketplaceSkill(
       cwd,
     });
   }
-  toast({
-    title: 'installMarketplaceSkill is only available in Tauri mode.',
-    variant: 'destructive',
+  return await postJson<string>('/api/skills/install-marketplace', {
+    skill_md_path: skillMdPath,
+    skill_name: skillName,
+    selected_agent: selectedAgent,
+    scope,
+    cwd,
   });
-  return Promise.reject(new Error('installMarketplaceSkill is only available in Tauri mode.'));
 }
 
 export async function uninstallInstalledSkill(
@@ -104,11 +101,12 @@ export async function uninstallInstalledSkill(
       cwd,
     });
   }
-  toast({
-    title: 'uninstallInstalledSkill is only available in Tauri mode.',
-    variant: 'destructive',
+  return await postJson<string>('/api/skills/uninstall-installed', {
+    skill_name: skillName,
+    selected_agent: selectedAgent,
+    scope,
+    cwd,
   });
-  return Promise.reject(new Error('uninstallInstalledSkill is only available in Tauri mode.'));
 }
 
 export async function skillsConfigWrite(path: string, enabled: boolean) {

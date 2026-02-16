@@ -12,6 +12,7 @@ use tokio::sync::broadcast;
 
 use crate::cc_commands::CCState;
 use crate::codex::AppState;
+use crate::sleep::SleepState;
 use crate::web_server::filesystem_watch::WebWatchState;
 use crate::web_server::terminal::WebTerminalState;
 
@@ -19,6 +20,7 @@ use crate::web_server::terminal::WebTerminalState;
 pub(crate) struct WebServerState {
     pub(crate) codex_state: Arc<AppState>,
     pub(crate) cc_state: Arc<CCState>,
+    pub(crate) sleep_state: Arc<SleepState>,
     pub(crate) terminal_state: Arc<WebTerminalState>,
     pub(crate) fs_watch_state: Arc<WebWatchState>,
     pub(crate) event_tx: broadcast::Sender<(String, Value)>,

@@ -28,3 +28,18 @@ export async function downloadAndExtractManifests() {
   }
   await postNoContent('/api/dxt/manifests/download');
 }
+
+export async function readDxtSetting(user: string, repo: string) {
+  if (isTauri()) {
+    return await invokeTauri<unknown>('read_dxt_setting', { user, repo });
+  }
+  return await postJson<unknown>('/api/dxt/setting/read', { user, repo });
+}
+
+export async function saveDxtSetting(user: string, repo: string, content: unknown) {
+  if (isTauri()) {
+    await invokeTauri('save_dxt_setting', { user, repo, content });
+    return;
+  }
+  await postNoContent('/api/dxt/setting/save', { user, repo, content });
+}

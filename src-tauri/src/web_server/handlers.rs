@@ -13,6 +13,9 @@ use super::{
     types::{ErrorResponse, WebServerState},
 };
 use crate::cc_commands::db::SessionData;
+use crate::cc_commands::mcp::{
+    self as cc_mcp_commands, ClaudeCodeMcpServer, ClaudeCodeResponse,
+};
 use crate::cc_commands::services::{
     message_service as cc_message_service, project_service as cc_project_service,
     session_service as cc_session_service, settings_service as cc_settings_service,
@@ -22,11 +25,13 @@ use crate::cc_commands::types::{AgentOptions, CCConnectParams};
 use crate::codex::scan::{list_archived_threads_payload, list_threads_payload};
 use crate::codex::utils::codex_home;
 use crate::commands::{
-    git as git_commands, mcp as mcp_commands, notes as notes_commands, usage as usage_commands,
+    git as git_commands, mcp as mcp_commands, notes as notes_commands,
+    skills as skills_commands, usage as usage_commands,
 };
 use crate::db::notes::Note;
 use crate::dxt::{
     check_manifests_exist, download_and_extract_manifests, load_manifest, load_manifests,
+    read_dxt_setting, save_dxt_setting,
 };
 use crate::filesystem::{
     directory_ops::{canonicalize_path, get_home_directory, read_directory, search_files},
@@ -148,6 +153,40 @@ pub(super) struct ToggleFavoriteParams {
 }
 
 #[derive(Deserialize)]
+pub(super) struct NotesMarkSyncedParams {
+    ids: Vec<String>,
+}
+
+#[derive(Deserialize)]
+pub(super) struct SkillsMarketplaceParams {
+    selected_agent: String,
+    scope: String,
+    cwd: Option<String>,
+}
+
+#[derive(Deserialize)]
+pub(super) struct SkillsInstallParams {
+    skill_md_path: String,
+    skill_name: String,
+    selected_agent: String,
+    scope: String,
+    cwd: Option<String>,
+}
+
+#[derive(Deserialize)]
+pub(super) struct SkillsUninstallParams {
+    skill_name: String,
+    selected_agent: String,
+    scope: String,
+    cwd: Option<String>,
+}
+
+#[derive(Deserialize)]
+pub(super) struct SkillsCloneRepoParams {
+    url: String,
+}
+
+#[derive(Deserialize)]
 pub(super) struct UnifiedMcpAddParams {
     #[serde(rename = "client_name", alias = "clientName")]
     client_name: String,
@@ -192,6 +231,13 @@ pub(super) struct DxtManifestParams {
 }
 
 #[derive(Deserialize)]
+pub(super) struct DxtSaveSettingParams {
+    user: String,
+    repo: String,
+    content: Value,
+}
+
+#[derive(Deserialize)]
 pub(super) struct CcSessionIdParams {
     #[serde(rename = "session_id", alias = "sessionId")]
     session_id: String,
@@ -219,6 +265,41 @@ pub(super) struct CcResumeSessionParams {
 #[derive(Deserialize)]
 pub(super) struct CcUpdateSettingsParams {
     settings: Value,
+}
+
+#[derive(Deserialize)]
+pub(super) struct CcMcpListParams {
+    #[serde(rename = "working_dir", alias = "workingDir")]
+    working_dir: String,
+}
+
+#[derive(Deserialize)]
+pub(super) struct CcMcpGetParams {
+    name: String,
+    #[serde(rename = "working_dir", alias = "workingDir")]
+    working_dir: String,
+}
+
+#[derive(Deserialize)]
+pub(super) struct CcMcpAddParams {
+    request: ClaudeCodeMcpServer,
+    #[serde(rename = "working_dir", alias = "workingDir")]
+    working_dir: String,
+}
+
+#[derive(Deserialize)]
+pub(super) struct CcMcpRemoveParams {
+    name: String,
+    #[serde(rename = "working_dir", alias = "workingDir")]
+    working_dir: String,
+    scope: String,
+}
+
+#[derive(Deserialize)]
+pub(super) struct CcMcpToggleParams {
+    name: String,
+    #[serde(rename = "working_dir", alias = "workingDir")]
+    working_dir: String,
 }
 
 #[derive(Deserialize)]
@@ -274,6 +355,12 @@ pub(super) struct TerminalResizeParams {
     session_id: String,
     cols: u16,
     rows: u16,
+}
+
+#[derive(Deserialize)]
+pub(super) struct SleepParams {
+    #[serde(default, rename = "conversation_id", alias = "conversationId")]
+    conversation_id: Option<String>,
 }
 
 pub(super) async fn api_start_thread(
@@ -937,6 +1024,24 @@ pub(super) async fn api_toggle_favorite(
     Ok(StatusCode::OK)
 }
 
+pub(super) async fn api_mark_notes_synced(
+    Json(params): Json<NotesMarkSyncedParams>,
+) -> Result<StatusCode, ErrorResponse> {
+    notes_commands::mark_notes_synced(params.ids)
+        .await
+        .map_err(to_error_response)?;
+    Ok(StatusCode::OK)
+}
+
+pub(super) async fn api_get_unsynced_notes(
+    Json(params): Json<NotesListParams>,
+) -> Result<Json<Vec<Note>>, ErrorResponse> {
+    let notes = notes_commands::get_unsynced_notes(params.user_id)
+        .await
+        .map_err(to_error_response)?;
+    Ok(Json(notes))
+}
+
 pub(super) async fn api_git_prepare_thread_worktree(
     Json(params): Json<GitPrepareThreadWorktreeParams>,
 ) -> Result<Json<git_commands::GitPrepareThreadWorktreeResponse>, ErrorResponse> {
@@ -1056,6 +1161,66 @@ pub(super) async fn api_unified_read_mcp_config(
     Ok(Json(result))
 }
 
+pub(super) async fn api_skills_list_marketplace(
+    Json(params): Json<SkillsMarketplaceParams>,
+) -> Result<Json<Vec<skills_commands::MarketplaceSkill>>, ErrorResponse> {
+    let skills = skills_commands::list_marketplace_skills(
+        params.selected_agent,
+        params.scope,
+        params.cwd,
+    )
+    .await
+    .map_err(to_error_response)?;
+    Ok(Json(skills))
+}
+
+pub(super) async fn api_skills_list_installed(
+    Json(params): Json<SkillsMarketplaceParams>,
+) -> Result<Json<Vec<skills_commands::InstalledSkill>>, ErrorResponse> {
+    let skills = skills_commands::list_installed_skills(params.selected_agent, params.scope, params.cwd)
+        .await
+        .map_err(to_error_response)?;
+    Ok(Json(skills))
+}
+
+pub(super) async fn api_skills_install_marketplace(
+    Json(params): Json<SkillsInstallParams>,
+) -> Result<Json<String>, ErrorResponse> {
+    let result = skills_commands::install_marketplace_skill(
+        params.skill_md_path,
+        params.skill_name,
+        params.selected_agent,
+        params.scope,
+        params.cwd,
+    )
+    .await
+    .map_err(to_error_response)?;
+    Ok(Json(result))
+}
+
+pub(super) async fn api_skills_uninstall_installed(
+    Json(params): Json<SkillsUninstallParams>,
+) -> Result<Json<String>, ErrorResponse> {
+    let result = skills_commands::uninstall_installed_skill(
+        params.skill_name,
+        params.selected_agent,
+        params.scope,
+        params.cwd,
+    )
+    .await
+    .map_err(to_error_response)?;
+    Ok(Json(result))
+}
+
+pub(super) async fn api_skills_clone_repo(
+    Json(params): Json<SkillsCloneRepoParams>,
+) -> Result<Json<String>, ErrorResponse> {
+    let result = skills_commands::clone_skills_repo(params.url)
+        .await
+        .map_err(to_error_response)?;
+    Ok(Json(result))
+}
+
 pub(super) async fn api_load_manifests() -> Result<Json<Value>, ErrorResponse> {
     let manifests = load_manifests().await.map_err(to_error_response)?;
     Ok(Json(manifests))
@@ -1075,6 +1240,24 @@ pub(super) async fn api_check_manifests_exist() -> Result<Json<bool>, ErrorRespo
     Ok(Json(exists))
 }
 
+pub(super) async fn api_read_dxt_setting(
+    Json(params): Json<DxtManifestParams>,
+) -> Result<Json<Value>, ErrorResponse> {
+    let setting = read_dxt_setting(params.user, params.repo)
+        .await
+        .map_err(to_error_response)?;
+    Ok(Json(setting))
+}
+
+pub(super) async fn api_save_dxt_setting(
+    Json(params): Json<DxtSaveSettingParams>,
+) -> Result<StatusCode, ErrorResponse> {
+    save_dxt_setting(params.user, params.repo, params.content)
+        .await
+        .map_err(to_error_response)?;
+    Ok(StatusCode::OK)
+}
+
 pub(super) async fn api_download_and_extract_manifests() -> Result<StatusCode, ErrorResponse> {
     download_and_extract_manifests()
         .await
@@ -1087,6 +1270,91 @@ pub(super) async fn api_read_token_usage() -> Result<Json<Vec<Value>>, ErrorResp
         .await
         .map_err(to_error_response)?;
     Ok(Json(usage))
+}
+
+pub(super) async fn api_cc_mcp_list(
+    Json(params): Json<CcMcpListParams>,
+) -> Result<Json<Vec<ClaudeCodeMcpServer>>, ErrorResponse> {
+    let servers = cc_mcp_commands::cc_mcp_list(params.working_dir)
+        .await
+        .map_err(to_error_response)?;
+    Ok(Json(servers))
+}
+
+pub(super) async fn api_cc_mcp_get(
+    Json(params): Json<CcMcpGetParams>,
+) -> Result<Json<ClaudeCodeMcpServer>, ErrorResponse> {
+    let server = cc_mcp_commands::cc_mcp_get(params.name, params.working_dir)
+        .await
+        .map_err(to_error_response)?;
+    Ok(Json(server))
+}
+
+pub(super) async fn api_cc_mcp_add(
+    Json(params): Json<CcMcpAddParams>,
+) -> Result<Json<ClaudeCodeResponse>, ErrorResponse> {
+    let response = cc_mcp_commands::cc_mcp_add(params.request, params.working_dir)
+        .await
+        .map_err(to_error_response)?;
+    Ok(Json(response))
+}
+
+pub(super) async fn api_cc_mcp_remove(
+    Json(params): Json<CcMcpRemoveParams>,
+) -> Result<Json<ClaudeCodeResponse>, ErrorResponse> {
+    let response = cc_mcp_commands::cc_mcp_remove(params.name, params.working_dir, params.scope)
+        .await
+        .map_err(to_error_response)?;
+    Ok(Json(response))
+}
+
+pub(super) async fn api_cc_list_projects() -> Result<Json<Vec<String>>, ErrorResponse> {
+    let projects = cc_mcp_commands::cc_list_projects()
+        .await
+        .map_err(to_error_response)?;
+    Ok(Json(projects))
+}
+
+pub(super) async fn api_cc_mcp_disable(
+    Json(params): Json<CcMcpToggleParams>,
+) -> Result<Json<ClaudeCodeResponse>, ErrorResponse> {
+    let response = cc_mcp_commands::cc_mcp_disable(params.name, params.working_dir)
+        .await
+        .map_err(to_error_response)?;
+    Ok(Json(response))
+}
+
+pub(super) async fn api_cc_mcp_enable(
+    Json(params): Json<CcMcpToggleParams>,
+) -> Result<Json<ClaudeCodeResponse>, ErrorResponse> {
+    let response = cc_mcp_commands::cc_mcp_enable(params.name, params.working_dir)
+        .await
+        .map_err(to_error_response)?;
+    Ok(Json(response))
+}
+
+pub(super) async fn api_prevent_sleep(
+    AxumState(state): AxumState<WebServerState>,
+    Json(params): Json<SleepParams>,
+) -> Result<StatusCode, ErrorResponse> {
+    state
+        .sleep_state
+        .prevent_sleep(params.conversation_id)
+        .await
+        .map_err(to_error_response)?;
+    Ok(StatusCode::OK)
+}
+
+pub(super) async fn api_allow_sleep(
+    AxumState(state): AxumState<WebServerState>,
+    Json(params): Json<SleepParams>,
+) -> Result<StatusCode, ErrorResponse> {
+    state
+        .sleep_state
+        .allow_sleep(params.conversation_id)
+        .await
+        .map_err(to_error_response)?;
+    Ok(StatusCode::OK)
 }
 
 pub(super) async fn health_check() -> impl IntoResponse {
