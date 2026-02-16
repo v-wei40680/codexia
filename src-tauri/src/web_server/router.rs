@@ -24,7 +24,8 @@ use super::{
         api_read_xlsx_content, api_respond_command_execution_approval,
         api_respond_file_change_approval, api_respond_user_input, api_resume_thread,
         api_search_files, api_skills_config_write, api_skills_list, api_start_review,
-        api_start_thread, api_terminal_resize, api_terminal_start, api_terminal_stop,
+        api_start_thread, api_start_watch_file, api_start_watch_path, api_stop_watch_file,
+        api_stop_watch_path, api_terminal_resize, api_terminal_start, api_terminal_stop,
         api_terminal_write, api_toggle_favorite, api_turn_interrupt, api_turn_start,
         api_unified_add_mcp_server, api_unified_disable_mcp_server,
         api_unified_enable_mcp_server, api_unified_read_mcp_config,
@@ -116,6 +117,10 @@ pub(crate) fn create_router(state: WebServerState) -> Router {
         .route("/api/filesystem/read-xlsx", post(api_read_xlsx_content))
         .route("/api/filesystem/write-file", post(api_write_file))
         .route("/api/filesystem/delete-file", post(api_delete_file))
+        .route("/api/filesystem/start-watch", post(api_start_watch_path))
+        .route("/api/filesystem/stop-watch", post(api_stop_watch_path))
+        .route("/api/filesystem/start-watch-file", post(api_start_watch_file))
+        .route("/api/filesystem/stop-watch-file", post(api_stop_watch_file))
         .route("/api/terminal/start", post(api_terminal_start))
         .route("/api/terminal/write", post(api_terminal_write))
         .route("/api/terminal/resize", post(api_terminal_resize))

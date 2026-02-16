@@ -160,6 +160,15 @@ export function useCodexEvents(enabled = true) {
             return;
           }
 
+          if (envelope.event === 'fs_change') {
+            window.dispatchEvent(
+              new CustomEvent('fs_change', {
+                detail: envelope.payload,
+              })
+            );
+            return;
+          }
+
           if (envelope.event === 'codex/approval-request') {
             addApproval(envelope.payload as ApprovalRequest);
             return;

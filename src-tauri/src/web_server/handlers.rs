@@ -8,6 +8,7 @@ use serde::Deserialize;
 use serde_json::{Value, json};
 
 use super::{
+    filesystem_watch,
     terminal as web_terminal,
     types::{ErrorResponse, WebServerState},
 };
@@ -777,6 +778,30 @@ pub(super) async fn api_delete_file(
     Ok(StatusCode::OK)
 }
 
+pub(super) async fn api_start_watch_path(
+    AxumState(state): AxumState<WebServerState>,
+    Json(params): Json<FilesystemPathParams>,
+) -> Result<StatusCode, ErrorResponse> {
+    filesystem_watch::start_watch_path(
+        state.fs_watch_state.as_ref(),
+        state.event_tx.clone(),
+        params.path,
+    )
+    .await
+    .map_err(to_error_response)?;
+    Ok(StatusCode::OK)
+}
+
+pub(super) async fn api_stop_watch_path(
+    AxumState(state): AxumState<WebServerState>,
+    Json(params): Json<FilesystemPathParams>,
+) -> Result<StatusCode, ErrorResponse> {
+    filesystem_watch::stop_watch_path(state.fs_watch_state.as_ref(), params.path)
+        .await
+        .map_err(to_error_response)?;
+    Ok(StatusCode::OK)
+}
+
 pub(super) async fn api_terminal_start(
     AxumState(state): AxumState<WebServerState>,
     Json(params): Json<TerminalStartParams>,
@@ -815,6 +840,30 @@ pub(super) async fn api_terminal_resize(
     )
     .await
     .map_err(to_error_response)?;
+    Ok(StatusCode::OK)
+}
+
+pub(super) async fn api_start_watch_file(
+    AxumState(state): AxumState<WebServerState>,
+    Json(params): Json<FilesystemFilePathParams>,
+) -> Result<StatusCode, ErrorResponse> {
+    filesystem_watch::start_watch_file(
+        state.fs_watch_state.as_ref(),
+        state.event_tx.clone(),
+        params.file_path,
+    )
+    .await
+    .map_err(to_error_response)?;
+    Ok(StatusCode::OK)
+}
+
+pub(super) async fn api_stop_watch_file(
+    AxumState(state): AxumState<WebServerState>,
+    Json(params): Json<FilesystemFilePathParams>,
+) -> Result<StatusCode, ErrorResponse> {
+    filesystem_watch::stop_watch_file(state.fs_watch_state.as_ref(), params.file_path)
+        .await
+        .map_err(to_error_response)?;
     Ok(StatusCode::OK)
 }
 

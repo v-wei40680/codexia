@@ -1,10 +1,21 @@
-import { getJson, invokeTauri, isTauri, postJson, postNoContent } from './shared';
+import {
+  getJson,
+  invokeTauri,
+  isTauri,
+  postJson,
+  postJsonWithOptions,
+  postNoContent,
+} from './shared';
 
-export async function readFile(filePath: string) {
+export async function readFile(filePath: string, options?: { suppressToast?: boolean }) {
   if (isTauri()) {
     return await invokeTauri<string>('read_file', { filePath });
   }
-  return await postJson<string>('/api/filesystem/read-file', { filePath });
+  return await postJsonWithOptions<string>(
+    '/api/filesystem/read-file',
+    { filePath },
+    options
+  );
 }
 
 export async function readTextFileLines(filePath: string) {
@@ -43,13 +54,15 @@ export async function readXlsxContent(filePath: string) {
   return await postJson<string>('/api/filesystem/read-xlsx', { filePath });
 }
 
-export async function readDirectory(path: string) {
+export async function readDirectory(path: string, options?: { suppressToast?: boolean }) {
   if (isTauri()) {
     return await invokeTauri<Array<import('./shared').TauriFileEntry>>('read_directory', { path });
   }
-  return await postJson<Array<import('./shared').TauriFileEntry>>('/api/filesystem/read-directory', {
-    path,
-  });
+  return await postJsonWithOptions<Array<import('./shared').TauriFileEntry>>(
+    '/api/filesystem/read-directory',
+    { path },
+    options
+  );
 }
 
 export async function getHomeDirectory() {
@@ -94,11 +107,31 @@ export async function deleteFile(filePath: string) {
 export async function startWatchDirectory(folderPath: string) {
   if (isTauri()) {
     await invokeTauri('start_watch_directory', { folderPath });
+    return;
   }
+  await postNoContent('/api/filesystem/start-watch', { path: folderPath });
 }
 
 export async function stopWatchDirectory(folderPath: string) {
   if (isTauri()) {
     await invokeTauri('stop_watch_directory', { folderPath });
+    return;
   }
+  await postNoContent('/api/filesystem/stop-watch', { path: folderPath });
+}
+
+export async function startWatchFile(filePath: string) {
+  if (isTauri()) {
+    await invokeTauri('start_watch_file', { filePath });
+    return;
+  }
+  await postNoContent('/api/filesystem/start-watch-file', { filePath });
+}
+
+export async function stopWatchFile(filePath: string) {
+  if (isTauri()) {
+    await invokeTauri('stop_watch_file', { filePath });
+    return;
+  }
+  await postNoContent('/api/filesystem/stop-watch-file', { filePath });
 }

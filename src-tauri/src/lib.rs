@@ -19,7 +19,7 @@ use filesystem::{
     directory_ops::{canonicalize_path, get_home_directory, read_directory, search_files},
     file_io::{delete_file, read_file, read_text_file_lines, write_file},
     file_parsers::{pdf::read_pdf_content, xlsx::read_xlsx_content},
-    watch::{start_watch_directory, stop_watch_directory},
+    watch::{start_watch_directory, start_watch_file, stop_watch_directory, stop_watch_file},
 };
 use sleep::{SleepState, allow_sleep, prevent_sleep};
 use std::sync::Arc;
@@ -83,6 +83,8 @@ pub fn run() {
             read_xlsx_content,
             start_watch_directory,
             stop_watch_directory,
+            start_watch_file,
+            stop_watch_file,
             prevent_sleep,
             allow_sleep,
             // CC commands

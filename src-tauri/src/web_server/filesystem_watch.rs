@@ -1,13 +1,13 @@
-use crate::state::WatchState;
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher, recommended_watcher};
-use serde::Serialize;
+use serde_json::{Value, json};
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
-use tauri::{AppHandle, Emitter, State};
+use std::sync::Arc;
+use tokio::sync::{Mutex, broadcast};
 
-#[derive(Serialize, Debug, Clone)]
-pub struct FsChangePayload {
-    pub path: String,
-    pub kind: String,
+#[derive(Default)]
+pub(crate) struct WebWatchState {
+    pub(crate) watchers: Arc<Mutex<HashMap<String, (RecommendedWatcher, usize)>>>,
 }
 
 fn expand_path(input: &str) -> Result<PathBuf, String> {
@@ -34,15 +34,16 @@ fn kind_to_string(kind: &EventKind) -> String {
     }
 }
 
-async fn start_watch_path(
-    app: AppHandle,
-    state: State<'_, WatchState>,
+pub(crate) async fn start_watch_path(
+    state: &WebWatchState,
+    event_tx: broadcast::Sender<(String, Value)>,
     path: String,
 ) -> Result<(), String> {
     let abs = expand_path(&path)?;
     if !abs.exists() {
         return Err("Path does not exist".to_string());
     }
+
     let recursive_mode = if abs.is_dir() {
         RecursiveMode::Recursive
     } else {
@@ -54,7 +55,6 @@ async fn start_watch_path(
         Err(_) => abs.to_string_lossy().to_string(),
     };
 
-    // If already watching, ignore
     {
         let mut watchers = state.watchers.lock().await;
         if let Some((_existing, count)) = watchers.get_mut(&key) {
@@ -63,18 +63,16 @@ async fn start_watch_path(
         }
     }
 
-    let app_for_cb = app.clone();
-    // Create a new watcher with a callback that emits tauri event
+    let event_tx_for_cb = event_tx.clone();
     let mut watcher: RecommendedWatcher =
         recommended_watcher(move |res: Result<Event, notify::Error>| {
             if let Ok(event) = res {
-                // Send one event per affected path
                 for p in event.paths.iter() {
-                    let payload = FsChangePayload {
-                        path: p.to_string_lossy().to_string(),
-                        kind: kind_to_string(&event.kind),
-                    };
-                    let _ = app_for_cb.emit("fs_change", &payload);
+                    let payload = json!({
+                        "path": p.to_string_lossy().to_string(),
+                        "kind": kind_to_string(&event.kind),
+                    });
+                    let _ = event_tx_for_cb.send(("fs_change".to_string(), payload));
                 }
             }
         })
@@ -89,7 +87,19 @@ async fn start_watch_path(
     Ok(())
 }
 
-async fn stop_watch_path(state: State<'_, WatchState>, path: String) -> Result<(), String> {
+pub(crate) async fn start_watch_file(
+    state: &WebWatchState,
+    event_tx: broadcast::Sender<(String, Value)>,
+    file_path: String,
+) -> Result<(), String> {
+    let abs = expand_path(&file_path)?;
+    if !abs.exists() || !abs.is_file() {
+        return Err("File does not exist".to_string());
+    }
+    start_watch_path(state, event_tx, file_path).await
+}
+
+pub(crate) async fn stop_watch_path(state: &WebWatchState, path: String) -> Result<(), String> {
     let abs = expand_path(&path)?;
     let key = match std::fs::canonicalize(&abs) {
         Ok(p) => p.to_string_lossy().to_string(),
@@ -109,40 +119,6 @@ async fn stop_watch_path(state: State<'_, WatchState>, path: String) -> Result<(
     Ok(())
 }
 
-#[tauri::command]
-pub async fn start_watch_directory(
-    app: AppHandle,
-    state: State<'_, WatchState>,
-    folder_path: String,
-) -> Result<(), String> {
-    start_watch_path(app, state, folder_path).await
-}
-
-#[tauri::command]
-pub async fn stop_watch_directory(
-    state: State<'_, WatchState>,
-    folder_path: String,
-) -> Result<(), String> {
-    stop_watch_path(state, folder_path).await
-}
-
-#[tauri::command]
-pub async fn start_watch_file(
-    app: AppHandle,
-    state: State<'_, WatchState>,
-    file_path: String,
-) -> Result<(), String> {
-    let abs = expand_path(&file_path)?;
-    if !abs.exists() || !abs.is_file() {
-        return Err("File does not exist".to_string());
-    }
-    start_watch_path(app, state, file_path).await
-}
-
-#[tauri::command]
-pub async fn stop_watch_file(
-    state: State<'_, WatchState>,
-    file_path: String,
-) -> Result<(), String> {
+pub(crate) async fn stop_watch_file(state: &WebWatchState, file_path: String) -> Result<(), String> {
     stop_watch_path(state, file_path).await
 }

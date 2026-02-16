@@ -1,3 +1,4 @@
+mod filesystem_watch;
 mod handlers;
 mod router;
 mod server;

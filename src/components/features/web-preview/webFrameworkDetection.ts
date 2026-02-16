@@ -1,4 +1,4 @@
-import { readFile } from '@/services';
+import { readDirectory, readFile } from '@/services';
 
 export interface WebFrameworkInfo {
   framework:
@@ -18,9 +18,18 @@ export interface WebFrameworkInfo {
 
 export async function detectWebFramework(projectPath: string): Promise<WebFrameworkInfo | null> {
   try {
+    // Check package.json existence first to avoid noisy read-file failures.
+    const entries = await readDirectory(projectPath, { suppressToast: true });
+    const hasPackageJson = entries.some(
+      (entry) => entry.name === 'package.json' && !entry.is_directory
+    );
+    if (!hasPackageJson) {
+      return null;
+    }
+
     // Read package.json to detect framework
     const packageJsonPath = `${projectPath}/package.json`;
-    const packageJsonContent = await readFile(packageJsonPath);
+    const packageJsonContent = await readFile(packageJsonPath, { suppressToast: true });
     const packageJson = JSON.parse(packageJsonContent);
 
     const dependencies = {
@@ -112,6 +121,13 @@ export async function detectWebFramework(projectPath: string): Promise<WebFramew
 
     return null;
   } catch (error) {
+    if (
+      error instanceof Error &&
+      (error.message.includes('File does not exist or is a directory') ||
+        error.message.includes('Failed to read file'))
+    ) {
+      return null;
+    }
     console.error('Failed to detect web framework:', error);
     return null;
   }

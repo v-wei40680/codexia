@@ -1,6 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react';
-import { watch } from '@tauri-apps/plugin-fs';
-import type { UnlistenFn } from '@tauri-apps/api/event';
+import { listen, type UnlistenFn } from '@tauri-apps/api/event';
+import { startWatchFile, stopWatchFile } from '@/services/tauri/filesystem';
+import { isTauri } from '@/hooks/runtime';
 
 /**
  * Hook to watch .git/index file changes and trigger Git status refresh
@@ -24,18 +25,40 @@ export function useGitWatch(cwd: string | null, onRefresh: () => void, enabled =
     if (!cwd || !enabled) return;
 
     const gitIndexPath = `${cwd}/.git/index`;
+    const normalizedGitIndexPath = gitIndexPath.replace(/\\/g, '/');
 
-    // Watch .git/index file for changes
+    const isGitIndexChange = (path: string) => {
+      const normalizedPath = path.replace(/\\/g, '/');
+      return (
+        normalizedPath === normalizedGitIndexPath || normalizedPath.endsWith('/.git/index')
+      );
+    };
+
+    // Listen to backend fs watcher events and trigger refresh on .git/index file changes.
     const setupWatcher = async () => {
       try {
-        const unlisten = await watch(
-          gitIndexPath,
-          () => {
+        await startWatchFile(gitIndexPath);
+
+        if (isTauri()) {
+          const unlisten = await listen<{ path: string; kind: string }>('fs_change', (event) => {
+            if (isGitIndexChange(event.payload.path)) {
+              debouncedRefresh();
+            }
+          });
+          unlistenRef.current = unlisten;
+          return;
+        }
+
+        const onWsEvent = (event: Event) => {
+          const changedPath = (event as CustomEvent<{ path?: string }>).detail?.path;
+          if (changedPath && isGitIndexChange(changedPath)) {
             debouncedRefresh();
-          },
-          { recursive: false }
-        );
-        unlistenRef.current = unlisten;
+          }
+        };
+        window.addEventListener('fs_change', onWsEvent as EventListener);
+        unlistenRef.current = () => {
+          window.removeEventListener('fs_change', onWsEvent as EventListener);
+        };
       } catch (error) {
         console.error('Failed to watch .git/index:', error);
       }
@@ -53,6 +76,7 @@ export function useGitWatch(cwd: string | null, onRefresh: () => void, enabled =
         unlistenRef.current();
         unlistenRef.current = null;
       }
+      void stopWatchFile(gitIndexPath).catch(() => {});
       if (refreshTimeoutRef.current) {
         clearTimeout(refreshTimeoutRef.current);
       }
