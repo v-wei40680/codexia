@@ -143,6 +143,12 @@ Download codexia-web or build from source code then
 codexia --web
 ```
 
+#### develop web frontend + router backend together
+
+```sh
+just dev-web
+```
+
 #### Linux/Macos 
 ```
 bash scripts/package-web.sh

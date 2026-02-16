@@ -11,6 +11,7 @@ import { useLayoutStore, useSettingsStore } from '@/stores/settings';
 import type { ServerNotification } from '@/bindings/ServerNotification';
 import { playBeep } from '@/utils/beep';
 import { allowSleep, preventSleep } from '@/services/tauri';
+import { buildWsUrl, isTauri } from '@/hooks/runtime';
 
 function shouldPlayCompletionBeep(
   mode: 'never' | 'unfocused' | 'always',
@@ -37,112 +38,166 @@ export function useCodexEvents(enabled = true) {
     if (!enabled) {
       return;
     }
-    // Listen for all codex:// events
-    const unlistenPromises: Promise<() => void>[] = [];
+    const handleServerNotification = (payload: ServerNotification) => {
+      if (
+        ![
+          'rawResponseItem/completed',
+          'account/rateLimits/updated',
+          'item/reasoning/textDelta',
+          'item/agentMessage/delta',
+          'thread/tokenUsage/updated',
+          'item/reasoning/summaryTextDelta',
+          'item/reasoning/summaryPartAdded',
+        ].includes(payload.method)
+      ) {
+        console.log(`[useCodexEvents] ${payload.method}:`, payload.params);
+      }
 
-    // Listen for approval requests
-    unlistenPromises.push(
-      listen<ApprovalRequest>('codex/approval-request', (event) => {
-        addApproval(event.payload);
-      })
-    );
+      let threadId: string | undefined;
 
-    // Listen for request_user_input prompts
-    unlistenPromises.push(
-      listen<RequestUserInputRequest>('codex/request-user-input', (event) => {
-        addRequest(event.payload);
-      })
-    );
-
-    // Add a catch-all listener to see ALL codex events
-    console.log('[useCodexEvents] Setting up event listeners...');
-
-    unlistenPromises.push(
-      listen<ServerNotification>('codex:notification', (event) => {
-        if (
-          ![
-            'rawResponseItem/completed',
-            'account/rateLimits/updated',
-            'item/reasoning/textDelta',
-            'item/agentMessage/delta',
-            'thread/tokenUsage/updated',
-            'item/reasoning/summaryTextDelta',
-            'item/reasoning/summaryPartAdded',
-          ].includes(event.payload.method)
-        ) {
-          console.log(`[useCodexEvents] ${event.payload.method}:`, event.payload.params);
+      if ('params' in payload && payload.params) {
+        const params = payload.params as any;
+        if ('threadId' in params) {
+          threadId = params.threadId;
+        } else if ('thread' in params && params.thread?.id) {
+          threadId = params.thread.id;
         }
+      }
 
-        // Extract threadId from notification params
-        const payload = event.payload;
-        let threadId: string | undefined;
-
-        if ('params' in payload && payload.params) {
-          const params = payload.params as any;
-          // Most notifications have threadId directly
-          if ('threadId' in params) {
-            threadId = params.threadId;
-          }
-          // ThreadStartedNotification has thread.id
-          else if ('thread' in params && params.thread?.id) {
-            threadId = params.thread.id;
+      if (threadId) {
+        if (payload.method === 'thread/started' && 'params' in payload && payload.params) {
+          const startedThread = (payload.params as any).thread;
+          const startedThreadId = startedThread?.id;
+          const startedThreadCwd = startedThread?.cwd;
+          if (startedThreadId && startedThreadCwd) {
+            useCodexStore.setState((state) => ({
+              threads: state.threads.map((thread) =>
+                thread.id === startedThreadId ? { ...thread, cwd: startedThreadCwd } : thread
+              ),
+            }));
           }
         }
 
-        if (threadId) {
-          if (payload.method === 'thread/started' && 'params' in payload && payload.params) {
-            const startedThread = (payload.params as any).thread;
-            const startedThreadId = startedThread?.id;
-            const startedThreadCwd = startedThread?.cwd;
-            if (startedThreadId && startedThreadCwd) {
-              useCodexStore.setState((state) => ({
-                threads: state.threads.map((thread) =>
-                  thread.id === startedThreadId ? { ...thread, cwd: startedThreadCwd } : thread
-                ),
-              }));
-            }
-          }
+        if (preventSleepDuringTasks && payload.method === 'turn/started') {
+          void preventSleep(threadId).catch((error) => {
+            console.warn('[useCodexEvents] preventSleep failed:', error);
+          });
+        }
 
-          if (preventSleepDuringTasks && payload.method === 'turn/started') {
-            void preventSleep(threadId).catch((error) => {
-              console.warn('[useCodexEvents] preventSleep failed:', error);
-            });
-          }
+        if (payload.method === 'turn/completed') {
+          void allowSleep(threadId).catch((error) => {
+            console.warn('[useCodexEvents] allowSleep failed:', error);
+          });
 
-          if (payload.method === 'turn/completed') {
-            void allowSleep(threadId).catch((error) => {
-              console.warn('[useCodexEvents] allowSleep failed:', error);
-            });
-
-            const turnStatus = (payload.params as any)?.turn?.status;
-            if (
-              turnStatus === 'completed' &&
-              shouldPlayCompletionBeep(taskCompleteBeepMode, isChatInterfaceActive)
-            ) {
-              playBeep();
-            }
-          }
-
-          if (payload.method === 'error') {
-            void allowSleep(threadId).catch((error) => {
-              console.warn('[useCodexEvents] allowSleep failed:', error);
-            });
-          }
-
-          addEvent(threadId, payload);
-        } else {
-          if (payload.method !== 'account/rateLimits/updated') {
-            console.warn('[useCodexEvents] No threadId found in payload:', payload);
+          const turnStatus = (payload.params as any)?.turn?.status;
+          if (
+            turnStatus === 'completed' &&
+            shouldPlayCompletionBeep(taskCompleteBeepMode, isChatInterfaceActive)
+          ) {
+            playBeep();
           }
         }
-      })
-    );
 
-    // Cleanup
+        if (payload.method === 'error') {
+          void allowSleep(threadId).catch((error) => {
+            console.warn('[useCodexEvents] allowSleep failed:', error);
+          });
+        }
+
+        addEvent(threadId, payload);
+      } else {
+        if (payload.method !== 'account/rateLimits/updated') {
+          console.warn('[useCodexEvents] No threadId found in payload:', payload);
+        }
+      }
+    };
+
+    if (isTauri()) {
+      const unlistenPromises: Promise<() => void>[] = [];
+      console.log('[useCodexEvents] Setting up Tauri event listeners...');
+
+      unlistenPromises.push(
+        listen<ApprovalRequest>('codex/approval-request', (event) => {
+          addApproval(event.payload);
+        })
+      );
+
+      unlistenPromises.push(
+        listen<RequestUserInputRequest>('codex/request-user-input', (event) => {
+          addRequest(event.payload);
+        })
+      );
+
+      unlistenPromises.push(
+        listen<ServerNotification>('codex:notification', (event) => {
+          handleServerNotification(event.payload);
+        })
+      );
+
+      return () => {
+        Promise.all(unlistenPromises).then((unlisteners) => {
+          unlisteners.forEach((unlisten) => unlisten());
+        });
+      };
+    }
+
+    console.log('[useCodexEvents] Setting up WebSocket event bridge...');
+    let ws: WebSocket | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let closedByCleanup = false;
+
+    const connectWebSocket = () => {
+      ws = new WebSocket(buildWsUrl('/ws'));
+
+      ws.onmessage = (messageEvent) => {
+        try {
+          const envelope = JSON.parse(messageEvent.data as string) as {
+            event?: string;
+            payload?: unknown;
+          };
+
+          if (!envelope.event) {
+            return;
+          }
+
+          if (envelope.event === 'codex/approval-request') {
+            addApproval(envelope.payload as ApprovalRequest);
+            return;
+          }
+
+          if (envelope.event === 'codex/request-user-input') {
+            addRequest(envelope.payload as RequestUserInputRequest);
+            return;
+          }
+
+          if (envelope.event === 'codex:notification') {
+            handleServerNotification(envelope.payload as ServerNotification);
+          }
+        } catch (error) {
+          console.warn('[useCodexEvents] Failed to parse websocket message:', error);
+        }
+      };
+
+      ws.onclose = () => {
+        if (closedByCleanup) {
+          return;
+        }
+        reconnectTimer = setTimeout(connectWebSocket, 1000);
+      };
+
+      ws.onerror = () => {
+        ws?.close();
+      };
+    };
+
+    connectWebSocket();
+
     return () => {
-      Promise.all(unlistenPromises).then((unlisteners) => {
-        unlisteners.forEach((unlisten) => unlisten());
-      });
+      closedByCleanup = true;
+      if (reconnectTimer) {
+        clearTimeout(reconnectTimer);
+      }
+      ws?.close();
     };
   }, [
     addEvent,

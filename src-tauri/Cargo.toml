@@ -81,3 +81,6 @@ tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
 # Platform-specific dependencies
 [target.'cfg(windows)'.dependencies]
 encoding_rs = "0.8"
+
+[dev-dependencies]
+tokio-tungstenite = "0.24"

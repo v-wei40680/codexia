@@ -18,7 +18,7 @@ if exist "%STAGE_DIR%" rmdir /s /q "%STAGE_DIR%"
 if exist "%OUT_FILE%" del /f /q "%OUT_FILE%"
 mkdir "%STAGE_DIR%"
 
-set "VITE_PORT=7420"
+if not defined VITE_WEB_PORT set "VITE_WEB_PORT=7420"
 call bun run build || exit /b 1
 call cargo build --release --manifest-path "%ROOT_DIR%\src-tauri\Cargo.toml" || exit /b 1
 

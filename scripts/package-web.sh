@@ -12,7 +12,7 @@ case "$(uname -s)" in
   MINGW*|MSYS*|CYGWIN*) bin_ext=".exe" ;;
 esac
 
-VITE_PORT=7420 bun run build
+VITE_WEB_PORT="${VITE_WEB_PORT:-7420}" bun run build
 cargo build --release --manifest-path "${root_dir}/src-tauri/Cargo.toml"
 
 stage_dir="/tmp/dist-web"

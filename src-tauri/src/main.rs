@@ -1,10 +1,12 @@
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+const DEFAULT_WEB_PORT: u16 = 7420;
+
 fn main() {
     let _ = fix_path_env::fix();
     let mut web = false;
-    let mut port: Option<u16> = std::env::var("WEB_PORT")
+    let mut port: Option<u16> = std::env::var("VITE_WEB_PORT")
         .ok()
         .and_then(|value| value.parse().ok());
 
@@ -31,7 +33,7 @@ fn main() {
     }
 
     if web {
-        codexia_lib::start_web_server(port.unwrap_or(7420));
+        codexia_lib::start_web_server(port.unwrap_or(DEFAULT_WEB_PORT));
         return;
     }
     codexia_lib::run()

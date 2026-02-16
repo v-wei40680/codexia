@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use axum::{
+    extract::FromRef,
     Json,
     http::StatusCode,
     response::{IntoResponse, Response},
@@ -19,6 +20,12 @@ pub(crate) struct WebServerState {
     pub(crate) cc_state: Arc<CCState>,
     pub(crate) terminal_state: Arc<WebTerminalState>,
     pub(crate) event_tx: broadcast::Sender<(String, Value)>,
+}
+
+impl FromRef<WebServerState> for broadcast::Sender<(String, Value)> {
+    fn from_ref(state: &WebServerState) -> Self {
+        state.event_tx.clone()
+    }
 }
 
 #[derive(Serialize)]
