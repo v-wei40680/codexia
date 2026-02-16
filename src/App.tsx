@@ -32,7 +32,9 @@ function AppShell() {
 }
 
 export default function App() {
-  useDeepLink();
+  if (isTauri()) {
+    useDeepLink();
+  }
 
   return <AppShell />;
 }
