@@ -19,7 +19,7 @@ stage_dir="/tmp/dist-web"
 rm -rf "${stage_dir}"
 mkdir -p "${stage_dir}"
 
-cp -R "${root_dir}/dist/." "${stage_dir}/"
+cp -R "${root_dir}/dist" "${stage_dir}/dist"
 cp "${root_dir}/src-tauri/target/release/codexia${bin_ext}" "${stage_dir}/codexia${bin_ext}"
 
 tar_name="codexia-web-${version}-${os}-${arch}.tar.gz"
