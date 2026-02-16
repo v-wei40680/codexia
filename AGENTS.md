@@ -29,7 +29,7 @@
 ## web server
 
 - new tauri command add a api to `src-tauri/src/web_server/handlers.rs` 
-- invoke add to `src/services/tauri.ts`
+- invoke add to `src/services/tauri/`
 
 ## cwd
 cwd mean current working dir
