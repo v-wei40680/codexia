@@ -30,18 +30,6 @@ interface ThreadListProps {
   cwdOverride?: string;
 }
 
-function normalizeThreadItem(thread: any): ThreadListItem {
-  const ts = thread.ts ?? thread.createdAt ?? thread.updatedAt ?? 0;
-  return {
-    id: thread.id,
-    preview: thread.preview ?? '',
-    cwd: thread.cwd ?? '',
-    path: thread.path ?? '',
-    source: thread.source ?? '',
-    ts,
-  };
-}
-
 export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
   const { cwd, historyMode, setCwd } = useWorkspaceStore();
   const { setView } = useLayoutStore();
@@ -68,14 +56,17 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
   );
   const filteredThreads = useThreadFilter(mergedThreads, searchTerm);
   const sortedThreads = useMemo(() => {
-    return [...filteredThreads].sort((a, b) => {
-      const aPinned = a.pinnedAtMs ?? -1;
-      const bPinned = b.pinnedAtMs ?? -1;
+    // Keep backend order (already sorted by sortKey) and only lift pinned rows.
+    const withIndex = filteredThreads.map((thread, index) => ({ thread, index }));
+    withIndex.sort((a, b) => {
+      const aPinned = a.thread.pinnedAtMs ?? -1;
+      const bPinned = b.thread.pinnedAtMs ?? -1;
       if (aPinned !== bPinned) {
         return bPinned - aPinned;
       }
-      return b.ts - a.ts;
+      return a.index - b.index;
     });
+    return withIndex.map((item) => item.thread);
   }, [filteredThreads]);
   const loadSessionMeta = useCallback(async () => {
     try {
@@ -128,7 +119,7 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
         if (cancelled) {
           return;
         }
-        const loadedThreads = response.data.map((t) => normalizeThreadItem(t));
+        const loadedThreads = response.data.map((t) => codexService.normalizeThreadItem(t));
         const next =
           (response as { nextCursor?: string | null }).nextCursor ??
           (response as { next_cursor?: string | null }).next_cursor ??
@@ -198,7 +189,7 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
           sourceKinds: null,
         };
         const response = await threadList(params, listCwd);
-        const loadedThreads = response.data.map((t) => normalizeThreadItem(t));
+        const loadedThreads = response.data.map((t) => codexService.normalizeThreadItem(t));
         const next =
           (response as { nextCursor?: string | null }).nextCursor ??
           (response as { next_cursor?: string | null }).next_cursor ??
@@ -240,7 +231,7 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
           sourceKinds: null,
         };
         const response = await threadList(params, listCwd);
-        const loadedThreads = response.data.map((t) => normalizeThreadItem(t));
+        const loadedThreads = response.data.map((t) => codexService.normalizeThreadItem(t));
         const next =
           (response as { nextCursor?: string | null }).nextCursor ??
           (response as { next_cursor?: string | null }).next_cursor ??
@@ -278,7 +269,7 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
           sourceKinds: null,
         };
         const response = await threadList(params, listCwd);
-        const loadedThreads = response.data.map((t) => normalizeThreadItem(t));
+        const loadedThreads = response.data.map((t) => codexService.normalizeThreadItem(t));
         const next =
           (response as { nextCursor?: string | null }).nextCursor ??
           (response as { next_cursor?: string | null }).next_cursor ??
@@ -423,7 +414,7 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
               {thread.preview}
             </div>
             <div className="flex items-center gap-2 text-xs text-muted-foreground whitespace-nowrap">
-              <span className="group-hover:hidden">{formatThreadAge(thread.ts)}</span>
+              <span className="group-hover:hidden">{formatThreadAge(thread.createdAt ?? 0)}</span>
             </div>
             <button
               type="button"

@@ -70,14 +70,16 @@ const isExperimentalRawEventsCapabilityError = (error: unknown): boolean =>
 
 export const codexService = {
   normalizeThreadItem(thread: any): ThreadListItem {
-    const ts = thread.ts ?? thread.createdAt ?? thread.updatedAt ?? 0;
+    const createdAt = thread.createdAt ?? 0;
+    const updatedAt = thread.updatedAt ?? 0;
     return {
       id: thread.id,
       preview: thread.preview ?? '',
       cwd: thread.cwd ?? '',
       path: thread.path ?? '',
       source: thread.source ?? '',
-      ts,
+      createdAt,
+      updatedAt,
     };
   },
   async loadThreads(

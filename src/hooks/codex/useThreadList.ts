@@ -25,17 +25,17 @@ export function useThreadList() {
     const menu = await Menu.new({
       items: [
         await MenuItem.new({
-          text: 'Sort by Created',
+          text: `${sortKey === 'created_at' ? '✓ ' : ''}Sort by Created`,
           action: () => setSortKey('created_at'),
         }),
         await MenuItem.new({
-          text: 'Sort by Updated',
+          text: `${sortKey === 'updated_at' ? '✓ ' : ''}Sort by Updated`,
           action: () => setSortKey('updated_at'),
         }),
       ],
     });
     await menu.popup();
-  }, [cwd, sortKey]);
+  }, [setSortKey, sortKey]);
 
-  return { searchTerm, setSearchTerm, handleNewThread, handleMenu };
+  return { searchTerm, setSearchTerm, sortKey, handleNewThread, handleMenu };
 }

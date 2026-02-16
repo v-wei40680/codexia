@@ -4,5 +4,6 @@ export type ThreadListItem = {
   cwd: string;
   path: string;
   source: string;
-  ts: number;
+  createdAt?: number;
+  updatedAt?: number;
 };

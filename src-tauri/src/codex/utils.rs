@@ -48,6 +48,13 @@ pub fn file_mtime(path: &Path) -> Option<i64> {
     Some(duration.as_secs() as i64)
 }
 
+pub fn file_created_time(path: &Path) -> Option<i64> {
+    let metadata = fs::metadata(path).ok()?;
+    let created = metadata.created().ok()?;
+    let duration = created.duration_since(UNIX_EPOCH).ok()?;
+    Some(duration.as_secs() as i64)
+}
+
 #[tauri::command]
 pub fn codex_home() -> PathBuf {
     if let Some(path) = std::env::var_os("CODEX_HOME") {
@@ -63,10 +70,4 @@ pub fn codexia_history_path() -> PathBuf {
     dirs::home_dir()
         .map(|home| home.join(".codexia").join("history.jsonl"))
         .unwrap_or_else(|| PathBuf::from(".codexia/history.jsonl"))
-}
-
-pub fn legacy_plux_history_path() -> PathBuf {
-    dirs::home_dir()
-        .map(|home| home.join(".plux").join("history.jsonl"))
-        .unwrap_or_else(|| PathBuf::from(".plux/history.jsonl"))
 }

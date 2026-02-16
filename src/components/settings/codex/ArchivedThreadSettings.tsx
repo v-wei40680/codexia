@@ -27,12 +27,13 @@ export function ArchivedThreadSettings() {
       };
       const response = await threadListArchived(params);
       const normalized = response.data.map((thread: any) => ({
+        createdAt: thread.createdAt ?? 0,
+        updatedAt: thread.updatedAt ?? 0,
         id: thread.id,
         preview: thread.preview ?? '',
         cwd: thread.cwd ?? '',
         path: thread.path ?? '',
         source: thread.source ?? '',
-        ts: thread.ts ?? thread.createdAt ?? thread.updatedAt ?? 0,
       }));
       setThreads(normalized);
     } catch (err) {
@@ -87,7 +88,7 @@ export function ArchivedThreadSettings() {
                   {thread.preview || 'Untitled thread'}
                 </div>
                 <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                  <span>{formatThreadAge(thread.ts)}</span>
+                  <span>{formatThreadAge(thread.createdAt ?? 0)}</span>
                   <span>{getFilename(thread.cwd)}</span>
                 </div>
               </div>

@@ -39,7 +39,7 @@ export function SideBar() {
     activeSidebarTab,
     setActiveSidebarTab,
   } = useLayoutStore();
-  const { searchTerm, setSearchTerm, handleNewThread, handleMenu } = useThreadList();
+  const { searchTerm, setSearchTerm, sortKey, handleNewThread, handleMenu } = useThreadList();
   const { handleSessionSelect, handleNewSession } = useCCSessionManager();
   const { activeSessionId } = useCCStore();
   const { hasUpdate, startUpdate } = useUpdater({ enabled: true });
@@ -48,6 +48,7 @@ export function SideBar() {
   const [ccLoading, setCcLoading] = useState(false);
   const [ccError, setCcError] = useState<string | null>(null);
   const sortedProjects = useMemo(() => projects, [projects]);
+  const currentThreadSortLabel = sortKey === 'created_at' ? 'Created' : 'Updated';
 
   useEffect(() => {
     if (activeSidebarTab !== 'cc') {
@@ -195,7 +196,13 @@ export function SideBar() {
             <Button variant="ghost" size="icon" className="h-8 w-8" title="Add new project" onClick={handleAddProject}>
               <FolderPlus className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" className="h-8 w-8" title="Filter threads" onClick={handleMenu}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              title={`Filter threads (current: ${currentThreadSortLabel})`}
+              onClick={handleMenu}
+            >
               <ListFilter className="h-4 w-4" />
             </Button>
           </span>

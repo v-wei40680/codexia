@@ -1,12 +1,12 @@
 use std::fs::{self, File};
 use std::io::{self, BufRead, BufReader, Write};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::{Arc, Mutex, Once, OnceLock};
 use std::time::{Duration, Instant};
 
 use super::event_sink::EventSink;
 use super::utils::{
-    codex_home, codexia_history_path, extract_preview, file_mtime, legacy_plux_history_path,
+    codex_home, codexia_history_path, extract_preview, file_created_time, file_mtime,
     parse_json_line, parse_ts,
 };
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher};
@@ -20,8 +20,10 @@ type EventSinks = Arc<Mutex<Vec<Arc<dyn EventSink>>>>;
 static HISTORY_SCANNER_START: Once = Once::new();
 static HISTORY_SCANNER_SINKS: OnceLock<EventSinks> = OnceLock::new();
 static HISTORY_CACHE: OnceLock<Mutex<Option<Vec<HistoryEntry>>>> = OnceLock::new();
+static HISTORY_WATCH_CWDS: OnceLock<Mutex<HashSet<String>>> = OnceLock::new();
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct HistoryEntry {
     pub id: String,
     pub preview: String,
@@ -29,7 +31,8 @@ pub struct HistoryEntry {
     #[serde(default)]
     pub path: String,
     pub source: String,
-    pub ts: i64,
+    #[serde(default)]
+    pub created_at: i64,
     #[serde(default)]
     pub updated_at: i64,
     #[serde(default)]
@@ -53,12 +56,7 @@ pub fn start_history_scanner(event_sink: Arc<dyn EventSink>) {
         emit_entries_to_sinks(&sinks, &cached_entries);
 
         std::thread::spawn(move || {
-            let mut known_preview_paths: HashSet<String> = cached_entries
-                .iter()
-                .filter(|entry| !entry.preview.trim().is_empty())
-                .map(|entry| history_path_key(Path::new(&entry.path)))
-                .collect();
-
+            let mut known_preview_paths = known_preview_paths_from_entries(&cached_entries);
             let _ = scan_and_emit_to_sinks(&sinks, &mut known_preview_paths);
 
             if !sessions_root.exists() {
@@ -109,25 +107,14 @@ pub fn start_history_scanner(event_sink: Arc<dyn EventSink>) {
 pub fn history_entries_to_thread_values(entries: &[HistoryEntry]) -> Vec<Value> {
     entries
         .iter()
-        .map(|entry| {
-            json!({
-                "id": entry.id,
-                "preview": entry.preview,
-                "cwd": entry.cwd,
-                "path": entry.path,
-                "source": entry.source,
-                "ts": entry.ts,
-                "updatedAt": entry.updated_at,
-                "archived": entry.archived,
-            })
-        })
+        .map(|entry| serde_json::to_value(entry).unwrap_or_else(|_| Value::Null))
         .collect()
 }
 
 pub fn scan_history_entries() -> io::Result<Vec<HistoryEntry>> {
     let mut entries = load_cached_history_entries()?;
     entries = reconcile_sessions_with_cache(entries)?;
-    entries.sort_by(|a, b| b.ts.cmp(&a.ts));
+    entries.sort_by(|a, b| b.created_at.cmp(&a.created_at));
     write_history(&entries)?;
     store_cached_history_entries(entries.clone());
     Ok(entries)
@@ -135,7 +122,7 @@ pub fn scan_history_entries() -> io::Result<Vec<HistoryEntry>> {
 
 pub fn scan_archived_entries() -> io::Result<Vec<HistoryEntry>> {
     let mut entries = scan_archived_sessions()?;
-    entries.sort_by(|a, b| b.ts.cmp(&a.ts));
+    entries.sort_by(|a, b| b.created_at.cmp(&a.created_at));
     Ok(entries)
 }
 
@@ -172,7 +159,10 @@ pub fn list_threads_payload(params: Value, cwd: Option<&str>) -> io::Result<Valu
     let mut entries = if archived {
         scan_archived_entries()?
     } else {
-        load_cached_history_entries()?
+        if let Some(filter_cwd) = cwd {
+            remember_watch_cwd(filter_cwd);
+        }
+        scan_history_entries()?
     };
 
     if let Some(cwd) = cwd {
@@ -203,7 +193,7 @@ pub fn list_threads_payload(params: Value, cwd: Option<&str>) -> io::Result<Valu
     if sort_key == "updated_at" {
         entries.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
     } else {
-        entries.sort_by(|a, b| b.ts.cmp(&a.ts));
+        entries.sort_by(|a, b| b.created_at.cmp(&a.created_at));
     }
 
     let total = entries.len();
@@ -259,7 +249,7 @@ pub fn list_archived_threads_payload(params: Value) -> io::Result<Value> {
     if sort_key == "updated_at" {
         entries.sort_by(|a, b| b.updated_at.cmp(&a.updated_at));
     } else {
-        entries.sort_by(|a, b| b.ts.cmp(&a.ts));
+        entries.sort_by(|a, b| b.created_at.cmp(&a.created_at));
     }
 
     let total = entries.len();
@@ -283,11 +273,7 @@ fn scan_and_emit_to_sinks(
     known_preview_paths: &mut HashSet<String>,
 ) -> io::Result<()> {
     let entries = scan_history_entries()?;
-    let non_empty_entries = filtered_non_empty_entries(&entries);
-    *known_preview_paths = non_empty_entries
-        .iter()
-        .map(|entry| history_path_key(Path::new(&entry.path)))
-        .collect();
+    *known_preview_paths = known_preview_paths_from_entries(&entries);
     emit_entries_to_sinks(sinks, &entries);
     Ok(())
 }
@@ -302,8 +288,10 @@ fn filtered_non_empty_entries(entries: &[HistoryEntry]) -> Vec<HistoryEntry> {
 
 fn emit_entries_to_sink(event_sink: &dyn EventSink, entries: &[HistoryEntry]) {
     let non_empty_entries = filtered_non_empty_entries(entries);
+    let watched_cwds = read_watch_cwds();
+    let entries_to_emit = filter_entries_for_watch_cwds(&non_empty_entries, &watched_cwds);
     let payload = json!({
-        "data": history_entries_to_thread_values(&non_empty_entries),
+        "data": history_entries_to_thread_values(&entries_to_emit),
         "nextCursor": null
     });
     event_sink.emit("thread/list-updated", payload);
@@ -320,25 +308,92 @@ fn emit_entries_to_sinks(sinks: &EventSinks, entries: &[HistoryEntry]) {
 }
 
 fn should_rescan_for_event(event: &Event, known_preview_paths: &HashSet<String>) -> bool {
-    let is_delete_like = matches!(event.kind, EventKind::Remove(_));
+    let is_delete_like = matches!(
+        event.kind,
+        EventKind::Remove(_) | EventKind::Modify(notify::event::ModifyKind::Name(_))
+    );
     for path in &event.paths {
         if path.extension().and_then(|ext| ext.to_str()) != Some("jsonl") {
             continue;
         }
         let key = history_path_key(path);
-        if !known_preview_paths.contains(&key) {
-            return true;
-        }
-        if is_delete_like {
+        if is_delete_like || !known_preview_paths.contains(&key) {
             return true;
         }
     }
     false
 }
 
-fn history_path_key(path: &Path) -> String {
-    let normalized: PathBuf = std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf());
-    normalized.to_string_lossy().to_string()
+fn known_preview_paths_from_entries(entries: &[HistoryEntry]) -> HashSet<String> {
+    entries
+        .iter()
+        .filter(|entry| !entry.preview.trim().is_empty())
+        .map(|entry| history_path_key(Path::new(&entry.path)))
+        .collect()
+}
+
+fn watch_cwds() -> &'static Mutex<HashSet<String>> {
+    HISTORY_WATCH_CWDS.get_or_init(|| Mutex::new(HashSet::new()))
+}
+
+fn remember_watch_cwd(cwd: &str) {
+    let trimmed = cwd.trim();
+    if trimmed.is_empty() {
+        return;
+    }
+    if let Ok(mut guarded) = watch_cwds().lock() {
+        guarded.insert(trimmed.to_string());
+    }
+}
+
+fn read_watch_cwds() -> Vec<String> {
+    if let Ok(guarded) = watch_cwds().lock() {
+        return guarded.iter().cloned().collect();
+    }
+    Vec::new()
+}
+
+fn filter_entries_for_watch_cwds(entries: &[HistoryEntry], watch_cwds: &[String]) -> Vec<HistoryEntry> {
+    if watch_cwds.is_empty() {
+        return entries.to_vec();
+    }
+
+    let normalized_watch_cwds = watch_cwds
+        .iter()
+        .map(|cwd| cwd.trim())
+        .filter(|cwd| !cwd.is_empty())
+        .collect::<Vec<_>>();
+    if normalized_watch_cwds.is_empty() {
+        return entries.to_vec();
+    }
+
+    let filter_repo_roots = normalized_watch_cwds
+        .iter()
+        .map(|cwd| repo_root_for_path(cwd))
+        .collect::<Vec<_>>();
+    let mut entry_repo_roots: HashMap<String, Option<String>> = HashMap::new();
+
+    entries
+        .iter()
+        .filter(|entry| {
+            normalized_watch_cwds
+                .iter()
+                .enumerate()
+                .any(|(idx, filter_cwd)| {
+                    if entry.cwd == *filter_cwd {
+                        return true;
+                    }
+                    let entry_root = entry_repo_roots
+                        .entry(entry.cwd.clone())
+                        .or_insert_with(|| repo_root_for_path(&entry.cwd));
+                    match (&filter_repo_roots[idx], entry_root) {
+                        (Some(filter_root), Some(entry_root)) => filter_root == entry_root,
+                        _ => false,
+                    }
+                })
+        })
+        .cloned()
+        .collect()
 }
 
 fn repo_root_for_path(path: &str) -> Option<String> {
@@ -375,6 +430,10 @@ fn reconcile_sessions_with_cache(cached_entries: Vec<HistoryEntry>) -> io::Resul
         let mtime = file_mtime(entry.path()).unwrap_or_default();
 
         if let Some(existing) = cached_by_path.get(&key) {
+            if !existing.preview.trim().is_empty() {
+                next_entries.push(existing.clone());
+                continue;
+            }
             if existing.updated_at == mtime {
                 next_entries.push(existing.clone());
                 continue;
@@ -392,6 +451,11 @@ fn reconcile_sessions_with_cache(cached_entries: Vec<HistoryEntry>) -> io::Resul
     });
 
     Ok(next_entries)
+}
+
+fn history_path_key(path: &Path) -> String {
+    let normalized = std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf());
+    normalized.to_string_lossy().to_string()
 }
 
 fn history_cache() -> &'static Mutex<Option<Vec<HistoryEntry>>> {
@@ -417,19 +481,10 @@ fn store_cached_history_entries(entries: Vec<HistoryEntry>) {
 }
 
 fn read_history_file() -> io::Result<Vec<HistoryEntry>> {
-    let primary = codexia_history_path();
-    let fallback = legacy_plux_history_path();
-    let read_target = if primary.exists() {
-        Some(primary)
-    } else if fallback.exists() {
-        Some(fallback)
-    } else {
-        None
-    };
-
-    let Some(path) = read_target else {
+    let path = codexia_history_path();
+    if !path.exists() {
         return Ok(Vec::new());
-    };
+    }
 
     let file = File::open(path)?;
     let reader = BufReader::new(file);
@@ -439,7 +494,7 @@ fn read_history_file() -> io::Result<Vec<HistoryEntry>> {
         if line.trim().is_empty() {
             continue;
         }
-        if let Ok(entry) = serde_json::from_str::<HistoryEntry>(&line) {
+    if let Ok(entry) = serde_json::from_str::<HistoryEntry>(&line) {
             entries.push(entry);
         }
     }
@@ -517,7 +572,8 @@ fn extract_entry_from_file(path: &Path, archived: bool) -> Option<HistoryEntry> 
         return None;
     }
 
-    let updated_at = file_mtime(path).unwrap_or(ts);
+    let created_at = file_created_time(path).or_else(|| file_mtime(path)).unwrap_or(ts);
+    let updated_at = file_mtime(path).unwrap_or(created_at);
 
     Some(HistoryEntry {
         id,
@@ -525,7 +581,7 @@ fn extract_entry_from_file(path: &Path, archived: bool) -> Option<HistoryEntry> 
         cwd,
         path: path.to_string_lossy().to_string(),
         source,
-        ts,
+        created_at,
         updated_at,
         archived,
     })
