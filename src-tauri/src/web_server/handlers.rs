@@ -12,16 +12,16 @@ use super::{
     terminal as web_terminal,
     types::{ErrorResponse, WebServerState},
 };
-use crate::cc_commands::db::SessionData;
-use crate::cc_commands::mcp::{
+use crate::cc::db::SessionData;
+use crate::cc::mcp::{
     self as cc_mcp_commands, ClaudeCodeMcpServer, ClaudeCodeResponse,
 };
-use crate::cc_commands::services::{
+use crate::cc::services::{
     message_service as cc_message_service, project_service as cc_project_service,
     session_service as cc_session_service, settings_service as cc_settings_service,
     skill_service as cc_skill_service,
 };
-use crate::cc_commands::types::{AgentOptions, CCConnectParams};
+use crate::cc::types::{AgentOptions, CCConnectParams};
 use crate::codex::scan::{list_archived_threads_payload, list_threads_payload};
 use crate::codex::utils::codex_home;
 use crate::commands::{

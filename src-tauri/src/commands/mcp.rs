@@ -3,7 +3,7 @@ use serde_json::Value as JsonValue;
 use std::collections::HashMap;
 use tauri::command;
 
-use crate::cc_commands::mcp::{
+use crate::cc::mcp::{
     ClaudeCodeMcpServer, cc_mcp_add, cc_mcp_disable, cc_mcp_enable, cc_mcp_list, cc_mcp_remove,
 };
 use crate::codex_commands;

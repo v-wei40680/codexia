@@ -1,5 +1,5 @@
-use crate::cc_commands::db::{SessionDB, SessionData};
-use crate::cc_commands::state::CCState;
+use crate::cc::db::{SessionDB, SessionData};
+use crate::cc::state::CCState;
 use claude_agent_sdk_rs::{ClaudeAgentOptions, Message};
 use std::fs;
 use std::io::{BufRead, BufReader};

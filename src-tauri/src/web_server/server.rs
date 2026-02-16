@@ -4,7 +4,7 @@ use serde_json::Value;
 use tokio::sync::broadcast;
 
 use super::{router::create_router, types::WebServerState};
-use crate::cc_commands::CCState;
+use crate::cc::CCState;
 use crate::codex::scan::start_history_scanner;
 use crate::codex::{AppState, EventSink, WebSocketEventSink, connect_codex, initialize_codex};
 use crate::sleep::SleepState;

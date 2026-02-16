@@ -1,4 +1,4 @@
-mod cc_commands;
+mod cc;
 mod codex;
 mod codex_commands;
 mod commands;
@@ -13,7 +13,7 @@ mod web_server;
 mod window;
 
 use crate::state::WatchState;
-use cc_commands::CCState;
+use cc::CCState;
 use commands::terminal::TerminalState;
 use filesystem::{
     directory_ops::{canonicalize_path, get_home_directory, read_directory, search_files},
@@ -88,26 +88,26 @@ pub fn run() {
             prevent_sleep,
             allow_sleep,
             // CC commands
-            cc_commands::cc_connect,
-            cc_commands::cc_new_session,
-            cc_commands::cc_send_message,
-            cc_commands::cc_disconnect,
-            cc_commands::cc_interrupt,
-            cc_commands::cc_list_sessions,
-            cc_commands::cc_resume_session,
-            cc_commands::cc_get_projects,
-            cc_commands::cc_get_sessions,
-            cc_commands::cc_get_installed_skills,
-            cc_commands::cc_get_settings,
-            cc_commands::cc_update_settings,
+            cc::cc_connect,
+            cc::cc_new_session,
+            cc::cc_send_message,
+            cc::cc_disconnect,
+            cc::cc_interrupt,
+            cc::cc_list_sessions,
+            cc::cc_resume_session,
+            cc::cc_get_projects,
+            cc::cc_get_sessions,
+            cc::cc_get_installed_skills,
+            cc::cc_get_settings,
+            cc::cc_update_settings,
             // cc mcp
-            cc_commands::cc_mcp_list,
-            cc_commands::cc_mcp_get,
-            cc_commands::cc_mcp_add,
-            cc_commands::cc_mcp_remove,
-            cc_commands::cc_list_projects,
-            cc_commands::cc_mcp_disable,
-            cc_commands::cc_mcp_enable,
+            cc::cc_mcp_list,
+            cc::cc_mcp_get,
+            cc::cc_mcp_add,
+            cc::cc_mcp_remove,
+            cc::cc_list_projects,
+            cc::cc_mcp_disable,
+            cc::cc_mcp_enable,
             // Unified MCP commands (routes to Codex or CC based on client_name)
             commands::mcp::unified_add_mcp_server,
             commands::mcp::unified_remove_mcp_server,

@@ -1,4 +1,4 @@
-use crate::cc_commands::state::CCState;
+use crate::cc::state::CCState;
 use claude_agent_sdk_rs::Message;
 use futures::StreamExt;
 
