@@ -29,11 +29,11 @@ use crate::commands::{
     skills as skills_commands, usage as usage_commands,
 };
 use crate::db::notes::Note;
-use crate::dxt::{
+use crate::features::dxt::{
     check_manifests_exist, download_and_extract_manifests, load_manifest, load_manifests,
     read_dxt_setting, save_dxt_setting,
 };
-use crate::filesystem::{
+use crate::features::filesystem::{
     directory_ops::{canonicalize_path, get_home_directory, read_directory, search_files},
     file_io::{delete_file, read_file, read_text_file_lines, write_file},
     file_parsers::{pdf::read_pdf_content, xlsx::read_xlsx_content},

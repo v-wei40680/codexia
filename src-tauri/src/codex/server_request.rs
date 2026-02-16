@@ -1,4 +1,4 @@
-use crate::codex::EventSink;
+use crate::features::event_sink::EventSink;
 use codex_app_server_protocol::ServerRequest;
 use std::sync::Arc;
 

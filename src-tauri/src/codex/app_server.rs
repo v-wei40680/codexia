@@ -1,5 +1,5 @@
 use super::server_request::handle_server_request;
-use crate::codex::EventSink;
+use crate::features::event_sink::EventSink;
 use codex_app_server_protocol::{
     JSONRPCMessage, JSONRPCResponse, RequestId, ServerNotification, ServerRequest,
 };

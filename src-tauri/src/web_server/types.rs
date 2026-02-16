@@ -12,7 +12,7 @@ use tokio::sync::broadcast;
 
 use crate::cc::CCState;
 use crate::codex::AppState;
-use crate::sleep::SleepState;
+use crate::features::sleep::SleepState;
 use crate::web_server::filesystem_watch::WebWatchState;
 use crate::web_server::terminal::WebTerminalState;
 

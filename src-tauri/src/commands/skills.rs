@@ -460,7 +460,7 @@ pub async fn clone_skills_repo(url: String) -> Result<String, String> {
 
     let target_for_clone = target.clone();
     let clone_result = tauri::async_runtime::spawn_blocking(move || {
-        crate::git::clone(&clone_url, &target_for_clone)
+        crate::features::git::clone(&clone_url, &target_for_clone)
     })
     .await
     .map_err(|err| format!("Clone task failed: {}", err))?;

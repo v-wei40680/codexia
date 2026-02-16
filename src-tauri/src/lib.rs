@@ -3,10 +3,7 @@ mod codex;
 mod codex_commands;
 mod commands;
 mod db;
-mod dxt;
-mod filesystem;
-mod git;
-mod sleep;
+mod features;
 mod state;
 mod web_server;
 #[cfg(any(windows, target_os = "linux"))]
@@ -15,13 +12,13 @@ mod window;
 use crate::state::WatchState;
 use cc::CCState;
 use commands::terminal::TerminalState;
-use filesystem::{
+use features::filesystem::{
     directory_ops::{canonicalize_path, get_home_directory, read_directory, search_files},
     file_io::{delete_file, read_file, read_text_file_lines, write_file},
     file_parsers::{pdf::read_pdf_content, xlsx::read_xlsx_content},
     watch::{start_watch_directory, start_watch_file, stop_watch_directory, stop_watch_file},
 };
-use sleep::{SleepState, allow_sleep, prevent_sleep};
+use features::sleep::{SleepState, allow_sleep, prevent_sleep};
 use std::sync::Arc;
 use tauri::Manager;
 
@@ -140,18 +137,18 @@ pub fn run() {
             commands::terminal::terminal_stop,
             codex::utils::codex_home,
             commands::usage::read_token_usage,
-            dxt::load_manifests,
-            dxt::load_manifest,
-            dxt::read_dxt_setting,
-            dxt::save_dxt_setting,
-            dxt::download_and_extract_manifests,
-            dxt::check_manifests_exist,
+            features::dxt::load_manifests,
+            features::dxt::load_manifest,
+            features::dxt::read_dxt_setting,
+            features::dxt::save_dxt_setting,
+            features::dxt::download_and_extract_manifests,
+            features::dxt::check_manifests_exist,
         ])
         .setup(|app| {
             let app_handle = app.handle().clone();
             let init_result = tauri::async_runtime::block_on(async {
-                let event_sink: Arc<dyn codex::EventSink> =
-                    Arc::new(codex::TauriEventSink::new(app_handle));
+                let event_sink: Arc<dyn features::event_sink::EventSink> =
+                    Arc::new(features::event_sink::TauriEventSink::new(app_handle));
                 let codex_client = codex::connect_codex(Arc::clone(&event_sink)).await?;
                 codex::initialize_codex(&codex_client, Arc::clone(&event_sink)).await?;
                 Ok::<_, String>((codex_client, event_sink))

@@ -4,7 +4,7 @@ use std::path::Path;
 use std::sync::{Arc, Mutex, Once, OnceLock};
 use std::time::{Duration, Instant};
 
-use super::event_sink::EventSink;
+use crate::features::event_sink::EventSink;
 use super::utils::{
     codex_home, codexia_history_path, extract_preview, file_created_time, file_mtime,
     parse_json_line, parse_ts,
