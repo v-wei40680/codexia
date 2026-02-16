@@ -14,6 +14,13 @@ import { open } from '@tauri-apps/plugin-dialog';
 import { useLayoutStore } from '@/stores';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { UserInfo } from './UserInfo';
@@ -39,7 +46,7 @@ export function SideBar() {
     activeSidebarTab,
     setActiveSidebarTab,
   } = useLayoutStore();
-  const { searchTerm, setSearchTerm, sortKey, handleNewThread, handleMenu } = useThreadList();
+  const { searchTerm, setSearchTerm, sortKey, setSortKey, handleNewThread } = useThreadList();
   const { handleSessionSelect, handleNewSession } = useCCSessionManager();
   const { activeSessionId } = useCCStore();
   const { hasUpdate, startUpdate } = useUpdater({ enabled: true });
@@ -196,15 +203,27 @@ export function SideBar() {
             <Button variant="ghost" size="icon" className="h-8 w-8" title="Add new project" onClick={handleAddProject}>
               <FolderPlus className="h-4 w-4" />
             </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              title={`Filter threads (current: ${currentThreadSortLabel})`}
-              onClick={handleMenu}
-            >
-              <ListFilter className="h-4 w-4" />
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  title={`Filter threads (current: ${currentThreadSortLabel})`}
+                >
+                  <ListFilter className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuRadioGroup
+                  value={sortKey}
+                  onValueChange={(value) => setSortKey(value as 'created_at' | 'updated_at')}
+                >
+                  <DropdownMenuRadioItem value="created_at">Sort by Created</DropdownMenuRadioItem>
+                  <DropdownMenuRadioItem value="updated_at">Sort by Updated</DropdownMenuRadioItem>
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </span>
         </span>
       </div>

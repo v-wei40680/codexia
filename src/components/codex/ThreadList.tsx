@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import type { KeyboardEvent, MouseEvent } from 'react';
-import { Menu, MenuItem } from '@tauri-apps/api/menu';
+import type { KeyboardEvent } from 'react';
 import { Archive, Pin } from 'lucide-react';
 import { useThreadFilter } from '@/hooks/codex/useThreadFilter';
 import { codexService } from '@/services/codexService';
@@ -15,6 +14,13 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
 import { Input } from '@/components/ui/input';
 import { formatThreadAge } from '@/utils/formatThreadAge';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
@@ -294,52 +300,15 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
     }
   }, [cwd, isLoadingMore, isProjectScoped, listCwd, nextCursor, sortKey]);
 
-  const handleThreadContextMenu = useCallback(
-    async (event: MouseEvent, threadId: string) => {
-      event.preventDefault();
+  const openRenameDialog = useCallback(
+    (threadId: string) => {
       const meta = sessionMeta[threadId];
-      const isPinned = !!meta?.pinned_at_ms;
       const matchedThread = mergedThreads.find((t) => t.id === threadId);
       const displayName = meta?.text ?? matchedThread?.preview ?? '';
-      const threadPath = matchedThread?.path ?? '';
-      const menu = await Menu.new({
-        items: [
-          await MenuItem.new({
-            text: 'Rename',
-            action: async () => {
-              setRenameThreadId(threadId);
-              setRenameValue(displayName);
-            },
-          }),
-          await MenuItem.new({
-            text: isPinned ? 'Unpin' : 'Pin',
-            action: async () => {
-              await handleTogglePin(threadId);
-            },
-          }),
-          await MenuItem.new({
-            text: 'Archive',
-            action: async () => {
-              await handleArchiveThread(threadId);
-            },
-          }),
-          await MenuItem.new({
-            text: 'Delete',
-            action: async () => {
-              await handleDeleteThreadByPath(threadId, threadPath);
-            },
-          }),
-          await MenuItem.new({
-            text: 'Copy Id',
-            action: async () => {
-              await navigator.clipboard.writeText(threadId);
-            },
-          }),
-        ],
-      });
-      await menu.popup();
+      setRenameThreadId(threadId);
+      setRenameValue(displayName);
     },
-    [handleArchiveThread, handleDeleteThreadByPath, handleTogglePin, mergedThreads, sessionMeta]
+    [mergedThreads, sessionMeta]
   );
 
   const handleRowKeyDown = useCallback(
@@ -381,53 +350,76 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
     <div className="flex min-h-0 flex-1 flex-col pr-2">
       <div className="min-h-0 flex-1">
         {sortedThreads.map((thread) => (
-          <div
-            key={thread.id}
-            onClick={() => {
-              handleSelectThread(thread.id);
-              setView('codex');
-            }}
-            onKeyDown={(event) => handleRowKeyDown(event, thread.id)}
-            onContextMenu={(event) => handleThreadContextMenu(event, thread.id)}
-            role="button"
-            tabIndex={0}
-            className={`group relative grid grid-cols-[0.5rem_1fr_auto] items-center gap-3 w-full text-left p-2 rounded-lg transition-colors ${
-              currentThreadId === thread.id ? 'bg-zinc-700/50' : 'hover:bg-zinc-800/30'
-            }`}
-          >
-            <div className="relative h-6">
-              <button
-                type="button"
-                aria-label={thread.pinnedAtMs ? 'Unpin thread' : 'Pin thread'}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  void handleTogglePin(thread.id);
+          <ContextMenu key={thread.id}>
+            <ContextMenuTrigger asChild>
+              <div
+                onClick={() => {
+                  handleSelectThread(thread.id);
+                  setView('codex');
                 }}
-                className={`absolute left-0 top-1/2 -translate-y-1/2 inline-flex items-center justify-center h-6 w-6 rounded hover:bg-accent/50 transition-colors ${
-                  thread.pinnedAtMs ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                } ${thread.pinnedAtMs ? 'text-foreground' : 'text-muted-foreground/40'}`}
+                onKeyDown={(event) => handleRowKeyDown(event, thread.id)}
+                role="button"
+                tabIndex={0}
+                className={`group relative grid grid-cols-[0.5rem_1fr_auto] items-center gap-3 w-full text-left p-2 rounded-lg transition-colors ${
+                  currentThreadId === thread.id ? 'bg-zinc-700/50' : 'hover:bg-zinc-800/30'
+                }`}
               >
-                <Pin className="h-4 w-4" />
-              </button>
-            </div>
-            <div className="text-sm font-medium truncate min-w-0 text-inherit">
-              {thread.preview}
-            </div>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground whitespace-nowrap">
-              <span className="group-hover:hidden">{formatThreadAge(thread.createdAt ?? 0)}</span>
-            </div>
-            <button
-              type="button"
-              aria-label="Archive thread"
-              onClick={(event) => {
-                event.stopPropagation();
-                void handleArchiveThread(thread.id);
-              }}
-              className="absolute right-0 inline-flex items-center justify-center h-6 w-6 rounded hover:bg-accent/50 transition-colors opacity-0 group-hover:opacity-100 text-muted-foreground"
-            >
-              <Archive className="h-3.5 w-3.5" />
-            </button>
-          </div>
+                <div className="relative h-6">
+                  <button
+                    type="button"
+                    aria-label={thread.pinnedAtMs ? 'Unpin thread' : 'Pin thread'}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      void handleTogglePin(thread.id);
+                    }}
+                    className={`absolute left-0 top-1/2 -translate-y-1/2 inline-flex items-center justify-center h-6 w-6 rounded hover:bg-accent/50 transition-colors ${
+                      thread.pinnedAtMs ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                    } ${thread.pinnedAtMs ? 'text-foreground' : 'text-muted-foreground/40'}`}
+                  >
+                    <Pin className="h-4 w-4" />
+                  </button>
+                </div>
+                <div className="text-sm font-medium truncate min-w-0 text-inherit">
+                  {thread.preview}
+                </div>
+                <div className="flex items-center gap-2 text-xs text-muted-foreground whitespace-nowrap">
+                  <span className="group-hover:hidden">{formatThreadAge(thread.createdAt ?? 0)}</span>
+                </div>
+                <button
+                  type="button"
+                  aria-label="Archive thread"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    void handleArchiveThread(thread.id);
+                  }}
+                  className="absolute right-0 inline-flex items-center justify-center h-6 w-6 rounded hover:bg-accent/50 transition-colors opacity-0 group-hover:opacity-100 text-muted-foreground"
+                >
+                  <Archive className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </ContextMenuTrigger>
+            <ContextMenuContent className="w-44">
+              <ContextMenuItem onSelect={() => openRenameDialog(thread.id)}>
+                Rename
+              </ContextMenuItem>
+              <ContextMenuItem onSelect={() => void handleTogglePin(thread.id)}>
+                {thread.pinnedAtMs ? 'Unpin' : 'Pin'}
+              </ContextMenuItem>
+              <ContextMenuItem onSelect={() => void handleArchiveThread(thread.id)}>
+                Archive
+              </ContextMenuItem>
+              <ContextMenuItem
+                variant="destructive"
+                onSelect={() => void handleDeleteThreadByPath(thread.id, thread.path ?? '')}
+              >
+                Delete
+              </ContextMenuItem>
+              <ContextMenuSeparator />
+              <ContextMenuItem onSelect={() => void navigator.clipboard.writeText(thread.id)}>
+                Copy Id
+              </ContextMenuItem>
+            </ContextMenuContent>
+          </ContextMenu>
         ))}
         {filteredThreads.length === 0 && (
           <div className="text-center text-sm text-sidebar-foreground/50 py-8 px-4">

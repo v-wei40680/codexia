@@ -1,5 +1,4 @@
 import { useCallback, useEffect } from 'react';
-import { Menu, MenuItem } from '@tauri-apps/api/menu';
 import { codexService } from '@/services/codexService';
 import { useCodexStore, useThreadListStore } from '@/stores/codex';
 import { useLayoutStore, useNoteStore, useWorkspaceStore } from '@/stores';
@@ -21,21 +20,5 @@ export function useThreadList() {
     codexService.loadThreads(cwd, false, sortKey);
   }, [cwd, sortKey, threadListRefreshToken]);
 
-  const handleMenu = useCallback(async () => {
-    const menu = await Menu.new({
-      items: [
-        await MenuItem.new({
-          text: `${sortKey === 'created_at' ? '✓ ' : ''}Sort by Created`,
-          action: () => setSortKey('created_at'),
-        }),
-        await MenuItem.new({
-          text: `${sortKey === 'updated_at' ? '✓ ' : ''}Sort by Updated`,
-          action: () => setSortKey('updated_at'),
-        }),
-      ],
-    });
-    await menu.popup();
-  }, [setSortKey, sortKey]);
-
-  return { searchTerm, setSearchTerm, sortKey, handleNewThread, handleMenu };
+  return { searchTerm, setSearchTerm, sortKey, setSortKey, handleNewThread };
 }
