@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import type { UnlistenFn } from '@tauri-apps/api/event';
 import { listen } from '@tauri-apps/api/event';
 import { Button } from '@/components/ui/button';
-import { Copy, Check, Send, FileText, GitBranch, Code } from 'lucide-react';
+import { Copy, Check, Send, FileText, GitBranch, Code, Loader2 } from 'lucide-react';
 import { CodeEditor } from '../editor/CodeEditor';
 import { DiffViewer } from '@/components/features/DiffViewer';
 import { useThemeContext } from '@/contexts/ThemeContext';
@@ -49,9 +49,10 @@ export function FileViewer({ filePath, addToNotepad }: FileViewerProps) {
   const { resolvedTheme } = useThemeContext();
   const { setInputValue } = useInputStore();
 
-  const getFileExtension = () => {
-    const lastDot = filename.lastIndexOf('.');
-    return lastDot > -1 ? filename.substring(lastDot + 1).toLowerCase() : '';
+  const getFileExtension = (path: string) => {
+    const base = getFilename(path);
+    const lastDot = base.lastIndexOf('.');
+    return lastDot > -1 ? base.substring(lastDot + 1).toLowerCase() : '';
   };
 
   const loadFile = async () => {
@@ -61,7 +62,7 @@ export function FileViewer({ filePath, addToNotepad }: FileViewerProps) {
     setViewMode('code');
 
     try {
-      const extension = getFileExtension();
+      const extension = getFileExtension(filePath);
       let fileContent: string;
 
       switch (extension) {
@@ -358,9 +359,23 @@ export function FileViewer({ filePath, addToNotepad }: FileViewerProps) {
         )}
         {loading ? (
           <div
-            className={`p-4 text-center ${resolvedTheme === 'dark' ? 'text-muted-foreground' : 'text-gray-500'}`}
+            className={`h-full p-6 flex flex-col items-center justify-center gap-4 ${resolvedTheme === 'dark' ? 'text-muted-foreground' : 'text-gray-500'}`}
           >
-            Loading file...
+            <div className="flex items-center gap-2">
+              <Loader2 className="w-5 h-5 animate-spin" />
+              <span className="text-sm font-medium">Loading file...</span>
+            </div>
+            <div className="w-full max-w-xl space-y-2">
+              <div
+                className={`h-3 rounded animate-pulse ${resolvedTheme === 'dark' ? 'bg-muted' : 'bg-gray-200'}`}
+              />
+              <div
+                className={`h-3 rounded animate-pulse ${resolvedTheme === 'dark' ? 'bg-muted' : 'bg-gray-200'}`}
+              />
+              <div
+                className={`h-3 rounded w-2/3 animate-pulse ${resolvedTheme === 'dark' ? 'bg-muted' : 'bg-gray-200'}`}
+              />
+            </div>
           </div>
         ) : error ? (
           <div
