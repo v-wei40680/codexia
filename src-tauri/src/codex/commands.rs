@@ -6,10 +6,8 @@ use codex_app_server_protocol::{
     ReviewStartResponse, SkillsListResponse, ThreadListParams, ThreadResumeParams,
     ThreadStartParams, TurnInterruptParams, TurnStartParams,
 };
-use crate::codex::config::mcp::McpServerConfig;
 use serde_json::Value;
 use serde_json::json;
-use std::collections::HashMap;
 use std::path::PathBuf;
 use tauri::State;
 
@@ -242,20 +240,4 @@ pub async fn start_review(
         .send_request("review/start", params_value)
         .await?;
     Ok(from_value(result)?)
-}
-
-pub async fn read_mcp_servers() -> Result<HashMap<String, McpServerConfig>, String> {
-    super::config::mcp::read_mcp_servers().await
-}
-
-pub async fn add_mcp_server(name: String, config: McpServerConfig) -> Result<(), String> {
-    super::config::mcp::add_mcp_server(name, config).await
-}
-
-pub async fn delete_mcp_server(name: String) -> Result<(), String> {
-    super::config::mcp::delete_mcp_server(name).await
-}
-
-pub async fn set_mcp_server_enabled(name: String, enabled: bool) -> Result<(), String> {
-    super::config::mcp::set_mcp_server_enabled(name, enabled).await
 }

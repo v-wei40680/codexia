@@ -101,7 +101,7 @@ pub async fn connect_codex(event_sink: Arc<dyn EventSink>) -> Result<Arc<CodexAp
     // Spawn stdout reader task
     let client_clone = Arc::clone(&client);
     let event_sink_clone = Arc::clone(&event_sink);
-    tauri::async_runtime::spawn(async move {
+    tokio::spawn(async move {
         let mut lines = BufReader::new(stdout).lines();
         while let Ok(Some(line)) = lines.next_line().await {
             if line.trim().is_empty() {
@@ -195,7 +195,7 @@ pub async fn connect_codex(event_sink: Arc<dyn EventSink>) -> Result<Arc<CodexAp
 
     // Spawn stderr reader task
     let event_sink_clone = Arc::clone(&event_sink);
-    tauri::async_runtime::spawn(async move {
+    tokio::spawn(async move {
         let mut lines = BufReader::new(stderr).lines();
         while let Ok(Some(line)) = lines.next_line().await {
             if line.trim().is_empty() {

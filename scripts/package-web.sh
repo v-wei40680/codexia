@@ -35,7 +35,13 @@ if [[ "${os}" == "linux" ]]; then
 fi
 
 VITE_WEB_PORT="${VITE_WEB_PORT:-7420}" bun run build
-cargo_args=(build --release --manifest-path "${root_dir}/src-tauri/Cargo.toml")
+cargo_args=(
+  build
+  --release
+  --manifest-path "${root_dir}/src-tauri/Cargo.toml"
+  --no-default-features
+  --features web
+)
 if [[ -n "${target_triple}" ]]; then
   cargo_args+=(--target "${target_triple}")
 fi

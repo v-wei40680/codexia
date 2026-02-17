@@ -325,7 +325,7 @@ pub async fn list_marketplace_skills(
     scope: String,
     cwd: Option<String>,
 ) -> Result<Vec<MarketplaceSkill>, String> {
-    tauri::async_runtime::spawn_blocking(move || {
+    tokio::task::spawn_blocking(move || {
         let install_root = resolve_skills_install_root(&selected_agent, &scope, cwd.as_deref())?;
         scan_marketplace_skills(&install_root)
     })
@@ -338,7 +338,7 @@ pub async fn list_installed_skills(
     scope: String,
     cwd: Option<String>,
 ) -> Result<Vec<InstalledSkill>, String> {
-    tauri::async_runtime::spawn_blocking(move || {
+    tokio::task::spawn_blocking(move || {
         let install_root = resolve_skills_install_root(&selected_agent, &scope, cwd.as_deref())?;
         scan_installed_skills(&install_root)
     })
@@ -353,7 +353,7 @@ pub async fn install_marketplace_skill(
     scope: String,
     cwd: Option<String>,
 ) -> Result<String, String> {
-    tauri::async_runtime::spawn_blocking(move || {
+    tokio::task::spawn_blocking(move || {
         let requested_name = skill_name.trim();
         if requested_name.is_empty() {
             return Err("skill_name cannot be empty".to_string());
@@ -407,7 +407,7 @@ pub async fn uninstall_installed_skill(
     scope: String,
     cwd: Option<String>,
 ) -> Result<String, String> {
-    tauri::async_runtime::spawn_blocking(move || {
+    tokio::task::spawn_blocking(move || {
         let requested_name = skill_name.trim();
         if requested_name.is_empty() {
             return Err("skill_name cannot be empty".to_string());
@@ -447,7 +447,7 @@ pub async fn clone_skills_repo(url: String) -> Result<String, String> {
     let target = plugins_root.join(&repo_subpath);
 
     let target_for_clone = target.clone();
-    let clone_result = tauri::async_runtime::spawn_blocking(move || {
+    let clone_result = tokio::task::spawn_blocking(move || {
         crate::features::git::clone(&clone_url, &target_for_clone)
     })
     .await
@@ -463,7 +463,7 @@ pub async fn clone_skills_repo(url: String) -> Result<String, String> {
     };
 
     let open_path = actual_path.clone();
-    let verify_result = tauri::async_runtime::spawn_blocking(move || gix::open(&open_path))
+    let verify_result = tokio::task::spawn_blocking(move || gix::open(&open_path))
         .await
         .map_err(|err| format!("Repository verification task failed: {}", err))?;
     if let Err(err) = verify_result {
