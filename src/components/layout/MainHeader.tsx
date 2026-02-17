@@ -1,5 +1,5 @@
 import { useCallback, useEffect } from 'react';
-import { Chrome, Diff, Files, GitBranch, History, PanelLeft, SquarePen, StickyNote, Terminal } from 'lucide-react';
+import { Chrome, Diff, Files, History, PanelLeft, PanelRight, SquarePen, StickyNote, Terminal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { codexService } from '@/services/codexService';
 import { ProjectSelector } from '@/components/project-selector';
@@ -98,6 +98,7 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
       <div className="flex items-center gap-2">
         <span className="flex">
           {showTerminalButton && (
+            <>
             <Button
               variant={isTerminalOpen ? 'secondary' : 'ghost'}
               size="icon"
@@ -106,17 +107,20 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
             >
               <Terminal />
             </Button>
+              <Button
+                variant={activeRightPanelTab === 'diff' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => setActiveRightPanelTab('diff')}
+                title="Diff"
+                className="rounded-md border"
+              >
+                <Diff />
+                <GitStatsIndicator />
+              </Button>
+            </>
           )}
           {isRightPanelOpen && (
             <div className="flex items-center">
-              <Button
-                variant={activeRightPanelTab === 'diff' ? 'secondary' : 'ghost'}
-                size="icon"
-                onClick={() => setActiveRightPanelTab('diff')}
-                title="Diff"
-              >
-                <GitBranch />
-              </Button>
               <Button
                 variant={activeRightPanelTab === 'note' ? 'secondary' : 'ghost'}
                 size="icon"
@@ -143,16 +147,13 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
               </Button>
             </div>
           )}
-          {/* Git statistics indicator */}
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={toggleRightPanel}
             title={isRightPanelOpen ? 'Hide right panel' : 'Show right panel'}
-            className="rounded-md border"
           >
-            <Diff />
-            <GitStatsIndicator />
+            <PanelRight />
           </Button>
         </span>
       </div>
