@@ -131,8 +131,8 @@ export function SkillsView() {
   };
 
   return (
-    <div className="h-full w-full">
-      <Tabs defaultValue="skills" className="w-full">
+    <div className="h-full min-h-0 w-full">
+      <Tabs defaultValue="skills" className="flex h-full min-h-0 w-full flex-col">
         <div className="mb-3 flex items-center justify-between gap-3">
           <TabsList>
             <TabsTrigger value="skills">Marketplace</TabsTrigger>
@@ -161,7 +161,7 @@ export function SkillsView() {
             </Button>
           </span>
         </div>
-        <TabsContent value="skills">
+        <TabsContent value="skills" className="min-h-0 overflow-y-auto">
           <h2>Skills marketplace</h2>
           <div className="mt-3 space-y-2">
             {loading ? <p className="text-sm text-muted-foreground">Loading...</p> : null}
@@ -193,7 +193,7 @@ export function SkillsView() {
             ))}
           </div>
         </TabsContent>
-        <TabsContent value="installed">
+        <TabsContent value="installed" className="min-h-0 overflow-y-auto">
           <h2>Installed skills</h2>
           <div className="mt-3 space-y-2">
             {loadingInstalled ? <p className="text-sm text-muted-foreground">Loading...</p> : null}
@@ -230,7 +230,7 @@ export function SkillsView() {
             ))}
           </div>
         </TabsContent>
-        <TabsContent value="new">
+        <TabsContent value="new" className="min-h-0 overflow-y-auto">
           <Clone />
         </TabsContent>
       </Tabs>
