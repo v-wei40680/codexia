@@ -20,6 +20,7 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
   const {
     isRightPanelOpen,
     toggleRightPanel,
+    setRightPanelOpen,
     isSidebarOpen,
     setSidebarOpen,
     setView,
@@ -33,6 +34,10 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
   const { refreshStats } = useGitStatsStore();
   const currentThread = useCurrentThread();
   const showTerminalButton = view === 'codex' || view === 'cc';
+  const openRightPanelTab = (tab: 'diff' | 'note' | 'files' | 'webpreview') => {
+    setActiveRightPanelTab(tab);
+    setRightPanelOpen(true);
+  };
 
   const refreshGitStats = useCallback(() => {
     void refreshStats(cwd);
@@ -110,7 +115,7 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
               <Button
                 variant={activeRightPanelTab === 'diff' ? 'secondary' : 'ghost'}
                 size="sm"
-                onClick={() => setActiveRightPanelTab('diff')}
+                onClick={() => openRightPanelTab('diff')}
                 title="Diff"
                 className="rounded-md border"
               >
@@ -124,7 +129,7 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
               <Button
                 variant={activeRightPanelTab === 'note' ? 'secondary' : 'ghost'}
                 size="icon"
-                onClick={() => setActiveRightPanelTab('note')}
+                onClick={() => openRightPanelTab('note')}
                 title="Notes"
               >
                 <StickyNote />
@@ -132,7 +137,7 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
               <Button
                 variant={activeRightPanelTab === 'files' ? 'secondary' : 'ghost'}
                 size="icon"
-                onClick={() => setActiveRightPanelTab('files')}
+                onClick={() => openRightPanelTab('files')}
                 title="Files"
               >
                 <Files />
@@ -140,7 +145,7 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
               <Button
                 variant={activeRightPanelTab === 'webpreview' ? 'secondary' : 'ghost'}
                 size="icon"
-                onClick={() => setActiveRightPanelTab('webpreview')}
+                onClick={() => openRightPanelTab('webpreview')}
                 title="Web Preview"
               >
                 <Chrome />
