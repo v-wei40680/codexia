@@ -23,17 +23,14 @@ VERSION=$(jq -r '.tag_name' release.json | sed 's/^v//')
 # Extract SHAs from release.json
 # The digest field format is "sha256:..." so we cut the prefix
 ARM_SHA=$(jq -r '.assets[] | select(.name | contains("aarch64") and endswith(".dmg")) | .digest' release.json | cut -d: -f2)
-INTEL_SHA=$(jq -r '.assets[] | select(.name | contains("x64") and endswith(".dmg")) | .digest' release.json | cut -d: -f2)
 
-if [ -z "$ARM_SHA" ] || [ -z "$INTEL_SHA" ]; then
+if [ -z "$ARM_SHA" ]; then
   echo "Error: Could not extract SHAs from release.json"
   echo "ARM SHA: $ARM_SHA"
-  echo "Intel SHA: $INTEL_SHA"
   exit 1
 fi
 
 echo "Updating to version $VERSION"
-echo "Intel SHA256: $INTEL_SHA"
 echo "ARM SHA256: $ARM_SHA"
 
 # Clone the Homebrew tap repository
@@ -51,7 +48,6 @@ fi
 # Update version and SHA256 values
 # Note: Using Linux-compatible sed syntax (without empty string after -i)
 sed -i "s/version \".*\"/version \"${VERSION}\"/" "$TARGET_FILE"
-sed -i "/on_intel do/,/end/ s/sha256 \".*\"/sha256 \"${INTEL_SHA}\"/" "$TARGET_FILE"
 sed -i "/on_arm do/,/end/ s/sha256 \".*\"/sha256 \"${ARM_SHA}\"/" "$TARGET_FILE"
 
 # Commit and push changes
