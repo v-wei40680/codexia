@@ -14,7 +14,7 @@ export async function skillList(cwd: string) {
   if (isTauri()) {
     return await invokeTauri<SkillsListResponse>('skills_list', { cwd });
   }
-  return await postJson<SkillsListResponse>('/api/codex/skills/list', { cwd });
+  return await postJson<SkillsListResponse>('/api/codex/skills/list', { cwds: [cwd] });
 }
 
 export async function cloneSkillsRepo(url: string) {

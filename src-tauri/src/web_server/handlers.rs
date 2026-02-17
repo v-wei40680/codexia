@@ -2,7 +2,9 @@ use axum::{Json, extract::State as AxumState, http::StatusCode, response::IntoRe
 use codex_app_server_protocol::{
     CommandExecutionApprovalDecision, FileChangeApprovalDecision, FuzzyFileSearchParams,
     GetAccountParams, LoginAccountParams, ModelListParams, RequestId, ReviewStartParams,
-    ThreadListParams, ThreadResumeParams, ThreadStartParams, TurnInterruptParams, TurnStartParams,
+    SkillsConfigWriteParams, SkillsListParams, ThreadArchiveParams, ThreadListParams,
+    ThreadResumeParams, ThreadStartParams, ToolRequestUserInputResponse, TurnInterruptParams,
+    TurnStartParams,
 };
 use serde::Deserialize;
 use serde_json::{Value, json};
@@ -48,22 +50,6 @@ pub(super) struct ListThreadsRequest {
 }
 
 #[derive(Deserialize)]
-pub(super) struct ArchiveThreadParams {
-    thread_id: String,
-}
-
-#[derive(Deserialize)]
-pub(super) struct SkillsListParams {
-    cwd: String,
-}
-
-#[derive(Deserialize)]
-pub(super) struct SkillsConfigWriteParams {
-    path: String,
-    enabled: bool,
-}
-
-#[derive(Deserialize)]
 pub(super) struct CommandExecutionApprovalParams {
     request_id: RequestId,
     decision: CommandExecutionApprovalDecision,
@@ -78,7 +64,7 @@ pub(super) struct FileChangeApprovalParams {
 #[derive(Deserialize)]
 pub(super) struct UserInputResponseParams {
     request_id: RequestId,
-    response: Value,
+    response: ToolRequestUserInputResponse,
 }
 
 #[derive(Deserialize)]
@@ -412,9 +398,9 @@ pub(super) async fn api_list_archived_threads(
 
 pub(super) async fn api_archive_thread(
     AxumState(state): AxumState<WebServerState>,
-    Json(params): Json<ArchiveThreadParams>,
+    Json(params): Json<ThreadArchiveParams>,
 ) -> Result<Json<Value>, ErrorResponse> {
-    let params_value = json!({ "threadId": params.thread_id });
+    let params_value = serde_json::to_value(params).map_err(to_error_response)?;
     let result = state
         .codex_state
         .codex
@@ -522,7 +508,7 @@ pub(super) async fn api_skills_list(
     AxumState(state): AxumState<WebServerState>,
     Json(params): Json<SkillsListParams>,
 ) -> Result<Json<Value>, ErrorResponse> {
-    let params_value = json!({ "cwds": [params.cwd] });
+    let params_value = serde_json::to_value(params).map_err(to_error_response)?;
     let result = state
         .codex_state
         .codex
@@ -536,10 +522,7 @@ pub(super) async fn api_skills_config_write(
     AxumState(state): AxumState<WebServerState>,
     Json(params): Json<SkillsConfigWriteParams>,
 ) -> Result<Json<Value>, ErrorResponse> {
-    let payload = json!({
-        "path": params.path,
-        "enabled": params.enabled,
-    });
+    let payload = serde_json::to_value(params).map_err(to_error_response)?;
     let result = state
         .codex_state
         .codex

@@ -99,7 +99,7 @@ export async function threadArchive(threadId: ThreadId) {
   if (isTauri()) {
     return await invokeTauri('archive_thread', { threadId });
   }
-  return await postJson('/api/codex/thread/archive', { thread_id: threadId });
+  return await postJson('/api/codex/thread/archive', { threadId });
 }
 
 export async function threadUnarchive(threadId: ThreadId) {
