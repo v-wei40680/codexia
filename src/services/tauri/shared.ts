@@ -1,5 +1,6 @@
 import { buildUrl, isTauri } from '@/hooks/runtime';
 import { toast } from '@/components/ui/use-toast';
+import { invoke } from '@tauri-apps/api/core';
 
 export type MarketplaceSkillItem = {
   name: string;
@@ -103,7 +104,6 @@ export async function invokeTauri<T>(
   command: string,
   payload?: Record<string, unknown>
 ): Promise<T> {
-  const { invoke } = await import('@tauri-apps/api/core');
   return invoke<T>(command, payload);
 }
 
