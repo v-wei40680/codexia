@@ -77,22 +77,33 @@ pub fn start_history_scanner(event_sink: Arc<dyn EventSink>) {
                 return;
             }
             let mut last_scan = Instant::now() - Duration::from_secs(60);
+            let mut pending_rescan = false;
             loop {
-                match rx.recv() {
+                match rx.recv_timeout(Duration::from_millis(200)) {
                     Ok(Ok(event)) => {
-                        if last_scan.elapsed() < Duration::from_millis(500) {
-                            continue;
-                        }
                         if !should_rescan_for_event(&event, &known_preview_paths) {
                             continue;
                         }
-                        last_scan = Instant::now();
-                        let _ = scan_and_emit_to_sinks(&sinks, &mut known_preview_paths);
+
+                        if last_scan.elapsed() < Duration::from_millis(500) {
+                            pending_rescan = true;
+                        } else {
+                            last_scan = Instant::now();
+                            let _ = scan_and_emit_to_sinks(&sinks, &mut known_preview_paths);
+                            pending_rescan = false;
+                        }
                     }
                     Ok(Err(err)) => {
                         eprintln!("history scanner: watch event error: {err}");
                     }
-                    Err(_) => break,
+                    Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {}
+                    Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => break,
+                }
+
+                if pending_rescan && last_scan.elapsed() >= Duration::from_millis(500) {
+                    last_scan = Instant::now();
+                    let _ = scan_and_emit_to_sinks(&sinks, &mut known_preview_paths);
+                    pending_rescan = false;
                 }
             }
         });
@@ -307,19 +318,24 @@ fn emit_entries_to_sinks(sinks: &EventSinks, entries: &[HistoryEntry]) {
     }
 }
 
-fn should_rescan_for_event(event: &Event, known_preview_paths: &HashSet<String>) -> bool {
-    let is_delete_like = matches!(
+fn should_rescan_for_event(event: &Event, _known_preview_paths: &HashSet<String>) -> bool {
+    if matches!(event.kind, EventKind::Access(_)) {
+        return false;
+    }
+
+    let is_relevant_kind = matches!(
         event.kind,
-        EventKind::Remove(_) | EventKind::Modify(notify::event::ModifyKind::Name(_))
+        EventKind::Create(_) | EventKind::Remove(_) | EventKind::Modify(_)
     );
+    if !is_relevant_kind {
+        return false;
+    }
+
     for path in &event.paths {
         if path.extension().and_then(|ext| ext.to_str()) != Some("jsonl") {
             continue;
         }
-        let key = history_path_key(path);
-        if is_delete_like || !known_preview_paths.contains(&key) {
-            return true;
-        }
+        return true;
     }
     false
 }

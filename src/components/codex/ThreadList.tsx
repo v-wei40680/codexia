@@ -1,11 +1,13 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import { Archive, Pin } from 'lucide-react';
+import { listen } from '@tauri-apps/api/event';
 import { useThreadFilter } from '@/hooks/codex/useThreadFilter';
 import { codexService } from '@/services/codexService';
 import { useCodexStore, useThreadListStore } from '@/stores/codex';
 import { deleteFile, readSessionMetaFile, threadList, writeSessionMetaFile } from '@/services/tauri';
 import type { ThreadListParams } from '@/bindings/v2';
+import { isTauri } from '@/hooks/runtime';
 import {
   Dialog,
   DialogContent,
@@ -46,6 +48,8 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [scopedThreads, setScopedThreads] = useState<ThreadListItem[]>([]);
   const [scopedNextCursor, setScopedNextCursor] = useState<string | null>(null);
+  // Stable ref so the event listener callback always calls the latest fetch
+  const reloadScopedThreadsRef = useRef<(() => Promise<void>) | null>(null);
   const [sessionMeta, setSessionMeta] = useState<Record<string, SessionMetaEntry>>({});
   const [renameThreadId, setRenameThreadId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
@@ -108,9 +112,11 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
 
   useEffect(() => {
     if (!isProjectScoped) {
+      reloadScopedThreadsRef.current = null;
       return;
     }
     let cancelled = false;
+
     const loadScopedThreads = async () => {
       try {
         const params: ThreadListParams = {
@@ -138,11 +144,50 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
         }
       }
     };
+
+    // Keep the ref up-to-date so the event listener below can call the latest version
+    reloadScopedThreadsRef.current = loadScopedThreads;
+
     void loadScopedThreads();
     return () => {
       cancelled = true;
     };
   }, [isProjectScoped, listCwd, sortKey]);
+
+  // Re-fetch scoped threads whenever the backend fires thread/list-updated
+  useEffect(() => {
+    if (!isProjectScoped) {
+      return;
+    }
+
+    const debounceMs = 150;
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const scheduleReload = () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(() => {
+        void reloadScopedThreadsRef.current?.();
+      }, debounceMs);
+    };
+
+    if (isTauri()) {
+      let unlisten: (() => void) | null = null;
+      void listen('thread/list-updated', scheduleReload).then((dispose) => {
+        unlisten = dispose;
+      });
+      return () => {
+        if (debounceTimer) clearTimeout(debounceTimer);
+        unlisten?.();
+      };
+    }
+
+    // Web/non-Tauri path mirrors how useCodexEvents forwards the event
+    window.addEventListener('thread/list-updated', scheduleReload);
+    return () => {
+      if (debounceTimer) clearTimeout(debounceTimer);
+      window.removeEventListener('thread/list-updated', scheduleReload);
+    };
+  }, [isProjectScoped]);
 
   const handleSelectThread = useCallback(
     async (threadId: string) => {

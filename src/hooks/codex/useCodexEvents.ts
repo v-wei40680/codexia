@@ -168,6 +168,14 @@ export function useCodexEvents(enabled = true) {
             );
             return;
           }
+          if (envelope.event === 'thread/list-updated') {
+            window.dispatchEvent(
+              new CustomEvent('thread/list-updated', {
+                detail: envelope.payload,
+              })
+            );
+            return;
+          }
 
           if (envelope.event === 'codex/approval-request') {
             addApproval(envelope.payload as ApprovalRequest);
