@@ -52,6 +52,7 @@
     "shell:allow-kill",
     "screenshots:default",
     "log:default",
-    "deep-link:default"
+    "deep-link:default",
+    "updater:default"
   ]
 }

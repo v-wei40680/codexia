@@ -35,25 +35,32 @@ type DebugEntry = {
 export function useUpdater({ enabled = true, onDebug }: UseUpdaterOptions) {
   const [state, setState] = useState<UpdateState>({ stage: "idle" });
   const updateRef = useRef<Update | null>(null);
+  const log = useCallback((message: string) => {
+    console.info(`[updater] ${message}`);
+  }, []);
 
   const resetToIdle = useCallback(async () => {
     const update = updateRef.current;
     updateRef.current = null;
     setState({ stage: "idle" });
+    log("reset to idle");
     await update?.close();
-  }, []);
+  }, [log]);
 
   const checkForUpdates = useCallback(async () => {
     let update: Awaited<ReturnType<typeof check>> | null = null;
     try {
       setState({ stage: "checking" });
+      log("checking for updates");
       update = await check();
       if (!update) {
+        log("no update available");
         setState({ stage: "idle" });
         return;
       }
 
       updateRef.current = update;
+      log(`update available: ${update.version}`);
       setState({
         stage: "available",
         version: update.version,
@@ -68,21 +75,24 @@ export function useUpdater({ enabled = true, onDebug }: UseUpdaterOptions) {
         label: "updater/error",
         payload: message,
       });
+      log(`check failed: ${message}`);
       setState({ stage: "error", error: message });
     } finally {
       if (!updateRef.current) {
         await update?.close();
       }
     }
-  }, [onDebug]);
+  }, [log, onDebug]);
 
   const startUpdate = useCallback(async () => {
     const update = updateRef.current;
     if (!update) {
+      log("start update requested without cached update, checking first");
       await checkForUpdates();
       return;
     }
 
+    log("starting download and install");
     setState((prev) => ({
       ...prev,
       stage: "downloading",
@@ -95,6 +105,7 @@ export function useUpdater({ enabled = true, onDebug }: UseUpdaterOptions) {
         stage: "installing",
       }));
       await update.downloadAndInstall();
+      log("download and install completed, relaunching");
 
       setState((prev) => ({
         ...prev,
@@ -111,20 +122,31 @@ export function useUpdater({ enabled = true, onDebug }: UseUpdaterOptions) {
         label: "updater/error",
         payload: message,
       });
+      log(`install failed: ${message}`);
       setState((prev) => ({
         ...prev,
         stage: "error",
         error: message,
       }));
     }
-  }, [checkForUpdates, onDebug]);
+  }, [checkForUpdates, log, onDebug]);
 
   useEffect(() => {
-    if (!enabled || import.meta.env.DEV || !isTauri()) {
+    if (!enabled) {
+      log("skip check: updater disabled");
       return;
     }
+    if (import.meta.env.DEV) {
+      log("skip check: running in dev mode");
+      return;
+    }
+    if (!isTauri()) {
+      log("skip check: not running in tauri");
+      return;
+    }
+    log("updater effect mounted, triggering initial check");
     void checkForUpdates();
-  }, [checkForUpdates, enabled]);
+  }, [checkForUpdates, enabled, log]);
 
 
   return {

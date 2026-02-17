@@ -142,7 +142,6 @@ export function SideBar() {
             <PanelLeft className="h-4 w-4" />
           </Button>
           <UpdateButton
-            isDev={import.meta.env.DEV}
             hasUpdate={hasUpdate}
             onUpdate={startUpdate}
           />

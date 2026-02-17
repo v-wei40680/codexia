@@ -2,13 +2,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 type UpdateButtonProps = {
-  isDev: boolean;
   hasUpdate: boolean;
   onUpdate: () => void | Promise<void>;
 };
 
-export function UpdateButton({ isDev, hasUpdate, onUpdate }: UpdateButtonProps) {
-  if (isDev) {
+export function UpdateButton({ hasUpdate, onUpdate }: UpdateButtonProps) {
+  if (import.meta.env.DEV) {
     return <Badge variant="destructive">DEV</Badge>;
   }
 
