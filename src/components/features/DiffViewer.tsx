@@ -30,6 +30,12 @@ const shouldSkipUnifiedLine = (line: string) =>
   /^\s*similarity index\b/i.test(line) ||
   /^\s*rename (from|to)\b/i.test(line);
 
+const getFilename = (path: string) => {
+  const normalized = path.replace(/\\/g, '/');
+  const parts = normalized.split('/');
+  return parts[parts.length - 1] || path;
+};
+
 export function DiffViewer({
   original = '',
   current = '',
@@ -114,6 +120,8 @@ export function DiffViewer({
     return '';
   }, [normalizedUnified]);
 
+  const resolvedPath = displayPath || unifiedPath;
+
   const diffLines = useMemo(() => {
     const changes = Diff.diffLines(left, right);
     const result: DiffLine[] = [];
@@ -193,10 +201,13 @@ export function DiffViewer({
     >
       <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-gray-200/70 bg-gray-50/70 px-3 py-2 dark:border-gray-800/70 dark:bg-gray-900/60">
         <div className="flex items-center gap-3 min-w-0">
-          {displayPath || unifiedPath ? (
+          {resolvedPath ? (
             <div className="flex items-center gap-2 min-w-0">
-              <span className="truncate text-sm font-medium text-gray-700 dark:text-gray-200">
-                {displayPath || unifiedPath}
+              <span
+                className="truncate text-sm font-medium text-gray-700 dark:text-gray-200"
+                title={resolvedPath}
+              >
+                {getFilename(resolvedPath)}
               </span>
               <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
                 <span className="text-green-600 dark:text-green-400">+{addedCount}</span>
