@@ -107,7 +107,11 @@ export function SideBar() {
     }
   }, [activeSidebarTab, selectedAgent, setActiveSidebarTab]);
 
-  const handleCreateNew = useCallback(async () => {
+  const handleCreateNew = useCallback(async (project?: string) => {
+    if (project && project !== cwd) {
+      setCwd(project);
+    }
+
     if (selectedAgent === 'cc') {
       setActiveSidebarTab('cc');
       setView('cc');
@@ -115,7 +119,7 @@ export function SideBar() {
       return;
     }
     await handleNewThread();
-  }, [handleNewSession, handleNewThread, selectedAgent, setActiveSidebarTab, setView]);
+  }, [cwd, handleNewSession, handleNewThread, selectedAgent, setActiveSidebarTab, setCwd, setView]);
 
   const handleAddProject = useCallback(async () => {
     const projectPath = await open({
@@ -155,7 +159,9 @@ export function SideBar() {
         <div className="flex flex-col">
           <Button
             variant="ghost"
-            onClick={handleCreateNew}
+            onClick={() => {
+              void handleCreateNew();
+            }}
             size="sm"
             className="h-8 justify-start gap-1.5 pl-0 pr-2 has-[>svg]:pl-0"
           >
@@ -300,7 +306,9 @@ export function SideBar() {
                       variant="ghost"
                       size="icon-xs"
                       title={`Start new thread in ${getFilename(project) || project}`}
-                      onClick={handleCreateNew}
+                      onClick={() => {
+                        void handleCreateNew(project);
+                      }}
                       className="shrink-0"
                     >
                       <SquarePen />
