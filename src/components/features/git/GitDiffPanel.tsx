@@ -91,6 +91,19 @@ export function GitDiffPanel({ cwd, isActive }: GitDiffPanelProps) {
   useGitWatch(cwd, refreshGitStatus, isActive);
 
   useEffect(() => {
+    if (cwd) return;
+    setGitData(null);
+    setGitError(null);
+    setGitLoading(false);
+    setSelectedDiffPath(null);
+    setDiffData(null);
+    setDiffMeta(null);
+    setDiffMetaLoading(false);
+    setDiffLoading(false);
+    setLargeDiffConfirmedKey(null);
+  }, [cwd]);
+
+  useEffect(() => {
     if (!isActive || !cwd) return;
     refreshGitStatus();
   }, [isActive, cwd, refreshGitStatus]);
@@ -513,16 +526,18 @@ export function GitDiffPanel({ cwd, isActive }: GitDiffPanelProps) {
                     No files matched current filter.
                   </div>
                 )}
-                <GitFileTree
-                  fileTree={fileTree}
-                  selectedDiffPath={selectedDiffPath}
-                  selectedDiffSection={selectedDiffSection}
-                  collapsedFolders={collapsedFolders}
-                  onToggleFolder={toggleFolder}
-                  onSelectPath={selectPath}
-                  onStage={runStage}
-                  onUnstage={runUnstage}
-                />
+                {cwd ? (
+                  <GitFileTree
+                    fileTree={fileTree}
+                    selectedDiffPath={selectedDiffPath}
+                    selectedDiffSection={selectedDiffSection}
+                    collapsedFolders={collapsedFolders}
+                    onToggleFolder={toggleFolder}
+                    onSelectPath={selectPath}
+                    onStage={runStage}
+                    onUnstage={runUnstage}
+                  />
+                ) : null}
               </div>
             </div>
           </div>

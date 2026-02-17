@@ -5,6 +5,7 @@ import { useCodexEvents } from '@/hooks/codex';
 import { useDeepLink } from '@/hooks/useDeepLink';
 import { AppLayout } from '@/components/layout';
 import { isTauri } from '@/hooks/runtime';
+import { HistoryProjectsDialog } from '@/components/project-selector';
 
 function AppShell() {
   useEffect(() => {
@@ -28,7 +29,12 @@ function AppShell() {
   // Listen to codex events
   useCodexEvents();
 
-  return <AppLayout />;
+  return (
+    <>
+      <AppLayout />
+      <HistoryProjectsDialog />
+    </>
+  );
 }
 
 export default function App() {

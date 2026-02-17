@@ -2,7 +2,7 @@ import { useCallback, useEffect } from 'react';
 import { Chrome, Diff, Files, GitBranch, History, PanelLeft, SquarePen, StickyNote, Terminal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { codexService } from '@/services/codexService';
-import { ProjectSelector } from '@/components/ProjectSelector';
+import { ProjectSelector } from '@/components/project-selector';
 import { useLayoutStore } from '@/stores';
 import { useCodexStore, useCurrentThread } from '@/stores/codex';
 import { useCCSessionManager } from '@/hooks/useCCSessionManager';
@@ -35,12 +35,10 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
   const showTerminalButton = view === 'codex' || view === 'cc';
 
   const refreshGitStats = useCallback(() => {
-    if (!cwd) return;
     void refreshStats(cwd);
   }, [cwd, refreshStats]);
 
   useEffect(() => {
-    if (!cwd) return;
     refreshGitStats();
   }, [cwd, refreshGitStats]);
 
@@ -95,7 +93,7 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
             <History />
           </Button>
         )}
-        <ProjectSelector />
+        <ProjectSelector forcedMode="browse" triggerMode="project-name" />
       </div>
       <div className="flex items-center gap-2">
         <span className="flex">

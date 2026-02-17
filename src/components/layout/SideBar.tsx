@@ -1,6 +1,7 @@
 import {
   BookOpen,
   ChevronRight,
+  Ellipsis,
   FolderPlus,
   ListFilter,
   Package,
@@ -8,6 +9,7 @@ import {
   ScrollText,
   SquarePen,
   Terminal,
+  X,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
@@ -17,6 +19,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import {
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
   DropdownMenuTrigger,
@@ -36,7 +39,16 @@ import { getSessions, SessionData } from '@/lib/sessions';
 import { useCCStore } from '@/stores/ccStore';
 
 export function SideBar() {
-  const { cwd, setCwd, selectedAgent, setSelectedAgent, projects, addProject, setInstructionType } =
+  const {
+    cwd,
+    setCwd,
+    selectedAgent,
+    setSelectedAgent,
+    projects,
+    addProject,
+    removeProject,
+    setInstructionType,
+  } =
     useWorkspaceStore();
   const {
     isSidebarOpen,
@@ -239,10 +251,9 @@ export function SideBar() {
                   onOpenChange={(open) =>
                     setExpandedProjects((prev) => ({ ...prev, [project]: open }))
                   }
-                  className="rounded-lg border border-sidebar-border bg-sidebar/30"
                 >
                   <div
-                    className={`flex items-center gap-1 rounded-t-lg px-2 py-1.5 text-xs transition-colors ${cwd === project
+                    className={`flex items-center gap-1 rounded-t-lg text-xs transition-colors ${cwd === project
                       ? 'bg-accent text-foreground'
                       : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
                       }`}
@@ -256,6 +267,23 @@ export function SideBar() {
                         {getFilename(project) || project}
                       </span>
                     </CollapsibleTrigger>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon-xs"
+                          title={`Project actions for ${getFilename(project) || project}`}
+                          className="shrink-0"
+                        >
+                          <Ellipsis />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => removeProject(project)}>
+                          <X /> Remove
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                     <Button
                       variant="ghost"
                       size="icon-xs"
@@ -327,6 +355,23 @@ export function SideBar() {
                         />
                         <span className="truncate font-medium">{getFilename(project) || project}</span>
                       </CollapsibleTrigger>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon-xs"
+                            title={`Project actions for ${getFilename(project) || project}`}
+                            className="shrink-0"
+                          >
+                            <Ellipsis />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => removeProject(project)}>
+                            Remove project from workspace
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                       <Button
                         variant="ghost"
                         size="icon-xs"

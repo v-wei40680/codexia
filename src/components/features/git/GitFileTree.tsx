@@ -33,6 +33,10 @@ export function GitFileTree({
   onStage,
   onUnstage,
 }: GitFileTreeProps) {
+  if (fileTree.length === 0) {
+    return null;
+  }
+
   const renderTreeNode = (node: TreeNode, depth: number): React.ReactNode => {
     if (node.type === 'folder') {
       const collapsed = collapsedFolders.has(node.path);

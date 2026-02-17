@@ -16,11 +16,14 @@ import { Quotes } from '../features/Quotes';
 import { toast } from '@/components/ui/use-toast';
 import { getErrorMessage } from '@/utils/errorUtils';
 import { getAccountWithParams } from '@/services';
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
+import { ProjectSelector } from '@/components/project-selector/ProjectSelector';
 
 export function ChatInterface() {
   const { currentThreadId, currentTurnId, events, inputFocusTrigger } = useCodexStore();
   const { setInputValue } = useInputStore();
   const { taskDetail } = useSettingsStore();
+  const { projects } = useWorkspaceStore();
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
   const [hasAccount, setHasAccount] = useState<boolean | null>(null);
 
@@ -76,6 +79,9 @@ export function ChatInterface() {
       isMounted = false;
     };
   }, []);
+
+  const isEmptyConversation = currentThreadEvents.length === 0;
+  const showWorkspaceLauncher = isEmptyConversation && hasAccount === true && projects.length > 0;
 
   const renderedEvents: Array<{
     key: string;
@@ -165,6 +171,17 @@ export function ChatInterface() {
             )}
             <ApprovalItem />
             {currentThreadEvents.length === 0 && hasAccount === false && <CodexAuth />}
+            {showWorkspaceLauncher && (
+              <div className="mx-auto my-8 flex w-full max-w-3xl flex-col items-center gap-3 px-4 text-center">
+                <p className="text-2xl font-semibold tracking-tight">let&apos;s build</p>
+                <ProjectSelector
+                  variant="hero"
+                  className="h-10 max-w-[220px] gap-2 px-3"
+                  triggerMode="project-name"
+                  showChevron
+                />
+              </div>
+            )}
             {currentThreadEvents.length === 0 && hasAccount === true && <Quotes />}
             {isProcessing && (
               <div className="text-sm text-muted-foreground animate-pulse">thinking...</div>

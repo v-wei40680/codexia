@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { FileIcon, defaultStyles } from 'react-file-icon';
-import { ChevronDown, ChevronRight, Plus } from 'lucide-react';
+import { ChevronDown, ChevronRight, FolderPlus, Plus } from 'lucide-react';
 import { useSettingsStore } from '@/stores/settings';
 import { useLayoutStore, useWorkspaceStore } from '@/stores';
 import { useInputStore } from '@/stores';
@@ -128,7 +128,7 @@ export function FileTree({ folder, onFileSelect }: FileTreeProps) {
   const [refreshKey, setRefreshKey] = useState(0);
   const { hiddenNames } = useSettingsStore();
   const { setRightPanelOpen, setActiveRightPanelTab } = useLayoutStore();
-  const { setSelectedFilePath } = useWorkspaceStore();
+  const { setSelectedFilePath, addProject } = useWorkspaceStore();
   const { appendInputValue } = useInputStore();
   const hiddenSet = useMemo(
     () => new Set(hiddenNames.map((name) => normalizeName(name))),
@@ -407,6 +407,21 @@ export function FileTree({ folder, onFileSelect }: FileTreeProps) {
             </span>
           )}
           <span className="whitespace-nowrap">{node.name}</span>
+          {isDir && !isRoot && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="ml-auto h-7 w-7"
+              onClick={(e) => {
+                e.stopPropagation();
+                addProject(node.path);
+              }}
+              title={`Add new project`}
+              aria-label={`Add new project`}
+            >
+              <FolderPlus className="h-4 w-4" />
+            </Button>
+          )}
           {isDir && isLoadingChildren ? (
             <span className="ml-auto text-xs text-muted-foreground">Loading...</span>
           ) : null}
