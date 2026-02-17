@@ -14,7 +14,7 @@
 
 ## Common Commands
 - `bun tauri dev` - read the backend output
-- `bun run build` - test frontend if frontend change
+- `bunx tsc --noEmit` - test frontend if frontend change
 - `bunx --bun shadcn@latest add <dep>` - add shadcn dep
 - `cargo check` at src-tauri if rust code change
 - only `cargo build` when I ask
