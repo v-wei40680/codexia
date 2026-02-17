@@ -69,7 +69,13 @@ export const IndividualFileChanges = ({
                 />
               </Button>
             </div>
-            {isExpanded && <DiffViewer {...getDiffViewerProps(change)} className="mt-2 max-h-64" />}
+            {isExpanded && (
+              <DiffViewer
+                {...getDiffViewerProps(change)}
+                isCollapsed={false}
+                className="mt-2 max-h-64"
+              />
+            )}
           </div>
         );
       })}

@@ -10,7 +10,7 @@ interface DiffViewerProps {
   current?: string;
   unifiedDiff?: string;
   displayPath?: string;
-  defaultCollapsed?: boolean;
+  isCollapsed?: boolean;
   className?: string;
 }
 
@@ -41,12 +41,12 @@ export function DiffViewer({
   current = '',
   unifiedDiff,
   displayPath,
-  defaultCollapsed = true,
+  isCollapsed = true,
   className,
 }: DiffViewerProps) {
   const [viewMode, setViewMode] = useState<'old' | 'new' | 'diff'>('diff');
   const viewModes: Array<'old' | 'new' | 'diff'> = ['old', 'new', 'diff'];
-  const [collapsed, setCollapsed] = useState(defaultCollapsed);
+  const [collapsed, setCollapsed] = useState(isCollapsed);
   const [copied, setCopied] = useState(false);
   const copyTimeoutRef = useRef<number | null>(null);
 
@@ -59,8 +59,8 @@ export function DiffViewer({
   }, []);
 
   useEffect(() => {
-    setCollapsed(defaultCollapsed);
-  }, [defaultCollapsed]);
+    setCollapsed(isCollapsed);
+  }, [isCollapsed]);
 
   const normalizedUnified = useMemo(() => normalizeUnifiedDiff(unifiedDiff), [unifiedDiff]);
 

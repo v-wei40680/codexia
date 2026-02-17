@@ -38,7 +38,7 @@ export const SummaryFileChanges = ({ changes, getDiffViewerProps }: SummaryFileC
       <div>
         {changes.map((change) => (
           <div key={change.path} className="border rounded-md overflow-hidden">
-            <DiffViewer {...getDiffViewerProps(change)} defaultCollapsed className="max-h-96" />
+            <DiffViewer {...getDiffViewerProps(change)} isCollapsed className="max-h-96" />
           </div>
         ))}
       </div>
