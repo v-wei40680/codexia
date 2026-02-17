@@ -2,7 +2,6 @@ use std::fs;
 use std::io::{BufRead, BufReader};
 use std::path::Path;
 
-#[tauri::command]
 pub async fn read_file(file_path: String) -> Result<String, String> {
     let expanded_path = if file_path.starts_with("~/") {
         let home = dirs::home_dir().ok_or_else(|| "Cannot find home directory".to_string())?;
@@ -29,7 +28,6 @@ pub async fn read_file(file_path: String) -> Result<String, String> {
     }
 }
 
-#[tauri::command]
 pub async fn write_file(file_path: String, content: String) -> Result<(), String> {
     let expanded_path = if file_path.starts_with("~/") {
         let home = dirs::home_dir().ok_or_else(|| "Cannot find home directory".to_string())?;
@@ -70,7 +68,6 @@ pub async fn write_file(file_path: String, content: String) -> Result<(), String
     }
 }
 
-#[tauri::command]
 pub async fn delete_file(file_path: String) -> Result<(), String> {
     let expanded_path = if file_path.starts_with("~/") {
         let home = dirs::home_dir().ok_or_else(|| "Cannot find home directory".to_string())?;
@@ -93,7 +90,6 @@ pub async fn delete_file(file_path: String) -> Result<(), String> {
     }
 }
 
-#[tauri::command]
 pub async fn read_text_file_lines(file_path: String) -> Result<Vec<String>, String> {
     let expanded_path = if file_path.starts_with("~/") {
         let home = dirs::home_dir().ok_or_else(|| "Cannot find home directory".to_string())?;

@@ -1,17 +1,10 @@
 use serde::Serialize;
 use std::path::{Path, PathBuf};
+use crate::codex::utils::codex_home;
 
 fn plugins_root_dir() -> Result<PathBuf, String> {
     let home = dirs::home_dir().ok_or_else(|| "Failed to resolve home directory".to_string())?;
     Ok(home.join(".agents").join("plugins"))
-}
-
-fn codex_home_dir() -> Result<PathBuf, String> {
-    if let Some(path) = std::env::var_os("CODEX_HOME") {
-        return Ok(PathBuf::from(path));
-    }
-    let home = dirs::home_dir().ok_or_else(|| "Failed to resolve home directory".to_string())?;
-    Ok(home.join(".codex"))
 }
 
 fn resolve_skills_install_root(
@@ -30,7 +23,7 @@ fn resolve_skills_install_root(
     }
 
     match (normalized_agent.as_str(), normalized_scope.as_str()) {
-        ("codex", "user") => Ok(codex_home_dir()?.join("skills")),
+        ("codex", "user") => Ok(codex_home().join("skills")),
         ("codex", "project") => {
             let working_dir = cwd
                 .map(str::trim)

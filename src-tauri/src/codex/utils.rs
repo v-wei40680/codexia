@@ -55,7 +55,6 @@ pub fn file_created_time(path: &Path) -> Option<i64> {
     Some(duration.as_secs() as i64)
 }
 
-#[tauri::command]
 pub fn codex_home() -> PathBuf {
     if let Some(path) = std::env::var_os("CODEX_HOME") {
         return PathBuf::from(path);

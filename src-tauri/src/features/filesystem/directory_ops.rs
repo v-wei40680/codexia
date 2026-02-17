@@ -16,7 +16,6 @@ fn should_skip_dir(entry: &DirEntry, excluded_names: &std::collections::HashSet<
     }
 }
 
-#[tauri::command]
 pub async fn read_directory(path: String) -> Result<Vec<FileEntry>, String> {
     let expanded_path = if path.starts_with("~/") {
         let home = dirs::home_dir().ok_or_else(|| "Cannot find home directory".to_string())?;
@@ -83,13 +82,11 @@ pub async fn read_directory(path: String) -> Result<Vec<FileEntry>, String> {
     Ok(entries)
 }
 
-#[tauri::command]
 pub async fn get_home_directory() -> Result<String, String> {
     let home = dirs::home_dir().ok_or_else(|| "Cannot find home directory".to_string())?;
     Ok(home.to_string_lossy().to_string())
 }
 
-#[tauri::command]
 pub async fn search_files(
     root: String,
     query: String,
@@ -179,7 +176,6 @@ pub async fn search_files(
     Ok(results)
 }
 
-#[tauri::command]
 pub async fn canonicalize_path(path: String) -> Result<String, String> {
     let expanded = if path.starts_with("~/") {
         let home = dirs::home_dir().ok_or_else(|| "Cannot find home directory".to_string())?;

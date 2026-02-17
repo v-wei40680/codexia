@@ -11,13 +11,7 @@ mod window;
 use crate::state::WatchState;
 use cc::CCState;
 use commands::terminal::TerminalState;
-use features::filesystem::{
-    directory_ops::{canonicalize_path, get_home_directory, read_directory, search_files},
-    file_io::{delete_file, read_file, read_text_file_lines, write_file},
-    file_parsers::{pdf::read_pdf_content, xlsx::read_xlsx_content},
-    watch::{start_watch_directory, start_watch_file, stop_watch_directory, stop_watch_file},
-};
-use features::sleep::{SleepState, allow_sleep, prevent_sleep};
+use features::sleep::SleepState;
 use std::sync::Arc;
 use tauri::Manager;
 
@@ -67,22 +61,22 @@ pub fn run() {
             codex::respond_to_command_execution_approval,
             codex::respond_to_file_change_approval,
             codex::respond_to_request_user_input,
-            read_directory,
-            get_home_directory,
-            search_files,
-            canonicalize_path,
-            read_file,
-            read_text_file_lines,
-            write_file,
-            delete_file,
-            read_pdf_content,
-            read_xlsx_content,
-            start_watch_directory,
-            stop_watch_directory,
-            start_watch_file,
-            stop_watch_file,
-            prevent_sleep,
-            allow_sleep,
+            commands::filesystem::read_directory,
+            commands::filesystem::get_home_directory,
+            commands::filesystem::search_files,
+            commands::filesystem::canonicalize_path,
+            commands::filesystem::read_file,
+            commands::filesystem::read_text_file_lines,
+            commands::filesystem::write_file,
+            commands::filesystem::delete_file,
+            commands::filesystem::read_pdf_content,
+            commands::filesystem::read_xlsx_content,
+            commands::filesystem::start_watch_directory,
+            commands::filesystem::stop_watch_directory,
+            commands::filesystem::start_watch_file,
+            commands::filesystem::stop_watch_file,
+            commands::sleep::prevent_sleep,
+            commands::sleep::allow_sleep,
             // CC commands
             cc::cc_connect,
             cc::cc_new_session,
@@ -134,14 +128,14 @@ pub fn run() {
             commands::terminal::terminal_write,
             commands::terminal::terminal_resize,
             commands::terminal::terminal_stop,
-            codex::utils::codex_home,
+            codex::codex_home,
             commands::usage::read_token_usage,
-            features::dxt::load_manifests,
-            features::dxt::load_manifest,
-            features::dxt::read_dxt_setting,
-            features::dxt::save_dxt_setting,
-            features::dxt::download_and_extract_manifests,
-            features::dxt::check_manifests_exist,
+            commands::dxt::load_manifests,
+            commands::dxt::load_manifest,
+            commands::dxt::read_dxt_setting,
+            commands::dxt::save_dxt_setting,
+            commands::dxt::download_and_extract_manifests,
+            commands::dxt::check_manifests_exist,
         ])
         .setup(|app| {
             let app_handle = app.handle().clone();

@@ -1,22 +1,13 @@
 use std::fs::File;
 use std::io::{BufRead, BufReader};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::time::SystemTime;
 
 use chrono::{DateTime, Utc};
 use codex_protocol::protocol::TokenUsage;
 use serde_json::{Value, json};
 use walkdir::WalkDir;
-
-fn codex_home() -> PathBuf {
-    if let Some(path) = std::env::var_os("CODEX_HOME") {
-        return PathBuf::from(path);
-    }
-
-    dirs::home_dir()
-        .map(|home| home.join(".codex"))
-        .unwrap_or_else(|| PathBuf::from(".codex"))
-}
+use crate::codex::utils::codex_home;
 
 fn parse_json_line(line: &str) -> Option<Value> {
     serde_json::from_str(line).ok()

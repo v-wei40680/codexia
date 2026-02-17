@@ -2,7 +2,7 @@ use crate::state::WatchState;
 use notify::{Event, EventKind, RecommendedWatcher, RecursiveMode, Watcher, recommended_watcher};
 use serde::Serialize;
 use std::path::{Path, PathBuf};
-use tauri::{AppHandle, Emitter, State};
+use std::sync::Arc;
 
 #[derive(Serialize, Debug, Clone)]
 pub struct FsChangePayload {
@@ -35,9 +35,9 @@ fn kind_to_string(kind: &EventKind) -> String {
 }
 
 async fn start_watch_path(
-    app: AppHandle,
-    state: State<'_, WatchState>,
+    state: &WatchState,
     path: String,
+    emit: Arc<dyn Fn(FsChangePayload) + Send + Sync>,
 ) -> Result<(), String> {
     let abs = expand_path(&path)?;
     if !abs.exists() {
@@ -63,18 +63,18 @@ async fn start_watch_path(
         }
     }
 
-    let app_for_cb = app.clone();
-    // Create a new watcher with a callback that emits tauri event
+    let emit_for_cb = Arc::clone(&emit);
+    // Create a new watcher with a callback that emits file change events.
     let mut watcher: RecommendedWatcher =
         recommended_watcher(move |res: Result<Event, notify::Error>| {
             if let Ok(event) = res {
-                // Send one event per affected path
+                // Send one event per affected path.
                 for p in event.paths.iter() {
                     let payload = FsChangePayload {
                         path: p.to_string_lossy().to_string(),
                         kind: kind_to_string(&event.kind),
                     };
-                    let _ = app_for_cb.emit("fs_change", &payload);
+                    emit_for_cb(payload);
                 }
             }
         })
@@ -89,7 +89,7 @@ async fn start_watch_path(
     Ok(())
 }
 
-async fn stop_watch_path(state: State<'_, WatchState>, path: String) -> Result<(), String> {
+async fn stop_watch_path(state: &WatchState, path: String) -> Result<(), String> {
     let abs = expand_path(&path)?;
     let key = match std::fs::canonicalize(&abs) {
         Ok(p) => p.to_string_lossy().to_string(),
@@ -109,40 +109,30 @@ async fn stop_watch_path(state: State<'_, WatchState>, path: String) -> Result<(
     Ok(())
 }
 
-#[tauri::command]
 pub async fn start_watch_directory(
-    app: AppHandle,
-    state: State<'_, WatchState>,
+    state: &WatchState,
     folder_path: String,
+    emit: Arc<dyn Fn(FsChangePayload) + Send + Sync>,
 ) -> Result<(), String> {
-    start_watch_path(app, state, folder_path).await
+    start_watch_path(state, folder_path, emit).await
 }
 
-#[tauri::command]
-pub async fn stop_watch_directory(
-    state: State<'_, WatchState>,
-    folder_path: String,
-) -> Result<(), String> {
+pub async fn stop_watch_directory(state: &WatchState, folder_path: String) -> Result<(), String> {
     stop_watch_path(state, folder_path).await
 }
 
-#[tauri::command]
 pub async fn start_watch_file(
-    app: AppHandle,
-    state: State<'_, WatchState>,
+    state: &WatchState,
     file_path: String,
+    emit: Arc<dyn Fn(FsChangePayload) + Send + Sync>,
 ) -> Result<(), String> {
     let abs = expand_path(&file_path)?;
     if !abs.exists() || !abs.is_file() {
         return Err("File does not exist".to_string());
     }
-    start_watch_path(app, state, file_path).await
+    start_watch_path(state, file_path, emit).await
 }
 
-#[tauri::command]
-pub async fn stop_watch_file(
-    state: State<'_, WatchState>,
-    file_path: String,
-) -> Result<(), String> {
+pub async fn stop_watch_file(state: &WatchState, file_path: String) -> Result<(), String> {
     stop_watch_path(state, file_path).await
 }

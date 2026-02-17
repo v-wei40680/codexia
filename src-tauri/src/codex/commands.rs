@@ -10,6 +10,7 @@ use crate::codex::config::mcp::McpServerConfig;
 use serde_json::Value;
 use serde_json::json;
 use std::collections::HashMap;
+use std::path::PathBuf;
 use tauri::State;
 
 use super::{AppState, scan};
@@ -20,6 +21,11 @@ fn to_value<T: serde::Serialize>(value: T) -> Result<Value, String> {
 
 fn from_value<T: serde::de::DeserializeOwned>(value: Value) -> Result<T, String> {
     serde_json::from_value(value).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn codex_home() -> PathBuf {
+    super::utils::codex_home()
 }
 
 #[tauri::command]

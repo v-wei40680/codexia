@@ -5,7 +5,6 @@ use zip::ZipArchive;
 
 const APP_NAME: &str = env!("CARGO_PKG_NAME");
 
-#[tauri::command]
 pub async fn load_manifests() -> Result<serde_json::Value, String> {
     async {
         let home = dirs::home_dir().ok_or_else(|| anyhow::anyhow!("Cannot find home directory"))?;
@@ -47,7 +46,6 @@ pub async fn load_manifests() -> Result<serde_json::Value, String> {
     .map_err(|e: anyhow::Error| e.to_string())
 }
 
-#[tauri::command]
 pub async fn load_manifest(user: String, repo: String) -> Result<serde_json::Value, String> {
     async {
         let home = dirs::home_dir().ok_or_else(|| anyhow::anyhow!("Cannot find home directory"))?;
@@ -71,7 +69,6 @@ pub async fn load_manifest(user: String, repo: String) -> Result<serde_json::Val
     .map_err(|e: anyhow::Error| e.to_string())
 }
 
-#[tauri::command]
 pub async fn read_dxt_setting(user: String, repo: String) -> Result<serde_json::Value, String> {
     async {
         let home = dirs::home_dir().ok_or_else(|| anyhow::anyhow!("Cannot find home directory"))?;
@@ -91,7 +88,6 @@ pub async fn read_dxt_setting(user: String, repo: String) -> Result<serde_json::
     .map_err(|e: anyhow::Error| e.to_string())
 }
 
-#[tauri::command]
 pub async fn save_dxt_setting(
     user: String,
     repo: String,
@@ -109,7 +105,6 @@ pub async fn save_dxt_setting(
     .map_err(|e: anyhow::Error| e.to_string())
 }
 
-#[tauri::command]
 pub async fn download_and_extract_manifests() -> Result<(), String> {
     async {
         let home = dirs::home_dir().ok_or_else(|| anyhow::anyhow!("Cannot find home directory"))?;
@@ -176,7 +171,6 @@ pub async fn download_and_extract_manifests() -> Result<(), String> {
     .map_err(|e: anyhow::Error| e.to_string())
 }
 
-#[tauri::command]
 pub async fn check_manifests_exist() -> Result<bool, String> {
     let home = dirs::home_dir().ok_or("Cannot find home directory")?;
     let dxt_base_path = home.join(".config").join(APP_NAME).join("dxt");
