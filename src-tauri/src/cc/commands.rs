@@ -1,4 +1,10 @@
 use super::db::SessionData;
+use super::mcp::{
+    ClaudeCodeMcpServer, ClaudeCodeResponse, cc_list_projects as mcp_cc_list_projects,
+    cc_mcp_add as mcp_cc_mcp_add, cc_mcp_disable as mcp_cc_mcp_disable,
+    cc_mcp_enable as mcp_cc_mcp_enable, cc_mcp_get as mcp_cc_mcp_get,
+    cc_mcp_list as mcp_cc_mcp_list, cc_mcp_remove as mcp_cc_mcp_remove,
+};
 use super::services::{
     message_service, project_service, session_service, settings_service, skill_service,
 };
@@ -91,4 +97,52 @@ pub fn cc_update_settings(settings: serde_json::Value) -> Result<(), String> {
 #[tauri::command]
 pub fn cc_get_sessions() -> Result<Vec<SessionData>, String> {
     session_service::get_sessions()
+}
+
+#[tauri::command]
+pub async fn cc_mcp_list(working_dir: String) -> Result<Vec<ClaudeCodeMcpServer>, String> {
+    mcp_cc_mcp_list(working_dir).await
+}
+
+#[tauri::command]
+pub async fn cc_mcp_get(name: String, working_dir: String) -> Result<ClaudeCodeMcpServer, String> {
+    mcp_cc_mcp_get(name, working_dir).await
+}
+
+#[tauri::command]
+pub async fn cc_mcp_add(
+    request: ClaudeCodeMcpServer,
+    working_dir: String,
+) -> Result<ClaudeCodeResponse, String> {
+    mcp_cc_mcp_add(request, working_dir).await
+}
+
+#[tauri::command]
+pub async fn cc_mcp_remove(
+    name: String,
+    working_dir: String,
+    scope: String,
+) -> Result<ClaudeCodeResponse, String> {
+    mcp_cc_mcp_remove(name, working_dir, scope).await
+}
+
+#[tauri::command]
+pub async fn cc_list_projects() -> Result<Vec<String>, String> {
+    mcp_cc_list_projects().await
+}
+
+#[tauri::command]
+pub async fn cc_mcp_disable(
+    name: String,
+    working_dir: String,
+) -> Result<ClaudeCodeResponse, String> {
+    mcp_cc_mcp_disable(name, working_dir).await
+}
+
+#[tauri::command]
+pub async fn cc_mcp_enable(
+    name: String,
+    working_dir: String,
+) -> Result<ClaudeCodeResponse, String> {
+    mcp_cc_mcp_enable(name, working_dir).await
 }

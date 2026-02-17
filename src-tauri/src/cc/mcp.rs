@@ -3,7 +3,6 @@ use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::time::{SystemTime, UNIX_EPOCH};
-use tauri::command;
 
 // ~/.claude.json {projects: { "working_dir": "mcpServers": {server}, disabledMcpServers:[server_name]}, mcpServers: {}, other_keys: {}}
 // {'sentry': {'type': 'http', 'url': 'https://mcp.sentry.dev/mcp'},
@@ -29,7 +28,6 @@ pub struct ClaudeCodeResponse {
 }
 
 /// List all MCP servers configured in Claude Code
-#[command]
 pub async fn cc_mcp_list(working_dir: String) -> Result<Vec<ClaudeCodeMcpServer>, String> {
     let cc_config_path = get_cc_config_path(Some(working_dir.clone()))?;
 
@@ -120,7 +118,6 @@ pub async fn cc_mcp_list(working_dir: String) -> Result<Vec<ClaudeCodeMcpServer>
 }
 
 /// Get details for a specific MCP server
-#[command]
 pub async fn cc_mcp_get(name: String, working_dir: String) -> Result<ClaudeCodeMcpServer, String> {
     let servers = cc_mcp_list(working_dir).await?;
 
@@ -131,7 +128,6 @@ pub async fn cc_mcp_get(name: String, working_dir: String) -> Result<ClaudeCodeM
 }
 
 /// Add a new MCP server to Claude Code
-#[command]
 pub async fn cc_mcp_add(
     request: ClaudeCodeMcpServer,
     working_dir: String,
@@ -254,7 +250,6 @@ pub async fn cc_mcp_add(
 }
 
 /// Remove an MCP server from Claude Code
-#[command]
 pub async fn cc_mcp_remove(
     name: String,
     working_dir: String,
@@ -381,7 +376,6 @@ pub async fn cc_mcp_remove(
 }
 
 /// List all projects configured in Claude Code
-#[command]
 pub async fn cc_list_projects() -> Result<Vec<String>, String> {
     let cc_config_path = get_cc_config_path(None)?;
 
@@ -474,7 +468,6 @@ fn update_disabled_server(
     })
 }
 
-#[command]
 pub async fn cc_mcp_disable(
     name: String,
     working_dir: String,
@@ -482,7 +475,6 @@ pub async fn cc_mcp_disable(
     update_disabled_server(&working_dir, &name, false)
 }
 
-#[command]
 pub async fn cc_mcp_enable(
     name: String,
     working_dir: String,

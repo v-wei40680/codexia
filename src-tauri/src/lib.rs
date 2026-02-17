@@ -1,6 +1,5 @@
 mod cc;
 mod codex;
-mod codex_commands;
 mod commands;
 mod db;
 mod features;

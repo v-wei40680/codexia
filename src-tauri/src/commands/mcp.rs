@@ -6,7 +6,7 @@ use tauri::command;
 use crate::cc::mcp::{
     ClaudeCodeMcpServer, cc_mcp_add, cc_mcp_disable, cc_mcp_enable, cc_mcp_list, cc_mcp_remove,
 };
-use crate::codex_commands;
+use crate::codex;
 
 /// Unified command to add MCP server for either Codex or CC
 #[command]
@@ -21,7 +21,7 @@ pub async fn unified_add_mcp_server(
         "codex" => {
             let config: McpServerConfig = serde_json::from_value(server_config)
                 .map_err(|e| format!("Failed to parse Codex MCP config: {}", e))?;
-            codex_commands::add_mcp_server(server_name, config).await
+            codex::add_mcp_server(server_name, config).await
         }
         "cc" => {
             let working_dir = path.ok_or("CC requires a project path")?;
@@ -74,7 +74,7 @@ pub async fn unified_enable_mcp_server(
     server_name: String,
 ) -> Result<(), String> {
     match client_name.as_str() {
-        "codex" => codex_commands::set_mcp_server_enabled(server_name, true).await,
+        "codex" => codex::set_mcp_server_enabled(server_name, true).await,
         "cc" => {
             let working_dir = path.ok_or("CC requires a project path")?;
             cc_mcp_enable(server_name, working_dir).await.map(|_| ())
@@ -91,7 +91,7 @@ pub async fn unified_disable_mcp_server(
     server_name: String,
 ) -> Result<(), String> {
     match client_name.as_str() {
-        "codex" => codex_commands::set_mcp_server_enabled(server_name, false).await,
+        "codex" => codex::set_mcp_server_enabled(server_name, false).await,
         "cc" => {
             let working_dir = path.ok_or("CC requires a project path")?;
             cc_mcp_disable(server_name, working_dir).await.map(|_| ())
@@ -109,7 +109,7 @@ pub async fn unified_remove_mcp_server(
     scope: Option<String>,
 ) -> Result<(), String> {
     match client_name.as_str() {
-        "codex" => codex_commands::delete_mcp_server(server_name).await,
+        "codex" => codex::delete_mcp_server(server_name).await,
         "cc" => {
             let working_dir = path.ok_or("CC requires a project path")?;
             let scope = scope.ok_or("CC requires a scope for removal")?;
@@ -129,7 +129,7 @@ pub async fn unified_read_mcp_config(
 ) -> Result<JsonValue, String> {
     match client_name.as_str() {
         "codex" => {
-            let servers = codex_commands::read_mcp_servers().await?;
+            let servers = codex::read_mcp_servers().await?;
             Ok(serde_json::json!({
                 "mcpServers": servers
             }))
