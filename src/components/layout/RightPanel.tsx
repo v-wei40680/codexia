@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Tabs, TabsContent } from '@/components/ui/tabs';
 import { useLayoutStore } from '@/stores/settings';
 import { NoteView } from '@/components/features/notes';
 import { useWorkspaceStore } from '@/stores';
@@ -10,7 +9,7 @@ import { WebPreview } from '../features/web-preview/WebPreview';
 import { detectWebFramework } from '../features/web-preview/webFrameworkDetection';
 
 export function RightPanel() {
-  const { activeRightPanelTab, setActiveRightPanelTab, setRightPanelOpen } = useLayoutStore();
+  const { activeRightPanelTab, setRightPanelOpen } = useLayoutStore();
   const { selectedFilePath, cwd } = useWorkspaceStore();
   const [webPreviewUrl, setWebPreviewUrl] = useState('');
 
@@ -38,60 +37,46 @@ export function RightPanel() {
 
   return (
     <div className="h-full w-full min-h-0 border-l border-white/10 bg-sidebar/30 flex flex-col overflow-hidden">
-      <Tabs
-        value={activeRightPanelTab}
-        onValueChange={(value) => setActiveRightPanelTab(value as typeof activeRightPanelTab)}
-        className="flex flex-col h-full min-h-0 gap-0"
-      >
-        <div className="flex-1 min-h-0 flex overflow-hidden">
-          <div className="flex-1 min-w-0 min-h-0 overflow-hidden">
-            <TabsContent
-              value="diff"
-              className="h-full min-h-0 m-0 overflow-hidden data-[state=inactive]:hidden"
-              forceMount
-            >
-              <GitDiffPanel cwd={cwd} isActive={activeRightPanelTab === 'diff'} />
-            </TabsContent>
+      <div className="flex-1 min-h-0 flex overflow-hidden">
+        <div className="flex-1 min-w-0 min-h-0 overflow-hidden">
+          <div className={activeRightPanelTab === 'diff' ? 'h-full min-h-0 overflow-hidden' : 'hidden'}>
+            <GitDiffPanel cwd={cwd} isActive={activeRightPanelTab === 'diff'} />
+          </div>
 
-            <TabsContent
-              value="note"
-              className="h-full min-h-0 m-0 overflow-hidden data-[state=inactive]:hidden"
-            >
+          {activeRightPanelTab === 'note' && (
+            <div className="h-full min-h-0 overflow-hidden">
               <NoteView />
-            </TabsContent>
+            </div>
+          )}
 
-            <TabsContent
-              value="files"
-              className="h-full min-h-0 m-0 overflow-hidden data-[state=inactive]:hidden"
-            >
-              <div className="flex h-full min-h-0 overflow-hidden">
-                <div className="h-full w-64 min-w-64 border-r border-border bg-sidebar/20">
-                  <FileTree folder={cwd} />
-                </div>
-                <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
-                  {selectedFilePath ? (
-                    <FileViewer filePath={selectedFilePath} />
-                  ) : (
-                    <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                      Select a file to view
-                    </div>
-                  )}
-                </div>
+          {activeRightPanelTab === 'files' && (
+            <div className="flex h-full min-h-0 overflow-hidden">
+              <div className="h-full w-64 min-w-64 border-r border-border bg-sidebar/20">
+                <FileTree folder={cwd} />
               </div>
-            </TabsContent>
-            <TabsContent
-              value="webpreview"
-              className="h-full min-h-0 m-0 overflow-hidden data-[state=inactive]:hidden"
-            >
+              <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
+                {selectedFilePath ? (
+                  <FileViewer filePath={selectedFilePath} />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                    Select a file to view
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {activeRightPanelTab === 'webpreview' && (
+            <div className="h-full min-h-0 overflow-hidden">
               <WebPreview
                 url={webPreviewUrl}
                 onUrlChange={setWebPreviewUrl}
                 onClose={() => setRightPanelOpen(false)}
               />
-            </TabsContent>
-          </div>
+            </div>
+          )}
         </div>
-      </Tabs>
+      </div>
     </div>
   );
 }
