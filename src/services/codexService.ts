@@ -223,6 +223,7 @@ export const codexService = {
         personality,
         ephemeral: null,
         experimentalRawEvents: true,
+        persistExtendedHistory: true,
       };
       let response;
       try {
@@ -275,6 +276,7 @@ export const codexService = {
         baseInstructions: null,
         developerInstructions: null,
         personality,
+        persistExtendedHistory: true,
       });
       console.log(response.thread.turns);
 
