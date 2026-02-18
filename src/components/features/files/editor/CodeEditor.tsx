@@ -27,6 +27,7 @@ import 'ace-builds/src-noconflict/mode-sql';
 import 'ace-builds/src-noconflict/mode-dockerfile';
 import 'ace-builds/src-noconflict/mode-ini';
 import 'ace-builds/src-noconflict/mode-toml';
+import 'ace-builds/src-noconflict/ext-language_tools';
 // Import themes
 import 'ace-builds/src-noconflict/theme-monokai';
 import 'ace-builds/src-noconflict/theme-github';
@@ -511,6 +512,9 @@ export function CodeEditor({
           theme={aceTheme}
           value={currentContent}
           readOnly={isReadOnly || !isEditableFile}
+          enableBasicAutocompletion={!isReadOnly && isEditableFile}
+          enableLiveAutocompletion={false}
+          enableSnippets={false}
           fontSize={fontSize}
           width="100%"
           height="100%"
@@ -518,9 +522,6 @@ export function CodeEditor({
           showGutter={showLineNumbers}
           highlightActiveLine={!isReadOnly && isEditableFile}
           setOptions={{
-            enableBasicAutocompletion: !isReadOnly && isEditableFile,
-            enableLiveAutocompletion: false,
-            enableSnippets: false,
             tabSize: tabSize,
             wrap: true,
             useWorker: false, // Disable worker to avoid console errors
