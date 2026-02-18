@@ -15,7 +15,8 @@ name = "codexia_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [features]
-default = ["tauri"]
+default = ["gui"]
+gui = ["tauri", "web"]
 tauri = [
   "dep:fix-path-env",
   "dep:tauri",
