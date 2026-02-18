@@ -47,11 +47,13 @@ import {
   type GitStatusResponse,
 } from '@/services/tauri';
 import { useGitWatch } from '@/hooks/useGitWatch';
+import { useWorkspaceStore } from '@/stores';
 import { GitFileTree } from './GitFileTree';
 import type { DiffSection, DiffSource, GitDiffPanelProps } from './types';
 import { LARGE_DIFF_THRESHOLD_BYTES, buildFileTree, formatBytes } from './utils';
 
 export function GitDiffPanel({ cwd, isActive }: GitDiffPanelProps) {
+  const { selectedFilePath, setSelectedFilePath } = useWorkspaceStore();
   const [gitData, setGitData] = useState<GitStatusResponse | null>(null);
   const [gitLoading, setGitLoading] = useState(false);
   const [gitError, setGitError] = useState<string | null>(null);
@@ -232,10 +234,70 @@ export function GitDiffPanel({ cwd, isActive }: GitDiffPanelProps) {
 
   const diffHunks = useMemo(() => (patchText ? [patchText] : []), [patchText]);
 
+  const resolveDiffPath = useCallback(
+    (relativePath: string) => {
+      if (!cwd) {
+        return relativePath;
+      }
+      if (relativePath.startsWith('/') || /^[a-zA-Z]:[\\/]/.test(relativePath)) {
+        return relativePath;
+      }
+      const separator = cwd.includes('\\') ? '\\' : '/';
+      return cwd.endsWith(separator) ? `${cwd}${relativePath}` : `${cwd}${separator}${relativePath}`;
+    },
+    [cwd]
+  );
+
   const selectPath = (section: DiffSection, path: string) => {
     setSelectedDiffSection(section);
     setSelectedDiffPath(path);
+    setSelectedFilePath(resolveDiffPath(path));
   };
+
+  useEffect(() => {
+    if (!isActive || !selectedDiffPath) {
+      return;
+    }
+    const resolved = resolveDiffPath(selectedDiffPath);
+    if (selectedFilePath !== resolved) {
+      setSelectedFilePath(resolved);
+    }
+  }, [isActive, resolveDiffPath, selectedDiffPath, selectedFilePath, setSelectedFilePath]);
+
+  useEffect(() => {
+    if (!isActive || !cwd || !selectedFilePath) {
+      return;
+    }
+
+    const toPosix = (value: string) => value.replace(/\\/g, '/');
+    const cwdPosix = toPosix(cwd).replace(/\/+$/, '');
+    const selectedPosix = toPosix(selectedFilePath);
+    if (!selectedPosix.startsWith(`${cwdPosix}/`)) {
+      return;
+    }
+
+    const relativePath = selectedPosix.slice(cwdPosix.length + 1);
+    const unstagedSet = new Set(unstagedEntries.map((entry) => toPosix(entry.path)));
+    const stagedSet = new Set(stagedEntries.map((entry) => toPosix(entry.path)));
+
+    let targetSection: DiffSection | null = null;
+    if (unstagedSet.has(relativePath)) {
+      targetSection = 'unstaged';
+    } else if (stagedSet.has(relativePath)) {
+      targetSection = 'staged';
+    }
+
+    if (!targetSection) {
+      return;
+    }
+
+    if (selectedDiffSection !== targetSection) {
+      setSelectedDiffSection(targetSection);
+    }
+    if (selectedDiffPath !== relativePath) {
+      setSelectedDiffPath(relativePath);
+    }
+  }, [cwd, isActive, selectedDiffPath, selectedDiffSection, selectedFilePath, stagedEntries, unstagedEntries]);
 
   const runStage = async (paths: string[]) => {
     if (!cwd || paths.length === 0) return;

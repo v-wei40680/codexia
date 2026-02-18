@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FileIcon, defaultStyles } from 'react-file-icon';
 import { ChevronDown, ChevronRight, FolderPlus, Plus } from 'lucide-react';
 import { useSettingsStore } from '@/stores/settings';
@@ -23,6 +23,8 @@ type FileNode = {
 
 type FileTreeProps = {
   folder: string;
+  isTreeVisible?: boolean;
+  onToggleTree?: () => void;
   onFileSelect?: (path: string) => void;
 };
 
@@ -115,7 +117,8 @@ const buildSearchTree = (rootNode: FileNode, matches: TauriFileEntry[]): FileNod
   return sortTree(treeRoot);
 };
 
-export function FileTree({ folder, onFileSelect }: FileTreeProps) {
+export function FileTree({ folder, isTreeVisible, onToggleTree, onFileSelect }: FileTreeProps) {
+  const treeContainerRef = useRef<HTMLDivElement | null>(null);
   const [root, setRoot] = useState<FileNode | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
@@ -128,8 +131,9 @@ export function FileTree({ folder, onFileSelect }: FileTreeProps) {
   const [refreshKey, setRefreshKey] = useState(0);
   const { hiddenNames } = useSettingsStore();
   const { setRightPanelOpen, setActiveRightPanelTab } = useLayoutStore();
-  const { setSelectedFilePath, addProject } = useWorkspaceStore();
+  const { selectedFilePath, setSelectedFilePath, addProject } = useWorkspaceStore();
   const { appendInputValue } = useInputStore();
+  const autoExpandedTargetRef = useRef<string | null>(null);
   const hiddenSet = useMemo(
     () => new Set(hiddenNames.map((name) => normalizeName(name))),
     [hiddenNames]
@@ -194,9 +198,9 @@ export function FileTree({ folder, onFileSelect }: FileTreeProps) {
   }, [folder, listDir, refreshKey]);
 
   useEffect(() => {
-    setFilterText('');
     setSearchError(null);
     setSearchMatches([]);
+    autoExpandedTargetRef.current = null;
   }, [folder]);
 
   const normalizedFilterText = filterText.trim().toLowerCase();
@@ -286,6 +290,22 @@ export function FileTree({ folder, onFileSelect }: FileTreeProps) {
     };
   };
 
+  const findNodeByPath = (node: FileNode, targetPath: string): FileNode | null => {
+    if (node.path === targetPath) {
+      return node;
+    }
+    if (!node.children) {
+      return null;
+    }
+    for (const child of node.children) {
+      const match = findNodeByPath(child, targetPath);
+      if (match) {
+        return match;
+      }
+    }
+    return null;
+  };
+
   const loadChildren = async (node: FileNode) => {
     if (node.kind !== 'dir' || node.children) {
       return;
@@ -305,6 +325,103 @@ export function FileTree({ folder, onFileSelect }: FileTreeProps) {
     }
   };
 
+  useEffect(() => {
+    if (!root || !selectedFilePath) {
+      return;
+    }
+
+    let cancelled = false;
+    const run = async () => {
+      let canonicalSelected = selectedFilePath;
+      try {
+        canonicalSelected = await canonicalizePath(selectedFilePath);
+      } catch {
+        canonicalSelected = selectedFilePath;
+      }
+      if (cancelled) {
+        return;
+      }
+
+      const toPosix = (value: string) => value.replace(/\\/g, '/');
+      const rootPosix = toPosix(root.path).replace(/\/+$/, '');
+      const selectedPosix = toPosix(canonicalSelected);
+      if (selectedPosix === rootPosix || !selectedPosix.startsWith(`${rootPosix}/`)) {
+        return;
+      }
+
+      const targetKey = `${root.path}::${selectedPosix}`;
+      if (autoExpandedTargetRef.current === targetKey) {
+        return;
+      }
+      autoExpandedTargetRef.current = targetKey;
+
+      const relativePath = selectedPosix.slice(rootPosix.length + 1);
+      const parts = relativePath.split('/').filter(Boolean);
+      if (parts.length <= 1) {
+        return;
+      }
+
+      const pathSeparator = root.path.includes('\\') ? '\\' : '/';
+      const ancestorDirs: string[] = [root.path];
+      let currentPath = root.path;
+      for (let index = 0; index < parts.length - 1; index += 1) {
+        currentPath = `${currentPath}${currentPath.endsWith(pathSeparator) ? '' : pathSeparator}${parts[index]}`;
+        ancestorDirs.push(currentPath);
+      }
+
+      setExpanded((prev) => {
+        const next = new Set(prev);
+        for (const dirPath of ancestorDirs) {
+          next.add(dirPath);
+        }
+        return next.size === prev.size ? prev : next;
+      });
+
+      let treeSnapshot: FileNode = root;
+      for (const dirPath of ancestorDirs) {
+        if (cancelled) {
+          return;
+        }
+
+        const existingNode = findNodeByPath(treeSnapshot, dirPath);
+        if (existingNode?.children) {
+          continue;
+        }
+
+        try {
+          const children = await listDir(dirPath);
+          if (cancelled) {
+            return;
+          }
+          treeSnapshot = updateChildren(treeSnapshot, dirPath, children);
+          setRoot(treeSnapshot);
+        } catch {
+          return;
+        }
+      }
+    };
+
+    void run();
+    return () => {
+      cancelled = true;
+    };
+  }, [root, selectedFilePath, listDir]);
+
+  useEffect(() => {
+    if (!selectedFilePath || !treeContainerRef.current) {
+      return;
+    }
+
+    const row = treeContainerRef.current.querySelector<HTMLElement>(
+      `[data-file-path="${CSS.escape(selectedFilePath)}"]`
+    );
+    if (!row) {
+      return;
+    }
+
+    row.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }, [selectedFilePath, root, expanded, displayRoot]);
+
   const isLatexFile = (ext: string) => ['tex', 'latex', 'ltx'].includes(ext);
   const isPdfFile = (ext: string) => ext === 'pdf';
   const isOfficeFile = (ext: string) => ['docx', 'xlsx', 'xls', 'pptx'].includes(ext);
@@ -320,6 +437,7 @@ export function FileTree({ folder, onFileSelect }: FileTreeProps) {
     const isExpanded = isSearching ? true : expanded.has(node.path);
     const isLoadingChildren = loadingNodes.has(node.path);
     const extension = getExtension(node.name);
+    const isSelectedFile = node.kind === 'file' && selectedFilePath === node.path;
     const iconStyle =
       extension && extension in defaultStyles
         ? defaultStyles[extension as keyof typeof defaultStyles]
@@ -330,6 +448,7 @@ export function FileTree({ folder, onFileSelect }: FileTreeProps) {
         <div
           role="button"
           tabIndex={0}
+          data-file-path={node.path}
           onClick={() => {
             if (isDir) {
               if (!isExpanded && !node.children) {
@@ -355,7 +474,9 @@ export function FileTree({ folder, onFileSelect }: FileTreeProps) {
               setActiveRightPanelTab('files');
             }
           }}
-          className="group/file-row flex w-full items-center gap-2 rounded-md px-2 py-1 pr-3 text-left text-sm hover:bg-accent"
+          className={`group/file-row flex w-full items-center gap-2 rounded-md px-2 py-1 pr-3 text-left text-sm hover:bg-accent ${
+            isSelectedFile ? 'bg-accent text-accent-foreground' : ''
+          }`}
           style={{ paddingLeft: depth * 12 }}
         >
           {isDir ? (
@@ -443,6 +564,8 @@ export function FileTree({ folder, onFileSelect }: FileTreeProps) {
           filterText={filterText}
           onFilterTextChange={setFilterText}
           onRefresh={() => setRefreshKey((prev) => prev + 1)}
+          isTreeVisible={isTreeVisible}
+          onToggleTree={onToggleTree}
         />
         <div className="text-sm text-muted-foreground">Loading files...</div>
       </div>
@@ -457,6 +580,8 @@ export function FileTree({ folder, onFileSelect }: FileTreeProps) {
           filterText={filterText}
           onFilterTextChange={setFilterText}
           onRefresh={() => setRefreshKey((prev) => prev + 1)}
+          isTreeVisible={isTreeVisible}
+          onToggleTree={onToggleTree}
         />
         <div className="text-sm text-destructive">{error}</div>
       </div>
@@ -471,6 +596,8 @@ export function FileTree({ folder, onFileSelect }: FileTreeProps) {
           filterText={filterText}
           onFilterTextChange={setFilterText}
           onRefresh={() => setRefreshKey((prev) => prev + 1)}
+          isTreeVisible={isTreeVisible}
+          onToggleTree={onToggleTree}
         />
         <div className="text-sm text-muted-foreground">No files found.</div>
       </div>
@@ -481,12 +608,14 @@ export function FileTree({ folder, onFileSelect }: FileTreeProps) {
   const hasSearchResults = visibleNodes.length > 0;
 
   return (
-    <div className="max-h-full min-w-0 max-w-full overflow-y-auto overflow-x-auto">
+    <div ref={treeContainerRef} className="max-h-full min-w-0 max-w-full overflow-y-auto overflow-x-auto">
       <FileTreeHeader
         currentFolder={folder}
         filterText={filterText}
         onFilterTextChange={setFilterText}
         onRefresh={() => setRefreshKey((prev) => prev + 1)}
+        isTreeVisible={isTreeVisible}
+        onToggleTree={onToggleTree}
       />
       {isSearching && searching ? (
         <div className="text-sm text-muted-foreground">Searching...</div>

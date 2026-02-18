@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { type ReactNode, useState, useEffect, useRef } from 'react';
 import type { UnlistenFn } from '@tauri-apps/api/event';
 import { listen } from '@tauri-apps/api/event';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,8 @@ import {
 interface FileViewerProps {
   filePath: string;
   addToNotepad?: (text: string, source?: string) => void;
+  /** Optional element rendered at the far-left of the viewer header (e.g. a panel-expand button). */
+  headerLeadingAction?: ReactNode;
 }
 
 interface GitDiff {
@@ -31,7 +33,7 @@ interface GitDiff {
   has_changes: boolean;
 }
 
-export function FileViewer({ filePath, addToNotepad }: FileViewerProps) {
+export function FileViewer({ filePath, addToNotepad, headerLeadingAction }: FileViewerProps) {
   const [content, setContent] = useState<string>('');
   const [filename, setFilename] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -261,9 +263,11 @@ export function FileViewer({ filePath, addToNotepad }: FileViewerProps) {
       className={`flex flex-col h-full border-l min-w-0 ${resolvedTheme === 'dark' ? 'border-border' : 'border-gray-200'}`}
     >
       <div
-        className={`flex items-center justify-between p-3 border-b ${resolvedTheme === 'dark' ? 'border-border bg-card' : 'border-gray-200 bg-gray-50'}`}
+        className={`flex items-center justify-between p-2 border-b ${resolvedTheme === 'dark' ? 'border-border bg-card' : 'border-gray-200 bg-gray-50'}`}
       >
-        <div className="flex items-center gap-2 min-w-0">
+        <div className="flex items-center gap-1 min-w-0">
+          {/* Slot for a leading control injected by the parent (e.g. expand-tree button) */}
+          {headerLeadingAction}
           <span className="text-sm font-medium truncate" title={filePath}>
             {filename}
           </span>
