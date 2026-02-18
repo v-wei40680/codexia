@@ -1,5 +1,6 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { isTauri } from "@/hooks/runtime";
 
 type UpdateButtonProps = {
   hasUpdate: boolean;
@@ -7,6 +8,10 @@ type UpdateButtonProps = {
 };
 
 export function UpdateButton({ hasUpdate, onUpdate }: UpdateButtonProps) {
+  if (!isTauri()) {
+    return null;
+  }
+
   if (import.meta.env.DEV) {
     return <Badge variant="destructive">DEV</Badge>;
   }

@@ -48,6 +48,12 @@ export function useUpdater({ enabled = true, onDebug }: UseUpdaterOptions) {
   }, [log]);
 
   const checkForUpdates = useCallback(async () => {
+    if (!isTauri()) {
+      log("skip check: not running in tauri");
+      setState({ stage: "idle" });
+      return;
+    }
+
     let update: Awaited<ReturnType<typeof check>> | null = null;
     try {
       setState({ stage: "checking" });
@@ -85,6 +91,11 @@ export function useUpdater({ enabled = true, onDebug }: UseUpdaterOptions) {
   }, [log, onDebug]);
 
   const startUpdate = useCallback(async () => {
+    if (!isTauri()) {
+      log("skip update: not running in tauri");
+      return;
+    }
+
     const update = updateRef.current;
     if (!update) {
       log("start update requested without cached update, checking first");
