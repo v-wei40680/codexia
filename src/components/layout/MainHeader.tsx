@@ -103,7 +103,6 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
       <div className="flex items-center gap-2">
         <span className="flex">
           {showTerminalButton && (
-            <>
             <Button
               variant={isTerminalOpen ? 'secondary' : 'ghost'}
               size="icon"
@@ -112,20 +111,17 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
             >
               <Terminal />
             </Button>
-              <Button
-                variant={activeRightPanelTab === 'diff' ? 'secondary' : 'ghost'}
-                size="sm"
-                onClick={() => openRightPanelTab('diff')}
-                title="Diff"
-                className="rounded-md border"
-              >
-                <Diff />
-                <GitStatsIndicator />
-              </Button>
-            </>
           )}
           {isRightPanelOpen && (
             <div className="flex items-center">
+              <Button
+                variant={activeRightPanelTab === 'webpreview' ? 'secondary' : 'ghost'}
+                size="icon"
+                onClick={() => openRightPanelTab('webpreview')}
+                title="Web Preview"
+              >
+                <Chrome />
+              </Button>
               <Button
                 variant={activeRightPanelTab === 'note' ? 'secondary' : 'ghost'}
                 size="icon"
@@ -142,16 +138,18 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
               >
                 <Files />
               </Button>
-              <Button
-                variant={activeRightPanelTab === 'webpreview' ? 'secondary' : 'ghost'}
-                size="icon"
-                onClick={() => openRightPanelTab('webpreview')}
-                title="Web Preview"
-              >
-                <Chrome />
-              </Button>
             </div>
           )}
+          <Button
+            variant={activeRightPanelTab === 'diff' ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => openRightPanelTab('diff')}
+            title="Diff"
+            className="rounded-md border"
+          >
+            <Diff />
+            <GitStatsIndicator />
+          </Button>
           <Button
             variant="ghost"
             size="icon"
