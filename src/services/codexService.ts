@@ -190,7 +190,7 @@ export const codexService = {
   async threadStart() {
     const set = useCodexStore.setState;
     try {
-      const { model, approvalPolicy, sandbox, reasoningEffort, personality } =
+      const { model, modelProvider, approvalPolicy, sandbox, reasoningEffort, personality } =
         useConfigStore.getState();
       const { threadCwdMode } = useConfigStore.getState();
       const { cwd } = useWorkspaceStore.getState();
@@ -205,7 +205,7 @@ export const codexService = {
       }
       const params: ThreadStartParams = {
         model: model,
-        modelProvider: 'openai',
+        modelProvider,
         cwd: threadCwd,
         approvalPolicy: approvalPolicy,
         sandbox: sandbox,

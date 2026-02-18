@@ -10,11 +10,15 @@ export interface ConfigStore {
   approvalPolicy: AskForApproval;
   reasoningEffort: ReasoningEffort;
   webSearchRequest: boolean;
+  modelProvider: 'openai' | 'ollama';
   model: string;
+  openaiModel: string;
+  ollamaModel: string;
   personality: Personality | null;
   collaborationMode: ModeKind;
   threadCwdMode: ThreadCwdMode;
   setModel: (model: string) => void;
+  setModelProvider: (provider: 'openai' | 'ollama') => void;
   setAccessMode: (sandbox: SandboxMode) => void;
   setReasoningEffort: (effort: ReasoningEffort) => void;
   setWebSearch: (webSearchRequest: boolean) => void;
@@ -36,12 +40,27 @@ export const useConfigStore = create<ConfigStore>()(
       sandbox: 'workspace-write',
       approvalPolicy: 'on-request',
       reasoningEffort: 'medium',
+      modelProvider: 'openai',
       model: '',
+      openaiModel: '',
+      ollamaModel: '',
       personality: 'friendly',
       collaborationMode: 'default',
       threadCwdMode: 'local',
       setModel: (model: string) => {
-        set({ model });
+        set((state) => {
+          if (state.modelProvider === 'ollama') {
+            return { model, ollamaModel: model };
+          }
+          return { model, openaiModel: model };
+        });
+      },
+
+      setModelProvider: (modelProvider: 'openai' | 'ollama') => {
+        set((state) => ({
+          modelProvider,
+          model: modelProvider === 'ollama' ? state.ollamaModel : state.openaiModel,
+        }));
       },
 
       setAccessMode: (sandbox: SandboxMode) => {
@@ -71,7 +90,19 @@ export const useConfigStore = create<ConfigStore>()(
     }),
     {
       name: 'codex-config-storage',
-      version: 2,
+      version: 3,
+      migrate: (persistedState: any, version) => {
+        if (!persistedState || version >= 3) {
+          return persistedState;
+        }
+        const previousModel = typeof persistedState.model === 'string' ? persistedState.model : '';
+        return {
+          ...persistedState,
+          modelProvider: 'openai',
+          openaiModel: previousModel,
+          ollamaModel: '',
+        };
+      },
     }
   )
 );
