@@ -17,6 +17,10 @@ pub async fn start_web_server_with_events(
     event_tx: broadcast::Sender<(String, Value)>,
     port: u16,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    crate::features::automation::initialize_automation_runtime(Some(codex_state.codex.clone()))
+        .await
+        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err))?;
+
     let history_sink: Arc<dyn EventSink> = Arc::new(WebSocketEventSink::new(event_tx.clone()));
     start_history_scanner(history_sink);
 

@@ -1,3 +1,4 @@
+pub mod automation;
 pub mod dxt;
 pub mod filesystem;
 pub mod git;

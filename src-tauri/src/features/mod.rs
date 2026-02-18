@@ -1,3 +1,4 @@
+pub(crate) mod automation;
 pub(crate) mod dxt;
 pub(crate) mod event_sink;
 pub(crate) mod filesystem;

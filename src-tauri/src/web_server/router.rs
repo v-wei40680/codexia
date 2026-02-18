@@ -14,6 +14,7 @@ use super::{
         api_cc_connect, api_cc_disconnect, api_cc_get_installed_skills, api_cc_get_projects,
         api_cc_get_sessions, api_cc_get_settings, api_cc_interrupt, api_cc_list_sessions,
         api_cc_new_session, api_cc_resume_session, api_cc_send_message, api_cc_update_settings,
+        api_create_automation, api_delete_automation, api_list_automations, api_set_automation_paused,
         api_check_manifests_exist, api_codex_home, api_create_note, api_delete_file,
         api_delete_note, api_download_and_extract_manifests, api_fuzzy_file_search,
         api_get_account, api_get_home_directory, api_get_note_by_id, api_get_notes,
@@ -141,6 +142,10 @@ pub(crate) fn create_router(state: WebServerState) -> Router {
         .route("/api/notes/toggle-favorite", post(api_toggle_favorite))
         .route("/api/notes/mark-synced", post(api_mark_notes_synced))
         .route("/api/notes/unsynced", post(api_get_unsynced_notes))
+        .route("/api/automation/list", post(api_list_automations))
+        .route("/api/automation/create", post(api_create_automation))
+        .route("/api/automation/set-paused", post(api_set_automation_paused))
+        .route("/api/automation/delete", post(api_delete_automation))
         .route("/api/skills/list-marketplace", post(api_skills_list_marketplace))
         .route("/api/skills/list-installed", post(api_skills_list_installed))
         .route(

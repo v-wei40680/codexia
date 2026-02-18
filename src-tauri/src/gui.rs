@@ -107,6 +107,10 @@ pub fn run() {
             crate::commands::notes::toggle_favorite,
             crate::commands::notes::mark_notes_synced,
             crate::commands::notes::get_unsynced_notes,
+            crate::commands::automation::list_automations,
+            crate::commands::automation::create_automation,
+            crate::commands::automation::set_automation_paused,
+            crate::commands::automation::delete_automation,
             crate::commands::git::git_status,
             crate::commands::git::git_file_diff,
             crate::commands::git::git_file_diff_meta,
@@ -140,9 +144,15 @@ pub fn run() {
 
             match init_result {
                 Ok(codex_client) => {
-                    app.handle().manage(crate::codex::AppState {
-                        codex: codex_client,
-                    });
+                    if let Err(err) = tauri::async_runtime::block_on(
+                        crate::features::automation::initialize_automation_runtime(Some(
+                            codex_client.clone(),
+                        )),
+                    ) {
+                        log::warn!("automation runtime init failed: {}", err);
+                    }
+
+                    app.handle().manage(crate::codex::AppState { codex: codex_client });
                 }
                 Err(err) => {
                     log::warn!(

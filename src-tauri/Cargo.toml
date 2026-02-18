@@ -79,6 +79,7 @@ regex = "1.12.2"
 chrono = { version = "0.4", features = ["serde"] }
 walkdir = "2.3"
 gix = { version = "0.78.0", features = ["blocking-network-client", "blocking-http-transport-curl"] }
+tokio-cron-scheduler = "0.13"
 
 # Async
 async-trait = "0.1"

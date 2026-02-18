@@ -7,6 +7,7 @@ use serde_json::Value;
 
 use crate::cc::mcp::ClaudeCodeMcpServer;
 use crate::cc::types::AgentOptions;
+use crate::features::automation::AutomationSchedule;
 
 #[derive(Deserialize)]
 pub(crate) struct ListThreadsRequest {
@@ -217,4 +218,26 @@ pub(crate) struct CcMcpToggleParams {
 pub(crate) struct SleepParams {
     #[serde(default, rename = "conversation_id", alias = "conversationId")]
     pub(crate) conversation_id: Option<String>,
+}
+
+#[derive(Deserialize)]
+pub(crate) struct CreateAutomationParams {
+    pub(crate) name: String,
+    #[serde(default)]
+    pub(crate) projects: Vec<String>,
+    pub(crate) prompt: String,
+    pub(crate) schedule: AutomationSchedule,
+    #[serde(default, rename = "access_mode", alias = "accessMode")]
+    pub(crate) access_mode: Option<String>,
+}
+
+#[derive(Deserialize)]
+pub(crate) struct SetAutomationPausedParams {
+    pub(crate) id: String,
+    pub(crate) paused: bool,
+}
+
+#[derive(Deserialize)]
+pub(crate) struct DeleteAutomationParams {
+    pub(crate) id: String,
 }

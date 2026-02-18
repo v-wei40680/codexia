@@ -13,6 +13,7 @@ export {
 } from './shared';
 
 export * from './cc';
+export * from './automation';
 export * from './codex';
 export * from './dxt';
 export * from './filesystem';
