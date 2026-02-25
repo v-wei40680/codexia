@@ -167,14 +167,24 @@ pub fn run() {
             #[cfg(debug_assertions)]
             {
                 use std::process::Command;
+                #[cfg(target_os = "windows")]
+                use std::os::windows::process::CommandExt;
 
-                let status = Command::new("codex")
+                #[cfg(target_os = "windows")]
+                const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+
+                let mut command = Command::new("codex");
+                command
                     .args(["app-server", "generate-ts", "-o", "src/bindings"])
                     .current_dir(
                         std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
                             .parent()
                             .expect("Failed to get project root"),
-                    )
+                    );
+                #[cfg(target_os = "windows")]
+                command.creation_flags(CREATE_NO_WINDOW);
+
+                let status = command
                     .status()
                     .expect("Failed to run codex app-server generate-ts");
 
