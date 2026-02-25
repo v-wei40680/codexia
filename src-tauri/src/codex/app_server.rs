@@ -6,8 +6,6 @@ use codex_app_server_protocol::{
 };
 use serde_json::Value;
 use std::collections::HashMap;
-#[cfg(target_os = "windows")]
-use std::os::windows::process::CommandExt;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicU64, Ordering};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
@@ -15,6 +13,9 @@ use tokio::process::{ChildStdin, Command};
 use tokio::sync::{Mutex, oneshot};
 
 use codex_finder::discover_codex_command;
+
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 pub struct CodexAppServer {
     stdin: Mutex<ChildStdin>,
@@ -86,6 +87,8 @@ pub async fn connect_codex(event_sink: Arc<dyn EventSink>) -> Result<Arc<CodexAp
     command.stdin(std::process::Stdio::piped());
     command.stdout(std::process::Stdio::piped());
     command.stderr(std::process::Stdio::piped());
+    #[cfg(target_os = "windows")]
+    command.creation_flags(CREATE_NO_WINDOW);
 
     let mut child = command.spawn().map_err(|e| e.to_string())?;
     let stdin = child.stdin.take().ok_or("missing stdin")?;

@@ -3,9 +3,14 @@ use gix::bstr::{BStr, BString, ByteSlice};
 use serde::Serialize;
 use std::collections::BTreeMap;
 use std::ops::ControlFlow;
+#[cfg(target_os = "windows")]
+use std::os::windows::process::CommandExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::atomic::AtomicBool;
+
+#[cfg(target_os = "windows")]
+const CREATE_NO_WINDOW: u32 = 0x0800_0000;
 
 #[derive(Debug, Clone, Serialize)]
 pub struct GitStatusEntry {
@@ -334,9 +339,12 @@ fn parse_numstat_totals(output: &str) -> GitDiffStatsCounts {
 }
 
 fn run_git_numstat(cwd: &str, args: &[&str]) -> Result<GitDiffStatsCounts, String> {
-    let output = Command::new("git")
-        .current_dir(cwd)
-        .args(args)
+    let mut command = Command::new("git");
+    command.current_dir(cwd).args(args);
+    #[cfg(target_os = "windows")]
+    command.creation_flags(CREATE_NO_WINDOW);
+
+    let output = command
         .output()
         .map_err(|err| format!("Failed to execute git {:?}: {err}", args))?;
     if !output.status.success() {
@@ -395,12 +403,17 @@ pub fn git_prepare_thread_worktree(
         });
     }
 
-    let output = Command::new("git")
+    let mut command = Command::new("git");
+    command
         .arg("-C")
         .arg(&repo_root)
         .args(["worktree", "add", "--detach"])
         .arg(&worktree_path)
-        .arg("HEAD")
+        .arg("HEAD");
+    #[cfg(target_os = "windows")]
+    command.creation_flags(CREATE_NO_WINDOW);
+
+    let output = command
         .output()
         .map_err(|err| format!("Failed to execute git worktree add: {err}"))?;
 
