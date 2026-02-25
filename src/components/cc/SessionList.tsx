@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { listen } from '@tauri-apps/api/event';
 import { useCCStore } from '@/stores/ccStore';
 import { getSessions, SessionData } from '@/lib/sessions';
 import { MoreVertical, Copy } from 'lucide-react';
@@ -12,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { useLayoutStore } from '@/stores';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
+import { isTauri } from '@/hooks/runtime';
 
 interface Props {
   project?: string;
@@ -28,28 +30,67 @@ export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Pr
   const { activeSessionIds, activeSessionId } = useCCStore();
   const { toast } = useToast();
 
+  const loadSessions = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const fetched = await getSessions();
+      setLoadedSessions(fetched);
+    } catch (err) {
+      console.error('Failed to load sessions:', err);
+      const message = err instanceof Error ? err.message : 'Failed to load sessions';
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (sessions !== undefined) {
       setLoading(false);
       setError(null);
       return;
     }
+    void loadSessions();
+  }, [loadSessions, sessions]);
 
-    const loadSessions = async () => {
-      try {
-        const fetched = await getSessions();
-        setLoadedSessions(fetched);
-      } catch (err) {
-        console.error('Failed to load sessions:', err);
-        const message = err instanceof Error ? err.message : 'Failed to load sessions';
-        setError(message);
-      } finally {
-        setLoading(false);
+  useEffect(() => {
+    if (sessions !== undefined) {
+      return;
+    }
+
+    const debounceMs = 150;
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    const scheduleReload = () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
       }
+      debounceTimer = setTimeout(() => {
+        void loadSessions();
+      }, debounceMs);
     };
 
-    loadSessions();
-  }, [sessions]);
+    if (isTauri()) {
+      let unlisten: (() => void) | null = null;
+      void listen('session/list-updated', scheduleReload).then((dispose) => {
+        unlisten = dispose;
+      });
+      return () => {
+        if (debounceTimer) {
+          clearTimeout(debounceTimer);
+        }
+        unlisten?.();
+      };
+    }
+
+    window.addEventListener('session/list-updated', scheduleReload);
+    return () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+      window.removeEventListener('session/list-updated', scheduleReload);
+    };
+  }, [loadSessions, sessions]);
 
   const normalizedProject = useMemo(() => project?.replace(/\\/g, '/'), [project]);
   const allSessions = sessions ?? loadedSessions;

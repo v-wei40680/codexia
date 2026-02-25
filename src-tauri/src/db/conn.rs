@@ -22,6 +22,7 @@ pub(crate) fn get_connection() -> Result<Connection, String> {
 /// Initialize database tables
 fn init_tables(conn: &Connection) -> Result<(), String> {
     init_notes_table(conn)?;
+    init_automation_runs_tables(conn)?;
     Ok(())
 }
 
@@ -60,6 +61,58 @@ fn init_notes_table(conn: &Connection) -> Result<(), String> {
         [],
     )
     .map_err(|e| format!("Failed to create notes synced_at index: {}", e))?;
+
+    Ok(())
+}
+
+fn init_automation_runs_tables(conn: &Connection) -> Result<(), String> {
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS automation_runs (
+            run_id TEXT PRIMARY KEY,
+            task_id TEXT NOT NULL,
+            task_name TEXT NOT NULL,
+            thread_id TEXT NOT NULL UNIQUE,
+            status TEXT NOT NULL,
+            started_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL
+        )",
+        [],
+    )
+    .map_err(|e| format!("Failed to create automation_runs table: {}", e))?;
+
+    conn.execute(
+        "CREATE TABLE IF NOT EXISTS automation_run_steps (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            run_id TEXT NOT NULL,
+            step_kind TEXT NOT NULL,
+            turn_id TEXT,
+            message TEXT,
+            created_at TEXT NOT NULL
+        )",
+        [],
+    )
+    .map_err(|e| format!("Failed to create automation_run_steps table: {}", e))?;
+
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_automation_runs_task_started
+         ON automation_runs(task_id, started_at DESC)",
+        [],
+    )
+    .map_err(|e| format!("Failed to create automation_runs task index: {}", e))?;
+
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_automation_runs_thread
+         ON automation_runs(thread_id)",
+        [],
+    )
+    .map_err(|e| format!("Failed to create automation_runs thread index: {}", e))?;
+
+    conn.execute(
+        "CREATE INDEX IF NOT EXISTS idx_automation_run_steps_run_created
+         ON automation_run_steps(run_id, created_at ASC)",
+        [],
+    )
+    .map_err(|e| format!("Failed to create automation_run_steps index: {}", e))?;
 
     Ok(())
 }

@@ -240,3 +240,139 @@ export function ModelReasonSelector() {
     </div>
   );
 }
+
+type CodexModelSelectorProps = {
+  provider: Provider;
+  value: string;
+  onValueChange: (value: string) => void;
+  disabled?: boolean;
+};
+
+export function CodexModelSelector({
+  provider,
+  value,
+  onValueChange,
+  disabled = false,
+}: CodexModelSelectorProps) {
+  const [open, setOpen] = useState(false);
+  const [openAiModels, setOpenAiModels] = useState<Model[]>([]);
+  const [ollamaModels, setOllamaModels] = useState<OllamaModel[]>([]);
+
+  useEffect(() => {
+    async function loadModels() {
+      try {
+        if (provider === 'openai') {
+          const response = await listModels();
+          setOpenAiModels(response.data);
+          if (response.data.length === 0) {
+            if (value) {
+              onValueChange('');
+            }
+            return;
+          }
+
+          const hasCurrentValue = response.data.some((candidate) => candidate.id === value);
+          if (!hasCurrentValue) {
+            const defaultModel = response.data.find((candidate) => candidate.isDefault) ?? response.data[0];
+            onValueChange(defaultModel.id);
+          }
+          return;
+        }
+        const data = await listOllamaModels();
+        setOllamaModels(data);
+        if (data.length === 0) {
+          if (value) {
+            onValueChange('');
+          }
+          return;
+        }
+
+        const hasCurrentValue = data.some((candidate) => candidate.id === value);
+        if (!hasCurrentValue) {
+          onValueChange(data[0].id);
+        }
+      } catch (error) {
+        console.warn('[CodexModelSelector] Failed to load models', error);
+        if (provider === 'openai') {
+          setOpenAiModels([]);
+        } else {
+          setOllamaModels([]);
+        }
+      }
+    }
+    void loadModels();
+  }, [onValueChange, provider, value]);
+
+  const availableModels = provider === 'openai' ? openAiModels : ollamaModels;
+  const selectedOpenAiModel =
+    provider === 'openai' ? openAiModels.find((candidate) => candidate.id === value) : null;
+  const selectedOllamaModel =
+    provider === 'ollama' ? ollamaModels.find((candidate) => candidate.id === value) : null;
+  const activeModelDisplay =
+    selectedOpenAiModel?.displayName || selectedOllamaModel?.id || 'Select model';
+
+  return (
+    <div className="flex items-center">
+      <div className="inline-flex items-center gap-2 rounded-md border border-transparent px-2 transition-all hover:border-input hover:bg-accent/50">
+        <Popover open={open} onOpenChange={setOpen}>
+          <PopoverTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-8 gap-2 px-2" disabled={disabled}>
+              <span className="text-xs">{activeModelDisplay}</span>
+              <ChevronsUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 p-3" align="start">
+            {availableModels.length === 0 ? (
+              <div className="rounded-md border px-3 py-2 text-xs text-muted-foreground">No models</div>
+            ) : (
+              <div className="max-h-80 space-y-1 overflow-y-auto pr-1">
+                {provider === 'openai'
+                  ? openAiModels.map((candidate) => (
+                      <button
+                        key={candidate.id}
+                        type="button"
+                        onClick={() => {
+                          onValueChange(candidate.id);
+                          setOpen(false);
+                        }}
+                        className={cn(
+                          'w-full rounded-md border px-2 py-1.5 text-left transition-colors',
+                          value === candidate.id
+                            ? 'border-primary bg-accent'
+                            : 'border-transparent hover:bg-accent/60'
+                        )}
+                      >
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-xs">{candidate.displayName || candidate.model}</span>
+                          <span className="text-[10px] text-muted-foreground">{candidate.description}</span>
+                        </div>
+                      </button>
+                    ))
+                  : ollamaModels.map((candidate) => (
+                      <button
+                        key={candidate.id}
+                        type="button"
+                        onClick={() => {
+                          onValueChange(candidate.id);
+                          setOpen(false);
+                        }}
+                        className={cn(
+                          'w-full rounded-md border px-2 py-1.5 text-left transition-colors',
+                          value === candidate.id
+                            ? 'border-primary bg-accent'
+                            : 'border-transparent hover:bg-accent/60'
+                        )}
+                      >
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-xs">{candidate.id}</span>
+                        </div>
+                      </button>
+                    ))}
+              </div>
+            )}
+          </PopoverContent>
+        </Popover>
+      </div>
+    </div>
+  );
+}

@@ -222,13 +222,43 @@ pub(crate) struct SleepParams {
 
 #[derive(Deserialize)]
 pub(crate) struct CreateAutomationParams {
+  pub(crate) name: String,
+  #[serde(default)]
+  pub(crate) projects: Vec<String>,
+  pub(crate) prompt: String,
+  pub(crate) schedule: AutomationSchedule,
+  #[serde(default)]
+  pub(crate) agent: Option<String>,
+  #[serde(default)]
+  #[serde(rename = "model_provider", alias = "modelProvider")]
+  pub(crate) model_provider: Option<String>,
+  #[serde(default)]
+  pub(crate) model: Option<String>,
+}
+
+#[derive(Deserialize)]
+pub(crate) struct ListAutomationRunsParams {
+    #[serde(default, rename = "task_id", alias = "taskId")]
+    pub(crate) task_id: Option<String>,
+    #[serde(default)]
+    pub(crate) limit: Option<u32>,
+}
+
+#[derive(Deserialize)]
+pub(crate) struct UpdateAutomationParams {
+    pub(crate) id: String,
     pub(crate) name: String,
     #[serde(default)]
     pub(crate) projects: Vec<String>,
     pub(crate) prompt: String,
     pub(crate) schedule: AutomationSchedule,
-    #[serde(default, rename = "access_mode", alias = "accessMode")]
-    pub(crate) access_mode: Option<String>,
+    #[serde(default)]
+    pub(crate) agent: Option<String>,
+    #[serde(default)]
+    #[serde(rename = "model_provider", alias = "modelProvider")]
+    pub(crate) model_provider: Option<String>,
+    #[serde(default)]
+    pub(crate) model: Option<String>,
 }
 
 #[derive(Deserialize)]
@@ -239,5 +269,10 @@ pub(crate) struct SetAutomationPausedParams {
 
 #[derive(Deserialize)]
 pub(crate) struct DeleteAutomationParams {
+    pub(crate) id: String,
+}
+
+#[derive(Deserialize)]
+pub(crate) struct RunAutomationNowParams {
     pub(crate) id: String,
 }

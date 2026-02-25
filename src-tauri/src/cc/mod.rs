@@ -2,6 +2,7 @@
 pub mod commands;
 pub mod db;
 pub mod mcp;
+pub mod scan;
 pub mod services;
 pub mod state;
 pub mod types;

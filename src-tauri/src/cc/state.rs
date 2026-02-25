@@ -5,6 +5,7 @@ use tokio::sync::Mutex;
 
 pub type ClientId = String;
 
+#[derive(Clone)]
 pub struct CCState {
     pub clients: Arc<Mutex<HashMap<ClientId, Arc<Mutex<ClaudeClient>>>>>,
 }

@@ -8,11 +8,12 @@ import {
   PanelLeft,
   ScrollText,
   SquarePen,
-  Terminal,
+  Timer,
   X,
 } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { open } from '@tauri-apps/plugin-dialog';
+import { listen } from '@tauri-apps/api/event';
 import { useLayoutStore } from '@/stores';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -37,6 +38,7 @@ import { UpdateButton } from '../features/UpdateButton';
 import { getFilename } from '@/utils/getFilename';
 import { getSessions, SessionData } from '@/lib/sessions';
 import { useCCStore } from '@/stores/ccStore';
+import { isTauri } from '@/hooks/runtime';
 
 export function SideBar() {
   const {
@@ -69,37 +71,64 @@ export function SideBar() {
   const sortedProjects = useMemo(() => projects, [projects]);
   const currentThreadSortLabel = sortKey === 'created_at' ? 'Created' : 'Updated';
 
+  const loadCcSessions = useCallback(async () => {
+    setCcLoading(true);
+    setCcError(null);
+    try {
+      const sessions = await getSessions();
+      setCcSessions(sessions);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load sessions';
+      setCcError(message);
+    } finally {
+      setCcLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     if (activeSidebarTab !== 'cc') {
       return;
     }
-    let cancelled = false;
+    void loadCcSessions();
+  }, [activeSessionId, activeSidebarTab, loadCcSessions]);
 
-    const loadSessions = async () => {
-      setCcLoading(true);
-      setCcError(null);
-      try {
-        const sessions = await getSessions();
-        if (!cancelled) {
-          setCcSessions(sessions);
-        }
-      } catch (err) {
-        const message = err instanceof Error ? err.message : 'Failed to load sessions';
-        if (!cancelled) {
-          setCcError(message);
-        }
-      } finally {
-        if (!cancelled) {
-          setCcLoading(false);
-        }
+  useEffect(() => {
+    if (activeSidebarTab !== 'cc') {
+      return;
+    }
+
+    const debounceMs = 150;
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+    const scheduleReload = () => {
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
       }
+      debounceTimer = setTimeout(() => {
+        void loadCcSessions();
+      }, debounceMs);
     };
 
-    void loadSessions();
+    if (isTauri()) {
+      let unlisten: (() => void) | null = null;
+      void listen('session/list-updated', scheduleReload).then((dispose) => {
+        unlisten = dispose;
+      });
+      return () => {
+        if (debounceTimer) {
+          clearTimeout(debounceTimer);
+        }
+        unlisten?.();
+      };
+    }
+
+    window.addEventListener('session/list-updated', scheduleReload);
     return () => {
-      cancelled = true;
+      if (debounceTimer) {
+        clearTimeout(debounceTimer);
+      }
+      window.removeEventListener('session/list-updated', scheduleReload);
     };
-  }, [activeSidebarTab, activeSessionId]);
+  }, [activeSidebarTab, loadCcSessions]);
 
   useEffect(() => {
     if (activeSidebarTab === 'explorer') {
@@ -170,14 +199,14 @@ export function SideBar() {
           <Button
             variant="ghost"
             size="sm"
-            className={`h-8 justify-start gap-1.5 rounded-md border pl-0 pr-2 has-[>svg]:pl-0 ${view === 'automate'
+            className={`h-8 justify-start gap-1.5 rounded-md border pl-0 pr-2 has-[>svg]:pl-0 ${view === 'automations'
               ? 'border-border bg-accent/70 text-foreground'
               : 'border-transparent hover:border-border/60'
               }`}
-            onClick={() => setView('automate')}
+            onClick={() => setView('automations')}
           >
-            <Terminal className="h-4 w-4" />
-            Automate
+            <Timer className="h-4 w-4" />
+            Automations
           </Button>
           <Button
             variant="ghost"

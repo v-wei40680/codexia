@@ -4,7 +4,7 @@ import { persist } from 'zustand/middleware';
 export type viewType =
   | 'codex'
   | 'cc'
-  | 'automate'
+  | 'automations'
   | 'agents'
   | 'history'
   | 'learn'
@@ -30,6 +30,8 @@ interface LayoutStore {
   setActiveRightPanelTab: (tab: 'diff' | 'note' | 'files' | 'webpreview') => void;
   isConfigLess: boolean;
   setIsConfigLess: (isConfigLess: boolean) => void;
+  selectedAutomationTaskId: string | null;
+  setSelectedAutomationTaskId: (taskId: string | null) => void;
 }
 
 export const useLayoutStore = create<LayoutStore>()(
@@ -51,6 +53,8 @@ export const useLayoutStore = create<LayoutStore>()(
       setActiveRightPanelTab: (tab) => set({ activeRightPanelTab: tab }),
       isConfigLess: false,
       setIsConfigLess: (isConfigLess) => set({ isConfigLess }),
+      selectedAutomationTaskId: null,
+      setSelectedAutomationTaskId: (taskId) => set({ selectedAutomationTaskId: taskId }),
     }),
     {
       name: 'layout-storage',

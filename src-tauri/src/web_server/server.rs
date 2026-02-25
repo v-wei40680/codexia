@@ -5,6 +5,7 @@ use tokio::sync::broadcast;
 
 use super::{router::create_router, types::WebServerState};
 use crate::cc::CCState;
+use crate::cc::scan::start_session_scanner;
 use crate::codex::scan::start_history_scanner;
 use crate::codex::{AppState, connect_codex, initialize_codex};
 use crate::features::event_sink::{EventSink, WebSocketEventSink};
@@ -17,12 +18,19 @@ pub async fn start_web_server_with_events(
     event_tx: broadcast::Sender<(String, Value)>,
     port: u16,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    crate::features::automation::initialize_automation_runtime(Some(codex_state.codex.clone()))
-        .await
-        .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err))?;
+    let automation_sink: Arc<dyn EventSink> = Arc::new(WebSocketEventSink::new(event_tx.clone()));
+    crate::features::automation::initialize_automation_runtime(
+        Some(codex_state.codex.clone()),
+        cc_state.as_ref().clone(),
+        automation_sink,
+    )
+    .await
+    .map_err(|err| std::io::Error::new(std::io::ErrorKind::Other, err))?;
 
     let history_sink: Arc<dyn EventSink> = Arc::new(WebSocketEventSink::new(event_tx.clone()));
     start_history_scanner(history_sink);
+    let session_sink: Arc<dyn EventSink> = Arc::new(WebSocketEventSink::new(event_tx.clone()));
+    start_session_scanner(session_sink);
 
     let state = WebServerState {
         codex_state,

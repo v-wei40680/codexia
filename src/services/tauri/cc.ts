@@ -26,6 +26,13 @@ export async function ccInterrupt(sessionId: string) {
   await postNoContent('/api/cc/interrupt', { session_id: sessionId });
 }
 
+export async function ccListSessions() {
+  if (isTauri()) {
+    return await invokeTauri<string[]>('cc_list_sessions');
+  }
+  return await getJson<string[]>('/api/cc/list-sessions');
+}
+
 export async function ccResumeSession(sessionId: string, options: Record<string, unknown>) {
   if (isTauri()) {
     await invokeTauri('cc_resume_session', { sessionId, options });

@@ -27,7 +27,6 @@ export default function CCView() {
     setConnected,
     setViewingHistory,
     clearMessages,
-    setActiveSessionId,
   } = useCCStore();
   const { cwd } = useWorkspaceStore();
 
@@ -35,22 +34,23 @@ export default function CCView() {
   const [input, setInput] = useState('');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
 
-  // Clear messages and reset session when directory changes
+  // Reset transient UI state when directory changes, but keep selected session.
   useEffect(() => {
-    if (cwd) {
-      clearMessages();
-      setActiveSessionId(null);
-      setConnected(false);
-      setLoading(false);
-      setShowExamples(true);
-    }
-  }, [cwd, clearMessages, setActiveSessionId, setConnected, setLoading, setShowExamples]);
+    if (!cwd) return;
+    if (activeSessionId) return;
+
+    clearMessages();
+    setConnected(false);
+    setLoading(false);
+    setShowExamples(true);
+  }, [cwd, activeSessionId, clearMessages, setConnected, setLoading, setShowExamples]);
 
   // Listen to message events
   useEffect(() => {
     if (!activeSessionId) return;
 
     const eventName = `cc-message:${activeSessionId}`;
+    console.info('[CCView] Bind message listener', { activeSessionId, eventName });
     const unlisten = listen<CCMessageType>(eventName, (event) => {
       const message = event.payload;
       addMessage(message);
@@ -65,6 +65,10 @@ export default function CCView() {
       unlisten.then((fn) => fn());
     };
   }, [activeSessionId, addMessage, setLoading]);
+
+  useEffect(() => {
+    console.info('[CCView] Active session changed', { activeSessionId, cwd });
+  }, [activeSessionId, cwd]);
 
   const handleSendMessage = async (messageText?: string) => {
     let textToSend = messageText || input;

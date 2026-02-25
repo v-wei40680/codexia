@@ -14,9 +14,11 @@ import CCView from '@/views/CCView';
 import { MarketplaceView } from '@/views/MarketplaceView';
 import AgentsView from '@/views/AgentsView';
 import LoginView from '@/views/LoginView';
-import { AutoMateView } from '../features/AutoMateView';
+import { AutoMationsView } from '../features/automations';
 import { BottomTerminal } from '@/components/terminal/BottomTerminal';
 import { LearnView } from '@/views/LearnView';
+import { Button } from '@/components/ui/button';
+import { PanelLeft } from 'lucide-react';
 
 export function AppLayout() {
   const MIN_SIDEBAR_WIDTH = 220;
@@ -161,6 +163,7 @@ export function AppLayout() {
       setRightPanelSize(nextSize);
     }
   };
+  const showMainHeader = view === 'codex' || view === 'cc';
 
   return (
     <div ref={layoutRef} className="h-screen w-screen overflow-x-hidden">
@@ -195,10 +198,23 @@ export function AppLayout() {
             <ResizableHandle className="w-2 -ml-1 bg-transparent hover:bg-border/60 cursor-col-resize" />
             <ResizablePanel defaultSize={100 - sidebarPercent} minSize={50}>
               <main className="bg-background relative flex w-full flex-1 flex-col min-w-0 h-full">
-                <MainHeader
-                  isTerminalOpen={isTerminalOpen}
-                  onToggleTerminal={() => setIsTerminalOpen((prev) => !prev)}
-                />
+                {showMainHeader ? (
+                  <MainHeader
+                    isTerminalOpen={isTerminalOpen}
+                    onToggleTerminal={() => setIsTerminalOpen((prev) => !prev)}
+                  />
+                ) : (
+                  <>
+                    <div className="absolute left-0 top-0 z-10 h-11 w-full" data-tauri-drag-region />
+                    {!isSidebarOpen && (
+                      <div className="absolute left-0 top-0 z-20 flex h-11 items-center pl-20">
+                        <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
+                          <PanelLeft />
+                        </Button>
+                      </div>
+                    )}
+                  </>
+                )}
                 <ResizablePanelGroup
                   direction="horizontal"
                   className="flex min-h-0 min-w-0 w-full flex-1"
@@ -207,7 +223,7 @@ export function AppLayout() {
                     <div className="flex flex-col min-w-0 h-full">
                       <div className="min-h-0 flex-1">
                         {view === 'agents' && <AgentsView />}
-                        {view === 'automate' && <AutoMateView />}
+                        {view === 'automations' && <AutoMationsView />}
                         {view === 'codex' && <ChatInterface />}
                         {view === 'history' && <History />}
                         {view === 'learn' && <LearnView />}

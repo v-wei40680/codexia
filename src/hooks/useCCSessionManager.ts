@@ -92,6 +92,7 @@ export function useCCSessionManager() {
 
   const handleResumeSession = async (sessionId: string) => {
     try {
+      console.info('[useCCSessionManager] Resume session start', { sessionId, cwd });
       setIsLoading(true);
       setLoading(true);
       setMessages([]);
@@ -127,13 +128,14 @@ export function useCCSessionManager() {
         ClaudeAgentOptions.disallowedTools = options.disallowedTools;
 
       await ccResumeSession(sessionId, ClaudeAgentOptions);
+      console.info('[useCCSessionManager] Resume session success', { sessionId, cwd });
 
       // Session history loaded, but not connected yet
       // Connection will happen when user sends first message
       setConnected(false);
       setViewingHistory(true);
     } catch (error) {
-      console.error('Failed to resume session:', error);
+      console.error('[useCCSessionManager] Failed to resume session', { sessionId, cwd, error });
     } finally {
       setLoading(false);
       setIsLoading(false);
@@ -141,6 +143,7 @@ export function useCCSessionManager() {
   };
 
   const handleSessionSelect = async (sessionId: string) => {
+    console.info('[useCCSessionManager] Session selected', { sessionId, cwd });
     await handleResumeSession(sessionId);
   };
 

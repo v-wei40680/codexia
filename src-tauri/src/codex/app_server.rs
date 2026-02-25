@@ -1,5 +1,6 @@
 use super::server_request::handle_server_request;
 use crate::features::event_sink::EventSink;
+use crate::features::automation::sync_automation_run_status;
 use codex_app_server_protocol::{
     JSONRPCMessage, JSONRPCResponse, RequestId, ServerNotification, ServerRequest,
 };
@@ -180,6 +181,7 @@ pub async fn connect_codex(event_sink: Arc<dyn EventSink>) -> Result<Arc<CodexAp
                             }
                             match serde_json::to_value(&server_notification) {
                                 Ok(payload) => {
+                                    sync_automation_run_status(&payload);
                                     event_sink_clone.emit("codex:notification", payload);
                                 }
                                 Err(err) => {
