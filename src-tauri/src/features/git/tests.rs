@@ -113,3 +113,81 @@ fn git_prepare_thread_worktree_creates_and_reuses_worktree_path() {
     let worktree_head = worktree_repo.head_id().expect("worktree head").detach();
     assert_eq!(source_head, worktree_head, "worktree should point to same HEAD");
 }
+
+#[test]
+fn git_reverse_unstaged_restores_file_from_index() {
+    let temp = tempfile::tempdir().expect("create tempdir");
+    let repo_dir = temp.path();
+    gix::init(repo_dir).expect("init repo");
+
+    let file_path = repo_dir.join("demo.txt");
+    std::fs::write(&file_path, "v1\n").expect("write initial");
+    git_stage_files(
+        repo_dir.to_string_lossy().to_string(),
+        vec!["demo.txt".to_string()],
+    )
+    .expect("stage file");
+
+    std::fs::write(&file_path, "v2\n").expect("write unstaged change");
+
+    git_reverse_files(
+        repo_dir.to_string_lossy().to_string(),
+        vec!["demo.txt".to_string()],
+        false,
+    )
+    .expect("reverse unstaged");
+
+    let content = std::fs::read_to_string(&file_path).expect("read restored file");
+    assert_eq!(content, "v1\n");
+}
+
+#[test]
+fn git_reverse_unstaged_removes_untracked_file() {
+    let temp = tempfile::tempdir().expect("create tempdir");
+    let repo_dir = temp.path();
+    gix::init(repo_dir).expect("init repo");
+
+    let file_path = repo_dir.join("scratch.txt");
+    std::fs::write(&file_path, "temp").expect("write untracked file");
+    assert!(file_path.exists(), "untracked file should exist");
+
+    git_reverse_files(
+        repo_dir.to_string_lossy().to_string(),
+        vec!["scratch.txt".to_string()],
+        false,
+    )
+    .expect("reverse untracked");
+
+    assert!(!file_path.exists(), "untracked file should be removed");
+}
+
+#[test]
+fn git_reverse_staged_moves_file_back_to_untracked() {
+    let temp = tempfile::tempdir().expect("create tempdir");
+    let repo_dir = temp.path();
+    gix::init(repo_dir).expect("init repo");
+
+    let file_path = repo_dir.join("new.txt");
+    std::fs::write(&file_path, "hello\n").expect("write file");
+    git_stage_files(
+        repo_dir.to_string_lossy().to_string(),
+        vec!["new.txt".to_string()],
+    )
+    .expect("stage file");
+
+    git_reverse_files(
+        repo_dir.to_string_lossy().to_string(),
+        vec!["new.txt".to_string()],
+        true,
+    )
+    .expect("reverse staged");
+
+    let status = git_status(repo_dir.to_string_lossy().to_string()).expect("status ok");
+    let entry = status
+        .entries
+        .into_iter()
+        .find(|item| item.path == "new.txt")
+        .expect("status entry exists");
+    assert_eq!(entry.index_status, '?');
+    assert_eq!(entry.worktree_status, '?');
+}

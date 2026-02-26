@@ -89,6 +89,13 @@ export async function gitUnstageFiles(cwd: string, filePaths: string[]) {
   await postNoContent('/api/git/unstage-files', { cwd, filePaths });
 }
 
+export async function gitReverseFiles(cwd: string, filePaths: string[], staged: boolean) {
+  if (isTauri()) {
+    return await invokeTauri<void>('git_reverse_files', { cwd, filePaths, staged });
+  }
+  await postNoContent('/api/git/reverse-files', { cwd, filePaths, staged });
+}
+
 export async function gitPrepareThreadWorktree(cwd: string, threadKey: string) {
   if (isTauri()) {
     return await invokeTauri<GitPrepareThreadWorktreeResponse>('git_prepare_thread_worktree', {

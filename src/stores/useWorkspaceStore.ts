@@ -67,6 +67,8 @@ interface WorkspaceStore {
   setCwd: (path: string) => void;
   selectedFilePath: string | null;
   setSelectedFilePath: (path: string | null) => void;
+  hasConfirmedGitRevert: boolean;
+  setHasConfirmedGitRevert: (value: boolean) => void;
   instructionType: string;
   setInstructionType: (type: string) => void;
 }
@@ -137,6 +139,8 @@ export const useWorkspaceStore = create(
       },
       selectedFilePath: null,
       setSelectedFilePath: (path) => set({ selectedFilePath: path }),
+      hasConfirmedGitRevert: false,
+      setHasConfirmedGitRevert: (value) => set({ hasConfirmedGitRevert: value }),
       instructionType: 'system',
       setInstructionType: (type) => set({ instructionType: type }),
     }),

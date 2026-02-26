@@ -1,4 +1,7 @@
-use gix::bstr::BString;
+use gix::bstr::{BString, ByteSlice};
+use std::fs;
+use std::io::ErrorKind;
+use std::path::Path;
 
 use crate::features::git::helpers::{
     entry_from_tree, open_repo, remove_all_entries_for_path, stat_for_worktree_path, to_repo_relative_path,
@@ -77,4 +80,89 @@ pub fn git_unstage_files(cwd: String, file_paths: Vec<String>) -> Result<(), Str
         .write(Default::default())
         .map_err(|err| format!("Failed to write git index: {err}"))?;
     Ok(())
+}
+
+pub fn git_reverse_files(cwd: String, file_paths: Vec<String>, staged: bool) -> Result<(), String> {
+    if staged {
+        return git_unstage_files(cwd, file_paths);
+    }
+
+    let repo = open_repo(&cwd)?;
+    let workdir = repo
+        .workdir()
+        .ok_or_else(|| "This git repository has no worktree".to_string())?
+        .to_path_buf();
+    let index = repo
+        .index_or_empty()
+        .map_err(|err| format!("Failed to load git index: {err}"))?;
+
+    for path in &file_paths {
+        let relative_path = to_repo_relative_path(&repo, path)?;
+        let entry = index.entry_by_path_and_stage(
+            relative_path.as_bytes().as_bstr(),
+            gix::index::entry::Stage::Unconflicted,
+        );
+
+        if let Some(entry) = entry {
+            write_worktree_file_from_index(&repo, &workdir, &relative_path, entry.id.to_owned())?;
+        } else {
+            remove_worktree_path(&workdir.join(&relative_path))?;
+        }
+    }
+
+    Ok(())
+}
+
+fn write_worktree_file_from_index(
+    repo: &gix::Repository,
+    workdir: &Path,
+    relative_path: &str,
+    object_id: gix::hash::ObjectId,
+) -> Result<(), String> {
+    let absolute_path = workdir.join(relative_path);
+    if let Some(parent) = absolute_path.parent() {
+        fs::create_dir_all(parent)
+            .map_err(|err| format!("Failed to create parent directories: {err}"))?;
+    }
+
+    if absolute_path.is_dir() {
+        fs::remove_dir_all(&absolute_path)
+            .map_err(|err| format!("Failed to remove directory at restore path: {err}"))?;
+    }
+
+    let object = repo
+        .find_object(object_id)
+        .map_err(|err| format!("Failed to read git object: {err}"))?;
+    if object.kind != gix::object::Kind::Blob {
+        return Err(format!(
+            "Cannot restore non-blob object for path {}",
+            relative_path
+        ));
+    }
+
+    fs::write(&absolute_path, &object.data)
+        .map_err(|err| format!("Failed to write restored file: {err}"))?;
+    Ok(())
+}
+
+fn remove_worktree_path(path: &Path) -> Result<(), String> {
+    match fs::symlink_metadata(path) {
+        Ok(metadata) => {
+            if metadata.is_dir() {
+                fs::remove_dir_all(path).map_err(|err| {
+                    format!("Failed to remove untracked directory {}: {err}", path.display())
+                })?;
+            } else {
+                fs::remove_file(path).map_err(|err| {
+                    format!("Failed to remove untracked file {}: {err}", path.display())
+                })?;
+            }
+            Ok(())
+        }
+        Err(err) if err.kind() == ErrorKind::NotFound => Ok(()),
+        Err(err) => Err(format!(
+            "Failed to inspect worktree path {}: {err}",
+            path.display()
+        )),
+    }
 }

@@ -21,7 +21,7 @@ use super::{
         api_get_account, api_get_home_directory, api_get_note_by_id, api_get_notes,
         api_get_unsynced_notes,
         api_git_diff_stats, api_git_file_diff, api_git_file_diff_meta,
-        api_git_prepare_thread_worktree, api_git_stage_files, api_git_status,
+        api_git_prepare_thread_worktree, api_git_reverse_files, api_git_stage_files, api_git_status,
         api_git_unstage_files,
         api_list_archived_threads, api_list_threads, api_load_manifest, api_load_manifests,
         api_mark_notes_synced, api_prevent_sleep,
@@ -182,6 +182,7 @@ pub(crate) fn create_router(state: WebServerState) -> Router {
         .route("/api/git/diff-stats", post(api_git_diff_stats))
         .route("/api/git/stage-files", post(api_git_stage_files))
         .route("/api/git/unstage-files", post(api_git_unstage_files))
+        .route("/api/git/reverse-files", post(api_git_reverse_files))
         .route("/api/codex/usage/token", get(api_read_token_usage))
         .route("/api/cc/connect", post(api_cc_connect))
         .route("/api/cc/send-message", post(api_cc_send_message))

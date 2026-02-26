@@ -5,7 +5,7 @@ use serde::Deserialize;
 use crate::features::git::{
     GitDiffStatsResponse, GitFileDiffMetaResponse, GitFileDiffResponse,
     GitPrepareThreadWorktreeResponse, GitStatusResponse, git_diff_stats, git_file_diff,
-    git_file_diff_meta, git_prepare_thread_worktree, git_stage_files, git_status,
+    git_file_diff_meta, git_prepare_thread_worktree, git_reverse_files, git_stage_files, git_status,
     git_unstage_files,
 };
 use crate::web_server::types::ErrorResponse;
@@ -28,6 +28,14 @@ pub(crate) struct GitStageFilesParams {
     cwd: String,
     #[serde(rename = "filePaths", alias = "file_paths")]
     file_paths: Vec<String>,
+}
+
+#[derive(Deserialize)]
+pub(crate) struct GitReverseFilesParams {
+    cwd: String,
+    #[serde(rename = "filePaths", alias = "file_paths")]
+    file_paths: Vec<String>,
+    staged: bool,
 }
 
 #[derive(Deserialize)]
@@ -86,5 +94,12 @@ pub(crate) async fn api_git_unstage_files(
     Json(params): Json<GitStageFilesParams>,
 ) -> Result<StatusCode, ErrorResponse> {
     git_unstage_files(params.cwd, params.file_paths).map_err(to_error_response)?;
+    Ok(StatusCode::OK)
+}
+
+pub(crate) async fn api_git_reverse_files(
+    Json(params): Json<GitReverseFilesParams>,
+) -> Result<StatusCode, ErrorResponse> {
+    git_reverse_files(params.cwd, params.file_paths, params.staged).map_err(to_error_response)?;
     Ok(StatusCode::OK)
 }

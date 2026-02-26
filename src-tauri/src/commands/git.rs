@@ -48,3 +48,12 @@ pub async fn git_stage_files(cwd: String, file_paths: Vec<String>) -> Result<(),
 pub async fn git_unstage_files(cwd: String, file_paths: Vec<String>) -> Result<(), String> {
     crate::features::git::git_unstage_files(cwd, file_paths)
 }
+
+#[tauri::command]
+pub async fn git_reverse_files(
+    cwd: String,
+    file_paths: Vec<String>,
+    staged: bool,
+) -> Result<(), String> {
+    crate::features::git::git_reverse_files(cwd, file_paths, staged)
+}
