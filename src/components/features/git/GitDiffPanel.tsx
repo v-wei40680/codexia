@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createTwoFilesPatch } from 'diff';
 import { DiffModeEnum, DiffView } from '@git-diff-view/react';
 import '@git-diff-view/react/styles/diff-view-pure.css';
@@ -72,6 +72,13 @@ export function GitDiffPanel({ cwd, isActive }: GitDiffPanelProps) {
   const [diffViewCollapsed, setDiffViewCollapsed] = useState(false);
   const [bulkStageDialogOpen, setBulkStageDialogOpen] = useState(false);
   const [bulkStageLoading, setBulkStageLoading] = useState(false);
+  const selectedDiffPathRef = useRef<string | null>(null);
+  const selectedDiffSectionRef = useRef<DiffSection>('unstaged');
+  const toPosix = useCallback((value: string) => value.replace(/\\/g, '/'), []);
+  const normalizeRelativePath = useCallback(
+    (value: string) => toPosix(value).replace(/^\/+/, ''),
+    [toPosix]
+  );
 
   const refreshGitStatus = useCallback(async () => {
     if (!cwd) return;
@@ -150,10 +157,14 @@ export function GitDiffPanel({ cwd, isActive }: GitDiffPanelProps) {
       setDiffMeta(null);
       return;
     }
-    if (!selectedDiffPath || !filteredEntries.some((entry) => entry.path === selectedDiffPath)) {
+    const normalizedSelected = selectedDiffPath ? normalizeRelativePath(selectedDiffPath) : null;
+    const hasMatch =
+      normalizedSelected !== null &&
+      filteredEntries.some((entry) => normalizeRelativePath(entry.path) === normalizedSelected);
+    if (!hasMatch) {
       setSelectedDiffPath(filteredEntries[0].path);
     }
-  }, [filteredEntries, selectedDiffPath]);
+  }, [filteredEntries, normalizeRelativePath, selectedDiffPath]);
 
   useEffect(() => {
     const currentDiffKey = selectedDiffPath ? `${selectedDiffSection}:${selectedDiffPath}` : null;
@@ -259,45 +270,92 @@ export function GitDiffPanel({ cwd, isActive }: GitDiffPanelProps) {
       return;
     }
     const resolved = resolveDiffPath(selectedDiffPath);
-    if (selectedFilePath !== resolved) {
+    const sameFile =
+      selectedFilePath !== null &&
+      normalizeRelativePath(toPosix(selectedFilePath)) === normalizeRelativePath(toPosix(resolved));
+    if (!sameFile) {
       setSelectedFilePath(resolved);
     }
-  }, [isActive, resolveDiffPath, selectedDiffPath, selectedFilePath, setSelectedFilePath]);
+  }, [
+    isActive,
+    normalizeRelativePath,
+    resolveDiffPath,
+    selectedDiffPath,
+    selectedFilePath,
+    setSelectedFilePath,
+    toPosix,
+  ]);
+
+  useEffect(() => {
+    selectedDiffPathRef.current = selectedDiffPath;
+  }, [selectedDiffPath]);
+
+  useEffect(() => {
+    selectedDiffSectionRef.current = selectedDiffSection;
+  }, [selectedDiffSection]);
 
   useEffect(() => {
     if (!isActive || !cwd || !selectedFilePath) {
       return;
     }
 
-    const toPosix = (value: string) => value.replace(/\\/g, '/');
+    const currentSelectedDiffPath = selectedDiffPathRef.current;
+    const currentSelectedDiffSection = selectedDiffSectionRef.current;
+    const resolvedCurrentSelection = currentSelectedDiffPath
+      ? resolveDiffPath(currentSelectedDiffPath)
+      : null;
+    if (
+      resolvedCurrentSelection &&
+      normalizeRelativePath(toPosix(selectedFilePath)) ===
+        normalizeRelativePath(toPosix(resolvedCurrentSelection))
+    ) {
+      return;
+    }
+
     const cwdPosix = toPosix(cwd).replace(/\/+$/, '');
     const selectedPosix = toPosix(selectedFilePath);
     if (!selectedPosix.startsWith(`${cwdPosix}/`)) {
       return;
     }
 
-    const relativePath = selectedPosix.slice(cwdPosix.length + 1);
-    const unstagedSet = new Set(unstagedEntries.map((entry) => toPosix(entry.path)));
-    const stagedSet = new Set(stagedEntries.map((entry) => toPosix(entry.path)));
+    const relativePath = normalizeRelativePath(selectedPosix.slice(cwdPosix.length + 1));
+    const unstagedPathMap = new Map(
+      unstagedEntries.map((entry) => [normalizeRelativePath(entry.path), entry.path] as const)
+    );
+    const stagedPathMap = new Map(
+      stagedEntries.map((entry) => [normalizeRelativePath(entry.path), entry.path] as const)
+    );
 
     let targetSection: DiffSection | null = null;
-    if (unstagedSet.has(relativePath)) {
+    let targetPath: string | null = null;
+    if (unstagedPathMap.has(relativePath)) {
       targetSection = 'unstaged';
-    } else if (stagedSet.has(relativePath)) {
+      targetPath = unstagedPathMap.get(relativePath) ?? null;
+    } else if (stagedPathMap.has(relativePath)) {
       targetSection = 'staged';
+      targetPath = stagedPathMap.get(relativePath) ?? null;
     }
 
-    if (!targetSection) {
+    if (!targetSection || !targetPath) {
       return;
     }
 
-    if (selectedDiffSection !== targetSection) {
+    if (currentSelectedDiffSection !== targetSection) {
       setSelectedDiffSection(targetSection);
     }
-    if (selectedDiffPath !== relativePath) {
-      setSelectedDiffPath(relativePath);
+    if (currentSelectedDiffPath !== targetPath) {
+      setSelectedDiffPath(targetPath);
     }
-  }, [cwd, isActive, selectedDiffPath, selectedDiffSection, selectedFilePath, stagedEntries, unstagedEntries]);
+  }, [
+    cwd,
+    isActive,
+    normalizeRelativePath,
+    resolveDiffPath,
+    selectedFilePath,
+    stagedEntries,
+    toPosix,
+    unstagedEntries,
+  ]);
 
   const runStage = async (paths: string[]) => {
     if (!cwd || paths.length === 0) return;
