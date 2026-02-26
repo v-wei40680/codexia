@@ -8,8 +8,8 @@ use axum::{Json, extract::State as AxumState, http::StatusCode};
 use codex_app_server_protocol::{
     FuzzyFileSearchParams, GetAccountParams, LoginAccountParams, ModelListParams,
     ReviewStartParams, SkillsConfigWriteParams, SkillsListParams, ThreadArchiveParams,
-    ThreadListParams, ThreadResumeParams, ThreadStartParams, TurnInterruptParams,
-    TurnStartParams,
+    ThreadForkParams, ThreadListParams, ThreadResumeParams, ThreadRollbackParams,
+    ThreadStartParams, TurnInterruptParams, TurnStartParams,
 };
 use serde_json::{Value, json};
 use crate::web_server::types::{ErrorResponse, WebServerState};
@@ -40,6 +40,34 @@ pub(crate) async fn api_resume_thread(
         .codex_state
         .codex
         .send_request("thread/resume", params_value)
+        .await
+        .map_err(to_error_response)?;
+    Ok(Json(result))
+}
+
+pub(crate) async fn api_fork_thread(
+    AxumState(state): AxumState<WebServerState>,
+    Json(params): Json<ThreadForkParams>,
+) -> Result<Json<Value>, ErrorResponse> {
+    let params_value = serde_json::to_value(params).map_err(to_error_response)?;
+    let result = state
+        .codex_state
+        .codex
+        .send_request("thread/fork", params_value)
+        .await
+        .map_err(to_error_response)?;
+    Ok(Json(result))
+}
+
+pub(crate) async fn api_rollback_thread(
+    AxumState(state): AxumState<WebServerState>,
+    Json(params): Json<ThreadRollbackParams>,
+) -> Result<Json<Value>, ErrorResponse> {
+    let params_value = serde_json::to_value(params).map_err(to_error_response)?;
+    let result = state
+        .codex_state
+        .codex
+        .send_request("thread/rollback", params_value)
         .await
         .map_err(to_error_response)?;
     Ok(Json(result))

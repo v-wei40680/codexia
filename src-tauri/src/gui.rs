@@ -35,6 +35,8 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             crate::codex::start_thread,
             crate::codex::resume_thread,
+            crate::codex::fork_thread,
+            crate::codex::rollback_thread,
             crate::codex::list_threads,
             crate::codex::list_archived_threads,
             crate::codex::archive_thread,

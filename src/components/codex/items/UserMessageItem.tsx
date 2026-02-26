@@ -1,14 +1,16 @@
 import { useState } from 'react';
 import type { UserInput } from '@/bindings/v2';
 import { convertFileSrc } from '@tauri-apps/api/core';
-import { Check, Copy } from 'lucide-react';
+import { Check, Copy, Pencil } from 'lucide-react';
 import { Markdown } from '@/components/Markdown';
 
 type UserMessageItemProps = {
   content: Array<UserInput>;
+  onEdit?: (text: string) => void | Promise<void>;
+  editDisabled?: boolean;
 };
 
-export const UserMessageItem = ({ content }: UserMessageItemProps) => {
+export const UserMessageItem = ({ content, onEdit, editDisabled = false }: UserMessageItemProps) => {
   const [copied, setCopied] = useState(false);
   const images = content.filter((m) => m.type === 'image').map((m) => m.url);
   const localImages = content
@@ -18,6 +20,7 @@ export const UserMessageItem = ({ content }: UserMessageItemProps) => {
     .filter((m) => m.type === 'text')
     .map((m) => m.text)
     .join('');
+  const canEdit = !!onEdit && text.length > 0 && !editDisabled;
 
   const handleCopy = async () => {
     if (!text.length) return;
@@ -28,6 +31,11 @@ export const UserMessageItem = ({ content }: UserMessageItemProps) => {
     } catch (err) {
       console.error('Failed to copy:', err);
     }
+  };
+
+  const handleEdit = async () => {
+    if (!canEdit || !onEdit) return;
+    await onEdit(text);
   };
 
   return (
@@ -61,6 +69,17 @@ export const UserMessageItem = ({ content }: UserMessageItemProps) => {
             copied ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
           }`}
         >
+          {onEdit && (
+            <button
+              type="button"
+              onClick={handleEdit}
+              disabled={!canEdit}
+              aria-label="Edit message"
+              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Pencil className="h-4 w-4" />
+            </button>
+          )}
           <button
             type="button"
             onClick={handleCopy}

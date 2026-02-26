@@ -8,10 +8,14 @@ import type {
   ModelListResponse,
   ReviewStartParams,
   ReviewStartResponse,
+  ThreadForkParams,
+  ThreadForkResponse,
   ThreadListParams,
   ThreadListResponse,
   ThreadResumeParams,
   ThreadResumeResponse,
+  ThreadRollbackParams,
+  ThreadRollbackResponse,
   ThreadStartParams,
   ThreadStartResponse,
   ToolRequestUserInputResponse,
@@ -65,6 +69,20 @@ export async function threadResume(params: ThreadResumeParams) {
     return await invokeTauri<ThreadResumeResponse>('resume_thread', { params });
   }
   return await postJson<ThreadResumeResponse>('/api/codex/thread/resume', params);
+}
+
+export async function threadFork(params: ThreadForkParams) {
+  if (isTauri()) {
+    return await invokeTauri<ThreadForkResponse>('fork_thread', { params });
+  }
+  return await postJson<ThreadForkResponse>('/api/codex/thread/fork', params);
+}
+
+export async function threadRollback(params: ThreadRollbackParams) {
+  if (isTauri()) {
+    return await invokeTauri<ThreadRollbackResponse>('rollback_thread', { params });
+  }
+  return await postJson<ThreadRollbackResponse>('/api/codex/thread/rollback', params);
 }
 
 export async function turnStart(params: TurnStartParams) {

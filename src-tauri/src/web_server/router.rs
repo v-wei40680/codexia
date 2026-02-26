@@ -30,6 +30,7 @@ use super::{
         api_read_pdf_content, api_read_text_file_lines, api_read_token_usage,
         api_read_xlsx_content, api_respond_command_execution_approval,
         api_respond_file_change_approval, api_respond_user_input, api_resume_thread,
+        api_rollback_thread, api_fork_thread,
         api_save_dxt_setting,
         api_search_files, api_skills_config_write, api_skills_list, api_start_review,
         api_start_thread, api_start_watch_file, api_start_watch_path, api_stop_watch_file,
@@ -79,6 +80,8 @@ pub(crate) fn create_router(state: WebServerState) -> Router {
         .route("/api/codex/thread/start", post(api_start_thread))
         .route("/api/codex/start-thread", post(api_start_thread))
         .route("/api/codex/thread/resume", post(api_resume_thread))
+        .route("/api/codex/thread/fork", post(api_fork_thread))
+        .route("/api/codex/thread/rollback", post(api_rollback_thread))
         .route("/api/codex/thread/list", post(api_list_threads))
         .route(
             "/api/codex/thread/list-archived",

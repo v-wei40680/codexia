@@ -1,5 +1,7 @@
 import { CollaborationMode, FuzzyFileSearchParams, ModeKind } from '@/bindings';
 import {
+  threadFork,
+  threadRollback,
   threadStart,
   threadResume,
   turnStart,
@@ -15,8 +17,10 @@ import {
   gitPrepareThreadWorktree,
 } from './tauri';
 import type {
+  ThreadForkParams,
   ThreadStartParams,
   ThreadListParams,
+  ThreadRollbackParams,
   UserInput,
   ReviewStartParams,
   SandboxMode,
@@ -298,6 +302,97 @@ export const codexService = {
       }));
     } catch (error: any) {
       console.error('[CodexService] threadResume error:', error);
+      throw error;
+    }
+  },
+
+  async threadFork(threadId: string) {
+    const set = useCodexStore.setState;
+    try {
+      const {
+        model,
+        modelProvider,
+        approvalPolicy,
+        sandbox,
+        reasoningEffort,
+        webSearchRequest,
+      } = useConfigStore.getState();
+      const params: ThreadForkParams = {
+        threadId,
+        path: null,
+        model,
+        modelProvider,
+        cwd: resolveThreadCwd(threadId),
+        approvalPolicy,
+        sandbox,
+        config: {
+          model_reasoning_effort: reasoningEffort,
+          show_raw_agent_reasoning: true,
+          model_reasoning_summary: 'auto',
+          web_search_request: webSearchRequest,
+          view_image_tool: true,
+          'features.multi_agents': true,
+        },
+        baseInstructions: null,
+        developerInstructions: null,
+        persistExtendedHistory: true,
+      };
+      const response = await threadFork(params);
+      const forkedThreadId = response.thread.id;
+      const historicalEvents = convertThreadHistoryToEvents(response.thread);
+      const normalized = codexService.normalizeThreadItem(response.thread);
+
+      set((state) => ({
+        currentThreadId: forkedThreadId,
+        currentTurnId: null,
+        activeThreadIds: state.activeThreadIds.includes(forkedThreadId)
+          ? state.activeThreadIds
+          : [...state.activeThreadIds, forkedThreadId],
+        threads: state.threads.some((thread) => thread.id === forkedThreadId)
+          ? state.threads.map((thread) => (thread.id === forkedThreadId ? normalized : thread))
+          : [normalized, ...state.threads],
+        events: {
+          ...state.events,
+          [forkedThreadId]: historicalEvents,
+        },
+        inputFocusTrigger: state.inputFocusTrigger + 1,
+      }));
+      return normalized;
+    } catch (error: any) {
+      console.error('[CodexService] threadFork error:', error);
+      throw error;
+    }
+  },
+
+  async threadRollback(threadId: string, numTurns: number) {
+    const set = useCodexStore.setState;
+    try {
+      const params: ThreadRollbackParams = {
+        threadId,
+        numTurns,
+      };
+      const response = await threadRollback(params);
+      const historicalEvents = convertThreadHistoryToEvents(response.thread);
+      const normalized = codexService.normalizeThreadItem(response.thread);
+
+      set((state) => ({
+        currentThreadId: threadId,
+        currentTurnId: null,
+        activeThreadIds: state.activeThreadIds.includes(threadId)
+          ? state.activeThreadIds
+          : [...state.activeThreadIds, threadId],
+        threads: state.threads.some((thread) => thread.id === threadId)
+          ? state.threads.map((thread) => (thread.id === threadId ? normalized : thread))
+          : [normalized, ...state.threads],
+        events: {
+          ...state.events,
+          [threadId]: historicalEvents,
+        },
+        inputFocusTrigger: state.inputFocusTrigger + 1,
+      }));
+      return normalized;
+    } catch (error: any) {
+      console.error('[CodexService] threadRollback error:', error);
       throw error;
     }
   },

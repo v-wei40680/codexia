@@ -1,14 +1,21 @@
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { CommandAction, FileUpdateChange } from '@/bindings/v2';
+import type { UserInput } from '@/bindings/v2';
 import type { ServerNotification } from '@/bindings';
 import { Markdown } from '@/components/Markdown';
 import { Check, Copy } from 'lucide-react';
+import { codexService } from '@/services/codexService';
+import { useInputStore } from '@/stores';
+import { useEventPreferencesStore } from '@/stores/codex';
+import { toast } from '@/components/ui/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
 import { TurnPlan } from './TurnPlan';
 import { UserMessageItem } from './UserMessageItem';
 import { CommandActionItem } from './CommandActionItem';
 import { IndividualFileChanges } from './IndividualFileChanges';
 import { SummaryFileChanges } from './SummaryFileChanges';
+import { EditRollbackConfirmDialog } from './EditRollbackConfirmDialog';
 import {
   aggregateFileChanges,
   aggregateTurnChangesFromContext,
@@ -61,6 +68,110 @@ const AgentMessageItem = ({ text }: AgentMessageItemProps) => {
   );
 };
 
+const getRollbackTurnsForTurn = (
+  context: RenderEventContext | undefined,
+  turnId: string
+): number => {
+  const events = context?.events;
+  const eventIndex = context?.eventIndex;
+  if (!events || eventIndex === undefined || eventIndex < 0) return 1;
+
+  const laterTurnIds = new Set<string>();
+  for (let i = eventIndex + 1; i < events.length; i += 1) {
+    const candidate = events[i];
+    let candidateTurnId: string | undefined;
+
+    if (
+      (candidate.method === 'item/started' || candidate.method === 'item/completed') &&
+      candidate.params?.turnId
+    ) {
+      candidateTurnId = candidate.params.turnId;
+    } else if (candidate.method === 'turn/completed') {
+      candidateTurnId = candidate.params?.turn?.id;
+    }
+
+    if (candidateTurnId && candidateTurnId !== turnId) {
+      laterTurnIds.add(candidateTurnId);
+    }
+  }
+
+  // Edit should remove the selected turn itself plus all later turns.
+  return laterTurnIds.size + 1;
+};
+
+type EditableUserMessageItemProps = {
+  content: Array<UserInput>;
+  threadId: string;
+  rollbackTurns: number;
+};
+
+const EditableUserMessageItem = ({
+  content,
+  threadId,
+  rollbackTurns,
+}: EditableUserMessageItemProps) => {
+  const [pendingText, setPendingText] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const { hasConfirmedEditRollback, setHasConfirmedEditRollback } = useEventPreferencesStore();
+
+  const applyEdit = async (text: string) => {
+    if (rollbackTurns > 0) {
+      await codexService.threadRollback(threadId, rollbackTurns);
+    }
+    useInputStore.getState().setInputValue(text);
+  };
+
+  const handleEdit = async (text: string) => {
+    try {
+      if (hasConfirmedEditRollback) {
+        await applyEdit(text);
+        return;
+      }
+      setPendingText(text);
+    } catch (error) {
+      console.error('Failed to edit from user message:', error);
+      toast.error('Failed to edit message', {
+        description: getErrorMessage(error),
+      });
+    }
+  };
+
+  const handleConfirmEdit = async () => {
+    if (!pendingText) return;
+    try {
+      setSubmitting(true);
+      await applyEdit(pendingText);
+      setHasConfirmedEditRollback(true);
+      setPendingText(null);
+    } catch (error) {
+      console.error('Failed to edit from user message:', error);
+      toast.error('Failed to edit message', {
+        description: getErrorMessage(error),
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <>
+      <UserMessageItem content={content} editDisabled={false} onEdit={handleEdit} />
+      <EditRollbackConfirmDialog
+        open={pendingText !== null}
+        submitting={submitting}
+        onOpenChange={(open) => {
+          if (!open && !submitting) {
+            setPendingText(null);
+          }
+        }}
+        onConfirm={() => {
+          void handleConfirmEdit();
+        }}
+      />
+    </>
+  );
+};
+
 export const renderEvent = (event: ServerNotification, context?: RenderEventContext) => {
   const fileChangeMap = {
     add: 'Created',
@@ -82,8 +193,19 @@ export const renderEvent = (event: ServerNotification, context?: RenderEventCont
     case 'item/started':
       let { item: startedItem } = event.params;
       switch (startedItem.type) {
-        case 'userMessage':
-          return <UserMessageItem content={startedItem.content} />;
+        case 'userMessage': {
+          const threadId = event.params.threadId;
+          const turnId = event.params.turnId;
+          const rollbackTurns = getRollbackTurnsForTurn(context, turnId);
+
+          return (
+            <EditableUserMessageItem
+              content={startedItem.content}
+              threadId={threadId}
+              rollbackTurns={rollbackTurns}
+            />
+          );
+        }
         case 'commandExecution':
           return (
             <div>

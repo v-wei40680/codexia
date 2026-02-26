@@ -3,8 +3,9 @@ use codex_app_server_protocol::{
     FileChangeApprovalDecision, FileChangeRequestApprovalResponse, FuzzyFileSearchParams,
     FuzzyFileSearchResponse, GetAccountParams, GetAccountRateLimitsResponse, GetAccountResponse,
     LoginAccountParams, LoginAccountResponse, ModelListResponse, RequestId, ReviewStartParams,
-    ReviewStartResponse, SkillsListResponse, ThreadListParams, ThreadResumeParams,
-    ThreadStartParams, TurnInterruptParams, TurnStartParams,
+    ReviewStartResponse, SkillsListResponse, ThreadForkParams, ThreadListParams,
+    ThreadResumeParams, ThreadRollbackParams, ThreadStartParams, TurnInterruptParams,
+    TurnStartParams,
 };
 use serde_json::Value;
 use serde_json::json;
@@ -48,6 +49,29 @@ pub async fn resume_thread(
     let result = state
         .codex
         .send_request("thread/resume", params_value)
+        .await?;
+    Ok(from_value(result)?)
+}
+
+#[tauri::command]
+pub async fn fork_thread(
+    params: ThreadForkParams,
+    state: State<'_, AppState>,
+) -> Result<Value, String> {
+    let params_value = to_value(params)?;
+    let result = state.codex.send_request("thread/fork", params_value).await?;
+    Ok(from_value(result)?)
+}
+
+#[tauri::command]
+pub async fn rollback_thread(
+    params: ThreadRollbackParams,
+    state: State<'_, AppState>,
+) -> Result<Value, String> {
+    let params_value = to_value(params)?;
+    let result = state
+        .codex
+        .send_request("thread/rollback", params_value)
         .await?;
     Ok(from_value(result)?)
 }

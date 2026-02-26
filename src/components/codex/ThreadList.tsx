@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { Archive, Pin } from 'lucide-react';
+import { Archive, GitFork, Pin } from 'lucide-react';
 import { listen } from '@tauri-apps/api/event';
 import { useThreadFilter } from '@/hooks/codex/useThreadFilter';
 import { codexService } from '@/services/codexService';
@@ -254,6 +254,17 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
     [cwd, isProjectScoped, listCwd, sortKey]
   );
 
+  const handleForkThread = useCallback(
+    async (threadId: string) => {
+      await codexService.threadFork(threadId);
+      setView('codex');
+      if (isProjectScoped) {
+        await reloadScopedThreadsRef.current?.();
+      }
+    },
+    [isProjectScoped, setView]
+  );
+
   const handleDeleteThreadByPath = useCallback(
     async (threadId: string, threadPath: string) => {
       if (!threadPath) {
@@ -449,6 +460,10 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
               </ContextMenuItem>
               <ContextMenuItem onSelect={() => void handleTogglePin(thread.id)}>
                 {thread.pinnedAtMs ? 'Unpin' : 'Pin'}
+              </ContextMenuItem>
+              <ContextMenuItem onSelect={() => void handleForkThread(thread.id)}>
+                <GitFork className="mr-2 h-4 w-4" />
+                Fork
               </ContextMenuItem>
               <ContextMenuItem onSelect={() => void handleArchiveThread(thread.id)}>
                 Archive
