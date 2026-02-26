@@ -164,6 +164,47 @@ export function SideBar() {
     addProject(projectPath);
   }, [addProject]);
 
+  useEffect(() => {
+    const isEditableTarget = (target: EventTarget | null): boolean => {
+      if (!(target instanceof HTMLElement)) {
+        return false;
+      }
+      if (target.isContentEditable) {
+        return true;
+      }
+      const tagName = target.tagName;
+      if (tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT') {
+        return true;
+      }
+      return Boolean(target.closest('[contenteditable="true"]'));
+    };
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      const isNewShortcut = (event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'n';
+
+      if (!isNewShortcut || event.shiftKey || event.altKey || event.repeat) {
+        return;
+      }
+
+      if (view !== 'codex' && view !== 'cc') {
+        return;
+      }
+
+      if (isEditableTarget(event.target)) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      void handleCreateNew();
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleCreateNew, view]);
+
   return (
     <div className="flex h-full w-[var(--sidebar-width)] min-w-[var(--sidebar-width)] max-w-[var(--sidebar-width)] flex-col border-r border-sidebar-border bg-zinc-100/95 dark:bg-zinc-900/95">
       <div className="gap-1 p-2 flex flex-col">
