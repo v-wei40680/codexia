@@ -28,7 +28,7 @@
 
 ## web server
 
-- new tauri command add a api to `src-tauri/src/web_server/handlers.rs` 
+- new tauri command add a api to `src-tauri/src/web_server/handlers/` 
 - invoke add to `src/services/tauri/`
 
 ## cwd
