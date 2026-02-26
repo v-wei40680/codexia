@@ -24,6 +24,20 @@ export interface SettingState {
   setPreventSleepDuringTasks: (enabled: boolean) => void;
   enabledQuoteCategories: string[];
   setEnabledQuoteCategories: (categories: string[]) => void;
+  showSidebarMarketplace: boolean;
+  setShowSidebarMarketplace: (show: boolean) => void;
+  showHeaderTerminalButton: boolean;
+  setShowHeaderTerminalButton: (show: boolean) => void;
+  showHeaderWebPreviewButton: boolean;
+  setShowHeaderWebPreviewButton: (show: boolean) => void;
+  showHeaderNotesButton: boolean;
+  setShowHeaderNotesButton: (show: boolean) => void;
+  showHeaderFilesButton: boolean;
+  setShowHeaderFilesButton: (show: boolean) => void;
+  showHeaderDiffButton: boolean;
+  setShowHeaderDiffButton: (show: boolean) => void;
+  showHeaderRightPanelToggle: boolean;
+  setShowHeaderRightPanelToggle: (show: boolean) => void;
 }
 
 type LegacySettingState = {
@@ -81,6 +95,20 @@ export const useSettingsStore = create<SettingState>()(
       setPreventSleepDuringTasks: (enabled: boolean) => set({ preventSleepDuringTasks: enabled }),
       setEnabledQuoteCategories: (categories: string[]) =>
         set({ enabledQuoteCategories: categories }),
+      showSidebarMarketplace: true,
+      setShowSidebarMarketplace: (show: boolean) => set({ showSidebarMarketplace: show }),
+      showHeaderTerminalButton: true,
+      setShowHeaderTerminalButton: (show: boolean) => set({ showHeaderTerminalButton: show }),
+      showHeaderWebPreviewButton: true,
+      setShowHeaderWebPreviewButton: (show: boolean) => set({ showHeaderWebPreviewButton: show }),
+      showHeaderNotesButton: true,
+      setShowHeaderNotesButton: (show: boolean) => set({ showHeaderNotesButton: show }),
+      showHeaderFilesButton: true,
+      setShowHeaderFilesButton: (show: boolean) => set({ showHeaderFilesButton: show }),
+      showHeaderDiffButton: true,
+      setShowHeaderDiffButton: (show: boolean) => set({ showHeaderDiffButton: show }),
+      showHeaderRightPanelToggle: true,
+      setShowHeaderRightPanelToggle: (show: boolean) => set({ showHeaderRightPanelToggle: show }),
     }),
     {
       name: 'settings-storage',

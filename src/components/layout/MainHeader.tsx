@@ -10,6 +10,7 @@ import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { GitStatsIndicator } from '@/components/features/GitStatsIndicator';
 import { useGitStatsStore } from '@/stores/useGitStatsStore';
 import { useGitWatch } from '@/hooks/useGitWatch';
+import { useSettingsStore } from '@/stores/settings';
 
 type MainHeaderProps = {
   isTerminalOpen: boolean;
@@ -29,6 +30,14 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
     setActiveRightPanelTab,
   } = useLayoutStore();
   const { historyMode, setHistoryMode, selectedAgent, cwd } = useWorkspaceStore();
+  const {
+    showHeaderTerminalButton,
+    showHeaderWebPreviewButton,
+    showHeaderNotesButton,
+    showHeaderFilesButton,
+    showHeaderDiffButton,
+    showHeaderRightPanelToggle,
+  } = useSettingsStore();
   const { handleNewSession } = useCCSessionManager();
   const { currentThreadId, activeThreadIds } = useCodexStore();
   const { refreshStats } = useGitStatsStore();
@@ -102,7 +111,7 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
       </div>
       <div className="flex items-center gap-2">
         <span className="flex">
-          {showTerminalButton && (
+          {showTerminalButton && showHeaderTerminalButton && (
             <Button
               variant={isTerminalOpen ? 'secondary' : 'ghost'}
               size="icon"
@@ -114,50 +123,60 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
           )}
           {isRightPanelOpen && (
             <div className="flex items-center">
-              <Button
-                variant={activeRightPanelTab === 'webpreview' ? 'secondary' : 'ghost'}
-                size="icon"
-                onClick={() => openRightPanelTab('webpreview')}
-                title="Web Preview"
-              >
-                <Chrome />
-              </Button>
-              <Button
-                variant={activeRightPanelTab === 'note' ? 'secondary' : 'ghost'}
-                size="icon"
-                onClick={() => openRightPanelTab('note')}
-                title="Notes"
-              >
-                <StickyNote />
-              </Button>
-              <Button
-                variant={activeRightPanelTab === 'files' ? 'secondary' : 'ghost'}
-                size="icon"
-                onClick={() => openRightPanelTab('files')}
-                title="Files"
-              >
-                <Files />
-              </Button>
+              {showHeaderWebPreviewButton && (
+                <Button
+                  variant={activeRightPanelTab === 'webpreview' ? 'secondary' : 'ghost'}
+                  size="icon"
+                  onClick={() => openRightPanelTab('webpreview')}
+                  title="Web Preview"
+                >
+                  <Chrome />
+                </Button>
+              )}
+              {showHeaderNotesButton && (
+                <Button
+                  variant={activeRightPanelTab === 'note' ? 'secondary' : 'ghost'}
+                  size="icon"
+                  onClick={() => openRightPanelTab('note')}
+                  title="Notes"
+                >
+                  <StickyNote />
+                </Button>
+              )}
+              {showHeaderFilesButton && (
+                <Button
+                  variant={activeRightPanelTab === 'files' ? 'secondary' : 'ghost'}
+                  size="icon"
+                  onClick={() => openRightPanelTab('files')}
+                  title="Files"
+                >
+                  <Files />
+                </Button>
+              )}
             </div>
           )}
-          <Button
-            variant={activeRightPanelTab === 'diff' ? 'secondary' : 'ghost'}
-            size="sm"
-            onClick={() => openRightPanelTab('diff')}
-            title="Diff"
-            className="rounded-md border"
-          >
-            <Diff />
-            <GitStatsIndicator />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleRightPanel}
-            title={isRightPanelOpen ? 'Hide right panel' : 'Show right panel'}
-          >
-            <PanelRight />
-          </Button>
+          {showHeaderDiffButton && (
+            <Button
+              variant={activeRightPanelTab === 'diff' ? 'secondary' : 'ghost'}
+              size="sm"
+              onClick={() => openRightPanelTab('diff')}
+              title="Diff"
+              className="rounded-md border"
+            >
+              <Diff />
+              <GitStatsIndicator />
+            </Button>
+          )}
+          {showHeaderRightPanelToggle && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleRightPanel}
+              title={isRightPanelOpen ? 'Hide right panel' : 'Show right panel'}
+            >
+              <PanelRight />
+            </Button>
+          )}
         </span>
       </div>
     </div>

@@ -31,6 +31,7 @@ import { UserInfo } from './UserInfo';
 import { ThreadList } from '@/components/codex/ThreadList';
 import { useThreadList } from '@/hooks/codex';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
+import { useSettingsStore } from '@/stores/settings';
 import { useCCSessionManager } from '@/hooks/useCCSessionManager';
 import { useUpdater } from '@/hooks/useUpdater';
 import { ClaudeCodeSessionList } from '../cc/SessionList';
@@ -63,6 +64,7 @@ export function SideBar() {
   const { searchTerm, setSearchTerm, sortKey, setSortKey, handleNewThread } = useThreadList();
   const { handleSessionSelect, handleNewSession } = useCCSessionManager();
   const { activeSessionId } = useCCStore();
+  const { showSidebarMarketplace } = useSettingsStore();
   const { hasUpdate, startUpdate } = useUpdater({ enabled: true });
   const [expandedProjects, setExpandedProjects] = useState<Record<string, boolean>>({});
   const [ccSessions, setCcSessions] = useState<SessionData[]>([]);
@@ -208,17 +210,19 @@ export function SideBar() {
             <Timer className="h-4 w-4" />
             Automations
           </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={`h-8 justify-start gap-1.5 rounded-md border pl-0 pr-2 has-[>svg]:pl-0 ${view === 'marketplace'
-              ? 'border-border bg-accent/70 text-foreground'
-              : 'border-transparent hover:border-border/60'
-              }`}
-            onClick={() => setView('marketplace')}
-          >
-            <Package className="h-4 w-4" /> Skills | MCP | Prompt
-          </Button>
+          {showSidebarMarketplace && (
+            <Button
+              variant="ghost"
+              size="sm"
+              className={`h-8 justify-start gap-1.5 rounded-md border pl-0 pr-2 has-[>svg]:pl-0 ${view === 'marketplace'
+                ? 'border-border bg-accent/70 text-foreground'
+                : 'border-transparent hover:border-border/60'
+                }`}
+              onClick={() => setView('marketplace')}
+            >
+              <Package className="h-4 w-4" /> Skills | MCP | Prompt
+            </Button>
+          )}
         </div>
         <span className="flex justify-between">
           <span className="flex">

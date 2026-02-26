@@ -19,6 +19,7 @@ import { CodexAuth } from '../codex/CodexAuth';
 import { QuoteSettings } from './QuoteSettings';
 import { ProjectsSettings } from './ProjectsSettings';
 import { RateLimitSettings, TaskSettings } from './codex';
+import { UISettings } from './UISettings';
 
 type SettingsSection =
   | 'general'
@@ -29,10 +30,11 @@ type SettingsSection =
   | 'archived'
   | 'explorer'
   | 'quote'
-  | 'task';
+  | 'task'
+  | 'ui';
 
 const codexSections = ['codexauth', 'task', 'config', 'personalization', 'archived'] as const;
-const topLevelSections = ['general', 'projects', 'explorer', 'quote'] as const;
+const topLevelSections = ['general', 'projects', 'explorer', 'quote', 'ui'] as const;
 
 const sectionLabel: Record<SettingsSection, string> = {
   general: 'General',
@@ -44,6 +46,7 @@ const sectionLabel: Record<SettingsSection, string> = {
   explorer: 'Explorer',
   quote: 'Quote',
   task: 'Task',
+  ui: 'UI',
 };
 
 export function SettingsView() {
@@ -143,6 +146,7 @@ export function SettingsView() {
             {activeSection === 'explorer' && <ExplorerSettings />}
             {activeSection === 'quote' && <QuoteSettings />}
             {activeSection === 'task' && <TaskSettings />}
+            {activeSection === 'ui' && <UISettings />}
           </div>
         </div>
       </SidebarInset>
