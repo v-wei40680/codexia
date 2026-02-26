@@ -18,6 +18,8 @@ import { getErrorMessage } from '@/utils/errorUtils';
 import { getAccountWithParams } from '@/services';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { ProjectSelector } from '@/components/project-selector/ProjectSelector';
+import { Button } from '@/components/ui/button';
+import { CircleHelp, Lightbulb } from 'lucide-react';
 
 export function ChatInterface() {
   const { currentThreadId, currentTurnId, events, inputFocusTrigger } = useCodexStore();
@@ -26,6 +28,8 @@ export function ChatInterface() {
   const { projects } = useWorkspaceStore();
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
   const [hasAccount, setHasAccount] = useState<boolean | null>(null);
+  const [showQuotes, setShowQuotes] = useState(true);
+  const [showTips, setShowTips] = useState(true);
 
   // Get events for the current thread
   const currentThreadEvents = currentThreadId ? events[currentThreadId] || [] : [];
@@ -174,19 +178,45 @@ export function ChatInterface() {
             {showWorkspaceLauncher && (
               <div className="mx-auto my-8 flex w-full max-w-3xl flex-col items-center gap-3 px-4 text-center">
                 <p className="text-2xl font-semibold tracking-tight">let&apos;s build</p>
-                <ProjectSelector
-                  variant="hero"
-                  className="h-10 max-w-[220px] gap-2 px-3"
-                  triggerMode="project-name"
-                  showChevron
-                />
+                <div className="flex items-center gap-2">
+                  <Button
+                    type="button"
+                    variant={showQuotes ? 'secondary' : 'ghost'}
+                    size="icon"
+                    className="h-10 w-10"
+                    onClick={() => setShowQuotes((prev) => !prev)}
+                    title={showQuotes ? 'Hide quotes' : 'Show quotes'}
+                    aria-label={showQuotes ? 'Hide quotes' : 'Show quotes'}
+                    aria-pressed={showQuotes}
+                  >
+                    <Lightbulb className="h-4 w-4" />
+                  </Button>
+                  <ProjectSelector
+                    variant="hero"
+                    className="h-10 max-w-[220px] gap-2 px-3"
+                    triggerMode="project-name"
+                    showChevron
+                  />
+                  <Button
+                    type="button"
+                    variant={showTips ? 'secondary' : 'ghost'}
+                    size="icon"
+                    className="h-10 w-10"
+                    onClick={() => setShowTips((prev) => !prev)}
+                    title={showTips ? 'Hide tips' : 'Show tips'}
+                    aria-label={showTips ? 'Hide tips' : 'Show tips'}
+                    aria-pressed={showTips}
+                  >
+                    <CircleHelp className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             )}
-            {currentThreadEvents.length === 0 && hasAccount === true && <Quotes />}
+            {currentThreadEvents.length === 0 && hasAccount === true && showQuotes && <Quotes />}
             {isProcessing && (
               <div className="text-sm text-muted-foreground animate-pulse">thinking...</div>
             )}
-            {currentThreadEvents.length === 0 && <Tips onTipClick={setInputValue} />}
+            {currentThreadEvents.length === 0 && showTips && <Tips onTipClick={setInputValue} />}
             <RequestUserInputItem currentThreadId={currentThreadId} />
             <div ref={bottomAnchorRef} aria-hidden="true" />
           </div>
