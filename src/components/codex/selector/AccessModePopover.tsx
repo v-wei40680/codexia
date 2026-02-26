@@ -3,7 +3,6 @@ import { useState } from 'react';
 import type { SandboxMode } from '@/bindings/v2';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Switch } from '@/components/ui/switch';
 import { useConfigStore } from '@/stores/codex';
 import { cn } from '@/lib/utils';
 
@@ -19,7 +18,7 @@ const ACCESS_MODE_OPTIONS: Array<{
 
 export function AccessModePopover() {
   const [open, setOpen] = useState(false);
-  const { sandbox, setAccessMode, collaborationMode, setCollaborationMode } = useConfigStore();
+  const { sandbox, setAccessMode } = useConfigStore();
   const selected =
     ACCESS_MODE_OPTIONS.find((item) => item.sandbox === sandbox) ?? ACCESS_MODE_OPTIONS[0];
 
@@ -33,15 +32,6 @@ export function AccessModePopover() {
       </PopoverTrigger>
       <PopoverContent className="w-72 p-1" align="start">
         <div className="space-y-1">
-          <div className="flex items-center justify-between rounded-md px-2 py-1.5">
-            <span className="text-xs font-medium">plan mode</span>
-            <Switch
-              checked={collaborationMode === 'plan'}
-              onCheckedChange={(checked) => {
-                setCollaborationMode(checked ? 'plan' : 'default');
-              }}
-            />
-          </div>
           {ACCESS_MODE_OPTIONS.map((item) => {
             const Icon = item.icon;
             const isActive = item.sandbox === sandbox;

@@ -15,7 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Monitor, Settings, Split } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ListChecks, Monitor, Settings, Split } from 'lucide-react';
 import { useLayoutStore } from '@/stores';
 import { useConfigStore, type ThreadCwdMode } from '@/stores/codex';
 
@@ -38,7 +39,8 @@ export function Composer({
 }: ComposerProps) {
   const [images, setImages] = useState<string[]>([]);
   const { isConfigLess, setIsConfigLess } = useLayoutStore();
-  const { threadCwdMode, setThreadCwdMode } = useConfigStore();
+  const { threadCwdMode, setThreadCwdMode, collaborationMode, setCollaborationMode } =
+    useConfigStore();
 
   const handleSend = async (message: string) => {
     await onSend(message, images);
@@ -75,7 +77,6 @@ export function Composer({
             <SkillsPopover />
           </>
         )}
-        <AccessModePopover />
         <ModelReasonSelector />
       </InputArea>
 
@@ -102,6 +103,17 @@ export function Composer({
             </SelectItem>
           </SelectContent>
         </Select>
+        <label className="mr-1 inline-flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-xs hover:bg-accent/60">
+          <Checkbox
+            checked={collaborationMode === 'plan'}
+            onCheckedChange={(checked) =>
+              setCollaborationMode(checked === true ? 'plan' : 'default')
+            }
+          />
+          <ListChecks className="h-3.5 w-3.5 text-muted-foreground" />
+          <span>Plan</span>
+        </label>
+        <AccessModePopover />
       </div>
     </div>
   );
