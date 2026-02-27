@@ -87,6 +87,7 @@ interface CodexStore {
   threads: ThreadListItem[];
   currentThreadId: string | null;
   currentTurnId: string | null;
+  hasAccount: boolean | null;
   events: Record<string, ServerNotification[]>; // Events per thread
   activeThreadIds: string[]; // Track resumed/active threads
   inputFocusTrigger: number; // Increment to trigger focus in InputArea
@@ -97,6 +98,7 @@ interface CodexStore {
   setThreads: (threads: ThreadListItem[]) => void;
   appendThreads: (threads: ThreadListItem[]) => void;
   setThreadListNextCursor: (cursor: string | null) => void;
+  setHasAccount: (hasAccount: boolean | null) => void;
   addEvent: (threadId: string, event: ServerNotification) => void;
   triggerInputFocus: () => void;
   triggerThreadListRefresh: () => void;
@@ -106,6 +108,7 @@ export const useCodexStore = create<CodexStore>((set) => ({
   threads: [],
   currentThreadId: null,
   currentTurnId: null,
+  hasAccount: null,
   events: {},
   activeThreadIds: [],
   inputFocusTrigger: 0,
@@ -135,6 +138,10 @@ export const useCodexStore = create<CodexStore>((set) => ({
 
   setThreadListNextCursor: (cursor: string | null) => {
     set({ threadListNextCursor: cursor });
+  },
+
+  setHasAccount: (hasAccount: boolean | null) => {
+    set({ hasAccount });
   },
 
   addEvent: (threadId: string, event: ServerNotification) => {

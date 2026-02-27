@@ -14,19 +14,17 @@ import { useSettingsStore } from '@/stores/settings';
 import { Quotes } from '../features/Quotes';
 import { toast } from '@/components/ui/use-toast';
 import { getErrorMessage } from '@/utils/errorUtils';
-import { getAccountWithParams } from '@/services';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { ProjectSelector } from '@/components/project-selector/ProjectSelector';
 import { Button } from '@/components/ui/button';
 import { CircleHelp, Lightbulb } from 'lucide-react';
 
 export function ChatInterface() {
-  const { currentThreadId, currentTurnId, events, inputFocusTrigger } = useCodexStore();
+  const { currentThreadId, currentTurnId, events, inputFocusTrigger, hasAccount } = useCodexStore();
   const { setInputValue } = useInputStore();
   const { taskDetail } = useSettingsStore();
   const { projects } = useWorkspaceStore();
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
-  const [hasAccount, setHasAccount] = useState<boolean | null>(null);
   const [showQuotes, setShowQuotes] = useState(true);
   const [showTips, setShowTips] = useState(true);
 
@@ -56,32 +54,6 @@ export function ChatInterface() {
   useEffect(() => {
     bottomAnchorRef.current?.scrollIntoView({ block: 'end' });
   }, [currentThreadEvents]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadAccount = async () => {
-      try {
-        const response = await getAccountWithParams({
-          refreshToken: false,
-        });
-        if (isMounted) {
-          setHasAccount(Boolean(response.account));
-        }
-      } catch (error) {
-        console.error('Failed to load account:', error);
-        if (isMounted) {
-          setHasAccount(false);
-        }
-      }
-    };
-
-    loadAccount();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
 
   const isEmptyConversation = currentThreadEvents.length === 0;
   const showWorkspaceLauncher = isEmptyConversation && hasAccount === true && projects.length > 0;

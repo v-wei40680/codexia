@@ -9,8 +9,10 @@ import {
 } from '@/stores/codex';
 import { useLayoutStore, useSettingsStore } from '@/stores/settings';
 import type { ServerNotification } from '@/bindings/ServerNotification';
+import type { AccountLoginCompletedNotification } from '@/bindings/v2';
 import { playBeep } from '@/utils/beep';
 import { allowSleep, preventSleep } from '@/services/tauri';
+import { getAccountWithParams } from '@/services';
 import { buildWsUrl, isTauri } from '@/hooks/runtime';
 
 function shouldPlayCompletionBeep(
@@ -27,7 +29,7 @@ function shouldPlayCompletionBeep(
 }
 
 export function useCodexEvents(enabled = true) {
-  const { addEvent } = useCodexStore();
+  const { addEvent, setHasAccount } = useCodexStore();
   const { addApproval } = useApprovalStore();
   const { addRequest } = useRequestUserInputStore();
   const taskCompleteBeepMode = useSettingsStore((state) => state.enableTaskCompleteBeep);
@@ -38,7 +40,31 @@ export function useCodexEvents(enabled = true) {
     if (!enabled) {
       return;
     }
+
+    const syncAccountState = async (refreshToken: boolean) => {
+      try {
+        const response = await getAccountWithParams({ refreshToken });
+        setHasAccount(Boolean(response.account));
+      } catch (error) {
+        console.error('[useCodexEvents] Failed to sync account state:', error);
+        setHasAccount(false);
+      }
+    };
+
+    void syncAccountState(false);
+
     const handleServerNotification = (payload: ServerNotification) => {
+      if (payload.method === 'account/updated') {
+        void syncAccountState(true);
+      }
+
+      if (payload.method === 'account/login/completed') {
+        const loginCompleted = payload.params as AccountLoginCompletedNotification;
+        if (loginCompleted.success) {
+          void syncAccountState(true);
+        }
+      }
+
       if (
         ![
           'rawResponseItem/completed',
@@ -110,7 +136,11 @@ export function useCodexEvents(enabled = true) {
 
         addEvent(threadId, payload);
       } else {
-        if (payload.method !== 'account/rateLimits/updated') {
+        if (
+          payload.method !== 'account/rateLimits/updated' &&
+          payload.method !== 'account/updated' &&
+          payload.method !== 'account/login/completed'
+        ) {
           console.warn('[useCodexEvents] No threadId found in payload:', payload);
         }
       }
@@ -232,6 +262,7 @@ export function useCodexEvents(enabled = true) {
     addEvent,
     addApproval,
     addRequest,
+    setHasAccount,
     enabled,
     taskCompleteBeepMode,
     preventSleepDuringTasks,
