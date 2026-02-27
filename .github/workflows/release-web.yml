@@ -21,9 +21,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - target: x86_64-unknown-linux-musl
+          - target: x86_64-unknown-linux-gnu
             arch: x86_64
-            libc: musl
+            libc: gnu
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
@@ -39,7 +39,7 @@ jobs:
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: x86_64-unknown-linux-musl
+          targets: x86_64-unknown-linux-gnu
 
       - name: Setup Rust cache
         uses: Swatinem/rust-cache@v2
@@ -49,12 +49,7 @@ jobs:
       - name: install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf musl-tools libdbus-1-dev pkg-config\
-            libsqlite3-dev \
-            libssl-dev \
-            libxcb-render0-dev \
-            libxcb-shape0-dev \
-            libxcb-xfixes0-dev
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
 
       - name: install frontend dependencies
         run: bun install
@@ -77,3 +72,11 @@ jobs:
           version="$(node -e "console.log(require('./package.json').version)")"
           package_path="/tmp/codexia-web-${version}-linux-${{ matrix.arch }}-${{ matrix.libc }}.tar.gz"
           echo "WEB_PACKAGE_PATH=${package_path}" >> "$GITHUB_ENV"
+
+      - name: Upload web package to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.WEB_PACKAGE_PATH }}
+          tag_name: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
