@@ -190,7 +190,6 @@ export function AppLayout() {
                   />
                 ) : (
                   <>
-                    <div className="absolute left-0 top-0 z-10 h-11 w-full" data-tauri-drag-region />
                     {!isSidebarOpen && (
                       <div className="absolute left-0 top-0 z-20 flex h-11 items-center pl-20">
                         <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
