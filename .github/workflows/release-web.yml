@@ -21,9 +21,6 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - target: x86_64-unknown-linux-gnu
-            arch: x86_64
-            libc: gnu
           - target: x86_64-unknown-linux-musl
             arch: x86_64
             libc: musl
@@ -43,7 +40,7 @@ jobs:
       - name: install Rust stable
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: x86_64-unknown-linux-gnu,x86_64-unknown-linux-musl
+          targets: x86_64-unknown-linux-musl
 
       - name: Setup Rust cache
         uses: Swatinem/rust-cache@v2
@@ -53,7 +50,12 @@ jobs:
       - name: install dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf musl-tools libdbus-1-dev pkg-config
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf musl-tools libdbus-1-dev pkg-config\
+            libsqlite3-dev \
+            libssl-dev \
+            libxcb-render0-dev \
+            libxcb-shape0-dev \
+            libxcb-xfixes0-dev
 
       - name: install frontend dependencies
         run: bun install
@@ -76,114 +78,6 @@ jobs:
           version="$(node -e "console.log(require('./package.json').version)")"
           package_path="/tmp/codexia-web-${version}-linux-${{ matrix.arch }}-${{ matrix.libc }}.tar.gz"
           echo "WEB_PACKAGE_PATH=${package_path}" >> "$GITHUB_ENV"
-
-      - name: Upload web package to release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: ${{ env.WEB_PACKAGE_PATH }}
-          tag_name: ${{ github.ref_name }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  publish-web-macos:
-    permissions:
-      contents: write
-    runs-on: macos-latest
-    if: false # Temporarily disabled
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: setup node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install Bun
-        uses: oven-sh/setup-bun@v2
-
-      - name: install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: aarch64-apple-darwin
-
-      - name: Setup Rust cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: "src-tauri"
-
-      - name: install frontend dependencies
-        run: bun install
-
-      - name: Export TS bindings
-        run: |
-          bun add -g @openai/codex
-          codex app-server generate-ts -o src/bindings
-
-      - name: Package web
-        run: |
-          WEB_TARGET_TRIPLE="aarch64-apple-darwin" \
-          WEB_ARCH="aarch64" \
-          bash scripts/package-web.sh
-
-      - name: Resolve package path
-        shell: bash
-        run: |
-          version="$(node -e "console.log(require('./package.json').version)")"
-          package_path="/tmp/codexia-web-${version}-darwin-aarch64.tar.gz"
-          echo "WEB_PACKAGE_PATH=${package_path}" >> "$GITHUB_ENV"
-
-      - name: Upload web package to release
-        uses: softprops/action-gh-release@v2
-        with:
-          files: ${{ env.WEB_PACKAGE_PATH }}
-          tag_name: ${{ github.ref_name }}
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-  publish-web-windows:
-    permissions:
-      contents: write
-    runs-on: windows-latest
-    if: false # Temporarily disabled
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: setup node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install Bun
-        uses: oven-sh/setup-bun@v2
-
-      - name: install Rust stable
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: x86_64-pc-windows-msvc
-
-      - name: Setup Rust cache
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: "src-tauri"
-
-      - name: install frontend dependencies
-        run: bun install
-
-      - name: Export TS bindings
-        run: |
-          bun add -g @openai/codex
-          codex app-server generate-ts -o src/bindings
-
-      - name: Package web for Windows
-        shell: cmd
-        run: scripts\package-web.bat
-
-      - name: Resolve package path
-        shell: pwsh
-        run: |
-          $version = (Get-Content -Raw package.json | ConvertFrom-Json).version
-          $path = Join-Path $env:TEMP "codexia-web-$version-windows-x86_64.zip"
-          "WEB_PACKAGE_PATH=$path" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: Upload web package to release
         uses: softprops/action-gh-release@v2
