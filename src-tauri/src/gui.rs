@@ -3,6 +3,7 @@ use crate::commands::terminal::TerminalState;
 use crate::features::sleep::SleepState;
 use crate::state::WatchState;
 use std::sync::Arc;
+use std::time::Instant;
 use tauri::Manager;
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -53,6 +54,7 @@ pub fn run() {
             crate::codex::respond_to_command_execution_approval,
             crate::codex::respond_to_file_change_approval,
             crate::codex::respond_to_request_user_input,
+            crate::codex::initialize_codex_async,
             crate::commands::filesystem::read_directory,
             crate::commands::filesystem::get_home_directory,
             crate::commands::filesystem::search_files,
@@ -142,30 +144,35 @@ pub fn run() {
             let event_sink: Arc<dyn crate::features::event_sink::EventSink> =
                 Arc::new(crate::features::event_sink::TauriEventSink::new(app_handle));
 
+            let codex_init_started_at = Instant::now();
             let init_result = tauri::async_runtime::block_on(async {
+                let connect_started_at = Instant::now();
                 let codex_client = crate::codex::connect_codex(Arc::clone(&event_sink)).await?;
-                crate::codex::initialize_codex(&codex_client, Arc::clone(&event_sink)).await?;
+                log::info!(
+                    "codex startup timing: connect_codex finished in {:?}",
+                    connect_started_at.elapsed()
+                );
                 Ok::<_, String>(codex_client)
             });
 
             match init_result {
                 Ok(codex_client) => {
-                    if let Err(err) = tauri::async_runtime::block_on(
-                        crate::features::automation::initialize_automation_runtime(
-                            Some(codex_client.clone()),
-                            app.state::<CCState>().inner().clone(),
-                            Arc::clone(&event_sink),
-                        ),
-                    ) {
-                        log::warn!("automation runtime init failed: {}", err);
-                    }
+                    log::info!(
+                        "codex startup timing: total connect during setup took {:?}",
+                        codex_init_started_at.elapsed()
+                    );
 
                     app.handle().manage(crate::codex::AppState { codex: codex_client });
+                    app.handle()
+                        .manage(crate::codex::CodexInitializationState::new(Arc::clone(
+                            &event_sink,
+                        )));
                 }
                 Err(err) => {
                     log::warn!(
-                        "codex app-server init failed, app will continue without codex backend: {}",
-                        err
+                        "codex app-server init failed after {:?}, app will continue without codex backend: {}",
+                        codex_init_started_at.elapsed(),
+                        err,
                     );
                 }
             }

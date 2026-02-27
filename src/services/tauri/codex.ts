@@ -46,6 +46,12 @@ import {
 export * from './mcp';
 export * from './skills';
 
+export async function initializeCodexAsync() {
+  if (isTauri()) {
+    return await invokeTauri<void>('initialize_codex_async');
+  }
+}
+
 export async function listModels() {
   const params: ModelListParams = {
     cursor: null,

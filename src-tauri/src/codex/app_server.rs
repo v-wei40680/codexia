@@ -73,6 +73,22 @@ pub struct AppState {
     pub codex: Arc<CodexAppServer>,
 }
 
+pub struct CodexInitializationState {
+    pub event_sink: Arc<dyn EventSink>,
+    pub initialized: std::sync::atomic::AtomicBool,
+    pub init_lock: Mutex<()>,
+}
+
+impl CodexInitializationState {
+    pub fn new(event_sink: Arc<dyn EventSink>) -> Self {
+        Self {
+            event_sink,
+            initialized: std::sync::atomic::AtomicBool::new(false),
+            init_lock: Mutex::new(()),
+        }
+    }
+}
+
 pub async fn connect_codex(event_sink: Arc<dyn EventSink>) -> Result<Arc<CodexAppServer>, String> {
     log::info!("Connecting to codex app-server");
     let codex_bin =

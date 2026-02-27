@@ -10,9 +10,12 @@ use codex_app_server_protocol::{
 use serde_json::Value;
 use serde_json::json;
 use std::path::PathBuf;
+use std::sync::Arc;
+use std::sync::atomic::Ordering;
+use std::time::Instant;
 use tauri::State;
 
-use super::{AppState, scan};
+use super::{AppState, CodexInitializationState, initialize_codex, scan};
 
 fn to_value<T: serde::Serialize>(value: T) -> Result<Value, String> {
     serde_json::to_value(value).map_err(|e| e.to_string())
@@ -25,6 +28,45 @@ fn from_value<T: serde::de::DeserializeOwned>(value: Value) -> Result<T, String>
 #[tauri::command]
 pub fn codex_home() -> PathBuf {
     super::utils::codex_home()
+}
+
+#[tauri::command]
+pub async fn initialize_codex_async(
+    state: State<'_, AppState>,
+    init_state: State<'_, CodexInitializationState>,
+    cc_state: State<'_, crate::cc::CCState>,
+) -> Result<(), String> {
+    if init_state.initialized.load(Ordering::SeqCst) {
+        return Ok(());
+    }
+
+    let _guard = init_state.init_lock.lock().await;
+
+    if init_state.initialized.load(Ordering::SeqCst) {
+        return Ok(());
+    }
+
+    let started_at = Instant::now();
+    initialize_codex(&state.codex, Arc::clone(&init_state.event_sink)).await?;
+    log::info!(
+        "codex startup timing: initialize_codex_async finished initialize in {:?}",
+        started_at.elapsed()
+    );
+
+    let automation_started_at = Instant::now();
+    crate::features::automation::initialize_automation_runtime(
+        Some(state.codex.clone()),
+        cc_state.inner().clone(),
+        Arc::clone(&init_state.event_sink),
+    )
+    .await?;
+    log::info!(
+        "codex startup timing: initialize_codex_async finished automation runtime in {:?}",
+        automation_started_at.elapsed()
+    );
+
+    init_state.initialized.store(true, Ordering::SeqCst);
+    Ok(())
 }
 
 #[tauri::command]

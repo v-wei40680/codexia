@@ -6,12 +6,17 @@ import { useDeepLink } from '@/hooks/useDeepLink';
 import { AppLayout } from '@/components/layout';
 import { isTauri } from '@/hooks/runtime';
 import { HistoryProjectsDialog } from '@/components/project-selector';
+import { initializeCodexAsync } from '@/services/tauri';
 
 function AppShell() {
   useEffect(() => {
     if (!isTauri()) {
       return;
     }
+
+    void initializeCodexAsync().catch((error) => {
+      console.warn('Failed to initialize codex asynchronously', error);
+    });
 
     // Listen for codex connected event
     const unlisten = listen('codex:notification', (event: any) => {
