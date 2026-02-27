@@ -8,7 +8,6 @@ import { MainHeader } from '@/components/layout/MainHeader';
 import { ChatInterface } from '@/components/codex/ChatInterface';
 import { History } from '@/components/codex/history';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import UsageView from '@/views/UsageView';
 import CCView from '@/views/CCView';
 import { MarketplaceView } from '@/views/MarketplaceView';
@@ -35,7 +34,6 @@ export function AppLayout() {
     view,
     setView,
   } = useLayoutStore();
-  const { historyMode } = useWorkspaceStore();
   const rightPanelRef = useRef<ImperativePanelHandle>(null);
   const sidebarPanelRef = useRef<ImperativePanelHandle>(null);
   const layoutRef = useRef<HTMLDivElement>(null);
@@ -69,19 +67,6 @@ export function AppLayout() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [setView]);
-
-  useEffect(() => {
-    if (view === 'settings') {
-      return;
-    }
-    if (historyMode && view === 'codex') {
-      setView('history');
-      return;
-    }
-    if (!historyMode && view === 'history') {
-      setView('codex');
-    }
-  }, [historyMode, setView, view]);
 
   useEffect(() => {
     if (view !== 'codex' && view !== 'cc') {
@@ -163,7 +148,7 @@ export function AppLayout() {
       setRightPanelSize(nextSize);
     }
   };
-  const showMainHeader = view === 'codex' || view === 'cc';
+  const showMainHeader = view === 'codex' || view === 'cc' || view === 'history';
 
   return (
     <div ref={layoutRef} className="h-screen w-screen overflow-x-hidden">

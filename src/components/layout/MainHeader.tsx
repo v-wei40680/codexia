@@ -29,7 +29,7 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
     activeRightPanelTab,
     setActiveRightPanelTab,
   } = useLayoutStore();
-  const { historyMode, setHistoryMode, selectedAgent, cwd } = useWorkspaceStore();
+  const { setHistoryMode, selectedAgent, cwd } = useWorkspaceStore();
   const {
     showHeaderTerminalButton,
     showHeaderWebPreviewButton,
@@ -43,6 +43,7 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
   const { refreshStats } = useGitStatsStore();
   const currentThread = useCurrentThread();
   const showTerminalButton = view === 'codex' || view === 'cc';
+  const isHistoryView = view === 'history';
   const openRightPanelTab = (tab: 'diff' | 'note' | 'files' | 'webpreview') => {
     setActiveRightPanelTab(tab);
     setRightPanelOpen(true);
@@ -67,7 +68,7 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
     await codexService.setCurrentThread(null);
   };
   const handleToggleHistoryMode = async () => {
-    const nextMode = !historyMode;
+    const nextMode = !isHistoryView;
     setHistoryMode(nextMode);
     setView(nextMode ? 'history' : 'codex');
 
@@ -97,12 +98,14 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
             </Button>
           </div>
         )}
-        {selectedAgent === 'codex' && currentThreadId && (
+        {selectedAgent === 'codex' &&
+          currentThreadId &&
+          (view === 'codex' || view === 'history') && (
           <Button
-            variant={historyMode ? 'secondary' : 'ghost'}
+            variant={isHistoryView ? 'secondary' : 'ghost'}
             size="icon"
             onClick={handleToggleHistoryMode}
-            title={historyMode ? 'Exit history mode' : 'Enter history mode'}
+            title={isHistoryView ? 'Exit history mode' : 'Enter history mode'}
           >
             <History />
           </Button>

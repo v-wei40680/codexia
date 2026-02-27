@@ -39,7 +39,7 @@ interface ThreadListProps {
 }
 
 export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
-  const { cwd, historyMode, setCwd } = useWorkspaceStore();
+  const { cwd, historyMode, setCwd, setHistoryMode } = useWorkspaceStore();
   const { setView } = useLayoutStore();
   const { threads, currentThreadId, threadListNextCursor } = useCodexStore();
   const { searchTerm, sortKey } = useThreadListStore();
@@ -190,16 +190,32 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
   }, [isProjectScoped]);
 
   const handleSelectThread = useCallback(
-    async (threadId: string) => {
+    async (threadId: string, options?: { resume?: boolean }) => {
       if (threadId === currentThreadId) {
         return;
       }
       if (listCwd && listCwd !== cwd) {
         setCwd(listCwd);
       }
-      await codexService.setCurrentThread(threadId, { resume: !historyMode });
+      const shouldResume = options?.resume ?? !historyMode;
+      await codexService.setCurrentThread(threadId, { resume: shouldResume });
     },
     [currentThreadId, cwd, historyMode, listCwd, setCwd]
+  );
+
+  const handleOpenThreadFromList = useCallback(
+    async (threadId: string) => {
+      if (historyMode) {
+        setView('history');
+        await handleSelectThread(threadId, { resume: false });
+        return;
+      }
+
+      setHistoryMode(false);
+      setView('codex');
+      await handleSelectThread(threadId, { resume: true });
+    },
+    [handleSelectThread, historyMode, setHistoryMode, setView]
   );
 
   const handleTogglePin = useCallback(
@@ -371,10 +387,10 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
     (event: KeyboardEvent<HTMLDivElement>, threadId: string) => {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
-        void handleSelectThread(threadId);
+        void handleOpenThreadFromList(threadId);
       }
     },
-    [handleSelectThread]
+    [handleOpenThreadFromList]
   );
 
   const handleRenameSubmit = useCallback(async () => {
@@ -410,8 +426,7 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
             <ContextMenuTrigger asChild>
               <div
                 onClick={() => {
-                  handleSelectThread(thread.id);
-                  setView('codex');
+                  void handleOpenThreadFromList(thread.id);
                 }}
                 onKeyDown={(event) => handleRowKeyDown(event, thread.id)}
                 role="button"

@@ -6,7 +6,7 @@ import { useLayoutStore, useNoteStore, useWorkspaceStore } from '@/stores';
 import { isTauri } from '@/hooks/runtime';
 
 export function useThreadList() {
-  const { cwd, historyMode } = useWorkspaceStore();
+  const { cwd } = useWorkspaceStore();
   const { setView } = useLayoutStore();
   const { setSelectedNoteId } = useNoteStore();
   const { threadListRefreshToken, triggerThreadListRefresh } = useCodexStore();
@@ -15,9 +15,9 @@ export function useThreadList() {
 
   const handleNewThread = useCallback(async () => {
     setSelectedNoteId(null);
-    setView(historyMode ? 'history' : 'codex');
+    setView('codex');
     await codexService.setCurrentThread(null);
-  }, [historyMode, setView, setSelectedNoteId]);
+  }, [setView, setSelectedNoteId]);
 
   useEffect(() => {
     const scheduleRefresh = () => {
