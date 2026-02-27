@@ -3,6 +3,12 @@ import type { UserInput } from '@/bindings/v2';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { Check, Copy, Pencil } from 'lucide-react';
 import { Markdown } from '@/components/Markdown';
+import { codexService } from '@/services/codexService';
+import { useInputStore } from '@/stores';
+import { useEventPreferencesStore } from '@/stores/codex';
+import { toast } from '@/components/ui/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
+import { EditRollbackConfirmDialog } from './EditRollbackConfirmDialog';
 
 type UserMessageItemProps = {
   content: Array<UserInput>;
@@ -92,5 +98,78 @@ export const UserMessageItem = ({ content, onEdit, editDisabled = false }: UserM
         </div>
       </div>
     </div>
+  );
+};
+
+type EditableUserMessageItemProps = {
+  content: Array<UserInput>;
+  threadId: string;
+  rollbackTurns: number;
+};
+
+export const EditableUserMessageItem = ({
+  content,
+  threadId,
+  rollbackTurns,
+}: EditableUserMessageItemProps) => {
+  const [pendingText, setPendingText] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const { hasConfirmedEditRollback, setHasConfirmedEditRollback } = useEventPreferencesStore();
+
+  const applyEdit = async (text: string) => {
+    if (rollbackTurns > 0) {
+      await codexService.threadRollback(threadId, rollbackTurns);
+    }
+    useInputStore.getState().setInputValue(text);
+  };
+
+  const handleEdit = async (text: string) => {
+    try {
+      if (hasConfirmedEditRollback) {
+        await applyEdit(text);
+        return;
+      }
+      setPendingText(text);
+    } catch (error) {
+      console.error('Failed to edit from user message:', error);
+      toast.error('Failed to edit message', {
+        description: getErrorMessage(error),
+      });
+    }
+  };
+
+  const handleConfirmEdit = async () => {
+    if (!pendingText) return;
+    try {
+      setSubmitting(true);
+      await applyEdit(pendingText);
+      setHasConfirmedEditRollback(true);
+      setPendingText(null);
+    } catch (error) {
+      console.error('Failed to edit from user message:', error);
+      toast.error('Failed to edit message', {
+        description: getErrorMessage(error),
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <>
+      <UserMessageItem content={content} editDisabled={false} onEdit={handleEdit} />
+      <EditRollbackConfirmDialog
+        open={pendingText !== null}
+        submitting={submitting}
+        onOpenChange={(open) => {
+          if (!open && !submitting) {
+            setPendingText(null);
+          }
+        }}
+        onConfirm={() => {
+          void handleConfirmEdit();
+        }}
+      />
+    </>
   );
 };

@@ -176,6 +176,7 @@ pub async fn connect_codex(event_sink: Arc<dyn EventSink>) -> Result<Arc<CodexAp
                                     | "item/reasoning/summaryTextDelta"
                                     | "thread/tokenUsage/updated"
                                     | "account/rateLimits/updated"
+                                    | "item/plan/delta"
                             ) {
                                 log::info!(
                                     "codex:notification: {}",

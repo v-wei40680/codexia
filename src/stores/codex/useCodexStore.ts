@@ -2,6 +2,86 @@ import { create } from 'zustand';
 import type { ServerNotification } from '@/bindings';
 import type { ThreadListItem } from '@/types/codex/ThreadListItem';
 
+type DeltaMethod =
+  | 'item/agentMessage/delta'
+  | 'item/plan/delta'
+  | 'item/reasoning/textDelta'
+  | 'item/reasoning/summaryTextDelta';
+
+type DeltaEvent = Extract<ServerNotification, { method: DeltaMethod }>;
+
+const isDeltaEvent = (event: ServerNotification): event is DeltaEvent =>
+  event.method === 'item/agentMessage/delta' ||
+  event.method === 'item/plan/delta' ||
+  event.method === 'item/reasoning/textDelta' ||
+  event.method === 'item/reasoning/summaryTextDelta';
+
+const canCompactDeltaEvents = (previous: DeltaEvent, incoming: DeltaEvent): boolean => {
+  if (previous.method !== incoming.method) {
+    return false;
+  }
+
+  switch (incoming.method) {
+    case 'item/agentMessage/delta':
+    case 'item/plan/delta':
+      return (
+        previous.params.threadId === incoming.params.threadId &&
+        previous.params.turnId === incoming.params.turnId &&
+        previous.params.itemId === incoming.params.itemId
+      );
+    case 'item/reasoning/textDelta':
+      const previousReasoning = previous as Extract<DeltaEvent, { method: 'item/reasoning/textDelta' }>;
+      const incomingReasoning = incoming as Extract<DeltaEvent, { method: 'item/reasoning/textDelta' }>;
+      return (
+        previousReasoning.params.threadId === incomingReasoning.params.threadId &&
+        previousReasoning.params.turnId === incomingReasoning.params.turnId &&
+        previousReasoning.params.itemId === incomingReasoning.params.itemId &&
+        previousReasoning.params.contentIndex === incomingReasoning.params.contentIndex
+      );
+    case 'item/reasoning/summaryTextDelta':
+      const previousSummary = previous as Extract<
+        DeltaEvent,
+        { method: 'item/reasoning/summaryTextDelta' }
+      >;
+      const incomingSummary = incoming as Extract<
+        DeltaEvent,
+        { method: 'item/reasoning/summaryTextDelta' }
+      >;
+      return (
+        previousSummary.params.threadId === incomingSummary.params.threadId &&
+        previousSummary.params.turnId === incomingSummary.params.turnId &&
+        previousSummary.params.itemId === incomingSummary.params.itemId &&
+        previousSummary.params.summaryIndex === incomingSummary.params.summaryIndex
+      );
+    default:
+      return true;
+  }
+};
+
+const compactDeltaEvents = (
+  events: ServerNotification[],
+  incoming: ServerNotification
+): ServerNotification[] => {
+  const previous = events[events.length - 1];
+  if (!previous || !isDeltaEvent(previous) || !isDeltaEvent(incoming)) {
+    return [...events, incoming];
+  }
+
+  if (!canCompactDeltaEvents(previous, incoming)) {
+    return [...events, incoming];
+  }
+
+  const compacted = {
+    ...incoming,
+    params: {
+      ...incoming.params,
+      delta: `${previous.params.delta}${incoming.params.delta}`,
+    },
+  } as ServerNotification;
+
+  return [...events.slice(0, -1), compacted];
+};
+
 interface CodexStore {
   // State
   threads: ThreadListItem[];
@@ -73,9 +153,11 @@ export const useCodexStore = create<CodexStore>((set) => ({
         });
       }
 
+      const compactedEvents = compactDeltaEvents(filteredEvents, event);
+
       const newEvents = {
         ...state.events,
-        [threadId]: [...filteredEvents, event],
+        [threadId]: compactedEvents,
       };
 
       return {

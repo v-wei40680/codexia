@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, type ReactNode } from 'react';
 import { useCodexStore } from '@/stores/codex';
 import { useInputStore } from '@/stores';
 import { codexService } from '@/services/codexService';
@@ -10,7 +10,6 @@ import { Markdown } from '@/components/Markdown';
 import { Composer } from './Composer';
 import { Tips } from '@/components/Tips';
 import { CodexAuth } from './CodexAuth';
-import type { ServerNotification } from '@/bindings';
 import { useSettingsStore } from '@/stores/settings';
 import { Quotes } from '../features/Quotes';
 import { toast } from '@/components/ui/use-toast';
@@ -90,9 +89,8 @@ export function ChatInterface() {
   const renderedEvents: Array<{
     key: string;
     type: 'event' | 'reasoningSummaryDelta';
-    event?: ServerNotification;
+    content?: ReactNode;
     text?: string;
-    sourceIndex?: number;
   }> = [];
   let pendingSummary: {
     key: string;
@@ -100,6 +98,10 @@ export function ChatInterface() {
     itemId: string;
     summaryIndex: number;
   } | null = null;
+  const seenAgentMessageDeltaItemIds = new Set<string>();
+  const seenPlanDeltaItemIds = new Set<string>();
+  const seenReasoningTextDeltaItemIds = new Set<string>();
+  const seenReasoningSummaryDeltaItemIds = new Set<string>();
 
   const flushPendingSummary = () => {
     if (pendingSummary) {
@@ -123,7 +125,16 @@ export function ChatInterface() {
   };
 
   currentThreadEvents.forEach((event, index) => {
+    if (event.method === 'item/agentMessage/delta') {
+      seenAgentMessageDeltaItemIds.add(event.params.itemId);
+    } else if (event.method === 'item/plan/delta') {
+      seenPlanDeltaItemIds.add(event.params.itemId);
+    } else if (event.method === 'item/reasoning/textDelta') {
+      seenReasoningTextDeltaItemIds.add(event.params.itemId);
+    }
+
     if (event.method === 'item/reasoning/summaryTextDelta') {
+      seenReasoningSummaryDeltaItemIds.add(event.params.itemId);
       if (!event.params.delta) return;
       const eventKey = `${event.params.itemId}-${event.params.summaryIndex}`;
       if (
@@ -144,12 +155,43 @@ export function ChatInterface() {
       return;
     }
 
+    if (event.method === 'item/completed') {
+      const completedItem = event.params.item;
+
+      if (
+        completedItem.type === 'agentMessage' &&
+        seenAgentMessageDeltaItemIds.has(completedItem.id)
+      ) {
+        return;
+      }
+
+      if (completedItem.type === 'plan' && seenPlanDeltaItemIds.has(completedItem.id)) {
+        return;
+      }
+
+      if (completedItem.type === 'reasoning') {
+        const hasReasoningTextDelta = seenReasoningTextDeltaItemIds.has(completedItem.id);
+        const hasVisibleReasoningSummaryDelta =
+          taskDetail !== 'steps' && seenReasoningSummaryDeltaItemIds.has(completedItem.id);
+
+        if (hasReasoningTextDelta || hasVisibleReasoningSummaryDelta) {
+          return;
+        }
+      }
+    }
+
     flushPendingSummary();
+    const rendered = renderEvent(event, {
+      events: currentThreadEvents,
+      eventIndex: index,
+    });
+    if (rendered === null) {
+      return;
+    }
     renderedEvents.push({
       key: `event-${index}`,
       type: 'event',
-      event,
-      sourceIndex: index,
+      content: rendered,
     });
   });
   flushPendingSummary();
@@ -166,12 +208,7 @@ export function ChatInterface() {
                   {taskDetail !== 'steps' && <Markdown value={entry.text ?? ''} inline />}
                 </div>
               ) : (
-                <div key={entry.key}>
-                  {renderEvent(entry.event as ServerNotification, {
-                    events: currentThreadEvents,
-                    eventIndex: entry.sourceIndex,
-                  })}
-                </div>
+                <div key={entry.key}>{entry.content}</div>
               )
             )}
             <ApprovalItem />
