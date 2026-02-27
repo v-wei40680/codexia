@@ -56,6 +56,7 @@ export function InputArea({
   }, [currentThreadId, inputFocusTrigger]);
 
   useEffect(() => {
+    if (!showFileSearch) return;
     debug('file search visibility changed', {
       showFileSearch,
       fileSearchQuery,
@@ -110,7 +111,6 @@ export function InputArea({
         setShowFileSearch(false);
       }
     } else {
-      debug('close file search due to no @');
       setShowFileSearch(false);
     }
   };
