@@ -45,8 +45,6 @@ export function UISettings() {
     setShowHeaderFilesButton,
     showHeaderDiffButton,
     setShowHeaderDiffButton,
-    showHeaderRightPanelToggle,
-    setShowHeaderRightPanelToggle,
   } = useSettingsStore();
 
   return (
@@ -104,13 +102,6 @@ export function UISettings() {
             checked={showHeaderDiffButton}
             onCheckedChange={setShowHeaderDiffButton}
             ariaLabel="Toggle header diff button visibility"
-          />
-          <SettingRow
-            title="Right panel button"
-            description="Show or hide the right panel toggle button in the main header."
-            checked={showHeaderRightPanelToggle}
-            onCheckedChange={setShowHeaderRightPanelToggle}
-            ariaLabel="Toggle header right panel button visibility"
           />
         </CardContent>
       </Card>

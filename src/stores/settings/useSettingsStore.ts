@@ -36,8 +36,6 @@ export interface SettingState {
   setShowHeaderFilesButton: (show: boolean) => void;
   showHeaderDiffButton: boolean;
   setShowHeaderDiffButton: (show: boolean) => void;
-  showHeaderRightPanelToggle: boolean;
-  setShowHeaderRightPanelToggle: (show: boolean) => void;
 }
 
 type LegacySettingState = {
@@ -107,8 +105,6 @@ export const useSettingsStore = create<SettingState>()(
       setShowHeaderFilesButton: (show: boolean) => set({ showHeaderFilesButton: show }),
       showHeaderDiffButton: true,
       setShowHeaderDiffButton: (show: boolean) => set({ showHeaderDiffButton: show }),
-      showHeaderRightPanelToggle: true,
-      setShowHeaderRightPanelToggle: (show: boolean) => set({ showHeaderRightPanelToggle: show }),
     }),
     {
       name: 'settings-storage',

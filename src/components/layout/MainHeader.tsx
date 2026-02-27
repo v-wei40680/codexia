@@ -36,7 +36,6 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
     showHeaderNotesButton,
     showHeaderFilesButton,
     showHeaderDiffButton,
-    showHeaderRightPanelToggle,
   } = useSettingsStore();
   const { handleNewSession } = useCCSessionManager();
   const { currentThreadId, activeThreadIds } = useCodexStore();
@@ -170,16 +169,14 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
               <GitStatsIndicator />
             </Button>
           )}
-          {showHeaderRightPanelToggle && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleRightPanel}
-              title={isRightPanelOpen ? 'Hide right panel' : 'Show right panel'}
-            >
-              <PanelRight />
-            </Button>
-          )}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleRightPanel}
+            title={isRightPanelOpen ? 'Hide right panel' : 'Show right panel'}
+          >
+            <PanelRight />
+          </Button>
         </span>
       </div>
     </div>
