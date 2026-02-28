@@ -22,6 +22,8 @@ export interface SettingState {
   setEnableTaskCompleteBeep: (mode: TaskCompleteBeepMode) => void;
   preventSleepDuringTasks: boolean;
   setPreventSleepDuringTasks: (enabled: boolean) => void;
+  showReasoning: boolean;
+  setShowReasoning: (enabled: boolean) => void;
   enabledQuoteCategories: string[];
   setEnabledQuoteCategories: (categories: string[]) => void;
   showSidebarMarketplace: boolean;
@@ -77,6 +79,7 @@ export const useSettingsStore = create<SettingState>()(
       autoCommitGitWorktree: true,
       enableTaskCompleteBeep: 'always',
       preventSleepDuringTasks: true,
+      showReasoning: true,
       enabledQuoteCategories: [
         'economics',
         'gfw',
@@ -91,6 +94,7 @@ export const useSettingsStore = create<SettingState>()(
       setEnableTaskCompleteBeep: (mode: TaskCompleteBeepMode) =>
         set({ enableTaskCompleteBeep: mode }),
       setPreventSleepDuringTasks: (enabled: boolean) => set({ preventSleepDuringTasks: enabled }),
+      setShowReasoning: (enabled: boolean) => set({ showReasoning: enabled }),
       setEnabledQuoteCategories: (categories: string[]) =>
         set({ enabledQuoteCategories: categories }),
       showSidebarMarketplace: true,

@@ -22,7 +22,7 @@ import { CircleHelp, Lightbulb } from 'lucide-react';
 export function ChatInterface() {
   const { currentThreadId, currentTurnId, events, inputFocusTrigger, hasAccount } = useCodexStore();
   const { setInputValue } = useInputStore();
-  const { taskDetail } = useSettingsStore();
+  const { taskDetail, showReasoning } = useSettingsStore();
   const { projects } = useWorkspaceStore();
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
   const [showQuotes, setShowQuotes] = useState(true);
@@ -97,6 +97,16 @@ export function ChatInterface() {
   };
 
   currentThreadEvents.forEach((event, index) => {
+    if (!showReasoning) {
+      if (
+        event.method === 'item/reasoning/textDelta' ||
+        event.method === 'item/reasoning/summaryTextDelta' ||
+        (event.method === 'item/completed' && event.params.item.type === 'reasoning')
+      ) {
+        return;
+      }
+    }
+
     if (event.method === 'item/agentMessage/delta') {
       seenAgentMessageDeltaItemIds.add(event.params.itemId);
     } else if (event.method === 'item/plan/delta') {
@@ -144,7 +154,9 @@ export function ChatInterface() {
       if (completedItem.type === 'reasoning') {
         const hasReasoningTextDelta = seenReasoningTextDeltaItemIds.has(completedItem.id);
         const hasVisibleReasoningSummaryDelta =
-          taskDetail !== 'steps' && seenReasoningSummaryDeltaItemIds.has(completedItem.id);
+          showReasoning &&
+          taskDetail !== 'steps' &&
+          seenReasoningSummaryDeltaItemIds.has(completedItem.id);
 
         if (hasReasoningTextDelta || hasVisibleReasoningSummaryDelta) {
           return;
@@ -177,7 +189,9 @@ export function ChatInterface() {
             {renderedEvents.map((entry) =>
               entry.type === 'reasoningSummaryDelta' ? (
                 <div key={entry.key} className="inline">
-                  {taskDetail !== 'steps' && <Markdown value={entry.text ?? ''} inline />}
+                  {showReasoning && taskDetail !== 'steps' && (
+                    <Markdown value={entry.text ?? ''} inline />
+                  )}
                 </div>
               ) : (
                 <div key={entry.key}>{entry.content}</div>

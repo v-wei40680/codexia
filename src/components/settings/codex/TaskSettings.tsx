@@ -14,6 +14,8 @@ export function TaskSettings() {
     setEnableTaskCompleteBeep,
     preventSleepDuringTasks,
     setPreventSleepDuringTasks,
+    showReasoning,
+    setShowReasoning,
     taskDetail,
     setTaskDetail,
   } = useSettingsStore();
@@ -72,6 +74,19 @@ export function TaskSettings() {
             <Switch
               checked={preventSleepDuringTasks}
               onCheckedChange={setPreventSleepDuringTasks}
+              className="flex-shrink-0"
+            />
+          </div>
+          <div className="flex items-start justify-between gap-2 sm:gap-4 rounded-md border p-3 sm:p-4">
+            <div className="flex-1 min-w-0">
+              <p className="text-xs sm:text-sm font-medium">Show reasoning</p>
+              <p className="text-xs text-muted-foreground">
+                Display agent reasoning events and reasoning summaries in the chat timeline.
+              </p>
+            </div>
+            <Switch
+              checked={showReasoning}
+              onCheckedChange={setShowReasoning}
               className="flex-shrink-0"
             />
           </div>

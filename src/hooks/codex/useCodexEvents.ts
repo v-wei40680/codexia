@@ -32,8 +32,8 @@ export function useCodexEvents(enabled = true) {
   const { addEvent, setHasAccount } = useCodexStore();
   const { addApproval } = useApprovalStore();
   const { addRequest } = useRequestUserInputStore();
+  const { preventSleepDuringTasks, showReasoning } = useSettingsStore();
   const taskCompleteBeepMode = useSettingsStore((state) => state.enableTaskCompleteBeep);
-  const preventSleepDuringTasks = useSettingsStore((state) => state.preventSleepDuringTasks);
   const isChatInterfaceActive = useLayoutStore((state) => state.view === 'codex');
 
   useEffect(() => {
@@ -95,6 +95,15 @@ export function useCodexEvents(enabled = true) {
       }
 
       if (threadId) {
+        const isReasoningEvent =
+          payload.method === 'item/reasoning/textDelta' ||
+          payload.method === 'item/reasoning/summaryTextDelta' ||
+          payload.method === 'item/reasoning/summaryPartAdded' ||
+          (payload.method === 'item/completed' && (payload.params as any)?.item?.type === 'reasoning');
+        if (!showReasoning && isReasoningEvent) {
+          return;
+        }
+
         if (payload.method === 'thread/started' && 'params' in payload && payload.params) {
           const startedThread = (payload.params as any).thread;
           const startedThreadId = startedThread?.id;
@@ -266,6 +275,7 @@ export function useCodexEvents(enabled = true) {
     enabled,
     taskCompleteBeepMode,
     preventSleepDuringTasks,
+    showReasoning,
     isChatInterfaceActive,
   ]);
 }
