@@ -86,12 +86,9 @@ export const useSettingsStore = create<SettingState>()(
       showReasoning: true,
       enabledQuoteCategories: [
         'economics',
-        'gfw',
-        'history',
         'interest',
         'life',
         'management',
-        'politics',
         'programming',
       ],
       setAutoCommitGitWorktree: (enabled: boolean) => set({ autoCommitGitWorktree: enabled }),
