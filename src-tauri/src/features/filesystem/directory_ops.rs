@@ -1,19 +1,14 @@
 use super::file_types::FileEntry;
+use ignore::WalkBuilder;
 use std::fs;
 use std::path::{Path, PathBuf};
-use walkdir::{DirEntry, WalkDir};
 
 fn normalize_name(name: &str) -> String {
-    name.trim_start_matches('.').to_lowercase()
+    name.to_lowercase()
 }
 
-/// Determine if we should skip descending into a directory based on the exclude list.
-fn should_skip_dir(entry: &DirEntry, excluded_names: &std::collections::HashSet<String>) -> bool {
-    if let Some(name) = entry.file_name().to_str() {
-        excluded_names.contains(&normalize_name(name))
-    } else {
-        false
-    }
+fn is_dot_git(name: &str) -> bool {
+    name.eq_ignore_ascii_case(".git")
 }
 
 pub async fn read_directory(path: String) -> Result<Vec<FileEntry>, String> {
@@ -108,18 +103,34 @@ pub async fn search_files(
     let lc_query = query.to_lowercase();
     // Reasonable default limit
     let limit = max_results.unwrap_or(2000);
-    let mut excluded_names = exclude_folders
+    let excluded_names = exclude_folders
         .into_iter()
-        .map(|name| name.trim_start_matches('.').to_lowercase())
+        .map(|name| name.to_lowercase())
         .collect::<std::collections::HashSet<_>>();
-    excluded_names.insert("git".to_string());
 
     let mut results: Vec<FileEntry> = Vec::new();
+    let excluded_names_for_walk = excluded_names.clone();
 
-    let walker = WalkDir::new(&expanded_root)
+    let walker = WalkBuilder::new(&expanded_root)
         .follow_links(false)
-        .into_iter()
-        .filter_entry(|entry| !entry.path_is_symlink() && !should_skip_dir(entry, &excluded_names));
+        .hidden(false)
+        .git_ignore(true)
+        .git_exclude(true)
+        .git_global(true)
+        .parents(true)
+        .filter_entry(move |entry| {
+            if entry.path_is_symlink() {
+                return false;
+            }
+            if let Some(name) = entry.file_name().to_str() {
+                if is_dot_git(name) {
+                    return false;
+                }
+                return !excluded_names_for_walk.contains(&normalize_name(name));
+            }
+            true
+        })
+        .build();
 
     for entry in walker {
         let entry = match entry {
@@ -136,10 +147,13 @@ pub async fn search_files(
         if excluded_names.contains(&normalize_name(file_name)) {
             continue;
         }
+        if is_dot_git(file_name) {
+            continue;
+        }
 
         // Match folders and files by name (case-insensitive)
         if file_name.to_lowercase().contains(&lc_query) {
-            let is_directory = entry.file_type().is_dir();
+            let is_directory = entry.file_type().is_some_and(|file_type| file_type.is_dir());
             let size = if is_directory {
                 None
             } else {
@@ -186,5 +200,118 @@ pub async fn canonicalize_path(path: String) -> Result<String, String> {
     match std::fs::canonicalize(&expanded) {
         Ok(p) => Ok(p.to_string_lossy().to_string()),
         Err(_) => Ok(expanded.to_string_lossy().to_string()),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::search_files;
+    use std::fs;
+
+    #[tokio::test]
+    async fn search_files_respects_gitignore_but_keeps_non_ignored_git_folder() {
+        let temp = tempfile::tempdir().expect("create tempdir");
+        let root = temp.path();
+
+        fs::create_dir_all(root.join("src/components/features/git")).expect("create git feature dir");
+        fs::create_dir_all(root.join("ignored_area")).expect("create ignored dir");
+        fs::create_dir_all(root.join(".git")).expect("create .git dir");
+        fs::write(root.join("src/components/features/git/readme.md"), "ok").expect("write feature file");
+        fs::write(root.join("ignored_area/git-note.txt"), "ignore me").expect("write ignored file");
+        fs::write(root.join(".gitignore"), "ignored_area/\n").expect("write gitignore");
+
+        let results = search_files(
+            root.to_string_lossy().to_string(),
+            "git".to_string(),
+            vec![],
+            Some(100),
+        )
+        .await
+        .expect("search should succeed");
+
+        assert!(
+            results.iter().any(|entry| {
+                entry.is_directory
+                    && entry
+                        .path
+                        .ends_with("src/components/features/git")
+            }),
+            "expected src/components/features/git to be present in search results"
+        );
+        assert!(
+            results
+                .iter()
+                .all(|entry| !entry.path.contains("ignored_area")),
+            "expected paths ignored by .gitignore to be excluded"
+        );
+    }
+
+    #[tokio::test]
+    async fn search_files_applies_frontend_exclude_folders_in_addition_to_gitignore() {
+        let temp = tempfile::tempdir().expect("create tempdir");
+        let root = temp.path();
+
+        fs::create_dir_all(root.join("src/components/features/git")).expect("create kept dir");
+        fs::create_dir_all(root.join("tmp_cache/git_stash")).expect("create excluded dir");
+        fs::create_dir_all(root.join(".git")).expect("create .git dir");
+        fs::write(root.join("src/components/features/git/readme.md"), "ok").expect("write kept file");
+        fs::write(root.join("tmp_cache/git_stash/note.txt"), "skip").expect("write excluded file");
+        fs::write(root.join(".gitignore"), "").expect("write gitignore");
+
+        let results = search_files(
+            root.to_string_lossy().to_string(),
+            "git".to_string(),
+            vec!["tmp_cache".to_string()],
+            Some(100),
+        )
+        .await
+        .expect("search should succeed");
+
+        assert!(
+            results.iter().any(|entry| {
+                entry
+                    .path
+                    .ends_with("src/components/features/git")
+            }),
+            "expected non-excluded git folder to be present"
+        );
+        assert!(
+            results.iter().all(|entry| !entry.path.contains("/tmp_cache/")),
+            "expected frontend excluded folders to be filtered out"
+        );
+    }
+
+    #[tokio::test]
+    async fn search_files_excluding_dot_git_does_not_exclude_git_named_folder() {
+        let temp = tempfile::tempdir().expect("create tempdir");
+        let root = temp.path();
+
+        fs::create_dir_all(root.join(".git")).expect("create .git dir");
+        fs::create_dir_all(root.join("src/components/features/git")).expect("create git feature dir");
+        fs::write(root.join("src/components/features/git/readme.md"), "ok").expect("write feature file");
+        fs::write(root.join(".gitignore"), "").expect("write gitignore");
+
+        let results = search_files(
+            root.to_string_lossy().to_string(),
+            "git".to_string(),
+            vec![".git".to_string()],
+            Some(100),
+        )
+        .await
+        .expect("search should succeed");
+
+        assert!(
+            results.iter().any(|entry| {
+                entry.is_directory
+                    && entry
+                        .path
+                        .ends_with("src/components/features/git")
+            }),
+            "expected src/components/features/git to be present when excluding only .git"
+        );
+        assert!(
+            results.iter().all(|entry| !entry.path.ends_with("/.git")),
+            "expected .git directory to stay excluded"
+        );
     }
 }
