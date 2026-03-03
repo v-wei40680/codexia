@@ -120,6 +120,24 @@ const PlanContentItem = ({ text }: PlanContentItemProps) => {
   );
 };
 
+type CollapsedJsonItemProps = {
+  label: string;
+  value: unknown;
+};
+
+const CollapsedJsonItem = ({ label, value }: CollapsedJsonItemProps) => {
+  return (
+    <details className="overflow-hidden rounded-md border bg-muted/20">
+      <summary className="cursor-pointer px-2 py-1 text-xs font-medium text-muted-foreground">
+        {label}
+      </summary>
+      <pre className="max-h-64 overflow-auto border-t bg-background/80 p-2">
+        <code>{JSON.stringify(value, null, 2)}</code>
+      </pre>
+    </details>
+  );
+};
+
 const getRollbackTurnsForTurn = (
   context: RenderEventContext | undefined,
   turnId: string
@@ -225,10 +243,7 @@ export const renderEvent = (event: ServerNotification, context?: RenderEventCont
           return null;
         default:
           return (
-            <div>
-              <pre>{JSON.stringify(item, null, 2)}</pre>
-              <Badge variant="destructive">{item.type}</Badge>
-            </div>
+            <CollapsedJsonItem label={item.type} value={item} />
           );
       }
     case 'turn/completed':
@@ -290,12 +305,7 @@ export const renderEvent = (event: ServerNotification, context?: RenderEventCont
 
     default:
       return (
-        <>
-          <pre className="max-h-64 overflow-auto">
-            <code>{JSON.stringify(event.params, null, 2)}</code>
-          </pre>
-          <Badge>{event.method}</Badge>
-        </>
+        <CollapsedJsonItem label={event.method} value={event.params} />
       );
   }
 };
