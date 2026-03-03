@@ -121,6 +121,7 @@ export function FileTree({ folder, isTreeVisible, onToggleTree, onFileSelect }: 
   const treeContainerRef = useRef<HTMLDivElement | null>(null);
   const [root, setRoot] = useState<FileNode | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [searchExpanded, setSearchExpanded] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [loadingNodes, setLoadingNodes] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
@@ -206,6 +207,16 @@ export function FileTree({ folder, isTreeVisible, onToggleTree, onFileSelect }: 
   const normalizedFilterText = filterText.trim().toLowerCase();
   const isSearching = normalizedFilterText.length > 0;
 
+  const collectDirPaths = useCallback((node: FileNode): string[] => {
+    if (node.kind !== 'dir') {
+      return [];
+    }
+
+    const childDirs =
+      node.children?.flatMap((child) => collectDirPaths(child)) ?? [];
+    return [node.path, ...childDirs];
+  }, []);
+
   useEffect(() => {
     let isActive = true;
 
@@ -265,8 +276,25 @@ export function FileTree({ folder, isTreeVisible, onToggleTree, onFileSelect }: 
     return buildSearchTree(root, searchMatches);
   }, [isSearching, root, searchMatches]);
 
+  useEffect(() => {
+    if (!isSearching || !displayRoot) {
+      setSearchExpanded(new Set());
+      return;
+    }
+
+    const expandedDirs = new Set<string>();
+    for (const child of displayRoot.children ?? []) {
+      for (const dirPath of collectDirPaths(child)) {
+        expandedDirs.add(dirPath);
+      }
+    }
+
+    setSearchExpanded(expandedDirs);
+  }, [collectDirPaths, displayRoot, isSearching, normalizedFilterText]);
+
   const toggle = (path: string) => {
-    setExpanded((prev) => {
+    const setExpandedState = isSearching ? setSearchExpanded : setExpanded;
+    setExpandedState((prev) => {
       const next = new Set(prev);
       if (next.has(path)) {
         next.delete(path);
@@ -434,7 +462,7 @@ export function FileTree({ folder, isTreeVisible, onToggleTree, onFileSelect }: 
         : node.path;
     const isDir = node.kind === 'dir';
     const isRoot = root?.path === node.path;
-    const isExpanded = isSearching ? true : expanded.has(node.path);
+    const isExpanded = isSearching ? searchExpanded.has(node.path) : expanded.has(node.path);
     const isLoadingChildren = loadingNodes.has(node.path);
     const extension = getExtension(node.name);
     const isSelectedFile = node.kind === 'file' && selectedFilePath === node.path;
