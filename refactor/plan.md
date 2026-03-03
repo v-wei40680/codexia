@@ -95,7 +95,7 @@ Menyelaraskan kode frontend terhadap hasil `generate-ts` terbaru agar strict Typ
 
 ---
 
-## Phase 3 — Mobile UX & Interaction Enhancement (`v0.27.0`, In Progress)
+## Phase 3 — Mobile UX & Interaction Enhancement (`v0.27.0`, Completed)
 
 ### Objective
 
@@ -117,10 +117,16 @@ Meningkatkan kenyamanan pemakaian di device kecil setelah foundation siap.
 - Thread list touch-first actions:
   - tombol pin/archive tetap terlihat di mobile (tidak tergantung hover)
 
-### Remaining Work (Phase 3B)
+### Implemented (Phase 3B)
 
-- Right panel files mode mobile optimization (tree default hidden + reveal action lebih jelas).
-- Settings view mobile single-column navigation polish.
+- Right panel files mode mobile optimization:
+  - file tree default hidden saat mobile
+  - file tree dibuka sebagai overlay panel dengan backdrop close
+  - viewer tetap full-width agar tidak sempit saat tree aktif
+- Settings mobile navigation polish:
+  - mode mobile memakai top bar + section selector
+  - pemilihan section via dropdown (single-column flow)
+  - mempertahankan desktop settings split layout tanpa regresi
 
 ### Success Criteria
 
@@ -155,6 +161,7 @@ Menurunkan technical debt pasca compatibility patch.
 - [x] Generate bindings berhasil
 - [x] TypeScript check (`npx tsc --noEmit`) hijau
 - [x] Phase 3A compile check (`npx tsc --noEmit`) hijau
+- [x] Phase 3B compile check (`npx tsc --noEmit`) hijau
 - [ ] Mobile manual smoke test (390x844)
 - [ ] Tablet smoke test (768x1024)
 - [ ] Desktop regression sanity check

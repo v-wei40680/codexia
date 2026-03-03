@@ -45,18 +45,20 @@ Semua perubahan di dokumen ini mengikuti semantic versioning.
 
 ---
 
-## [0.27.0] - In Progress
+## [0.27.0] - 2026-03-03
 
 ### Added
 
 - Mobile composer compact behavior (control wrapping dan compact sizing).
 - Adaptive terminal height strategy untuk mobile viewport.
+- Settings mobile single-column navigation via section selector.
 
 ### Changed
 
 - Input area mobile menambahkan safe-area bottom padding dan tuning tinggi textarea.
 - Tombol send/stop di composer dibuat lebih besar pada mobile.
 - Thread list actions (pin/archive) dibuat visible pada mobile tanpa hover.
+- Right panel files mode mobile diubah ke overlay tree + backdrop dismiss.
 
 ### Validation
 
@@ -69,6 +71,5 @@ Semua perubahan di dokumen ini mengikuti semantic versioning.
 ### Planned
 
 - Mobile UX enhancement wave:
-  - Settings mobile navigation polishing
-  - Right panel files mobile optimization
   - Additional touch accessibility pass
+  - Interaction micro-polish untuk tablet landscape
