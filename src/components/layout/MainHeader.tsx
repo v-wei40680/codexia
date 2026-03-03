@@ -18,6 +18,10 @@ type MainHeaderProps = {
 };
 
 export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps) {
+  const requestFocusCCInput = () => {
+    window.dispatchEvent(new Event('cc-input-focus-request'));
+  };
+
   const {
     isRightPanelOpen,
     toggleRightPanel,
@@ -62,6 +66,7 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
     if (selectedAgent === 'cc') {
       setView('cc');
       await handleNewSession();
+      requestFocusCCInput();
       return;
     }
     await codexService.setCurrentThread(null);

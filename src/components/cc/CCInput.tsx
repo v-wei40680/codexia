@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -15,6 +15,8 @@ import { FolderSelectorCompact } from '@/components/features/dxt/FolderSelectorC
 import { useCCStore, ModelType } from '@/stores/ccStore';
 import { ccGetInstalledSkills } from '@/services';
 
+const CC_INPUT_FOCUS_EVENT = 'cc-input-focus-request';
+
 interface CCInputProps {
   input: string;
   setInput: (value: string | ((prev: string) => string)) => void;
@@ -27,6 +29,7 @@ export function CCInput({ input, setInput, onSendMessage, onInterrupt }: CCInput
     useCCStore();
   const [showCommands, setShowCommands] = useState(false);
   const [installedSkills, setInstalledSkills] = useState<string[]>([]);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     const loadSkills = async () => {
@@ -40,6 +43,19 @@ export function CCInput({ input, setInput, onSendMessage, onInterrupt }: CCInput
     loadSkills();
   }, []);
 
+  useEffect(() => {
+    const handleFocusRequest = () => {
+      requestAnimationFrame(() => {
+        textareaRef.current?.focus();
+      });
+    };
+
+    window.addEventListener(CC_INPUT_FOCUS_EVENT, handleFocusRequest);
+    return () => {
+      window.removeEventListener(CC_INPUT_FOCUS_EVENT, handleFocusRequest);
+    };
+  }, []);
+
   const handleInsertCommand = (skillName: string) => {
     setInput(`/${skillName} `);
     setShowCommands(false);
@@ -50,6 +66,7 @@ export function CCInput({ input, setInput, onSendMessage, onInterrupt }: CCInput
       <div className="shrink-0 flex flex-col gap-2 p-2 border-t bg-background">
         <div className="relative group">
           <Textarea
+            ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {

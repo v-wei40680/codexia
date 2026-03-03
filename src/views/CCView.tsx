@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { useCCStore, CCMessage as CCMessageType } from '@/stores/ccStore';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { useCCSessionManager } from '@/hooks/useCCSessionManager';
 import { CCInput } from '@/components/cc/CCInput';
 import { CCScrollControls } from '@/components/cc/CCScrollControls';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
+import { useCCInputStore } from '@/stores/useCCInputStore';
 import { ccInterrupt, ccSendMessage } from '@/services';
 
 export default function CCView() {
@@ -29,10 +30,22 @@ export default function CCView() {
     clearMessages,
   } = useCCStore();
   const { cwd } = useWorkspaceStore();
+  const { inputValue: input, setInputValue } = useCCInputStore();
 
   const { handleNewSession } = useCCSessionManager();
-  const [input, setInput] = useState('');
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+
+  const setInput = useCallback(
+    (value: string | ((prev: string) => string)) => {
+      if (typeof value === 'function') {
+        const nextValue = value(useCCInputStore.getState().inputValue);
+        setInputValue(nextValue);
+        return;
+      }
+      setInputValue(value);
+    },
+    [setInputValue]
+  );
 
   // Reset transient UI state when directory changes, but keep selected session.
   useEffect(() => {

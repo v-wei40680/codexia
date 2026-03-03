@@ -42,6 +42,10 @@ import { useCCStore } from '@/stores/ccStore';
 import { isTauri } from '@/hooks/runtime';
 
 export function SideBar() {
+  const requestFocusCCInput = () => {
+    window.dispatchEvent(new Event('cc-input-focus-request'));
+  };
+
   const {
     cwd,
     setCwd,
@@ -147,10 +151,20 @@ export function SideBar() {
       setActiveSidebarTab('cc');
       setView('cc');
       await handleNewSession();
+      requestFocusCCInput();
       return;
     }
     await handleNewThread();
-  }, [cwd, handleNewSession, handleNewThread, selectedAgent, setActiveSidebarTab, setCwd, setView]);
+  }, [
+    cwd,
+    handleNewSession,
+    handleNewThread,
+    requestFocusCCInput,
+    selectedAgent,
+    setActiveSidebarTab,
+    setCwd,
+    setView,
+  ]);
 
   const handleAddProject = useCallback(async () => {
     const projectPath = await open({
@@ -476,6 +490,7 @@ export function SideBar() {
                           setView('cc');
                           setCwd(project);
                           await handleNewSession();
+                          requestFocusCCInput();
                         }}
                         className="shrink-0"
                       >
