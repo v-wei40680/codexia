@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import type { ThreadListItem } from '@/types/codex/ThreadListItem';
-import type { ThreadListParams } from '@/bindings/v2';
 import { threadListArchived, threadUnarchive } from '@/services/tauri';
 import { ThreadId } from '@/bindings';
 import { getFilename } from '@/utils/getFilename';
@@ -17,7 +16,7 @@ export function ArchivedThreadSettings() {
     setIsLoading(true);
     setError(null);
     try {
-      const params: ThreadListParams = {
+      const params = {
         cursor: null,
         limit: 50,
         modelProviders: null,

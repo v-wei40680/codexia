@@ -40,6 +40,7 @@ import { getFilename } from '@/utils/getFilename';
 import { getSessions, SessionData } from '@/lib/sessions';
 import { useCCStore } from '@/stores/ccStore';
 import { isTauri } from '@/hooks/runtime';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export function SideBar() {
   const requestFocusCCInput = () => {
@@ -70,6 +71,7 @@ export function SideBar() {
   const { activeSessionId } = useCCStore();
   const { showSidebarMarketplace } = useSettingsStore();
   const { hasUpdate, startUpdate } = useUpdater({ enabled: true });
+  const isMobile = useIsMobile();
   const [expandedProjects, setExpandedProjects] = useState<Record<string, boolean>>({});
   const [ccSessions, setCcSessions] = useState<SessionData[]>([]);
   const [ccLoading, setCcLoading] = useState(false);
@@ -222,7 +224,10 @@ export function SideBar() {
   return (
     <div className="flex h-full w-[var(--sidebar-width)] min-w-[var(--sidebar-width)] max-w-[var(--sidebar-width)] flex-col border-r border-sidebar-border bg-zinc-100/95 dark:bg-zinc-900/95">
       <div className="gap-1 p-2 flex flex-col">
-        <div className="flex items-center gap-2 pl-20" data-tauri-drag-region>
+        <div
+          className={`flex items-center gap-2 ${isTauri() && !isMobile ? 'pl-20' : 'pl-2'}`}
+          data-tauri-drag-region
+        >
           <Button
             variant="ghost"
             size="icon"

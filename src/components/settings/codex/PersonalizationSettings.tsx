@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { Personality } from '@/bindings';
-import { useConfigStore } from '@/stores/codex';
+import { useConfigStore, type Personality } from '@/stores/codex';
 import { Card, CardContent } from '@/components/ui/card';
 import {
   Select,

@@ -18,6 +18,7 @@ import { BottomTerminal } from '@/components/terminal/BottomTerminal';
 import { LearnView } from '@/views/LearnView';
 import { Button } from '@/components/ui/button';
 import { PanelLeft } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export function AppLayout() {
   const MIN_SIDEBAR_WIDTH = 220;
@@ -41,6 +42,8 @@ export function AppLayout() {
   const [sidebarWidth, setSidebarWidth] = useState(320);
   const [layoutWidth, setLayoutWidth] = useState(0);
   const [isTerminalOpen, setIsTerminalOpen] = useState(false);
+  const isMobile = useIsMobile();
+  const hasInitializedMobileLayoutRef = useRef(false);
 
   const clamp = (value: number, min: number, max: number) => Math.min(Math.max(value, min), max);
   const getMinSidebarPercent = (width: number) =>
@@ -75,6 +78,10 @@ export function AppLayout() {
   }, [view]);
 
   useEffect(() => {
+    if (isMobile) {
+      return;
+    }
+
     const panel = rightPanelRef.current;
     if (!panel) {
       return;
@@ -90,9 +97,13 @@ export function AppLayout() {
     } else {
       panel.collapse();
     }
-  }, [isRightPanelOpen, rightPanelSize, setRightPanelSize]);
+  }, [isMobile, isRightPanelOpen, rightPanelSize, setRightPanelSize]);
 
   useEffect(() => {
+    if (isMobile) {
+      return;
+    }
+
     const panel = sidebarPanelRef.current;
     if (!panel) {
       return;
@@ -102,9 +113,13 @@ export function AppLayout() {
     } else {
       panel.collapse();
     }
-  }, [isSidebarOpen]);
+  }, [isMobile, isSidebarOpen]);
 
   useEffect(() => {
+    if (isMobile) {
+      return;
+    }
+
     const node = layoutRef.current;
     if (!node) {
       return;
@@ -124,7 +139,26 @@ export function AppLayout() {
     const observer = new ResizeObserver(updateWidth);
     observer.observe(node);
     return () => observer.disconnect();
-  }, [isSidebarOpen, sidebarWidth]);
+  }, [isMobile, isSidebarOpen, sidebarWidth]);
+
+  useEffect(() => {
+    if (!isMobile) {
+      hasInitializedMobileLayoutRef.current = false;
+      return;
+    }
+
+    if (hasInitializedMobileLayoutRef.current) {
+      return;
+    }
+
+    hasInitializedMobileLayoutRef.current = true;
+    if (isSidebarOpen) {
+      setSidebarOpen(false);
+    }
+    if (isRightPanelOpen) {
+      setRightPanelOpen(false);
+    }
+  }, [isMobile, isRightPanelOpen, isSidebarOpen, setRightPanelOpen, setSidebarOpen]);
 
   const handleSidebarResize = (size: number) => {
     const node = layoutRef.current;
@@ -150,10 +184,90 @@ export function AppLayout() {
   };
   const showMainHeader = view === 'codex' || view === 'cc' || view === 'history';
 
+  const activeView = (
+    <>
+      {view === 'agents' && <AgentsView />}
+      {view === 'automations' && <AutoMationsView />}
+      {view === 'codex' && <ChatInterface />}
+      {view === 'history' && <History />}
+      {view === 'learn' && <LearnView />}
+      {view === 'login' && <LoginView />}
+      {view === 'marketplace' && <MarketplaceView />}
+      {view === 'usage' && <UsageView />}
+      {view === 'cc' && <CCView />}
+    </>
+  );
+
+  const mainContent = (
+    <div className="flex flex-col min-w-0 h-full">
+      <div className="min-h-0 flex-1">{activeView}</div>
+      {(view === 'codex' || view === 'cc') && (
+        <BottomTerminal open={isTerminalOpen} onOpenChange={setIsTerminalOpen} />
+      )}
+    </div>
+  );
+
   return (
-    <div ref={layoutRef} className="h-screen w-screen overflow-x-hidden">
+    <div ref={layoutRef} className="h-[100dvh] w-full overflow-hidden">
       {view === 'settings' ? (
         <SettingsView />
+      ) : isMobile ? (
+        <div className="relative h-full w-full bg-background">
+          <div className="flex h-full w-full flex-col min-h-0 min-w-0">
+            {showMainHeader ? (
+              <MainHeader
+                isTerminalOpen={isTerminalOpen}
+                onToggleTerminal={() => setIsTerminalOpen((prev) => !prev)}
+              />
+            ) : (
+              !isSidebarOpen && (
+                <div className="absolute left-0 top-0 z-20 flex h-11 items-center pl-2">
+                  <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
+                    <PanelLeft />
+                  </Button>
+                </div>
+              )
+            )}
+            <main className="bg-background relative flex min-h-0 min-w-0 flex-1 flex-col">
+              {mainContent}
+            </main>
+          </div>
+
+          {isSidebarOpen && (
+            <>
+              <button
+                type="button"
+                className="absolute inset-0 z-30 bg-black/50"
+                aria-label="Close sidebar"
+                onClick={() => setSidebarOpen(false)}
+              />
+              <div
+                className="absolute inset-y-0 left-0 z-40"
+                style={
+                  {
+                    '--sidebar-width': 'min(85vw, 320px)',
+                  } as React.CSSProperties
+                }
+              >
+                <SideBar />
+              </div>
+            </>
+          )}
+
+          {isRightPanelOpen && (
+            <>
+              <button
+                type="button"
+                className="absolute inset-0 z-30 bg-black/40"
+                aria-label="Close right panel"
+                onClick={() => setRightPanelOpen(false)}
+              />
+              <div className="absolute inset-y-0 right-0 z-40 w-[min(92vw,420px)]">
+                <RightPanel />
+              </div>
+            </>
+          )}
+        </div>
       ) : (
         <div
           className="h-full w-full"
@@ -204,22 +318,7 @@ export function AppLayout() {
                   className="flex min-h-0 min-w-0 w-full flex-1"
                 >
                   <ResizablePanel defaultSize={isRightPanelOpen ? 32 : 100} minSize={25}>
-                    <div className="flex flex-col min-w-0 h-full">
-                      <div className="min-h-0 flex-1">
-                        {view === 'agents' && <AgentsView />}
-                        {view === 'automations' && <AutoMationsView />}
-                        {view === 'codex' && <ChatInterface />}
-                        {view === 'history' && <History />}
-                        {view === 'learn' && <LearnView />}
-                        {view === 'login' && <LoginView />}
-                        {view === 'marketplace' && <MarketplaceView />}
-                        {view === 'usage' && <UsageView />}
-                        {view === 'cc' && <CCView />}
-                      </div>
-                      {(view === 'codex' || view === 'cc') && (
-                        <BottomTerminal open={isTerminalOpen} onOpenChange={setIsTerminalOpen} />
-                      )}
-                    </div>
+                    {mainContent}
                   </ResizablePanel>
                   <ResizableHandle withHandle />
                   <ResizablePanel

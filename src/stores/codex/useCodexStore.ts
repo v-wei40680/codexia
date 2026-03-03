@@ -4,7 +4,6 @@ import type { ThreadListItem } from '@/types/codex/ThreadListItem';
 
 type DeltaMethod =
   | 'item/agentMessage/delta'
-  | 'item/plan/delta'
   | 'item/reasoning/textDelta'
   | 'item/reasoning/summaryTextDelta';
 
@@ -12,7 +11,6 @@ type DeltaEvent = Extract<ServerNotification, { method: DeltaMethod }>;
 
 const isDeltaEvent = (event: ServerNotification): event is DeltaEvent =>
   event.method === 'item/agentMessage/delta' ||
-  event.method === 'item/plan/delta' ||
   event.method === 'item/reasoning/textDelta' ||
   event.method === 'item/reasoning/summaryTextDelta';
 
@@ -23,7 +21,6 @@ const canCompactDeltaEvents = (previous: DeltaEvent, incoming: DeltaEvent): bool
 
   switch (incoming.method) {
     case 'item/agentMessage/delta':
-    case 'item/plan/delta':
       return (
         previous.params.threadId === incoming.params.threadId &&
         previous.params.turnId === incoming.params.turnId &&

@@ -6,7 +6,6 @@ import { useThreadFilter } from '@/hooks/codex/useThreadFilter';
 import { codexService } from '@/services/codexService';
 import { useCodexStore, useThreadListStore } from '@/stores/codex';
 import { deleteFile, readSessionMetaFile, threadList, writeSessionMetaFile } from '@/services/tauri';
-import type { ThreadListParams } from '@/bindings/v2';
 import { isTauri } from '@/hooks/runtime';
 import {
   Dialog,
@@ -119,7 +118,7 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
 
     const loadScopedThreads = async () => {
       try {
-        const params: ThreadListParams = {
+        const params = {
           cursor: null,
           limit: 3,
           modelProviders: null,
@@ -247,7 +246,7 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
     async (threadId: string) => {
       await codexService.archiveThread(threadId);
       if (isProjectScoped) {
-        const params: ThreadListParams = {
+        const params = {
           cursor: null,
           limit: 20,
           modelProviders: null,
@@ -300,7 +299,7 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
       }
 
       if (isProjectScoped) {
-        const params: ThreadListParams = {
+        const params = {
           cursor: null,
           limit: 20,
           modelProviders: null,
@@ -338,7 +337,7 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
     setIsLoadingMore(true);
     try {
       if (isProjectScoped) {
-        const params: ThreadListParams = {
+        const params = {
           cursor: nextCursor,
           limit: 20,
           modelProviders: null,

@@ -20,6 +20,8 @@ import { QuoteSettings } from './QuoteSettings';
 import { ProjectsSettings } from './ProjectsSettings';
 import { RateLimitSettings, TaskSettings } from './codex';
 import { UISettings } from './UISettings';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { isTauri } from '@/hooks/runtime';
 
 type SettingsSection =
   | 'general'
@@ -51,6 +53,7 @@ const sectionLabel: Record<SettingsSection, string> = {
 
 export function SettingsView() {
   const { setView } = useLayoutStore();
+  const isMobile = useIsMobile();
   const [activeSection, setActiveSection] = useState<SettingsSection>('general');
   const [codexOpen, setCodexOpen] = useState(true);
 
@@ -67,7 +70,10 @@ export function SettingsView() {
     >
       <Sidebar collapsible="none">
         <SidebarHeader className="gap-2 p-2">
-          <div className="flex items-center pl-20" data-tauri-drag-region>
+          <div
+            className={`flex items-center ${isTauri() && !isMobile ? 'pl-20' : 'pl-2'}`}
+            data-tauri-drag-region
+          >
             <Button
               variant="ghost"
               size="sm"

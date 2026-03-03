@@ -1,7 +1,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { SandboxMode, AskForApproval } from '@/bindings/v2';
-import type { ReasoningEffort, Personality, ModeKind } from '@/bindings';
+import type { ReasoningEffort } from '@/bindings';
+
+export type Personality = 'friendly' | 'pragmatic';
+export type ModeKind = 'default' | 'plan';
 
 export type ThreadCwdMode = 'local' | 'worktree';
 

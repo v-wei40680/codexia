@@ -4,7 +4,6 @@ import type { ServerNotification } from '@/bindings';
 import { Markdown } from '@/components/Markdown';
 import { Brain } from 'lucide-react';
 import { TurnPlan } from './TurnPlan';
-import { PlanContentItem } from './PlanContentItem';
 import { EditableUserMessageItem } from './UserMessageItem';
 import { AgentMessageItem } from './AgentMessageItem';
 import { CommandActionItem } from './CommandActionItem';
@@ -134,8 +133,6 @@ export const renderEvent = (event: ServerNotification, context?: RenderEventCont
           return null;
         case 'fileChange':
           return renderFileChanges(item.changes);
-        case 'plan':
-          return <PlanContentItem text={item.text} />
         case 'enteredReviewMode':
         case 'exitedReviewMode':
           return null;
@@ -174,8 +171,6 @@ export const renderEvent = (event: ServerNotification, context?: RenderEventCont
       return <TurnPlan plan={event.params.plan} explanation={event.params.explanation} />;
     case 'item/agentMessage/delta':
       return <AgentMessageItem text={event.params.delta} />;
-    case 'item/plan/delta':
-      return <PlanContentItem text={event.params.delta} />;
     case 'item/reasoning/textDelta':
       return (
         <div className="rounded-md border border-muted bg-muted/20 px-2 py-1 text-sm text-muted-foreground">

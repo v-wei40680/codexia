@@ -18,7 +18,6 @@ import type {
   ThreadRollbackResponse,
   ThreadStartParams,
   ThreadStartResponse,
-  ToolRequestUserInputResponse,
   TurnInterruptParams,
   TurnStartParams,
   TurnStartResponse,
@@ -185,7 +184,7 @@ export async function getAccountRateLimits() {
 
 export async function respondToRequestUserInput(
   requestId: RequestId,
-  response: ToolRequestUserInputResponse
+  response: unknown
 ) {
   if (isTauri()) {
     return await invokeTauri('respond_to_request_user_input', { requestId, response });

@@ -1,4 +1,4 @@
-import { CollaborationMode, FuzzyFileSearchParams, ModeKind } from '@/bindings';
+import { FuzzyFileSearchParams } from '@/bindings';
 import {
   threadFork,
   threadRollback,
@@ -25,24 +25,21 @@ import type {
   ReviewStartParams,
   SandboxMode,
   SandboxPolicy,
-  ReadOnlyAccess,
 } from '@/bindings/v2';
 import type { ThreadListItem } from '@/types/codex/ThreadListItem';
-import { useCodexStore, useConfigStore } from '@/stores/codex';
+import { useCodexStore, useConfigStore, type ModeKind } from '@/stores/codex';
 import { useWorkspaceStore } from '@/stores';
 import { convertThreadHistoryToEvents } from '@/utils/threadHistoryConverter';
 import { getErrorMessage } from '@/utils/errorUtils';
 
 const sandboxModeToPolicy = (mode: SandboxMode): SandboxPolicy => {
-  const fullReadOnlyAccess: ReadOnlyAccess = { type: 'fullAccess' };
   switch (mode) {
     case 'read-only':
-      return { type: 'readOnly', access: fullReadOnlyAccess };
+      return { type: 'readOnly' };
     case 'workspace-write':
       return {
         type: 'workspaceWrite',
         writableRoots: [],
-        readOnlyAccess: fullReadOnlyAccess,
         networkAccess: false,
         excludeTmpdirEnvVar: false,
         excludeSlashTmp: false,
@@ -96,11 +93,16 @@ export const codexService = {
         cursor: null,
         limit: 20,
         modelProviders: null,
-        sortKey,
-        archived,
-        sourceKinds: null,
       };
-      const response = await threadList(params, cwd);
+      const response = await threadList(
+        {
+          ...params,
+          sortKey,
+          archived,
+          sourceKinds: null,
+        } as ThreadListParams,
+        cwd
+      );
       console.log('[CodexService] listThreads response:', response);
       const workingDirThreads = response.data.map((t) => codexService.normalizeThreadItem(t));
       const nextCursor =
@@ -127,11 +129,16 @@ export const codexService = {
         cursor: threadListNextCursor,
         limit: 20,
         modelProviders: null,
-        sortKey,
-        archived: false,
-        sourceKinds: null,
       };
-      const response = await threadList(params, cwd);
+      const response = await threadList(
+        {
+          ...params,
+          sortKey,
+          archived: false,
+          sourceKinds: null,
+        } as ThreadListParams,
+        cwd
+      );
       console.log('[CodexService] listThreads (nextCursor) response:', response);
       const workingDirThreads = response.data.map((t) => codexService.normalizeThreadItem(t));
       const nextCursor =
@@ -194,7 +201,7 @@ export const codexService = {
   async threadStart() {
     const set = useCodexStore.setState;
     try {
-      const { model, modelProvider, approvalPolicy, sandbox, reasoningEffort, personality } =
+      const { model, modelProvider, approvalPolicy, sandbox, reasoningEffort } =
         useConfigStore.getState();
       const { threadCwdMode } = useConfigStore.getState();
       const { cwd } = useWorkspaceStore.getState();
@@ -223,10 +230,7 @@ export const codexService = {
           view_image_tool: true,
           'features.multi_agents': true,
         },
-        personality,
-        ephemeral: null,
         experimentalRawEvents: true,
-        persistExtendedHistory: true,
       };
       let response;
       try {
@@ -264,7 +268,6 @@ export const codexService = {
     const set = useCodexStore.setState;
     const { activeThreadIds, events } = useCodexStore.getState();
     try {
-      const { personality } = useConfigStore.getState();
       const resumeCwd = resolveThreadCwd(threadId);
       const response = await threadResume({
         threadId,
@@ -278,8 +281,6 @@ export const codexService = {
         config: null,
         baseInstructions: null,
         developerInstructions: null,
-        personality,
-        persistExtendedHistory: true,
       });
       console.log(response.thread.turns);
 
@@ -335,7 +336,6 @@ export const codexService = {
         },
         baseInstructions: null,
         developerInstructions: null,
-        persistExtendedHistory: true,
       };
       const response = await threadFork(params);
       const forkedThreadId = response.thread.id;
@@ -408,7 +408,7 @@ export const codexService = {
       const userInputs: UserInput[] = [];
 
       if (input.trim()) {
-        userInputs.push({ type: 'text', text: input, text_elements: [] });
+        userInputs.push({ type: 'text', text: input });
       }
 
       for (const imagePath of images) {
@@ -417,19 +417,12 @@ export const codexService = {
 
       // If both are empty? Assuming input area checks this, but if so, send empty text?
       if (userInputs.length === 0) {
-        userInputs.push({ type: 'text', text: '', text_elements: [] });
+        userInputs.push({ type: 'text', text: '' });
       }
 
-      const { model, reasoningEffort, collaborationMode, approvalPolicy, sandbox, personality } =
+      const { model, reasoningEffort, approvalPolicy, sandbox } =
         useConfigStore.getState();
-      const selectedCollaborationMode: CollaborationMode = {
-        mode: collaborationModeOverride ?? collaborationMode,
-        settings: {
-          model,
-          reasoning_effort: reasoningEffort ?? null,
-          developer_instructions: null,
-        },
-      };
+      void collaborationModeOverride;
 
       const response = await turnStart({
         threadId,
@@ -440,9 +433,7 @@ export const codexService = {
         model: model || null,
         effort: reasoningEffort ?? null,
         summary: null,
-        personality,
         outputSchema: null,
-        collaborationMode: selectedCollaborationMode,
       });
 
       set({ currentTurnId: response.turn.id });

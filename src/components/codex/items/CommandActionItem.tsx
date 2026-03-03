@@ -4,17 +4,19 @@ import { getFilename } from '@/utils/getFilename';
 import { ShellCommand } from './ShellCommand';
 
 export const CommandActionItem = ({ action }: { action: CommandAction }) => {
-  const actionTypeMap = {
-    listFiles: 'Listed files',
-    read: 'Read',
-    search: 'Search',
-    unknown: null,
-  };
+  const actionTypeLabel =
+    action.type === 'listFiles'
+      ? 'Listed files'
+      : action.type === 'read'
+        ? 'Read'
+        : action.type === 'search'
+          ? 'Search'
+          : null;
 
   return (
     <div className="space-y-2">
       <div className="flex gap-2 items-center">
-        {actionTypeMap[action.type]}
+        {actionTypeLabel}
         {action.type === 'search' && (
           <>
             <Badge variant="secondary">{action.query}</Badge> in{' '}

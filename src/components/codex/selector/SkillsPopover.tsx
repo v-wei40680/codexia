@@ -7,6 +7,8 @@ import type { SkillsListEntry } from '@/bindings/v2/SkillsListEntry';
 import { Switch } from '@/components/ui/switch';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 
+type SkillWithEnabled = SkillsListEntry['skills'][number] & { enabled?: boolean };
+
 export function SkillsPopover() {
   const { cwd } = useWorkspaceStore();
   const [skillsList, setSkillsList] = useState<SkillsListEntry[]>([]);
@@ -35,7 +37,9 @@ export function SkillsPopover() {
             <div className="grid gap-2">
               {skillsList
                 .flatMap((entry) => entry.skills)
-                .map((skill, i) => (
+                .map((skill, i) => {
+                  const typedSkill = skill as SkillWithEnabled;
+                  return (
                   <div
                     key={`${skill.name}-${i}`}
                     className="flex justify-between gap-2 border-b pb-2 last:border-0 last:pb-0"
@@ -49,7 +53,7 @@ export function SkillsPopover() {
                     <span className="flex gap-2">
                       <div className="text-xs text-muted-foreground">{skill.scope}</div>
                       <Switch
-                        checked={skill.enabled}
+                        checked={typedSkill.enabled ?? false}
                         onCheckedChange={(checked) => {
                           codexService.skillsConfigWrite(skill.path, checked).catch(console.error);
                           setSkillsList((prev) => {
@@ -62,7 +66,7 @@ export function SkillsPopover() {
                                       return {
                                         ...s,
                                         enabled: checked,
-                                      };
+                                      } as SkillWithEnabled;
                                     }
                                     return s;
                                   }),
@@ -75,7 +79,8 @@ export function SkillsPopover() {
                       />
                     </span>
                   </div>
-                ))}
+                  );
+                })}
             </div>
           )}
         </div>
