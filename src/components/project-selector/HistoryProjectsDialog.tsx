@@ -11,14 +11,19 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { codexService } from '@/services/codexService';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
+import { useLayoutStore } from '@/stores/settings/useLayoutStore';
 import { getFilename } from '@/utils/getFilename';
 
 export function HistoryProjectsDialog() {
-  const { projects, historyProjects, setCwd, addProject } = useWorkspaceStore();
+  const { projects, historyProjects, setCwd, addProject, selectedAgent, setSelectedAgent } =
+    useWorkspaceStore();
+  const { setView, setActiveSidebarTab } = useLayoutStore();
   const [open, setOpen] = useState(false);
+  const [continueAgent, setContinueAgent] = useState<'codex' | 'cc'>(selectedAgent);
   const [selectedProjects, setSelectedProjects] = useState<string[]>([]);
   const [isContinuing, setIsContinuing] = useState(false);
 
@@ -47,6 +52,10 @@ export function HistoryProjectsDialog() {
     );
   }, [historyOnlyProjects]);
 
+  useEffect(() => {
+    setContinueAgent(selectedAgent);
+  }, [selectedAgent]);
+
   const toggleSelectedProject = (path: string) => {
     setSelectedProjects((previousProjects) =>
       previousProjects.includes(path)
@@ -74,7 +83,12 @@ export function HistoryProjectsDialog() {
       setIsContinuing(true);
       selectedProjects.forEach((path) => addProject(path));
       setCwd(selectedProjects[0]);
-      await codexService.setCurrentThread(null);
+      setSelectedAgent(continueAgent);
+      setActiveSidebarTab(continueAgent);
+      setView(continueAgent);
+      if (continueAgent === 'codex') {
+        await codexService.setCurrentThread(null);
+      }
       setOpen(false);
       setSelectedProjects([]);
     } catch (error) {
@@ -104,6 +118,23 @@ export function HistoryProjectsDialog() {
         </DialogHeader>
 
         <div className="space-y-3">
+          <div className="flex justify-center">
+            <Tabs
+              value={continueAgent}
+              onValueChange={(value) => {
+                const nextAgent = value as 'codex' | 'cc';
+                setContinueAgent(nextAgent);
+                setSelectedAgent(nextAgent);
+              }}
+              className="w-auto"
+            >
+              <TabsList>
+                <TabsTrigger value="codex">Codex</TabsTrigger>
+                <TabsTrigger value="cc">Claude Code</TabsTrigger>
+              </TabsList>
+            </Tabs>
+          </div>
+
           <div className="flex items-center justify-between rounded-md border px-3 py-2">
             <div className="flex items-center gap-2">
               <Checkbox
