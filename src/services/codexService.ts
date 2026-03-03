@@ -17,6 +17,7 @@ import {
   gitPrepareThreadWorktree,
 } from './tauri';
 import type {
+  Thread,
   ThreadForkParams,
   ThreadStartParams,
   ThreadListParams,
@@ -69,8 +70,10 @@ const generateThreadWorktreeKey = (): string => {
 const isExperimentalRawEventsCapabilityError = (error: unknown): boolean =>
   getErrorMessage(error).includes('experimentalRawEvents requires experimentalApi capability');
 
+type ThreadLike = Thread & { updatedAt?: number };
+
 export const codexService = {
-  normalizeThreadItem(thread: any): ThreadListItem {
+  normalizeThreadItem(thread: ThreadLike): ThreadListItem {
     const createdAt = thread.createdAt ?? 0;
     const updatedAt = thread.updatedAt ?? 0;
     return {

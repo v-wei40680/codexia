@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import type { ThreadListItem } from '@/types/codex/ThreadListItem';
+import type { Thread } from '@/bindings/v2';
 import { threadListArchived, threadUnarchive } from '@/services/tauri';
 import { ThreadId } from '@/bindings';
 import { getFilename } from '@/utils/getFilename';
@@ -25,7 +26,7 @@ export function ArchivedThreadSettings() {
         sourceKinds: null,
       };
       const response = await threadListArchived(params);
-      const normalized = response.data.map((thread: any) => ({
+      const normalized = response.data.map((thread: ThreadLike) => ({
         createdAt: thread.createdAt ?? 0,
         updatedAt: thread.updatedAt ?? 0,
         id: thread.id,
@@ -107,3 +108,4 @@ export function ArchivedThreadSettings() {
     </section>
   );
 }
+  type ThreadLike = Thread & { updatedAt?: number };

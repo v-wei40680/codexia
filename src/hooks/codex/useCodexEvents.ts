@@ -28,6 +28,19 @@ function shouldPlayCompletionBeep(
   return document.hidden || !document.hasFocus() || !isChatInterfaceActive;
 }
 
+const extractThreadId = (payload: ServerNotification): string | undefined => {
+  if ('threadId' in payload.params && typeof payload.params.threadId === 'string') {
+    return payload.params.threadId;
+  }
+  if ('thread' in payload.params) {
+    const threadCandidate = payload.params.thread as { id?: unknown } | null | undefined;
+    if (threadCandidate && typeof threadCandidate.id === 'string') {
+      return threadCandidate.id;
+    }
+  }
+  return undefined;
+};
+
 export function useCodexEvents(enabled = true) {
   const { addEvent, setHasAccount } = useCodexStore();
   const { addApproval } = useApprovalStore();
@@ -83,31 +96,22 @@ export function useCodexEvents(enabled = true) {
         console.log(`[useCodexEvents] ${payload.method}:`, payload.params);
       }
 
-      let threadId: string | undefined;
-
-      if ('params' in payload && payload.params) {
-        const params = payload.params as any;
-        if ('threadId' in params) {
-          threadId = params.threadId;
-        } else if ('thread' in params && params.thread?.id) {
-          threadId = params.thread.id;
-        }
-      }
+      const threadId = extractThreadId(payload);
 
       if (threadId) {
         const isReasoningEvent =
           payload.method === 'item/reasoning/textDelta' ||
           payload.method === 'item/reasoning/summaryTextDelta' ||
           payload.method === 'item/reasoning/summaryPartAdded' ||
-          (payload.method === 'item/completed' && (payload.params as any)?.item?.type === 'reasoning');
+          (payload.method === 'item/completed' && payload.params.item.type === 'reasoning');
         if (!showReasoning && isReasoningEvent) {
           return;
         }
 
-        if (payload.method === 'thread/started' && 'params' in payload && payload.params) {
-          const startedThread = (payload.params as any).thread;
-          const startedThreadId = startedThread?.id;
-          const startedThreadCwd = startedThread?.cwd;
+        if (payload.method === 'thread/started') {
+          const startedThread = payload.params.thread;
+          const startedThreadId = startedThread.id;
+          const startedThreadCwd = startedThread.cwd;
           if (startedThreadId && startedThreadCwd) {
             useCodexStore.setState((state) => ({
               threads: state.threads.map((thread) =>
@@ -128,7 +132,7 @@ export function useCodexEvents(enabled = true) {
             console.warn('[useCodexEvents] allowSleep failed:', error);
           });
 
-          const turnStatus = (payload.params as any)?.turn?.status;
+          const turnStatus = payload.params.turn.status;
           if (
             turnStatus === 'completed' &&
             shouldPlayCompletionBeep(taskCompleteBeepMode, isChatInterfaceActive)

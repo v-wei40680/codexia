@@ -136,18 +136,19 @@ Meningkatkan kenyamanan pemakaian di device kecil setelah foundation siap.
 
 ---
 
-## Phase 4 — Hardening & Cleanup (`v0.26.1`, Planned)
+## Phase 4 — Hardening & Cleanup (`v0.26.1`, Completed)
 
 ### Objective
 
 Menurunkan technical debt pasca compatibility patch.
 
-### Planned Work
+### Implemented
 
-- Mengurangi `any` yang masih tersisa pada layer event/service.
-- Memperketat tipe object response user input dan approval flow.
-- Menambahkan guard runtime untuk perbedaan minor schema lintas versi Codex CLI.
-- Tambah dokumentasi internal untuk prosedur regenerate bindings.
+- Menambahkan runtime guard terstruktur untuk ekstraksi `threadId` dari event stream.
+- Menghapus penggunaan `as any` pada event reasoning/thread/turn path yang sudah bisa ditipkan langsung.
+- Memperketat tipe deduplikasi event `turn/diff/updated` pada store.
+- Menambahkan tipe `ThreadLike` eksplisit pada normalisasi thread service/settings agar parsing response lebih aman.
+- Menjaga compile strict tetap hijau setelah hardening (`npx tsc --noEmit`).
 
 ### Success Criteria
 

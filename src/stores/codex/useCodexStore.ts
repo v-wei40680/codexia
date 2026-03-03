@@ -149,10 +149,10 @@ export const useCodexStore = create<CodexStore>((set) => ({
       // If this is a turn/diff/updated event, remove previous ones with the same turnId
       let filteredEvents = existingEvents;
       if (event.method === 'turn/diff/updated') {
-        const newTurnId = (event.params as any)?.turnId;
+        const newTurnId = event.params.turnId;
         filteredEvents = existingEvents.filter((e) => {
           if (e.method !== 'turn/diff/updated') return true;
-          const existingTurnId = (e.params as any)?.turnId;
+          const existingTurnId = e.params.turnId;
           return existingTurnId !== newTurnId;
         });
       }

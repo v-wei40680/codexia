@@ -35,13 +35,17 @@ Semua perubahan di dokumen ini mengikuti semantic versioning.
 
 ---
 
-## [0.26.1] - Planned
+## [0.26.1] - 2026-03-03
 
-### Planned
+### Changed
 
-- Hardening tipe untuk mengurangi `any` pada event/service layer.
-- Normalisasi type guard untuk approval/request-user-input flow.
-- Dokumentasi workflow regenerate bindings + troubleshooting matrix versi Codex CLI.
+- Runtime guard event stream ditingkatkan untuk ekstraksi `threadId` tanpa `as any`.
+- Deduplikasi event `turn/diff/updated` pada store dipertegas dengan tipe langsung.
+- Normalisasi data thread menggunakan `ThreadLike` typed parsing pada service/settings.
+
+### Validation
+
+- ✅ `npx tsc --noEmit`
 
 ---
 
