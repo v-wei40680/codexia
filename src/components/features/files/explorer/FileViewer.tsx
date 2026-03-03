@@ -2,16 +2,14 @@ import { type ReactNode, useState, useEffect, useRef } from 'react';
 import type { UnlistenFn } from '@tauri-apps/api/event';
 import { listen } from '@tauri-apps/api/event';
 import { Button } from '@/components/ui/button';
-import { Copy, Check, Send, FileText, GitBranch, Code, Loader2 } from 'lucide-react';
+import { Copy, Check, Send, FileText, Loader2 } from 'lucide-react';
 import { CodeEditor } from '../editor/CodeEditor';
-import { DiffViewer } from '@/components/features/DiffViewer';
 import { useThemeContext } from '@/contexts/ThemeContext';
 import { useInputStore } from '@/stores';
 import { getErrorMessage } from '@/utils/errorUtils';
 import { getFilename } from '@/utils/getFilename';
 import {
   canonicalizePath,
-  getGitFileDiff,
   readFile,
   readPdfContent,
   readXlsxContent,
@@ -27,12 +25,6 @@ interface FileViewerProps {
   headerLeadingAction?: ReactNode;
 }
 
-interface GitDiff {
-  original_content: string;
-  current_content: string;
-  has_changes: boolean;
-}
-
 export function FileViewer({ filePath, addToNotepad, headerLeadingAction }: FileViewerProps) {
   const [content, setContent] = useState<string>('');
   const [filename, setFilename] = useState<string>('');
@@ -42,9 +34,6 @@ export function FileViewer({ filePath, addToNotepad, headerLeadingAction }: File
   const [showFullContent, setShowFullContent] = useState(false);
   const [selectedText, setSelectedText] = useState<string>('');
   const [currentContent, setCurrentContent] = useState<string>('');
-  const [viewMode, setViewMode] = useState<'code' | 'diff'>('code');
-  const [gitDiff, setGitDiff] = useState<GitDiff | null>(null);
-  const [diffLoading, setDiffLoading] = useState(false);
   const [diskChanged, setDiskChanged] = useState(false);
   const prevWatchedDirRef = useRef<string | null>(null);
   const [canonicalFile, setCanonicalFile] = useState<string | null>(null);
@@ -60,8 +49,6 @@ export function FileViewer({ filePath, addToNotepad, headerLeadingAction }: File
   const loadFile = async () => {
     setLoading(true);
     setError(null);
-    setGitDiff(null);
-    setViewMode('code');
 
     try {
       const extension = getFileExtension(filePath);
@@ -93,8 +80,6 @@ export function FileViewer({ filePath, addToNotepad, headerLeadingAction }: File
     if (!filePath) {
       setContent('');
       setError(null);
-      setGitDiff(null);
-      setViewMode('code');
       return;
     }
     setFilename(getFilename(filePath));
@@ -112,30 +97,6 @@ export function FileViewer({ filePath, addToNotepad, headerLeadingAction }: File
   useEffect(() => {
     setCurrentContent(content);
   }, [content]);
-
-  const loadGitDiff = async () => {
-    if (!filePath) return;
-
-    setDiffLoading(true);
-    try {
-      const diff = await getGitFileDiff<GitDiff>(filePath);
-      setGitDiff(diff);
-    } catch (err) {
-      console.error('Failed to load git diff:', err);
-      setGitDiff(null);
-    } finally {
-      setDiffLoading(false);
-    }
-  };
-
-  const handleToggleViewMode = async () => {
-    if (viewMode === 'code') {
-      await loadGitDiff();
-      setViewMode('diff');
-    } else {
-      setViewMode('code');
-    }
-  };
 
   const handleCopy = async () => {
     const textToCopy = selectedText || currentContent;
@@ -292,22 +253,6 @@ export function FileViewer({ filePath, addToNotepad, headerLeadingAction }: File
           <Button
             variant="ghost"
             size="sm"
-            onClick={handleToggleViewMode}
-            disabled={diffLoading}
-            className="p-1 h-auto"
-            title={viewMode === 'code' ? 'Show git diff' : 'Show code view'}
-          >
-            {diffLoading ? (
-              <div className="w-4 h-4 animate-spin border-2 border-gray-300 border-t-gray-600 rounded-full"></div>
-            ) : viewMode === 'code' ? (
-              <GitBranch className="w-4 h-4" />
-            ) : (
-              <Code className="w-4 h-4" />
-            )}
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
             onClick={handleSendToAI}
             disabled={!content || loading}
             className="p-1 h-auto"
@@ -389,58 +334,35 @@ export function FileViewer({ filePath, addToNotepad, headerLeadingAction }: File
           </div>
         ) : (
           <div className="h-full flex flex-col">
-            {viewMode === 'diff' && gitDiff ? (
-              gitDiff.has_changes ? (
-                <div className="flex-1 min-h-0">
-                  <DiffViewer
-                    original={gitDiff.original_content}
-                    current={gitDiff.current_content}
-                  />
-                </div>
-              ) : (
-                <div
-                  className={`p-8 text-center ${resolvedTheme === 'dark' ? 'text-muted-foreground' : 'text-gray-500'}`}
+            <CodeEditor
+              content={displayContent}
+              filePath={filePath}
+              onContentChange={handleContentChange}
+              onSave={handleSave}
+              onSelectionChange={handleSelectionChange}
+              onSendToAI={(text) => {
+                setInputValue(text);
+              }}
+              onAddToNote={(text) => {
+                if (addToNotepad) {
+                  addToNotepad(text, `File: ${filename}`);
+                }
+              }}
+              className="flex-1"
+            />
+            {isLargeFile && !showFullContent && (
+              <div
+                className={`p-4 text-center border-t ${resolvedTheme === 'dark' ? 'border-border bg-card' : 'border-gray-200 bg-gray-50'}`}
+              >
+                <p
+                  className={`text-sm mb-2 ${resolvedTheme === 'dark' ? 'text-muted-foreground' : 'text-gray-600'}`}
                 >
-                  <GitBranch
-                    className={`w-12 h-12 mx-auto mb-4 ${resolvedTheme === 'dark' ? 'text-muted-foreground/50' : 'text-gray-300'}`}
-                  />
-                  <p className="text-lg font-medium mb-2">No changes detected</p>
-                  <p className="text-sm">This file is identical to the version in git HEAD</p>
-                </div>
-              )
-            ) : (
-              <>
-                <CodeEditor
-                  content={displayContent}
-                  filePath={filePath}
-                  onContentChange={handleContentChange}
-                  onSave={handleSave}
-                  onSelectionChange={handleSelectionChange}
-                  onSendToAI={(text) => {
-                    setInputValue(text);
-                  }}
-                  onAddToNote={(text) => {
-                    if (addToNotepad) {
-                      addToNotepad(text, `File: ${filename}`);
-                    }
-                  }}
-                  className="flex-1"
-                />
-                {isLargeFile && !showFullContent && (
-                  <div
-                    className={`p-4 text-center border-t ${resolvedTheme === 'dark' ? 'border-border bg-card' : 'border-gray-200 bg-gray-50'}`}
-                  >
-                    <p
-                      className={`text-sm mb-2 ${resolvedTheme === 'dark' ? 'text-muted-foreground' : 'text-gray-600'}`}
-                    >
-                      Showing first {MAX_LINES} lines of {content.split('\n').length} total lines
-                    </p>
-                    <Button variant="outline" size="sm" onClick={handleToggleContent}>
-                      Show All Lines
-                    </Button>
-                  </div>
-                )}
-              </>
+                  Showing first {MAX_LINES} lines of {content.split('\n').length} total lines
+                </p>
+                <Button variant="outline" size="sm" onClick={handleToggleContent}>
+                  Show All Lines
+                </Button>
+              </div>
             )}
           </div>
         )}
