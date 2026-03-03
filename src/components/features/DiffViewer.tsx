@@ -195,11 +195,11 @@ export function DiffViewer({
   return (
     <div
       className={cn(
-        'diff-viewer flex flex-col h-full overflow-auto bg-white dark:bg-gray-900',
+        'diff-viewer flex h-full min-w-0 flex-col overflow-hidden bg-white dark:bg-gray-900',
         className
       )}
     >
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-gray-200/70 bg-gray-50/70 px-3 py-2 dark:border-gray-800/70 dark:bg-gray-900/60">
+      <div className="sticky top-0 z-10 flex w-full items-center justify-between gap-3 border-b border-gray-200/70 bg-gray-50/70 px-3 py-2 dark:border-gray-800/70 dark:bg-gray-900/60">
         <div className="flex items-center gap-3 min-w-0">
           {resolvedPath ? (
             <div className="flex items-center gap-2 min-w-0">
@@ -261,9 +261,9 @@ export function DiffViewer({
       </div>
 
       {!collapsed && (
-        <div className="diff-content flex-1 font-mono text-sm">
+        <div className="diff-content min-w-0 flex-1 overflow-auto font-mono text-sm">
           {viewMode === 'diff' ? (
-            <table className="w-full table-fixed">
+            <table className="min-w-full table-fixed">
               <tbody>
                 {diffLines.map((line, index) => (
                   <tr
