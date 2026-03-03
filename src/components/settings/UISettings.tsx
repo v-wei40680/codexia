@@ -45,6 +45,10 @@ export function UISettings() {
     setShowHeaderFilesButton,
     showHeaderDiffButton,
     setShowHeaderDiffButton,
+    showQuotes,
+    setShowQuotes,
+    showTips,
+    setShowTips,
   } = useSettingsStore();
 
   return (
@@ -102,6 +106,26 @@ export function UISettings() {
             checked={showHeaderDiffButton}
             onCheckedChange={setShowHeaderDiffButton}
             ariaLabel="Toggle header diff button visibility"
+          />
+
+          <Separator />
+
+          <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+            Chat
+          </div>
+          <SettingRow
+            title="Quotes"
+            description="Show or hide quotes in the empty chat view."
+            checked={showQuotes}
+            onCheckedChange={setShowQuotes}
+            ariaLabel="Toggle chat quotes visibility"
+          />
+          <SettingRow
+            title="Tips"
+            description="Show or hide tips in the empty chat view."
+            checked={showTips}
+            onCheckedChange={setShowTips}
+            ariaLabel="Toggle chat tips visibility"
           />
         </CardContent>
       </Card>

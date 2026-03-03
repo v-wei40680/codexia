@@ -1,4 +1,4 @@
-import { useRef, useEffect, useState, type ReactNode } from 'react';
+import { useRef, useEffect, type ReactNode } from 'react';
 import { useCodexStore } from '@/stores/codex';
 import { useInputStore } from '@/stores';
 import { codexService } from '@/services/codexService';
@@ -22,11 +22,10 @@ import { CircleHelp, Lightbulb } from 'lucide-react';
 export function ChatInterface() {
   const { currentThreadId, currentTurnId, events, inputFocusTrigger, hasAccount } = useCodexStore();
   const { setInputValue } = useInputStore();
-  const { taskDetail, showReasoning } = useSettingsStore();
+  const { taskDetail, showReasoning, showQuotes, setShowQuotes, showTips, setShowTips } =
+    useSettingsStore();
   const { projects } = useWorkspaceStore();
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
-  const [showQuotes, setShowQuotes] = useState(true);
-  const [showTips, setShowTips] = useState(true);
 
   // Get events for the current thread
   const currentThreadEvents = currentThreadId ? events[currentThreadId] || [] : [];
@@ -208,7 +207,7 @@ export function ChatInterface() {
                     variant={showQuotes ? 'secondary' : 'ghost'}
                     size="icon"
                     className="h-10 w-10"
-                    onClick={() => setShowQuotes((prev) => !prev)}
+                    onClick={() => setShowQuotes(!showQuotes)}
                     title={showQuotes ? 'Hide quotes' : 'Show quotes'}
                     aria-label={showQuotes ? 'Hide quotes' : 'Show quotes'}
                     aria-pressed={showQuotes}
@@ -226,7 +225,7 @@ export function ChatInterface() {
                     variant={showTips ? 'secondary' : 'ghost'}
                     size="icon"
                     className="h-10 w-10"
-                    onClick={() => setShowTips((prev) => !prev)}
+                    onClick={() => setShowTips(!showTips)}
                     title={showTips ? 'Hide tips' : 'Show tips'}
                     aria-label={showTips ? 'Hide tips' : 'Show tips'}
                     aria-pressed={showTips}

@@ -38,6 +38,10 @@ export interface SettingState {
   setShowHeaderFilesButton: (show: boolean) => void;
   showHeaderDiffButton: boolean;
   setShowHeaderDiffButton: (show: boolean) => void;
+  showQuotes: boolean;
+  setShowQuotes: (show: boolean) => void;
+  showTips: boolean;
+  setShowTips: (show: boolean) => void;
 }
 
 type LegacySettingState = {
@@ -109,26 +113,40 @@ export const useSettingsStore = create<SettingState>()(
       setShowHeaderFilesButton: (show: boolean) => set({ showHeaderFilesButton: show }),
       showHeaderDiffButton: true,
       setShowHeaderDiffButton: (show: boolean) => set({ showHeaderDiffButton: show }),
+      showQuotes: true,
+      setShowQuotes: (show: boolean) => set({ showQuotes: show }),
+      showTips: true,
+      setShowTips: (show: boolean) => set({ showTips: show }),
     }),
     {
       name: 'settings-storage',
-      version: 3,
+      version: 4,
       migrate: (persistedState, version) => {
         if (!persistedState) {
           return persistedState;
         }
 
+        let nextState = persistedState as Record<string, unknown>;
+
         if (version < 2) {
-          const state = persistedState as LegacySettingState & Record<string, unknown>;
+          const state = nextState as LegacySettingState & Record<string, unknown>;
           if (typeof state.enableTaskCompleteBeep === 'boolean') {
-            return {
+            nextState = {
               ...state,
               enableTaskCompleteBeep: state.enableTaskCompleteBeep ? 'always' : 'never',
             };
           }
         }
 
-        return persistedState;
+        if (version < 4) {
+          return {
+            ...nextState,
+            showQuotes: typeof nextState.showQuotes === 'boolean' ? nextState.showQuotes : true,
+            showTips: typeof nextState.showTips === 'boolean' ? nextState.showTips : true,
+          };
+        }
+
+        return nextState;
       },
     }
   )
