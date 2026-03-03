@@ -407,6 +407,10 @@
 }
 
 /* Git diff viewer */
+.git-diff-compact-num .unified-diff-table-wrapper {
+  --diff-aside-width--: 9px !important;
+}
+
 .git-diff-table {
   --diff-gutter-insert-background-color: rgba(46, 160, 67, 0.18);
   --diff-gutter-delete-background-color: rgba(248, 81, 73, 0.18);
@@ -431,11 +435,41 @@
   color: hsl(var(--muted-foreground));
 }
 
-.git-diff-table.diff-unified col.diff-gutter-col:first-child {
+/* Unified mode line numbers: show only one number per line. */
+.git-diff-table .unified-diff-table .diff-line-num {
+  padding-left: 1px !important;
+  padding-right: 2px !important;
+  font-size: 10px;
+}
+
+.git-diff-table .unified-diff-table .diff-line-num > .flex {
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0 !important;
+}
+
+.git-diff-table .unified-diff-table .diff-line-num > .flex > span {
+  width: auto !important;
+}
+
+.git-diff-table .unified-diff-table .diff-line-num > .flex > .w-\[10px\] {
   display: none;
 }
 
-.git-diff-table.diff-unified td.diff-gutter:first-child {
+.git-diff-table .unified-diff-table .diff-line-num [data-line-old-num] {
+  display: none;
+}
+
+.git-diff-table .unified-diff-table .diff-line-num [data-line-new-num] {
+  display: inline-block;
+}
+
+/* Deleted lines have empty new number, fallback to old number. */
+.git-diff-table .unified-diff-table .diff-line-num > .flex:has([data-line-new-num]:empty) [data-line-old-num] {
+  display: inline-block;
+}
+
+.git-diff-table .unified-diff-table .diff-line-num > .flex:has([data-line-new-num]:empty) [data-line-new-num] {
   display: none;
 }
 
