@@ -19,6 +19,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { ListChecks, Monitor, Settings, Split } from 'lucide-react';
 import { useLayoutStore } from '@/stores';
 import { useConfigStore, type ThreadCwdMode } from '@/stores/codex';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface ComposerProps {
   currentThreadId: string | null;
@@ -39,6 +40,7 @@ export function Composer({
 }: ComposerProps) {
   const [images, setImages] = useState<string[]>([]);
   const { isConfigLess, setIsConfigLess } = useLayoutStore();
+  const isMobile = useIsMobile();
   const { threadCwdMode, setThreadCwdMode, collaborationMode, setCollaborationMode } =
     useConfigStore();
 
@@ -80,12 +82,12 @@ export function Composer({
         <ModelReasonSelector />
       </InputArea>
 
-      <div className="flex items-center pl-4">
+      <div className={`flex items-center gap-2 ${isMobile ? 'flex-wrap px-2 pb-1' : 'pl-4'}`}>
         <Select
           value={threadCwdMode}
           onValueChange={(value) => setThreadCwdMode(value as ThreadCwdMode)}
         >
-          <SelectTrigger className="h-8 w-[140px]">
+          <SelectTrigger className={`h-8 ${isMobile ? 'w-[120px]' : 'w-[140px]'}`}>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -103,7 +105,7 @@ export function Composer({
             </SelectItem>
           </SelectContent>
         </Select>
-        <label className="mr-1 inline-flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-xs hover:bg-accent/60">
+        <label className="mr-1 inline-flex h-9 cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-xs hover:bg-accent/60">
           <Checkbox
             checked={collaborationMode === 'plan'}
             onCheckedChange={(checked) =>

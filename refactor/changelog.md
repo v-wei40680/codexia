@@ -45,14 +45,30 @@ Semua perubahan di dokumen ini mengikuti semantic versioning.
 
 ---
 
-## [0.27.0] - Planned
+## [0.27.0] - In Progress
+
+### Added
+
+- Mobile composer compact behavior (control wrapping dan compact sizing).
+- Adaptive terminal height strategy untuk mobile viewport.
+
+### Changed
+
+- Input area mobile menambahkan safe-area bottom padding dan tuning tinggi textarea.
+- Tombol send/stop di composer dibuat lebih besar pada mobile.
+- Thread list actions (pin/archive) dibuat visible pada mobile tanpa hover.
+
+### Validation
+
+- ✅ `npx tsc --noEmit`
+
+---
+
+## [0.27.1] - Planned
 
 ### Planned
 
 - Mobile UX enhancement wave:
-  - Composer compact layout
-  - Touch target optimization
-  - Adaptive terminal height
-  - Thread action UX touch-first
   - Settings mobile navigation polishing
-
+  - Right panel files mobile optimization
+  - Additional touch accessibility pass

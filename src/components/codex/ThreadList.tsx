@@ -27,6 +27,7 @@ import { formatThreadAge } from '@/utils/formatThreadAge';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import type { ThreadListItem } from '@/types/codex/ThreadListItem';
 import { useLayoutStore } from '@/stores';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 type SessionMetaEntry = {
   text?: string;
@@ -52,6 +53,7 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
   const [sessionMeta, setSessionMeta] = useState<Record<string, SessionMetaEntry>>({});
   const [renameThreadId, setRenameThreadId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
+  const isMobile = useIsMobile();
   const sourceThreads = isProjectScoped ? scopedThreads : threads;
   const nextCursor = isProjectScoped ? scopedNextCursor : threadListNextCursor;
   const mergedThreads = useMemo(
@@ -443,7 +445,7 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
                       void handleTogglePin(thread.id);
                     }}
                     className={`absolute left-0 top-1/2 -translate-y-1/2 inline-flex items-center justify-center h-6 w-6 rounded hover:bg-accent/50 transition-colors ${
-                      thread.pinnedAtMs ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                      thread.pinnedAtMs || isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
                     } ${thread.pinnedAtMs ? 'text-foreground' : 'text-muted-foreground/40'}`}
                   >
                     <Pin className="h-4 w-4" />
@@ -462,7 +464,7 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
                     event.stopPropagation();
                     void handleArchiveThread(thread.id);
                   }}
-                  className="absolute right-0 inline-flex items-center justify-center h-6 w-6 rounded hover:bg-accent/50 transition-colors opacity-0 group-hover:opacity-100 text-muted-foreground"
+                  className={`absolute right-0 inline-flex items-center justify-center h-6 w-6 rounded hover:bg-accent/50 transition-colors text-muted-foreground ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'}`}
                 >
                   <Archive className="h-3.5 w-3.5" />
                 </button>

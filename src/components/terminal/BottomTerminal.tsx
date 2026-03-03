@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { terminalResize, terminalStart, terminalStop, terminalWrite } from '@/services/tauri';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 type BottomTerminalProps = {
   open: boolean;
@@ -26,6 +27,7 @@ type TerminalExitPayload = {
 
 export function BottomTerminal({ open, onOpenChange }: BottomTerminalProps) {
   const { cwd } = useWorkspaceStore();
+  const isMobile = useIsMobile();
   const [shell, setShell] = useState('');
   const [sessionId, setSessionId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -196,9 +198,10 @@ export function BottomTerminal({ open, onOpenChange }: BottomTerminalProps) {
 
   return (
     <div
+      style={{ height: open ? (isMobile ? '42dvh' : '18rem') : '0px' }}
       className={cn(
         'border-t border-border/80 bg-black text-zinc-100 transition-[height,opacity] duration-200 ease-out',
-        open ? 'h-72 opacity-100' : 'h-0 opacity-0'
+        open ? 'opacity-100' : 'opacity-0'
       )}
     >
       <div className="flex h-full min-h-0 flex-col">

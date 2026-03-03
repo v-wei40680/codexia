@@ -95,20 +95,30 @@ Menyelaraskan kode frontend terhadap hasil `generate-ts` terbaru agar strict Typ
 
 ---
 
-## Phase 3 — Mobile UX & Interaction Enhancement (`v0.27.0`, Planned)
+## Phase 3 — Mobile UX & Interaction Enhancement (`v0.27.0`, In Progress)
 
 ### Objective
 
 Meningkatkan kenyamanan pemakaian di device kecil setelah foundation siap.
 
-### Planned Work
+### Implemented (Phase 3A)
 
-- Composer compact mode untuk mobile:
-  - Toolbar wrapping
-  - Touch target >= 40px
-  - Pengurangan kontrol sekunder di viewport sempit
-- Bottom terminal height adaptif berdasarkan viewport.
-- Thread list touch-first actions (tidak mengandalkan hover).
+- Composer mobile compact behavior:
+  - toolbar controls wrap di viewport sempit
+  - select width diperkecil untuk menjaga ruang input
+  - kontrol plan toggle ditingkatkan touch area
+- Input area mobile improvements:
+  - safe-area padding bawah
+  - textarea mobile height tuning
+  - tombol send/stop diperbesar untuk touch
+- Bottom terminal adaptive height:
+  - mobile menggunakan `42dvh`
+  - desktop mempertahankan tinggi setara `18rem`
+- Thread list touch-first actions:
+  - tombol pin/archive tetap terlihat di mobile (tidak tergantung hover)
+
+### Remaining Work (Phase 3B)
+
 - Right panel files mode mobile optimization (tree default hidden + reveal action lebih jelas).
 - Settings view mobile single-column navigation polish.
 
@@ -144,6 +154,7 @@ Menurunkan technical debt pasca compatibility patch.
 
 - [x] Generate bindings berhasil
 - [x] TypeScript check (`npx tsc --noEmit`) hijau
+- [x] Phase 3A compile check (`npx tsc --noEmit`) hijau
 - [ ] Mobile manual smoke test (390x844)
 - [ ] Tablet smoke test (768x1024)
 - [ ] Desktop regression sanity check
@@ -155,4 +166,3 @@ Menurunkan technical debt pasca compatibility patch.
 1. Pertahankan command generate bindings sebagai bagian workflow development.
 2. Jalankan TS check setelah setiap wave refactor.
 3. Untuk merge utama, pisahkan commit berdasarkan phase (layout vs bindings) agar review lebih mudah.
-
