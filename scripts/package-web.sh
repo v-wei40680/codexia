@@ -57,6 +57,45 @@ if [[ -n "${target_triple}" ]]; then
   bin_dir="${root_dir}/src-tauri/target/${target_triple}/release"
 fi
 cp "${bin_dir}/codexia${bin_ext}" "${stage_dir}/codexia${bin_ext}"
+cat > "${stage_dir}/start-server.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "${script_dir}"
+./codexia --web "$@"
+EOF
+chmod +x "${stage_dir}/start-server.sh"
+cat > "${stage_dir}/start-server.bat" <<'EOF'
+@echo off
+setlocal EnableExtensions
+cd /d "%~dp0"
+.\codexia.exe --web %*
+EOF
+echo "Stage dir: ${stage_dir}"
+echo "Dist index: ${stage_dir}/dist/index.html"
+if [[ -f "${stage_dir}/dist/index.html" ]]; then
+  echo "Dist index exists."
+else
+  echo "Dist index missing."
+fi
+echo "Binary: ${stage_dir}/codexia${bin_ext}"
+if [[ -f "${stage_dir}/codexia${bin_ext}" ]]; then
+  echo "Binary exists."
+else
+  echo "Binary missing."
+fi
+echo "Start script (sh): ${stage_dir}/start-server.sh"
+if [[ -f "${stage_dir}/start-server.sh" ]]; then
+  echo "Start script sh exists."
+else
+  echo "Start script sh missing."
+fi
+echo "Start script (bat): ${stage_dir}/start-server.bat"
+if [[ -f "${stage_dir}/start-server.bat" ]]; then
+  echo "Start script bat exists."
+else
+  echo "Start script bat missing."
+fi
 
 tar_name="codexia-web-${version}-${os}-${arch}.tar.gz"
 if [[ -n "${libc}" ]]; then

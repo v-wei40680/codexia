@@ -18,6 +18,13 @@ pub async fn start_web_server_with_events(
     event_tx: broadcast::Sender<(String, Value)>,
     port: u16,
 ) -> Result<(), Box<dyn std::error::Error>> {
+    if let Ok(cwd) = std::env::current_dir() {
+        println!("[web] startup cwd: {}", cwd.display());
+    } else {
+        println!("[web] startup cwd: <unavailable>");
+    }
+    println!("[web] requested port: {}", port);
+
     let automation_sink: Arc<dyn EventSink> = Arc::new(WebSocketEventSink::new(event_tx.clone()));
     crate::features::automation::initialize_automation_runtime(
         Some(codex_state.codex.clone()),

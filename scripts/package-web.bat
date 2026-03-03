@@ -24,6 +24,44 @@ call cargo build --release --manifest-path "%ROOT_DIR%\src-tauri\Cargo.toml" || 
 
 xcopy /e /i /y "%ROOT_DIR%\dist\*" "%STAGE_DIR%\dist\" >nul || exit /b 1
 copy /y "%ROOT_DIR%\src-tauri\target\release\codexia.exe" "%STAGE_DIR%\codexia.exe" >nul || exit /b 1
+(
+  echo @echo off
+  echo setlocal EnableExtensions
+  echo cd /d "%%~dp0"
+  echo .\codexia.exe --web %%*
+) > "%STAGE_DIR%\start-server.bat"
+(
+  echo #!/usr/bin/env bash
+  echo set -euo pipefail
+  echo script_dir="$$(cd "$$(dirname "$${BASH_SOURCE[0]}")" ^&^& pwd)"
+  echo cd "$${script_dir}"
+  echo ./codexia --web "$$@"
+) > "%STAGE_DIR%\start-server.sh"
+echo Stage dir: %STAGE_DIR%
+echo Dist index: %STAGE_DIR%\dist\index.html
+if exist "%STAGE_DIR%\dist\index.html" (
+  echo Dist index exists.
+) else (
+  echo Dist index missing.
+)
+echo Binary: %STAGE_DIR%\codexia.exe
+if exist "%STAGE_DIR%\codexia.exe" (
+  echo Binary exists.
+) else (
+  echo Binary missing.
+)
+echo Start script (bat): %STAGE_DIR%\start-server.bat
+if exist "%STAGE_DIR%\start-server.bat" (
+  echo Start script bat exists.
+) else (
+  echo Start script bat missing.
+)
+echo Start script (sh): %STAGE_DIR%\start-server.sh
+if exist "%STAGE_DIR%\start-server.sh" (
+  echo Start script sh exists.
+) else (
+  echo Start script sh missing.
+)
 
 powershell -NoProfile -Command "Compress-Archive -Path '%STAGE_DIR%\*' -DestinationPath '%OUT_FILE%' -Force" || exit /b 1
 echo Wrote %OUT_FILE%

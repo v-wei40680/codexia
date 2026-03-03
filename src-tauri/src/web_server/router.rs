@@ -2,6 +2,7 @@ use axum::{
     Router,
     routing::{get, post},
 };
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use tower_http::cors::{Any, CorsLayer};
 use tower_http::services::{ServeDir, ServeFile};
@@ -48,25 +49,49 @@ use super::{
 
 fn resolve_dist_dir() -> PathBuf {
     let mut candidates: Vec<PathBuf> = Vec::new();
+    let mut seen = HashSet::new();
+    let mut add_candidate = |path: PathBuf| {
+        if seen.insert(path.clone()) {
+            candidates.push(path);
+        }
+    };
 
     if let Some(project_root) = Path::new(env!("CARGO_MANIFEST_DIR")).parent() {
-        candidates.push(project_root.join("dist"));
+        add_candidate(project_root.join("dist"));
     }
 
     if let Ok(exe_path) = std::env::current_exe() {
+        println!("[web] current_exe: {}", exe_path.display());
         if let Some(exe_dir) = exe_path.parent() {
-            candidates.push(exe_dir.join("dist"));
-            candidates.push(exe_dir.join("../dist"));
-            candidates.push(exe_dir.join("../../dist"));
+            add_candidate(exe_dir.join("dist"));
+            add_candidate(exe_dir.join("../dist"));
+            add_candidate(exe_dir.join("../../dist"));
+            add_candidate(exe_dir.join("resources/dist"));
+            add_candidate(exe_dir.join("../resources/dist"));
+            add_candidate(exe_dir.join("../Resources/dist"));
+            add_candidate(exe_dir.join("../../Resources/dist"));
         }
+    } else {
+        println!("[web] current_exe: <unavailable>");
     }
 
-    candidates.push(PathBuf::from("dist"));
+    add_candidate(PathBuf::from("dist"));
 
-    candidates
+    for path in &candidates {
+        println!(
+            "[web] dist candidate: {} (index.html exists: {})",
+            path.display(),
+            path.join("index.html").exists()
+        );
+    }
+
+    let selected = candidates
         .into_iter()
         .find(|path| path.join("index.html").exists())
-        .unwrap_or_else(|| PathBuf::from("dist"))
+        .unwrap_or_else(|| PathBuf::from("dist"));
+
+    println!("[web] resolved dist dir: {}", selected.display());
+    selected
 }
 
 pub(crate) fn create_router(state: WebServerState) -> Router {
