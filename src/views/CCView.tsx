@@ -235,7 +235,7 @@ export default function CCView() {
             {isLoading && (
               <Card className="p-3 bg-gray-50 dark:bg-gray-900">
                 <div className="text-xs text-muted-foreground animate-pulse">
-                  Claude is thinking...
+                  Thinking
                 </div>
               </Card>
             )}
