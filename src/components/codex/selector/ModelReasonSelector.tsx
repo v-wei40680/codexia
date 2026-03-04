@@ -240,7 +240,7 @@ export function ModelReasonSelector() {
           disabled={!canSelectModel || !canSelectReasoning}
         >
           <SelectTrigger className="h-8 w-[100px]">
-            <SelectValue placeholder="Default" />
+            <SelectValue placeholder="Default">{reasoningEffort}</SelectValue>
           </SelectTrigger>
           <SelectContent>
             {modelProvider === 'openai'
