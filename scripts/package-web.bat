@@ -33,9 +33,9 @@ copy /y "%ROOT_DIR%\src-tauri\target\release\codexia.exe" "%STAGE_DIR%\codexia.e
 (
   echo #!/usr/bin/env bash
   echo set -euo pipefail
-  echo script_dir="$$(cd "$$(dirname "$${BASH_SOURCE[0]}")" ^&^& pwd)"
-  echo cd "$${script_dir}"
-  echo ./codexia --web "$$@"
+  echo script_dir="^$(cd "^$(dirname "^${BASH_SOURCE[0]}")" ^&^& pwd)"
+  echo cd "^${script_dir}"
+  echo ./codexia --web "^$@"
 ) > "%STAGE_DIR%\start-server.sh"
 echo Stage dir: %STAGE_DIR%
 echo Dist index: %STAGE_DIR%\dist\index.html
