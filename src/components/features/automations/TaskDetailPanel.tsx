@@ -254,7 +254,7 @@ export function TaskDetailPanel({ task, now, runs, togglingPauseTaskId }: TaskDe
   const [activeCcSessionIds, setActiveCcSessionIds] = useState<string[]>([]);
   const { setView, setActiveSidebarTab } = useLayoutStore();
   const { setSelectedAgent, setCwd } = useWorkspaceStore();
-  const { setActiveSessionId, setConnected, setMessages, setViewingHistory } = useCCStore();
+  const { setActiveSessionId, setConnected, setMessages } = useCCStore();
   const { handleSessionSelect } = useCCSessionManager();
   const resolvedModelProvider = task ? resolveModelProvider(task) : 'openai';
 
@@ -296,7 +296,6 @@ export function TaskDetailPanel({ task, now, runs, togglingPauseTaskId }: TaskDe
       setMessages([]);
       setActiveSessionId(run.threadId);
       setConnected(true);
-      setViewingHistory(false);
       setActiveCcSessionIds((prev) =>
         prev.includes(run.threadId) ? prev : [...prev, run.threadId]
       );

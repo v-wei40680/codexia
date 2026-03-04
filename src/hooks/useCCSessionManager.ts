@@ -16,7 +16,6 @@ export function useCCSessionManager() {
     setConnected,
     setLoading,
     setShowExamples,
-    setViewingHistory,
     addMessage,
   } = useCCStore();
 
@@ -33,7 +32,6 @@ export function useCCSessionManager() {
         setActiveSessionId(null);
         setMessages([]);
         setConnected(false);
-        setViewingHistory(false);
         setShowExamples(false);
         setLoading(false);
         setIsLoading(false);
@@ -70,7 +68,6 @@ export function useCCSessionManager() {
       setActiveSessionId(newSessionId);
       setMessages([]);
       setShowExamples(false);
-      setViewingHistory(false);
 
       // Connection will happen automatically when sending the first message
       addMessage({
@@ -133,7 +130,6 @@ export function useCCSessionManager() {
       // Session history loaded, but not connected yet
       // Connection will happen when user sends first message
       setConnected(false);
-      setViewingHistory(true);
     } catch (error) {
       console.error('[useCCSessionManager] Failed to resume session', { sessionId, cwd, error });
     } finally {

@@ -38,7 +38,6 @@ interface CCStoreState {
   isLoading: boolean;
   showExamples: boolean;
   showFooter: boolean;
-  isViewingHistory: boolean; // true when viewing history, false when actively working
 
   setActiveSessionId: (id: string | null) => void;
   addActiveSessionId: (id: string) => void;
@@ -50,7 +49,6 @@ interface CCStoreState {
   setLoading: (loading: boolean) => void;
   setShowExamples: (show: boolean) => void;
   setShowFooter: (show: boolean) => void;
-  setViewingHistory: (viewing: boolean) => void;
   clearMessages: () => void;
 }
 
@@ -68,7 +66,6 @@ export const useCCStore = create<CCStoreState>()(
       isLoading: false,
       showExamples: true,
       showFooter: true,
-      isViewingHistory: false,
 
       setActiveSessionId: (id) =>
         set((state) => {
@@ -99,7 +96,6 @@ export const useCCStore = create<CCStoreState>()(
       setLoading: (loading) => set({ isLoading: loading }),
       setShowExamples: (show) => set({ showExamples: show }),
       setShowFooter: (show) => set({ showFooter: show }),
-      setViewingHistory: (viewing) => set({ isViewingHistory: viewing }),
       clearMessages: () => set({ messages: [] }),
     }),
     {

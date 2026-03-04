@@ -1,5 +1,16 @@
 import { useCallback, useEffect } from 'react';
-import { Chrome, Diff, Files, History, PanelLeft, PanelRight, SquarePen, StickyNote, Terminal } from 'lucide-react';
+import {
+  Chrome,
+  Circle,
+  Diff,
+  Files,
+  History,
+  PanelLeft,
+  PanelRight,
+  SquarePen,
+  StickyNote,
+  Terminal,
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { codexService } from '@/services/codexService';
 import { ProjectSelector } from '@/components/project-selector';
@@ -13,6 +24,7 @@ import { useGitWatch } from '@/hooks/useGitWatch';
 import { useSettingsStore } from '@/stores/settings';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { isTauri } from '@/hooks/runtime';
+import { useCCStore } from '@/stores/ccStore';
 
 type MainHeaderProps = {
   isTerminalOpen: boolean;
@@ -44,6 +56,7 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
     showHeaderDiffButton,
   } = useSettingsStore();
   const { handleNewSession } = useCCSessionManager();
+  const isConnected = useCCStore((state) => state.isConnected);
   const { currentThreadId, activeThreadIds } = useCodexStore();
   const { refreshStats } = useGitStatsStore();
   const isMobile = useIsMobile();
@@ -96,6 +109,20 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
       data-tauri-drag-region
     >
       <div className="flex min-w-0 items-center gap-2">
+        {view === 'cc' && (
+          <span
+            title={isConnected ? 'Connected' : 'Ready'}
+            aria-label={isConnected ? 'Connected' : 'Ready'}
+          >
+            <Circle
+              className={`size-3 ${
+                isConnected
+                  ? 'fill-emerald-500 text-emerald-500'
+                  : 'fill-transparent text-emerald-500/80'
+              }`}
+            />
+          </span>
+        )}
         {shouldShowIcons && (
           <div className={`flex items-center gap-2 ${shouldUseDesktopDragOffset ? 'pl-20' : 'pl-2'}`}>
             <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>

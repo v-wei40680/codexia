@@ -1,9 +1,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { useCCStore, CCMessage as CCMessageType } from '@/stores/ccStore';
-import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
-import { Pencil } from 'lucide-react';
 import { CCMessage } from '@/components/cc/CCMessage';
 import { ExamplePrompts } from '@/components/cc/ExamplePrompts';
 import { useCCSessionManager } from '@/hooks/useCCSessionManager';
@@ -17,16 +15,13 @@ export default function CCView() {
   const {
     activeSessionId,
     messages,
-    options,
     isConnected,
     isLoading,
     showExamples,
-    isViewingHistory,
     addMessage,
     setLoading,
     setShowExamples,
     setConnected,
-    setViewingHistory,
     clearMessages,
   } = useCCStore();
   const { cwd } = useWorkspaceStore();
@@ -105,11 +100,6 @@ export default function CCView() {
       return;
     }
 
-    // If viewing history, first message will connect the session
-    if (isViewingHistory) {
-      setViewingHistory(false);
-    }
-
     // Add user message to store
     addMessage({
       type: 'user',
@@ -183,43 +173,6 @@ export default function CCView() {
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      {/* Fixed header */}
-      <div className="sticky top-0 z-10 shrink-0 flex gap-2 items-center border-b p-2 bg-background">
-        <Button
-          onClick={() => {
-            handleNewSession();
-            setShowExamples(false);
-          }}
-          disabled={isLoading}
-          variant="default"
-          size="icon"
-          title="New Session"
-        >
-          <Pencil />
-        </Button>
-
-        <div className="ml-auto flex items-center gap-2">
-          {activeSessionId && (
-            <span className="text-xs text-muted-foreground">
-              {activeSessionId.slice(0, 8)}... | {options.model ?? 'auto'}
-            </span>
-          )}
-          {isConnected ? (
-            <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-100">
-              Connected
-            </span>
-          ) : isViewingHistory ? (
-            <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-100">
-              Viewing History
-            </span>
-          ) : (
-            <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-100">
-              Ready
-            </span>
-          )}
-        </div>
-      </div>
-
       {/* Scrollable content area */}
       <div className="flex-1 min-h-0 overflow-hidden relative">
         <div ref={scrollContainerRef} className="h-full overflow-y-auto">
