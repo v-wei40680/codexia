@@ -20,7 +20,7 @@ mkdir "%STAGE_DIR%"
 
 if not defined VITE_WEB_PORT set "VITE_WEB_PORT=7420"
 call bun run build || exit /b 1
-call cargo build --release --manifest-path "%ROOT_DIR%\src-tauri\Cargo.toml" || exit /b 1
+call cargo build --release --manifest-path "%ROOT_DIR%\src-tauri\Cargo.toml" --no-default-features --features web || exit /b 1
 
 xcopy /e /i /y "%ROOT_DIR%\dist\*" "%STAGE_DIR%\dist\" >nul || exit /b 1
 copy /y "%ROOT_DIR%\src-tauri\target\release\codexia.exe" "%STAGE_DIR%\codexia.exe" >nul || exit /b 1
@@ -30,13 +30,6 @@ copy /y "%ROOT_DIR%\src-tauri\target\release\codexia.exe" "%STAGE_DIR%\codexia.e
   echo cd /d "%%~dp0"
   echo .\codexia.exe --web %%*
 ) > "%STAGE_DIR%\start-server.bat"
-(
-  echo #!/usr/bin/env bash
-  echo set -euo pipefail
-  echo script_dir="$$(cd "$$(dirname "$${BASH_SOURCE[0]}")" ^&^& pwd)"
-  echo cd "$${script_dir}"
-  echo ./codexia --web "$$@"
-) > "%STAGE_DIR%\start-server.sh"
 echo Stage dir: %STAGE_DIR%
 echo Dist index: %STAGE_DIR%\dist\index.html
 if exist "%STAGE_DIR%\dist\index.html" (
@@ -56,12 +49,5 @@ if exist "%STAGE_DIR%\start-server.bat" (
 ) else (
   echo Start script bat missing.
 )
-echo Start script (sh): %STAGE_DIR%\start-server.sh
-if exist "%STAGE_DIR%\start-server.sh" (
-  echo Start script sh exists.
-) else (
-  echo Start script sh missing.
-)
-
 powershell -NoProfile -Command "Compress-Archive -Path '%STAGE_DIR%\*' -DestinationPath '%OUT_FILE%' -Force" || exit /b 1
 echo Wrote %OUT_FILE%
