@@ -1,0 +1,127 @@
+{
+  "baseUrl": "http://127.0.0.1:4173/",
+  "executedAt": "2026-03-04T00:13:10.792Z",
+  "results": [
+    {
+      "name": "mobile-390x844",
+      "viewport": {
+        "width": 390,
+        "height": 844
+      },
+      "durationMs": 3793,
+      "pageErrors": [
+        "TypeError: Cannot read properties of undefined (reading 'dimensions')",
+        "TypeError: Cannot read properties of undefined (reading 'dimensions')",
+        "TypeError: Cannot read properties of undefined (reading 'transformCallback')",
+        "TypeError: Cannot read properties of undefined (reading 'transformCallback')",
+        "TypeError: Cannot read properties of undefined (reading 'transformCallback')",
+        "TypeError: Cannot read properties of undefined (reading 'transformCallback')",
+        "Error: Request failed: 404",
+        "Error: Request failed: 404",
+        "TypeError: Cannot read properties of undefined (reading 'transformCallback')",
+        "Error: Request failed: 404",
+        "Error: Request failed: 404"
+      ],
+      "consoleErrors": [
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "[CodexService] Failed to load threads: Error: Request failed: 404\n    at Rk (http://127.0.0.1:4173/assets/mermaid-3ZIDBTTL-CnzGBu6s.js:10:42106)\n    at async Mp (http://127.0.0.1:4173/assets/mermaid-3ZIDBTTL-CnzGBu6s.js:10:46439)\n    at async Object.loadThreads (http://127.0.0.1:4173/assets/mermaid-3ZIDBTTL-CnzGBu6s.js:10:71629)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "[useCodexEvents] Failed to sync account state: Error: Request failed: 404\n    at Rk (http://127.0.0.1:4173/assets/mermaid-3ZIDBTTL-CnzGBu6s.js:10:42106)\n    at async Ak (http://127.0.0.1:4173/assets/mermaid-3ZIDBTTL-CnzGBu6s.js:10:47327)\n    at async c (http://127.0.0.1:4173/assets/mermaid-3ZIDBTTL-CnzGBu6s.js:10:63721)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "[CodexService] Failed to load threads: Error: Request failed: 404\n    at Rk (http://127.0.0.1:4173/assets/mermaid-3ZIDBTTL-CnzGBu6s.js:10:42106)\n    at async Mp (http://127.0.0.1:4173/assets/mermaid-3ZIDBTTL-CnzGBu6s.js:10:46439)\n    at async Object.loadThreads (http://127.0.0.1:4173/assets/mermaid-3ZIDBTTL-CnzGBu6s.js:10:71629)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Error: Request failed: 404\n    at Rk (http://127.0.0.1:4173/assets/mermaid-3ZIDBTTL-CnzGBu6s.js:10:42106)\n    at async Ak (http://127.0.0.1:4173/assets/mermaid-3ZIDBTTL-CnzGBu6s.js:10:47327)\n    at async http://127.0.0.1:4173/assets/mermaid-3ZIDBTTL-CnzGBu6s.js:1744:6528",
+        "WebSocket connection to 'ws://127.0.0.1:4173/ws' failed: Error during WebSocket handshake: Unexpected response code: 200",
+        "WebSocket connection to 'ws://127.0.0.1:4173/ws' failed: Error during WebSocket handshake: Unexpected response code: 200",
+        "WebSocket connection to 'ws://127.0.0.1:4173/ws' failed: Error during WebSocket handshake: Unexpected response code: 200"
+      ],
+      "metrics": {
+        "title": "Tauri + React + Typescript",
+        "bodyScrollWidth": 50000,
+        "bodyClientWidth": 390,
+        "rootScrollWidth": 50000,
+        "rootClientWidth": 390
+      },
+      "screenshot": "/home/runner/codexia/refactor/smoke/mobile-390x844.png",
+      "horizontalOverflow": true
+    },
+    {
+      "name": "tablet-768x1024",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "durationMs": 4284,
+      "pageErrors": [
+        "TypeError: Cannot read properties of undefined (reading 'transformCallback')",
+        "TypeError: Cannot read properties of undefined (reading 'transformCallback')",
+        "Error: Request failed: 404",
+        "Error: Request failed: 404",
+        "TypeError: Cannot read properties of undefined (reading 'transformCallback')"
+      ],
+      "consoleErrors": [
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "[CodexService] Failed to load threads: Error: Request failed: 404\n    at Rk (http://127.0.0.1:4173/assets/mermaid-3ZIDBTTL-CnzGBu6s.js:10:42106)\n    at async Mp (http://127.0.0.1:4173/assets/mermaid-3ZIDBTTL-CnzGBu6s.js:10:46439)\n    at async Object.loadThreads (http://127.0.0.1:4173/assets/mermaid-3ZIDBTTL-CnzGBu6s.js:10:71629)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "[useCodexEvents] Failed to sync account state: Error: Request failed: 404\n    at Rk (http://127.0.0.1:4173/assets/mermaid-3ZIDBTTL-CnzGBu6s.js:10:42106)\n    at async Ak (http://127.0.0.1:4173/assets/mermaid-3ZIDBTTL-CnzGBu6s.js:10:47327)\n    at async c (http://127.0.0.1:4173/assets/mermaid-3ZIDBTTL-CnzGBu6s.js:10:63721)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Error: Request failed: 404\n    at Rk (http://127.0.0.1:4173/assets/mermaid-3ZIDBTTL-CnzGBu6s.js:10:42106)\n    at async Ak (http://127.0.0.1:4173/assets/mermaid-3ZIDBTTL-CnzGBu6s.js:10:47327)\n    at async http://127.0.0.1:4173/assets/mermaid-3ZIDBTTL-CnzGBu6s.js:1744:6528",
+        "WebSocket connection to 'ws://127.0.0.1:4173/ws' failed: Error during WebSocket handshake: Unexpected response code: 200",
+        "WebSocket connection to 'ws://127.0.0.1:4173/ws' failed: Error during WebSocket handshake: Unexpected response code: 200",
+        "WebSocket connection to 'ws://127.0.0.1:4173/ws' failed: Error during WebSocket handshake: Unexpected response code: 200"
+      ],
+      "metrics": {
+        "title": "Tauri + React + Typescript",
+        "bodyScrollWidth": 50000,
+        "bodyClientWidth": 768,
+        "rootScrollWidth": 50000,
+        "rootClientWidth": 768
+      },
+      "screenshot": "/home/runner/codexia/refactor/smoke/tablet-768x1024.png",
+      "horizontalOverflow": true
+    },
+    {
+      "name": "desktop-1366x768",
+      "viewport": {
+        "width": 1366,
+        "height": 768
+      },
+      "durationMs": 3713,
+      "pageErrors": [
+        "TypeError: Cannot read properties of undefined (reading 'transformCallback')",
+        "TypeError: Cannot read properties of undefined (reading 'transformCallback')",
+        "Error: Request failed: 404",
+        "Error: Request failed: 404",
+        "TypeError: Cannot read properties of undefined (reading 'transformCallback')"
+      ],
+      "consoleErrors": [
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "[CodexService] Failed to load threads: Error: Request failed: 404\n    at Rk (http://127.0.0.1:4173/assets/mermaid-3ZIDBTTL-CnzGBu6s.js:10:42106)\n    at async Mp (http://127.0.0.1:4173/assets/mermaid-3ZIDBTTL-CnzGBu6s.js:10:46439)\n    at async Object.loadThreads (http://127.0.0.1:4173/assets/mermaid-3ZIDBTTL-CnzGBu6s.js:10:71629)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "[useCodexEvents] Failed to sync account state: Error: Request failed: 404\n    at Rk (http://127.0.0.1:4173/assets/mermaid-3ZIDBTTL-CnzGBu6s.js:10:42106)\n    at async Ak (http://127.0.0.1:4173/assets/mermaid-3ZIDBTTL-CnzGBu6s.js:10:47327)\n    at async c (http://127.0.0.1:4173/assets/mermaid-3ZIDBTTL-CnzGBu6s.js:10:63721)",
+        "Failed to load resource: the server responded with a status of 404 (Not Found)",
+        "Error: Request failed: 404\n    at Rk (http://127.0.0.1:4173/assets/mermaid-3ZIDBTTL-CnzGBu6s.js:10:42106)\n    at async Ak (http://127.0.0.1:4173/assets/mermaid-3ZIDBTTL-CnzGBu6s.js:10:47327)\n    at async http://127.0.0.1:4173/assets/mermaid-3ZIDBTTL-CnzGBu6s.js:1744:6528",
+        "WebSocket connection to 'ws://127.0.0.1:4173/ws' failed: Error during WebSocket handshake: Unexpected response code: 200",
+        "WebSocket connection to 'ws://127.0.0.1:4173/ws' failed: Error during WebSocket handshake: Unexpected response code: 200",
+        "WebSocket connection to 'ws://127.0.0.1:4173/ws' failed: Error during WebSocket handshake: Unexpected response code: 200"
+      ],
+      "metrics": {
+        "title": "Tauri + React + Typescript",
+        "bodyScrollWidth": 50000,
+        "bodyClientWidth": 1366,
+        "rootScrollWidth": 50000,
+        "rootClientWidth": 1366
+      },
+      "screenshot": "/home/runner/codexia/refactor/smoke/desktop-1366x768.png",
+      "horizontalOverflow": true
+    }
+  ],
+  "passed": false
+}

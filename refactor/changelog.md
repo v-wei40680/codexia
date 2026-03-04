@@ -83,3 +83,4 @@ Semua perubahan di dokumen ini mengikuti semantic versioning.
 - ✅ `npx tsc --noEmit`
 - ✅ `npm run build`
 - ℹ️ `bunx tsc --noEmit` tidak tersedia di environment saat validasi.
+- ⚠️ Headless smoke test (`390x844`, `768x1024`, `1366x768`) dijalankan via static preview; ditemukan 404/ws backend dependency, runtime error `transformCallback/dimensions`, dan overflow lebar root.

@@ -201,9 +201,28 @@ Meningkatkan kesiapan rilis dengan validasi build penuh dan mengurangi beban ini
 - [x] Phase 3B compile check (`npx tsc --noEmit`) hijau
 - [x] Phase 5 compile check (`npx tsc --noEmit`) hijau
 - [x] Phase 5 production build (`npm run build`) hijau
+- [x] Headless smoke run executed (`refactor/smoke/summary.json`)
 - [ ] Mobile manual smoke test (390x844)
 - [ ] Tablet smoke test (768x1024)
 - [ ] Desktop regression sanity check
+
+### Smoke Test Findings (2026-03-04)
+
+- Eksekusi smoke test headless selesai untuk viewport:
+  - 390x844
+  - 768x1024
+  - 1366x768
+- Artefak hasil disimpan di:
+  - `refactor/smoke/summary.json`
+  - `refactor/smoke/*.png`
+- Temuan utama:
+  - Request API `404` di mode static preview (backend app-server tidak aktif).
+  - WebSocket `/ws` handshake gagal di preview static (expected jika endpoint backend tidak ada).
+  - Muncul runtime error `transformCallback/dimensions` yang perlu investigasi lanjutan.
+  - Terdeteksi horizontal overflow (`rootScrollWidth = 50000`) pada semua viewport.
+- Status akhir smoke:
+  - Functional backend-dependent flow belum bisa dianggap pass tanpa app-server live.
+  - UI overflow issue terkonfirmasi dan masuk kandidat patch berikutnya.
 
 ---
 
