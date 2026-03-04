@@ -14,6 +14,8 @@ import { useToast } from '@/components/ui/use-toast';
 import { useLayoutStore } from '@/stores';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { isTauri } from '@/hooks/runtime';
+import { formatThreadAge } from '@/utils/formatThreadAge';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Props {
   project?: string;
@@ -29,6 +31,7 @@ export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Pr
   const { setView } = useLayoutStore();
   const { activeSessionIds, activeSessionId } = useCCStore();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const loadSessions = useCallback(async () => {
     setLoading(true);
@@ -133,45 +136,44 @@ export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Pr
   }
 
   return (
-    <div className="flex min-w-0 max-w-full flex-col gap-1 overflow-x-hidden">
-      {visibleSessions.map((session) => {
-        const isSelected = activeSessionId === session.sessionId;
-        const isActive = activeSessionIds.includes(session.sessionId);
-        return (
-          <div
-            key={session.sessionId}
-            className={`group w-full min-w-0 max-w-full overflow-hidden rounded-lg border p-3 transition-all duration-200 cursor-pointer ${
-              isSelected
-                ? 'border-primary bg-primary/[0.06] dark:bg-primary/[0.15] shadow-sm'
-                : 'border-border/50 hover:border-primary/30 hover:bg-accent/50'
-            }`}
-            onClick={() => handleSessionClick(session)}
-          >
-            <div className="flex min-w-0 max-w-full flex-col gap-1">
-              <div className="flex min-w-0 max-w-full items-start justify-between gap-2">
-                <div
-                  className={`min-w-0 max-w-full truncate text-sm font-medium ${isSelected ? 'text-primary' : ''}`}
-                >
-                  {session.display}
-                </div>
+    <div className="flex min-h-0 flex-1 flex-col pr-2">
+      <div className="min-h-0 flex-1">
+        {visibleSessions.map((session) => {
+          const isSelected = activeSessionId === session.sessionId;
+          const isActive = activeSessionIds.includes(session.sessionId);
+          return (
+            <div
+              key={session.sessionId}
+              role="button"
+              tabIndex={0}
+              className={`group relative grid grid-cols-[0.5rem_1fr_auto] items-center gap-3 w-full text-left p-2 rounded-lg transition-colors cursor-pointer ${isSelected ? 'bg-zinc-700/50' : 'hover:bg-zinc-800/30'
+                }`}
+              onClick={() => handleSessionClick(session)}
+            >
+              <div className="relative h-6 flex items-center justify-center">
+                {isActive && (
+                  <div className="w-2 h-2 rounded-full bg-green-500 shrink-0 shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
+                )}
               </div>
 
-              <div className="flex min-w-0 max-w-full items-center justify-between gap-2">
-                <div className="flex min-w-0 items-center gap-2">
-                  {isActive && (
-                    <div className="w-2 h-2 rounded-full bg-green-500 shrink-0 shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
-                  )}
-                  <div className="min-w-0 truncate text-xs text-muted-foreground">
-                    {new Date(session.timestamp * 1000).toLocaleString()}
-                  </div>
-                </div>
+              <div
+                className={`text-sm font-medium truncate min-w-0 ${isSelected ? 'text-primary' : 'text-inherit'}`}
+              >
+                {session.display}
+              </div>
 
+              <div className="flex items-center gap-2 text-xs text-muted-foreground whitespace-nowrap">
+                <span className="group-hover:hidden">{formatThreadAge(session.timestamp)}</span>
+              </div>
+
+              <div className="absolute right-0">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className={`h-6 w-6 -mr-1 transition-colors ${isSelected ? 'hover:bg-primary/10' : 'hover:bg-accent'}`}
+                      className={`h-6 w-6 rounded hover:bg-accent/50 transition-colors text-muted-foreground ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                        }`}
                       onClick={(e) => e.stopPropagation()}
                     >
                       <MoreVertical className="h-3.5 w-3.5" />
@@ -179,16 +181,16 @@ export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Pr
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem onClick={(e) => copySessionId(e, session.sessionId)}>
-                      <Copy className="h-3 w-3 mr-2" />
+                      <Copy className="h-3 w-3" />
                       <span>Copy Session ID</span>
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
             </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
   );
 }
