@@ -9,11 +9,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Settings, Slash, CircleStop, Send } from 'lucide-react';
-import { CCFooter } from '@/components/cc/CCFooter';
-import { FolderSelectorCompact } from '@/components/features/dxt/FolderSelectorCompact';
+import { Slash, CircleStop, Send, Plus } from 'lucide-react';
 import { useCCStore, ModelType } from '@/stores/ccStore';
+import { useInputStore } from '@/stores/useInputStore';
 import { ccGetInstalledSkills } from '@/services';
+import { CCPermissionModeSelect } from '@/components/cc/CCPermissionModeSelect';
+import { SelectFilesMenuItem } from '@/components/codex/selector/AttachmentSelector';
 
 const CC_INPUT_FOCUS_EVENT = 'cc-input-focus-request';
 
@@ -25,9 +26,10 @@ interface CCInputProps {
 }
 
 export function CCInput({ input, setInput, onSendMessage, onInterrupt }: CCInputProps) {
-  const { showFooter, setShowFooter, isLoading, setShowExamples, options, updateOptions } =
-    useCCStore();
+  const { isLoading, setShowExamples, options, updateOptions } = useCCStore();
+  const { appendFileLinks } = useInputStore();
   const [showCommands, setShowCommands] = useState(false);
+  const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
   const [installedSkills, setInstalledSkills] = useState<string[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -61,9 +63,18 @@ export function CCInput({ input, setInput, onSendMessage, onInterrupt }: CCInput
     setShowCommands(false);
   };
 
+  const handleSelectFiles = (paths: string[]) => {
+    try {
+      appendFileLinks(paths);
+      setShowAttachmentMenu(false);
+    } catch (error) {
+      console.error('Failed to select files:', error);
+    }
+  };
+
   return (
     <>
-      <div className="shrink-0 flex flex-col gap-2 p-2 border-t bg-background">
+      <div className="shrink-0 p-2 border-t bg-background">
         <div className="relative group">
           <Textarea
             ref={textareaRef}
@@ -84,15 +95,22 @@ export function CCInput({ input, setInput, onSendMessage, onInterrupt }: CCInput
           />
 
           <div className="absolute left-1 bottom-1 flex items-center gap-0.5">
-            <Button
-              onClick={() => setShowFooter(!showFooter)}
-              size="icon"
-              variant="ghost"
-              className="h-8 w-8 text-muted-foreground hover:text-foreground"
-              title="Toggle Options"
-            >
-              <Settings className={`h-4 w-4 ${showFooter ? 'text-primary' : ''}`} />
-            </Button>
+            <Popover open={showAttachmentMenu} onOpenChange={setShowAttachmentMenu}>
+              <PopoverTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                  title="Add Files"
+                >
+                  <Plus className={`h-4 w-4 ${showAttachmentMenu ? 'text-primary' : ''}`} />
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent align="start" side="top" className="w-44 p-1">
+                <SelectFilesMenuItem onFilesSelected={handleSelectFiles} onAfterSelect={() => setShowAttachmentMenu(false)} className="h-8 w-full text-xs" />
+              </PopoverContent>
+            </Popover>
+
             <Popover open={showCommands} onOpenChange={setShowCommands}>
               <PopoverTrigger asChild>
                 <Button
@@ -125,7 +143,10 @@ export function CCInput({ input, setInput, onSendMessage, onInterrupt }: CCInput
                 </div>
               </PopoverContent>
             </Popover>
-            <FolderSelectorCompact />
+            <CCPermissionModeSelect
+              value={options.permissionMode}
+              onChange={(value) => updateOptions({ permissionMode: value })}
+            />
           </div>
 
           <div className="absolute right-1 bottom-1 flex items-center gap-1.5 px-1 bg-background/50 backdrop-blur-sm rounded-md">
@@ -135,7 +156,7 @@ export function CCInput({ input, setInput, onSendMessage, onInterrupt }: CCInput
                 updateOptions({ model: value === 'default' ? undefined : (value as ModelType) })
               }
             >
-              <SelectTrigger className="h-7 w-[100px] text-[10px] bg-transparent border-none focus:ring-0 focus:ring-offset-0 pr-0">
+              <SelectTrigger className="h-7 w-[96px] text-[10px] bg-transparent border-none focus:ring-0 focus:ring-offset-0 pr-0">
                 <SelectValue placeholder="Auto" />
               </SelectTrigger>
               <SelectContent side="top">
@@ -168,9 +189,6 @@ export function CCInput({ input, setInput, onSendMessage, onInterrupt }: CCInput
             </Button>
           </div>
         </div>
-
-        {/* Fixed footer - Options */}
-        {showFooter && <CCFooter />}
       </div>
     </>
   );

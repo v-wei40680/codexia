@@ -7,6 +7,7 @@ interface InputStore {
   inputValue: string;
   setInputValue: (value: string) => void;
   appendInputValue: (value: string) => void;
+  appendFileLinks: (paths: string[]) => void;
   clearInputValue: () => void;
 }
 
@@ -34,6 +35,35 @@ export const useInputStore = create<InputStore>()(
           return { inputValue: `${state.inputValue}${separator}${value}` };
         });
       },
+      appendFileLinks: (paths) => {
+        const { selectedAgent, cwd } = useWorkspaceStore.getState();
+        if (selectedAgent === 'cc') {
+          useCCInputStore.getState().appendFileLinks(paths, cwd);
+          return;
+        }
+
+        set((state) => {
+          const toPosix = (value: string) => value.replace(/\\/g, '/');
+          const normalizedCwd = toPosix(cwd).replace(/\/+$/, '');
+          const links = paths.map((path) => {
+            const normalizedPath = toPosix(path);
+            const relativePath = normalizedCwd && normalizedPath.startsWith(`${normalizedCwd}/`)
+              ? normalizedPath.slice(normalizedCwd.length + 1)
+              : normalizedPath;
+            const fileName = normalizedPath.split('/').filter(Boolean).pop() ?? normalizedPath;
+            return `[${fileName}](${relativePath})`;
+          });
+
+          if (links.length === 0) {
+            return state;
+          }
+
+          const appended = links.join(' ');
+          const separator =
+            state.inputValue.length === 0 || state.inputValue.endsWith(' ') ? '' : ' ';
+          return { inputValue: `${state.inputValue}${separator}${appended}` };
+        });
+      },
       clearInputValue: () => {
         const { selectedAgent } = useWorkspaceStore.getState();
         if (selectedAgent === 'cc') {
@@ -45,7 +75,7 @@ export const useInputStore = create<InputStore>()(
     }),
     {
       name: 'input-storage',
-      version: 2,
+      version: 3,
     }
   )
 );

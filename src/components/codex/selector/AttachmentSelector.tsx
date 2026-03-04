@@ -1,4 +1,5 @@
-import { PlusIcon, Globe, Image as ImageIcon, Check } from 'lucide-react';
+import { useState } from 'react';
+import { PlusIcon, Globe, Image as ImageIcon, Check, File } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ScreenshotPopover } from '@/components/codex/selector/ScreenshotPopover';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -6,12 +7,59 @@ import { useConfigStore } from '@/stores/codex';
 import { cn } from '@/lib/utils';
 import { open } from '@tauri-apps/plugin-dialog';
 
-export interface AttachmentSelectorProps {
-  onImagesSelected?: (paths: string[]) => void;
+interface SelectFilesMenuItemProps {
+  onFilesSelected?: (paths: string[]) => void;
+  onAfterSelect?: () => void;
+  className?: string;
 }
 
-export function AttachmentSelector({ onImagesSelected }: AttachmentSelectorProps) {
+export function SelectFilesMenuItem({
+  onFilesSelected,
+  onAfterSelect,
+  className,
+}: SelectFilesMenuItemProps) {
+  const handleSelectFiles = async () => {
+    try {
+      const selected = await open({
+        multiple: true,
+        directory: false,
+      });
+
+      if (!selected) {
+        return;
+      }
+
+      const paths = Array.isArray(selected) ? selected : [selected];
+      onFilesSelected?.(paths);
+      onAfterSelect?.();
+    } catch (error) {
+      console.error('Failed to select files:', error);
+    }
+  };
+
+  return (
+    <Button
+      variant="ghost"
+      className={cn(
+        'justify-start gap-2 px-2 hover:bg-blue-500 hover:text-white transition-colors',
+        className
+      )}
+      onClick={handleSelectFiles}
+    >
+      <File className="w-4 h-4" />
+      <span>Select files</span>
+    </Button>
+  );
+}
+
+export interface AttachmentSelectorProps {
+  onImagesSelected?: (paths: string[]) => void;
+  onFilesSelected?: (paths: string[]) => void;
+}
+
+export function AttachmentSelector({ onImagesSelected, onFilesSelected }: AttachmentSelectorProps) {
   const { webSearchRequest, setWebSearch } = useConfigStore();
+  const [openState, setOpenState] = useState(false);
 
   const handleSelectImage = async () => {
     try {
@@ -30,6 +78,7 @@ export function AttachmentSelector({ onImagesSelected }: AttachmentSelectorProps
         if (onImagesSelected) {
           onImagesSelected(paths);
         }
+        setOpenState(false);
       }
     } catch (error) {
       console.error('Failed to select image:', error);
@@ -37,7 +86,7 @@ export function AttachmentSelector({ onImagesSelected }: AttachmentSelectorProps
   };
 
   return (
-    <Popover>
+    <Popover open={openState} onOpenChange={setOpenState}>
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon">
           <PlusIcon className="w-4 h-4" />
@@ -51,7 +100,10 @@ export function AttachmentSelector({ onImagesSelected }: AttachmentSelectorProps
               'justify-start gap-2 px-2 hover:bg-blue-500 hover:text-white transition-colors',
               webSearchRequest && 'bg-blue-100 text-blue-900'
             )}
-            onClick={() => setWebSearch(!webSearchRequest)}
+            onClick={() => {
+              setWebSearch(!webSearchRequest);
+              setOpenState(false);
+            }}
           >
             <Globe className="w-4 h-4" />
             <span className="flex-1 text-left">Web search</span>
@@ -66,12 +118,14 @@ export function AttachmentSelector({ onImagesSelected }: AttachmentSelectorProps
             <ImageIcon className="w-4 h-4" />
             <span>Add images</span>
           </Button>
+          <SelectFilesMenuItem onFilesSelected={onFilesSelected} onAfterSelect={() => setOpenState(false)} />
           {/* Screenshot button */}
           <ScreenshotPopover
             onScreenshotTaken={(path) => {
               if (onImagesSelected) {
                 onImagesSelected([path]);
               }
+              setOpenState(false);
             }}
           />
         </div>

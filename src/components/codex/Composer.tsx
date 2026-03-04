@@ -18,6 +18,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox';
 import { ListChecks, Monitor, Settings, Split } from 'lucide-react';
 import { useLayoutStore } from '@/stores';
+import { useInputStore } from '@/stores/useInputStore';
 import { useConfigStore, type ThreadCwdMode } from '@/stores/codex';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -40,6 +41,7 @@ export function Composer({
 }: ComposerProps) {
   const [images, setImages] = useState<string[]>([]);
   const { isConfigLess, setIsConfigLess } = useLayoutStore();
+  const { appendFileLinks } = useInputStore();
   const isMobile = useIsMobile();
   const { threadCwdMode, setThreadCwdMode, collaborationMode, setCollaborationMode } =
     useConfigStore();
@@ -74,6 +76,7 @@ export function Composer({
           <>
             <AttachmentSelector
               onImagesSelected={(paths) => setImages((prev) => [...prev, ...paths])}
+              onFilesSelected={(paths) => appendFileLinks(paths)}
             />
             <SlashCommandsSelector currentThreadId={currentThreadId} />
             <SkillsPopover />

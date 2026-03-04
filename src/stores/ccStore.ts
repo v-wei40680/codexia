@@ -37,7 +37,6 @@ interface CCStoreState {
   isConnected: boolean;
   isLoading: boolean;
   showExamples: boolean;
-  showFooter: boolean;
 
   setActiveSessionId: (id: string | null) => void;
   addActiveSessionId: (id: string) => void;
@@ -48,7 +47,6 @@ interface CCStoreState {
   setConnected: (connected: boolean) => void;
   setLoading: (loading: boolean) => void;
   setShowExamples: (show: boolean) => void;
-  setShowFooter: (show: boolean) => void;
   clearMessages: () => void;
 }
 
@@ -65,7 +63,6 @@ export const useCCStore = create<CCStoreState>()(
       isConnected: false,
       isLoading: false,
       showExamples: true,
-      showFooter: true,
 
       setActiveSessionId: (id) =>
         set((state) => {
@@ -95,7 +92,6 @@ export const useCCStore = create<CCStoreState>()(
       setConnected: (connected) => set({ isConnected: connected }),
       setLoading: (loading) => set({ isLoading: loading }),
       setShowExamples: (show) => set({ showExamples: show }),
-      setShowFooter: (show) => set({ showFooter: show }),
       clearMessages: () => set({ messages: [] }),
     }),
     {
@@ -103,7 +99,6 @@ export const useCCStore = create<CCStoreState>()(
       version: 2,
       partialize: (state) => ({
         options: state.options,
-        showFooter: state.showFooter,
       }),
     }
   )
