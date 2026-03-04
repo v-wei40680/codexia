@@ -16,7 +16,7 @@ const SettingsView = lazy(() =>
   import('@/components/settings').then((module) => ({ default: module.SettingsView })),
 );
 const UsageView = lazy(() => import('@/views/UsageView'));
-const CCView = lazy(() => import('@/views/CCView'));
+const CCView = lazy(() => import('@/components/cc/CCView'));
 const MarketplaceView = lazy(() =>
   import('@/views/MarketplaceView').then((module) => ({ default: module.MarketplaceView })),
 );
