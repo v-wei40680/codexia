@@ -1,3 +1,4 @@
+mod actions;
 mod diff;
 mod helpers;
 mod staging;
@@ -9,6 +10,7 @@ mod worktree;
 #[cfg(test)]
 mod tests;
 
+pub use self::actions::{git_commit, git_push};
 pub use self::diff::{git_diff_stats, git_file_diff, git_file_diff_meta};
 pub use self::staging::{git_reverse_files, git_stage_files, git_unstage_files};
 pub use self::status::git_status;

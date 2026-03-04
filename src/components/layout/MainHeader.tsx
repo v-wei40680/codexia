@@ -18,7 +18,7 @@ import { useLayoutStore } from '@/stores';
 import { useCodexStore, useCurrentThread } from '@/stores/codex';
 import { useCCSessionManager } from '@/hooks/useCCSessionManager';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
-import { GitStatsIndicator } from '@/components/features/git';
+import { GitStatsIndicator, GitActions } from '@/components/features/git';
 import { useGitStatsStore } from '@/stores/useGitStatsStore';
 import { useGitWatch } from '@/hooks/useGitWatch';
 import { useSettingsStore } from '@/stores/settings';
@@ -55,6 +55,7 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
     showHeaderFilesButton,
     showHeaderDiffButton,
   } = useSettingsStore();
+
   const { handleNewSession } = useCCSessionManager();
   const isConnected = useCCStore((state) => state.isConnected);
   const { currentThreadId, activeThreadIds } = useCodexStore();
@@ -116,8 +117,8 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
           >
             <Circle
               className={`size-3 ${isConnected
-                  ? 'fill-emerald-500 text-emerald-500'
-                  : 'fill-transparent text-emerald-500/80'
+                ? 'fill-emerald-500 text-emerald-500'
+                : 'fill-transparent text-emerald-500/80'
                 }`}
             />
           </span>
@@ -147,72 +148,71 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
         <ProjectSelector forcedMode="browse" triggerMode="project-name" />
       </div>
       <div className="flex items-center gap-2">
-        <span className="flex">
-          {showTerminalButton && showHeaderTerminalButton && (
-            <Button
-              variant={isTerminalOpen ? 'secondary' : 'ghost'}
-              size="icon"
-              onClick={onToggleTerminal}
-              title={isTerminalOpen ? 'Hide terminal' : 'Show terminal'}
-            >
-              <Terminal />
-            </Button>
-          )}
-          {isRightPanelOpen && (
-            <div className="flex items-center">
-              {showHeaderWebPreviewButton && (
-                <Button
-                  variant={activeRightPanelTab === 'webpreview' ? 'secondary' : 'ghost'}
-                  size="icon"
-                  onClick={() => openRightPanelTab('webpreview')}
-                  title="Web Preview"
-                >
-                  <Chrome />
-                </Button>
-              )}
-              {showHeaderNotesButton && (
-                <Button
-                  variant={activeRightPanelTab === 'note' ? 'secondary' : 'ghost'}
-                  size="icon"
-                  onClick={() => openRightPanelTab('note')}
-                  title="Notes"
-                >
-                  <StickyNote />
-                </Button>
-              )}
-              {showHeaderFilesButton && (
-                <Button
-                  variant={activeRightPanelTab === 'files' ? 'secondary' : 'ghost'}
-                  size="icon"
-                  onClick={() => openRightPanelTab('files')}
-                  title="Files"
-                >
-                  <Files />
-                </Button>
-              )}
-            </div>
-          )}
-          {showHeaderDiffButton && (
-            <Button
-              variant={activeRightPanelTab === 'diff' ? 'secondary' : 'ghost'}
-              size="sm"
-              onClick={() => openRightPanelTab('diff')}
-              title="Diff"
-              className="rounded-md border"
-            >
-              <Diff />
-              <GitStatsIndicator />
-            </Button>
-          )}
+        <GitActions />
+        {showTerminalButton && showHeaderTerminalButton && (
           <Button
-            variant="ghost"
+            variant={isTerminalOpen ? 'secondary' : 'ghost'}
             size="icon"
-            onClick={toggleRightPanel}
-            title={isRightPanelOpen ? 'Hide right panel' : 'Show right panel'}
+            onClick={onToggleTerminal}
+            title={isTerminalOpen ? 'Hide terminal' : 'Show terminal'}
           >
-            <PanelRight />
+            <Terminal />
           </Button>
-        </span>
+        )}
+        {isRightPanelOpen && (
+          <div className="flex items-center">
+            {showHeaderWebPreviewButton && (
+              <Button
+                variant={activeRightPanelTab === 'webpreview' ? 'secondary' : 'ghost'}
+                size="icon"
+                onClick={() => openRightPanelTab('webpreview')}
+                title="Web Preview"
+              >
+                <Chrome />
+              </Button>
+            )}
+            {showHeaderNotesButton && (
+              <Button
+                variant={activeRightPanelTab === 'note' ? 'secondary' : 'ghost'}
+                size="icon"
+                onClick={() => openRightPanelTab('note')}
+                title="Notes"
+              >
+                <StickyNote />
+              </Button>
+            )}
+            {showHeaderFilesButton && (
+              <Button
+                variant={activeRightPanelTab === 'files' ? 'secondary' : 'ghost'}
+                size="icon"
+                onClick={() => openRightPanelTab('files')}
+                title="Files"
+              >
+                <Files />
+              </Button>
+            )}
+          </div>
+        )}
+        {showHeaderDiffButton && (
+          <Button
+            variant={activeRightPanelTab === 'diff' ? 'secondary' : 'ghost'}
+            size="sm"
+            onClick={() => openRightPanelTab('diff')}
+            title="Diff"
+            className="rounded-md border"
+          >
+            <Diff />
+            <GitStatsIndicator />
+          </Button>
+        )}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleRightPanel}
+          title={isRightPanelOpen ? 'Hide right panel' : 'Show right panel'}
+        >
+          <PanelRight />
+        </Button>
       </div>
     </div>
   );

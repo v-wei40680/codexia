@@ -103,3 +103,32 @@ pub(crate) async fn api_git_reverse_files(
     git_reverse_files(params.cwd, params.file_paths, params.staged).map_err(to_error_response)?;
     Ok(StatusCode::OK)
 }
+
+#[derive(Deserialize)]
+pub(crate) struct GitCommitParams {
+    cwd: String,
+    message: String,
+}
+
+#[derive(Deserialize)]
+pub(crate) struct GitPushParams {
+    cwd: String,
+    remote: Option<String>,
+    branch: Option<String>,
+}
+
+pub(crate) async fn api_git_commit(
+    Json(params): Json<GitCommitParams>,
+) -> Result<Json<String>, ErrorResponse> {
+    let result = crate::features::git::git_commit(params.cwd, params.message)
+        .map_err(to_error_response)?;
+    Ok(Json(result))
+}
+
+pub(crate) async fn api_git_push(
+    Json(params): Json<GitPushParams>,
+) -> Result<Json<String>, ErrorResponse> {
+    let result = crate::features::git::git_push(params.cwd, params.remote, params.branch)
+        .map_err(to_error_response)?;
+    Ok(Json(result))
+}

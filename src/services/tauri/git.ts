@@ -140,3 +140,18 @@ export async function getGitFileDiff<T = unknown>(filePath: string) {
     has_changes: diff.has_changes,
   } as T;
 }
+
+export async function gitCommit(cwd: string, message: string) {
+  if (isTauri()) {
+    return await invokeTauri<string>('git_commit', { cwd, message });
+  }
+  return await postJson<string>('/api/git/commit', { cwd, message });
+}
+
+export async function gitPush(cwd: string, remote?: string, branch?: string) {
+  if (isTauri()) {
+    return await invokeTauri<string>('git_push', { cwd, remote, branch });
+  }
+  return await postJson<string>('/api/git/push', { cwd, remote, branch });
+}
+

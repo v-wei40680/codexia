@@ -126,6 +126,8 @@ pub fn run() {
             crate::commands::git::git_unstage_files,
             crate::commands::git::git_reverse_files,
             crate::commands::git::git_prepare_thread_worktree,
+            crate::commands::git::git_commit,
+            crate::commands::git::git_push,
             crate::commands::terminal::terminal_start,
             crate::commands::terminal::terminal_write,
             crate::commands::terminal::terminal_resize,

@@ -57,3 +57,17 @@ pub async fn git_reverse_files(
 ) -> Result<(), String> {
     crate::features::git::git_reverse_files(cwd, file_paths, staged)
 }
+
+#[tauri::command]
+pub async fn git_commit(cwd: String, message: String) -> Result<String, String> {
+    crate::features::git::git_commit(cwd, message)
+}
+
+#[tauri::command]
+pub async fn git_push(
+    cwd: String,
+    remote: Option<String>,
+    branch: Option<String>,
+) -> Result<String, String> {
+    crate::features::git::git_push(cwd, remote, branch)
+}
