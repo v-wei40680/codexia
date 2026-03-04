@@ -1,4 +1,4 @@
-import { CollaborationMode, FuzzyFileSearchParams, ModeKind } from '@/bindings';
+import { FuzzyFileSearchParams } from '@/bindings';
 import {
   threadFork,
   threadRollback,
@@ -17,6 +17,7 @@ import {
   gitPrepareThreadWorktree,
 } from './tauri';
 import type {
+  Thread,
   ThreadForkParams,
   ThreadStartParams,
   ThreadListParams,
@@ -28,7 +29,7 @@ import type {
   ReadOnlyAccess,
 } from '@/bindings/v2';
 import type { ThreadListItem } from '@/types/codex/ThreadListItem';
-import { useCodexStore, useConfigStore } from '@/stores/codex';
+import { useCodexStore, useConfigStore, type ModeKind } from '@/stores/codex';
 import { useWorkspaceStore } from '@/stores';
 import { convertThreadHistoryToEvents } from '@/utils/threadHistoryConverter';
 import { getErrorMessage } from '@/utils/errorUtils';
@@ -72,8 +73,19 @@ const generateThreadWorktreeKey = (): string => {
 const isExperimentalRawEventsCapabilityError = (error: unknown): boolean =>
   getErrorMessage(error).includes('experimentalRawEvents requires experimentalApi capability');
 
+type ThreadLike = Thread & { updatedAt?: number };
+const threadSourceToString = (source: ThreadLike['source']): string => {
+  if (typeof source === 'string') {
+    return source;
+  }
+  if (!source) {
+    return '';
+  }
+  return JSON.stringify(source);
+};
+
 export const codexService = {
-  normalizeThreadItem(thread: any): ThreadListItem {
+  normalizeThreadItem(thread: ThreadLike): ThreadListItem {
     const createdAt = thread.createdAt ?? 0;
     const updatedAt = thread.updatedAt ?? 0;
     return {
@@ -81,7 +93,7 @@ export const codexService = {
       preview: thread.preview ?? '',
       cwd: thread.cwd ?? '',
       path: thread.path ?? '',
-      source: thread.source ?? '',
+      source: threadSourceToString(thread.source),
       createdAt,
       updatedAt,
     };
@@ -96,11 +108,16 @@ export const codexService = {
         cursor: null,
         limit: 20,
         modelProviders: null,
-        sortKey,
-        archived,
-        sourceKinds: null,
       };
-      const response = await threadList(params, cwd);
+      const response = await threadList(
+        {
+          ...params,
+          sortKey,
+          archived,
+          sourceKinds: null,
+        } as ThreadListParams,
+        cwd
+      );
       console.log('[CodexService] listThreads response:', response);
       const workingDirThreads = response.data.map((t) => codexService.normalizeThreadItem(t));
       const nextCursor =
@@ -110,10 +127,10 @@ export const codexService = {
       const { setThreads, setThreadListNextCursor } = useCodexStore.getState();
       setThreads(workingDirThreads);
       setThreadListNextCursor(nextCursor);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] Failed to load threads:', error);
       useCodexStore.getState().setThreadListNextCursor(null);
-      throw error;
+      useCodexStore.getState().setThreads([]);
     }
   },
   async loadMoreThreads(cwd: string, sortKey: 'created_at' | 'updated_at' = 'updated_at') {
@@ -127,11 +144,16 @@ export const codexService = {
         cursor: threadListNextCursor,
         limit: 20,
         modelProviders: null,
-        sortKey,
-        archived: false,
-        sourceKinds: null,
       };
-      const response = await threadList(params, cwd);
+      const response = await threadList(
+        {
+          ...params,
+          sortKey,
+          archived: false,
+          sourceKinds: null,
+        } as ThreadListParams,
+        cwd
+      );
       console.log('[CodexService] listThreads (nextCursor) response:', response);
       const workingDirThreads = response.data.map((t) => codexService.normalizeThreadItem(t));
       const nextCursor =
@@ -140,15 +162,15 @@ export const codexService = {
         null;
       appendThreads(workingDirThreads);
       setThreadListNextCursor(nextCursor);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] Failed to load more threads:', error);
-      throw error;
+      setThreadListNextCursor(null);
     }
   },
   async archiveThread(threadId: string) {
     try {
       await threadArchive(threadId);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] archiveThread error:', error);
       throw error;
     }
@@ -185,7 +207,7 @@ export const codexService = {
           inputFocusTrigger: state.inputFocusTrigger + 1,
         }));
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] setCurrentThread error:', error);
       throw error;
     }
@@ -194,7 +216,7 @@ export const codexService = {
   async threadStart() {
     const set = useCodexStore.setState;
     try {
-      const { model, modelProvider, approvalPolicy, sandbox, reasoningEffort, personality } =
+      const { model, modelProvider, approvalPolicy, sandbox, reasoningEffort } =
         useConfigStore.getState();
       const { threadCwdMode } = useConfigStore.getState();
       const { cwd } = useWorkspaceStore.getState();
@@ -223,8 +245,6 @@ export const codexService = {
           view_image_tool: true,
           'features.multi_agents': true,
         },
-        personality,
-        ephemeral: null,
         experimentalRawEvents: true,
         persistExtendedHistory: true,
       };
@@ -254,7 +274,7 @@ export const codexService = {
 
       console.log('[CodexService] threadStart completed successfully');
       return thread;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] threadStart error:', error);
       throw error;
     }
@@ -264,7 +284,6 @@ export const codexService = {
     const set = useCodexStore.setState;
     const { activeThreadIds, events } = useCodexStore.getState();
     try {
-      const { personality } = useConfigStore.getState();
       const resumeCwd = resolveThreadCwd(threadId);
       const response = await threadResume({
         threadId,
@@ -278,7 +297,6 @@ export const codexService = {
         config: null,
         baseInstructions: null,
         developerInstructions: null,
-        personality,
         persistExtendedHistory: true,
       });
       console.log(response.thread.turns);
@@ -300,7 +318,7 @@ export const codexService = {
         },
         inputFocusTrigger: state.inputFocusTrigger + 1,
       }));
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] threadResume error:', error);
       throw error;
     }
@@ -358,7 +376,7 @@ export const codexService = {
         inputFocusTrigger: state.inputFocusTrigger + 1,
       }));
       return normalized;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] threadFork error:', error);
       throw error;
     }
@@ -391,7 +409,7 @@ export const codexService = {
         inputFocusTrigger: state.inputFocusTrigger + 1,
       }));
       return normalized;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] threadRollback error:', error);
       throw error;
     }
@@ -420,16 +438,9 @@ export const codexService = {
         userInputs.push({ type: 'text', text: '', text_elements: [] });
       }
 
-      const { model, reasoningEffort, collaborationMode, approvalPolicy, sandbox, personality } =
+      const { model, reasoningEffort, approvalPolicy, sandbox } =
         useConfigStore.getState();
-      const selectedCollaborationMode: CollaborationMode = {
-        mode: collaborationModeOverride ?? collaborationMode,
-        settings: {
-          model,
-          reasoning_effort: reasoningEffort ?? null,
-          developer_instructions: null,
-        },
-      };
+      void collaborationModeOverride;
 
       const response = await turnStart({
         threadId,
@@ -440,14 +451,12 @@ export const codexService = {
         model: model || null,
         effort: reasoningEffort ?? null,
         summary: null,
-        personality,
         outputSchema: null,
-        collaborationMode: selectedCollaborationMode,
       });
 
       set({ currentTurnId: response.turn.id });
       return response.turn;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] turnStart error:', error);
       throw error;
     }
@@ -458,7 +467,7 @@ export const codexService = {
     try {
       await turnInterrupt({ threadId, turnId });
       set({ currentTurnId: null });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] turnInterrupt error:', error);
       throw error;
     }
@@ -469,7 +478,7 @@ export const codexService = {
       const response = await skillList(cwd);
       console.log('[CodexService] listSkills response:', response.data);
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] listSkills error:', error);
       throw error;
     }
@@ -479,7 +488,7 @@ export const codexService = {
       const response = await tauriFuzzyFileSearch(params);
       console.log('[CodexService] fuzzyFileSearch response:', response.files);
       return response.files;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] fuzzyFileSearch error:', error);
       throw error;
     }
@@ -489,7 +498,7 @@ export const codexService = {
       const response = await tauriSkillsConfigWrite(path, enabled);
       console.log('[CodexService] skillsConfigWrite response:', response);
       return response;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] skillsConfigWrite error:', error);
       throw error;
     }
@@ -499,7 +508,7 @@ export const codexService = {
       const response = await tauriLoginChatGpt();
       console.log('[CodexService] loginChatGpt response:', response);
       return response;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] loginChatGpt error:', error);
       throw error;
     }
@@ -509,7 +518,7 @@ export const codexService = {
       const response = await tauriGetAccount();
       console.log('[CodexService] getAccount response:', response);
       return response;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] getAccount error:', error);
       throw error;
     }
@@ -519,7 +528,7 @@ export const codexService = {
       const response = await reviewStart(params);
       console.log('[CodexService] startReview response:', response);
       return response;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] startReview error:', error);
       throw error;
     }

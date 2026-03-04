@@ -10,6 +10,13 @@ import {
 } from '@/components/ui/sidebar';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { GeneralSettings } from './GeneralSettings';
 import { ExplorerSettings } from './ExplorerSettings';
@@ -20,6 +27,8 @@ import { QuoteSettings } from './QuoteSettings';
 import { ProjectsSettings } from './ProjectsSettings';
 import { RateLimitSettings, TaskSettings } from './codex';
 import { UISettings } from './UISettings';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { isTauri } from '@/hooks/runtime';
 
 type SettingsSection =
   | 'general'
@@ -51,8 +60,62 @@ const sectionLabel: Record<SettingsSection, string> = {
 
 export function SettingsView() {
   const { setView } = useLayoutStore();
+  const isMobile = useIsMobile();
   const [activeSection, setActiveSection] = useState<SettingsSection>('general');
   const [codexOpen, setCodexOpen] = useState(true);
+
+  const activeSectionContent = (
+    <>
+      {activeSection === 'general' && <GeneralSettings />}
+      {activeSection === 'projects' && <ProjectsSettings />}
+      {activeSection === 'codexauth' && <CodexAuth />}
+      {activeSection === 'config' && <ConfigSettings />}
+      {activeSection === 'personalization' && <PersonalizationSettings />}
+      {activeSection === 'archived' && <ArchivedThreadSettings />}
+      {activeSection === 'explorer' && <ExplorerSettings />}
+      {activeSection === 'quote' && <QuoteSettings />}
+      {activeSection === 'task' && <TaskSettings />}
+      {activeSection === 'ui' && <UISettings />}
+    </>
+  );
+
+  if (isMobile) {
+    return (
+      <div className="flex h-full w-full flex-col bg-background">
+        <div className="flex items-center gap-2 border-b px-2 py-2" data-tauri-drag-region>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-9 gap-1 px-2"
+            onClick={() => setView('codex')}
+          >
+            <ChevronLeft className="h-4 w-4" />
+            <span className="text-xs">Back</span>
+          </Button>
+          <Select value={activeSection} onValueChange={(value) => setActiveSection(value as SettingsSection)}>
+            <SelectTrigger className="h-9 flex-1">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {topLevelSections.map((section) => (
+                <SelectItem key={section} value={section}>
+                  {sectionLabel[section]}
+                </SelectItem>
+              ))}
+              {codexSections.map((section) => (
+                <SelectItem key={section} value={section}>
+                  Codex: {sectionLabel[section]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="min-h-0 flex-1 overflow-y-auto px-3 py-3">
+          <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">{activeSectionContent}</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <SidebarProvider
@@ -67,7 +130,10 @@ export function SettingsView() {
     >
       <Sidebar collapsible="none">
         <SidebarHeader className="gap-2 p-2">
-          <div className="flex items-center pl-20" data-tauri-drag-region>
+          <div
+            className={`flex items-center ${isTauri() && !isMobile ? 'pl-20' : 'pl-2'}`}
+            data-tauri-drag-region
+          >
             <Button
               variant="ghost"
               size="sm"
@@ -136,18 +202,7 @@ export function SettingsView() {
       <SidebarInset className="min-w-0">
         <header className="h-8" data-tauri-drag-region />
         <div className="h-full min-h-0 w-full bg-background px-6 py-5 overflow-y-auto">
-          <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">
-            {activeSection === 'general' && <GeneralSettings />}
-            {activeSection === 'projects' && <ProjectsSettings />}
-            {activeSection === 'codexauth' && <CodexAuth />}
-            {activeSection === 'config' && <ConfigSettings />}
-            {activeSection === 'personalization' && <PersonalizationSettings />}
-            {activeSection === 'archived' && <ArchivedThreadSettings />}
-            {activeSection === 'explorer' && <ExplorerSettings />}
-            {activeSection === 'quote' && <QuoteSettings />}
-            {activeSection === 'task' && <TaskSettings />}
-            {activeSection === 'ui' && <UISettings />}
-          </div>
+          <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">{activeSectionContent}</div>
         </div>
       </SidebarInset>
     </SidebarProvider>

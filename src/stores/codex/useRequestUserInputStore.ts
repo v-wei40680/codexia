@@ -1,7 +1,18 @@
 import { create } from 'zustand';
-import type { ToolRequestUserInputQuestion, ToolRequestUserInputResponse } from '@/bindings/v2';
 import type { RequestId } from '@/bindings';
 import { respondToRequestUserInput } from '@/services';
+
+type ToolRequestUserInputQuestion = {
+  id: string;
+  header?: string;
+  question: string;
+  options?: Array<{ label: string; description?: string }>;
+  isOther?: boolean;
+};
+
+type ToolRequestUserInputResponse = {
+  answers: Record<string, { answers: string[] }>;
+};
 
 export type RequestUserInputRequest = {
   requestId: RequestId;

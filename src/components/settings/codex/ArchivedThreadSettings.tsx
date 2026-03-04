@@ -2,11 +2,23 @@ import { useCallback, useEffect, useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import type { ThreadListItem } from '@/types/codex/ThreadListItem';
-import type { ThreadListParams } from '@/bindings/v2';
+import type { Thread, ThreadListParams } from '@/bindings/v2';
 import { threadListArchived, threadUnarchive } from '@/services/tauri';
 import { ThreadId } from '@/bindings';
 import { getFilename } from '@/utils/getFilename';
 import { formatThreadAge } from '@/utils/formatThreadAge';
+
+type ThreadLike = Thread & { updatedAt?: number };
+
+const threadSourceToString = (source: ThreadLike['source']): string => {
+  if (typeof source === 'string') {
+    return source;
+  }
+  if (!source) {
+    return '';
+  }
+  return JSON.stringify(source);
+};
 
 export function ArchivedThreadSettings() {
   const [threads, setThreads] = useState<ThreadListItem[]>([]);
@@ -26,14 +38,14 @@ export function ArchivedThreadSettings() {
         sourceKinds: null,
       };
       const response = await threadListArchived(params);
-      const normalized = response.data.map((thread: any) => ({
+      const normalized = response.data.map((thread: ThreadLike) => ({
         createdAt: thread.createdAt ?? 0,
         updatedAt: thread.updatedAt ?? 0,
         id: thread.id,
         preview: thread.preview ?? '',
         cwd: thread.cwd ?? '',
         path: thread.path ?? '',
-        source: thread.source ?? '',
+        source: threadSourceToString(thread.source),
       }));
       setThreads(normalized);
     } catch (err) {

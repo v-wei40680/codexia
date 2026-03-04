@@ -70,7 +70,6 @@ export function ChatInterface() {
     summaryIndex: number;
   } | null = null;
   const seenAgentMessageDeltaItemIds = new Set<string>();
-  const seenPlanDeltaItemIds = new Set<string>();
   const seenReasoningTextDeltaItemIds = new Set<string>();
   const seenReasoningSummaryDeltaItemIds = new Set<string>();
 
@@ -108,8 +107,6 @@ export function ChatInterface() {
 
     if (event.method === 'item/agentMessage/delta') {
       seenAgentMessageDeltaItemIds.add(event.params.itemId);
-    } else if (event.method === 'item/plan/delta') {
-      seenPlanDeltaItemIds.add(event.params.itemId);
     } else if (event.method === 'item/reasoning/textDelta') {
       seenReasoningTextDeltaItemIds.add(event.params.itemId);
     }
@@ -143,10 +140,6 @@ export function ChatInterface() {
         completedItem.type === 'agentMessage' &&
         seenAgentMessageDeltaItemIds.has(completedItem.id)
       ) {
-        return;
-      }
-
-      if (completedItem.type === 'plan' && seenPlanDeltaItemIds.has(completedItem.id)) {
         return;
       }
 

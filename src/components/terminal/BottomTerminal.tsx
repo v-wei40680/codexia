@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { terminalResize, terminalStart, terminalStop, terminalWrite } from '@/services/tauri';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { isTauri } from '@/hooks/runtime';
 
 type BottomTerminalProps = {
   open: boolean;
@@ -26,6 +28,8 @@ type TerminalExitPayload = {
 
 export function BottomTerminal({ open, onOpenChange }: BottomTerminalProps) {
   const { cwd } = useWorkspaceStore();
+  const isMobile = useIsMobile();
+  const isTauriRuntime = isTauri();
   const [shell, setShell] = useState('');
   const [sessionId, setSessionId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -39,7 +43,7 @@ export function BottomTerminal({ open, onOpenChange }: BottomTerminalProps) {
   }, [sessionId]);
 
   useEffect(() => {
-    if (!containerRef.current || terminalRef.current) {
+    if (!open || !containerRef.current || terminalRef.current) {
       return;
     }
 
@@ -78,12 +82,12 @@ export function BottomTerminal({ open, onOpenChange }: BottomTerminalProps) {
       terminalRef.current = null;
       fitAddonRef.current = null;
     };
-  }, []);
+  }, [open]);
 
   const startSession = async () => {
     const term = terminalRef.current;
     const fitAddon = fitAddonRef.current;
-    if (!term || !fitAddon || sessionIdRef.current || isStartingRef.current) {
+    if (!isTauriRuntime || !term || !fitAddon || sessionIdRef.current || isStartingRef.current) {
       return;
     }
     isStartingRef.current = true;
@@ -103,6 +107,9 @@ export function BottomTerminal({ open, onOpenChange }: BottomTerminalProps) {
   };
 
   const stopSession = async () => {
+    if (!isTauriRuntime) {
+      return;
+    }
     const current = sessionIdRef.current;
     if (!current) {
       return;
@@ -127,6 +134,10 @@ export function BottomTerminal({ open, onOpenChange }: BottomTerminalProps) {
   }, [open]);
 
   useEffect(() => {
+    if (!isTauriRuntime) {
+      return;
+    }
+
     let unlistenData: (() => void) | null = null;
     let unlistenExit: (() => void) | null = null;
 
@@ -158,10 +169,13 @@ export function BottomTerminal({ open, onOpenChange }: BottomTerminalProps) {
         unlistenExit();
       }
     };
-  }, []);
+  }, [isTauriRuntime]);
 
   useEffect(() => {
     const fitAndResize = () => {
+      if (!open) {
+        return;
+      }
       const term = terminalRef.current;
       const fitAddon = fitAddonRef.current;
       const current = sessionIdRef.current;
@@ -169,36 +183,45 @@ export function BottomTerminal({ open, onOpenChange }: BottomTerminalProps) {
         return;
       }
       fitAddon.fit();
-      if (current) {
+      if (isTauriRuntime && current) {
         void terminalResize(current, Math.max(term.cols, 2), Math.max(term.rows, 2));
       }
     };
 
     const observer = new ResizeObserver(fitAndResize);
-    if (containerRef.current) {
+    if (open && containerRef.current) {
       observer.observe(containerRef.current);
     }
-    window.addEventListener('resize', fitAndResize);
+    if (open) {
+      window.addEventListener('resize', fitAndResize);
+    }
     return () => {
       observer.disconnect();
-      window.removeEventListener('resize', fitAndResize);
+      if (open) {
+        window.removeEventListener('resize', fitAndResize);
+      }
     };
-  }, []);
+  }, [isTauriRuntime, open]);
 
   useEffect(() => {
+    if (!isTauriRuntime) {
+      return;
+    }
+
     return () => {
       const current = sessionIdRef.current;
       if (current) {
         void terminalStop(current);
       }
     };
-  }, []);
+  }, [isTauriRuntime]);
 
   return (
     <div
+      style={{ height: open ? (isMobile ? '42dvh' : '18rem') : '0px' }}
       className={cn(
         'border-t border-border/80 bg-black text-zinc-100 transition-[height,opacity] duration-200 ease-out',
-        open ? 'h-72 opacity-100' : 'h-0 opacity-0'
+        open ? 'opacity-100' : 'opacity-0'
       )}
     >
       <div className="flex h-full min-h-0 flex-col">

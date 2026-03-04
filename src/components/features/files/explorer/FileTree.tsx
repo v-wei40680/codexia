@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FileIcon, defaultStyles } from 'react-file-icon';
-import { ChevronDown, ChevronRight, FolderPlus, Plus } from 'lucide-react';
+import { ChevronDown, ChevronRight, FileText, FolderPlus, Plus } from 'lucide-react';
 import { useSettingsStore } from '@/stores/settings';
 import { useLayoutStore, useWorkspaceStore } from '@/stores';
 import { useInputStore } from '@/stores';
+import { isTauri } from '@/hooks/runtime';
 import { Button } from '@/components/ui/button';
 import {
   canonicalizePath,
@@ -135,6 +136,7 @@ export function FileTree({ folder, isTreeVisible, onToggleTree, onFileSelect }: 
   const { selectedFilePath, setSelectedFilePath, addProject } = useWorkspaceStore();
   const { appendInputValue } = useInputStore();
   const autoExpandedTargetRef = useRef<string | null>(null);
+  const shouldUseSvgFileIcon = isTauri();
   const hiddenSet = useMemo(
     () => new Set(hiddenNames.map((name) => normalizeName(name))),
     [hiddenNames]
@@ -536,7 +538,11 @@ export function FileTree({ folder, isTreeVisible, onToggleTree, onFileSelect }: 
           )}
           {!isDir && (
             <span className="relative h-4 w-4 shrink-0">
-              <FileIcon extension={extension} {...iconStyle} />
+              {shouldUseSvgFileIcon ? (
+                <FileIcon extension={extension} {...iconStyle} />
+              ) : (
+                <FileText className="h-4 w-4 text-muted-foreground" />
+              )}
               {!isRoot ? (
                 <Button
                   onClick={(event) => {

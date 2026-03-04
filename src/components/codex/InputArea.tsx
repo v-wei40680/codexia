@@ -8,6 +8,7 @@ import type { FileSearchPopoverHandle } from './selector';
 import type { FuzzyFileSearchResult } from '@/bindings';
 import { useInputStore } from '@/stores/useInputStore';
 import { getFilename } from '@/utils/getFilename';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface InputAreaProps {
   currentThreadId: string | null;
@@ -31,6 +32,7 @@ export function InputArea({
   images = [],
   onRemoveImage,
 }: InputAreaProps & { children?: React.ReactNode }) {
+  const isMobile = useIsMobile();
   const isDev = import.meta.env.DEV;
   const debug = (...args: unknown[]) => {
     if (isDev) {
@@ -212,7 +214,7 @@ export function InputArea({
   };
 
   return (
-    <div className="px-4 bg-background">
+    <div className={`${isMobile ? 'px-2 pb-[env(safe-area-inset-bottom)]' : 'px-4'} bg-background`}>
       {showFileSearch && (
         <FileSearchPopover
           ref={fileSearchRef}
@@ -256,17 +258,17 @@ export function InputArea({
             }, 50);
           }}
           placeholder="Ask anything..."
-          className="min-h-[60px] max-h-[200px] w-full resize-none border-0 shadow-none focus-visible:ring-0 bg-transparent py-4 text-base"
+          className={`w-full resize-none border-0 bg-transparent text-base shadow-none focus-visible:ring-0 ${isMobile ? 'min-h-[72px] max-h-[180px] py-3' : 'min-h-[60px] max-h-[200px] py-4'}`}
         />
-        <div className="flex justify-between items-center p-0 pl-3 bg-muted/20 rounded-b-xl">
-          <div className="flex items-center">{children}</div>
+        <div className={`flex items-center justify-between rounded-b-xl bg-muted/20 ${isMobile ? 'gap-2 px-2 py-1.5' : 'p-0 pl-3'}`}>
+          <div className={`flex items-center ${isMobile ? 'flex-wrap gap-1' : ''}`}>{children}</div>
           <div>
             {isProcessing ? (
               <Button
                 onClick={handleStop}
                 variant="destructive"
                 size="icon"
-                className="h-8 w-8 rounded-lg"
+                className={`${isMobile ? 'h-10 w-10' : 'h-8 w-8'} rounded-lg`}
               >
                 <Square className="w-4 h-4" />
               </Button>
@@ -275,7 +277,7 @@ export function InputArea({
                 onClick={handleSend}
                 disabled={!inputValue.trim()}
                 size="icon"
-                className="h-8 w-8 rounded-lg"
+                className={`${isMobile ? 'h-10 w-10' : 'h-8 w-8'} rounded-lg`}
               >
                 <SendIcon className="w-4 h-4" />
               </Button>

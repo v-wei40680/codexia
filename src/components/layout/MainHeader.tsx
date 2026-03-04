@@ -11,6 +11,8 @@ import { GitStatsIndicator } from '@/components/features/GitStatsIndicator';
 import { useGitStatsStore } from '@/stores/useGitStatsStore';
 import { useGitWatch } from '@/hooks/useGitWatch';
 import { useSettingsStore } from '@/stores/settings';
+import { useIsMobile } from '@/hooks/use-mobile';
+import { isTauri } from '@/hooks/runtime';
 
 type MainHeaderProps = {
   isTerminalOpen: boolean;
@@ -44,9 +46,11 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
   const { handleNewSession } = useCCSessionManager();
   const { currentThreadId, activeThreadIds } = useCodexStore();
   const { refreshStats } = useGitStatsStore();
+  const isMobile = useIsMobile();
   const currentThread = useCurrentThread();
   const showTerminalButton = view === 'codex' || view === 'cc';
   const isHistoryView = view === 'history';
+  const shouldUseDesktopDragOffset = isTauri() && !isMobile;
   const openRightPanelTab = (tab: 'diff' | 'note' | 'files' | 'webpreview') => {
     setActiveRightPanelTab(tab);
     setRightPanelOpen(true);
@@ -93,7 +97,7 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
     >
       <div className="flex min-w-0 items-center gap-2">
         {shouldShowIcons && (
-          <div className="flex items-center gap-2 pl-20">
+          <div className={`flex items-center gap-2 ${shouldUseDesktopDragOffset ? 'pl-20' : 'pl-2'}`}>
             <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
               <PanelLeft />
             </Button>

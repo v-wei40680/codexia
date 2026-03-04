@@ -9,10 +9,12 @@ import { Button } from '@/components/ui/button';
 import { PanelLeftOpen } from 'lucide-react';
 import { WebPreview } from '../features/web-preview/WebPreview';
 import { detectWebFramework } from '../features/web-preview/webFrameworkDetection';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export function RightPanel() {
   const { activeRightPanelTab, setRightPanelOpen } = useLayoutStore();
   const { selectedFilePath, cwd } = useWorkspaceStore();
+  const isMobile = useIsMobile();
   const [webPreviewUrl, setWebPreviewUrl] = useState('');
   const [isFileTreeVisible, setIsFileTreeVisible] = useState(true);
 
@@ -40,8 +42,8 @@ export function RightPanel() {
 
   // Reset tree visibility whenever the workspace changes
   useEffect(() => {
-    setIsFileTreeVisible(true);
-  }, [cwd]);
+    setIsFileTreeVisible(!isMobile);
+  }, [cwd, isMobile]);
 
   return (
     <div className="h-full w-full min-h-0 border-l border-white/10 bg-sidebar/30 flex flex-col overflow-hidden">
@@ -58,9 +60,9 @@ export function RightPanel() {
           )}
 
           {activeRightPanelTab === 'files' && (
-            <div className="flex h-full min-h-0 overflow-hidden">
+            <div className="relative flex h-full min-h-0 overflow-hidden">
               {/* File tree sidebar — slides out without leaving a gap */}
-              {isFileTreeVisible && (
+              {isFileTreeVisible && !isMobile && (
                 <div className="h-full w-64 min-w-64 shrink-0 border-r border-border bg-sidebar/20 overflow-hidden pl-2 pt-2">
                   <FileTree
                     folder={cwd}
@@ -68,6 +70,24 @@ export function RightPanel() {
                     onToggleTree={() => setIsFileTreeVisible(false)}
                   />
                 </div>
+              )}
+
+              {isFileTreeVisible && isMobile && (
+                <>
+                  <button
+                    type="button"
+                    className="absolute inset-0 z-10 bg-black/20"
+                    aria-label="Hide file tree"
+                    onClick={() => setIsFileTreeVisible(false)}
+                  />
+                  <div className="absolute inset-y-0 left-0 z-20 w-[min(78vw,280px)] border-r border-border bg-sidebar/90 overflow-hidden pl-2 pt-2 backdrop-blur">
+                    <FileTree
+                      folder={cwd}
+                      isTreeVisible={isFileTreeVisible}
+                      onToggleTree={() => setIsFileTreeVisible(false)}
+                    />
+                  </div>
+                </>
               )}
 
               {/* File viewer — fills all remaining space */}

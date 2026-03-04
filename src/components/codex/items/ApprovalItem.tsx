@@ -57,9 +57,7 @@ export function ApprovalItem() {
             <Badge variant="secondary">{pendingApprovals.length} pending</Badge>
           )}
         </div>
-        {(currentApproval.reason ||
-          (currentApproval.type === 'commandExecution' &&
-            (currentApproval.commandActions?.length ?? 0) > 0)) && (
+        {currentApproval.reason && (
           <Button
             variant="ghost"
             size="sm"
@@ -83,11 +81,11 @@ export function ApprovalItem() {
 
       {/* Main info - always visible */}
       <div className="grid gap-3 text-sm">
-        {currentApproval.type === 'commandExecution' && currentApproval.command && (
+        {currentApproval.type === 'commandExecution' && (
           <div>
-            <div className="font-medium mb-1">Command:</div>
+            <div className="font-medium mb-1">Command Execution Request:</div>
             <div className="text-muted-foreground p-2 bg-muted rounded font-mono text-xs break-all">
-              {currentApproval.command}
+              itemId: {currentApproval.itemId}
             </div>
           </div>
         )}
@@ -130,31 +128,6 @@ export function ApprovalItem() {
             </div>
           )}
 
-          {currentApproval.type === 'commandExecution' &&
-            currentApproval.commandActions &&
-            currentApproval.commandActions.length > 0 && (
-              <div>
-                <div className="font-medium mb-1">Actions Summary:</div>
-                <div className="space-y-1">
-                  {currentApproval.commandActions.map((action, idx) => (
-                    <div key={idx} className="text-muted-foreground p-2 bg-muted rounded text-xs">
-                      <div className="font-medium text-foreground">
-                        {action.type === 'read' && `📖 Read: ${action.name}`}
-                        {action.type === 'listFiles' && '📁 List Files'}
-                        {action.type === 'search' && '🔍 Search'}
-                        {action.type === 'unknown' && '❓ Unknown Action'}
-                      </div>
-                      {action.type === 'read' && action.path && (
-                        <div className="mt-1 font-mono opacity-70">{action.path}</div>
-                      )}
-                      {action.type === 'search' && action.query && (
-                        <div className="mt-1">Query: {action.query}</div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
         </div>
       )}
 

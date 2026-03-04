@@ -1,0 +1,41 @@
+{
+  "baseUrl": "http://127.0.0.1:4173/",
+  "executedAt": "2026-03-04T00:26:24.034Z",
+  "results": [
+    {
+      "name": "mobile-390x844",
+      "pageErrors": [
+        "Error: Request failed: 404",
+        "Error: Request failed: 404"
+      ],
+      "metrics": {
+        "rootScrollWidth": 390,
+        "rootClientWidth": 390
+      },
+      "horizontalOverflow": false
+    },
+    {
+      "name": "tablet-768x1024",
+      "pageErrors": [
+        "Error: Request failed: 404"
+      ],
+      "metrics": {
+        "rootScrollWidth": 768,
+        "rootClientWidth": 768
+      },
+      "horizontalOverflow": false
+    },
+    {
+      "name": "desktop-1366x768",
+      "pageErrors": [
+        "Error: Request failed: 404"
+      ],
+      "metrics": {
+        "rootScrollWidth": 1366,
+        "rootClientWidth": 1366
+      },
+      "horizontalOverflow": false
+    }
+  ],
+  "passed": false
+}
