@@ -1,5 +1,4 @@
 import { Card } from '@/components/ui/card';
-import { useSettingsStore } from '@/stores/settings';
 import {
   Code,
   FileText,
@@ -13,10 +12,7 @@ import {
   Wrench,
   ChevronsDown,
   ChevronsUp,
-  Sheet,
-  Folder,
 } from 'lucide-react';
-import { useState } from 'react';
 
 interface Example {
   icon: React.ReactNode;
@@ -92,91 +88,69 @@ const EXAMPLES: Example[] = [
   },
 ];
 
-const CoworkExamples: Example[] = [
-  {
-    icon: <Sheet className="h-5 w-5" />,
-    title: 'Create a file',
-    prompt: 'Create a spreadsheet',
-    category: 'Create',
-  },
-  {
-    icon: <Folder className="h-5 w-5" />,
-    title: 'Organize files',
-    prompt: 'Organize files',
-    category: 'Organize',
-  },
-];
 
 interface Props {
   onSelectPrompt: (prompt: string) => void;
+  isExpanded: boolean;
+  onToggleExpanded: () => void;
 }
 
-export function ExamplePrompts({ onSelectPrompt }: Props) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const { isCoworkMode } = useSettingsStore();
-
-  const toggleAll = () => {
-    setIsExpanded((prev) => !prev);
-  };
+export function ExamplePrompts({ onSelectPrompt, isExpanded, onToggleExpanded }: Props) {
+  const displayedExamples = isExpanded ? EXAMPLES : EXAMPLES.slice(0, 4);
 
   return (
-    <div className="space-y-4 p-4">
-      <div className="text-center space-y-2">
-        <div className="flex items-center justify-center gap-2">
-          <h2 className="text-2xl font-bold">What can Claude Code help you with?</h2>
-          <button
-            onClick={toggleAll}
-            className="p-1.5 hover:bg-accent rounded transition-colors"
-            aria-label={isExpanded ? 'Collapse all' : 'Expand all'}
-          >
-            {isExpanded ? (
-              <ChevronsUp className="h-5 w-5 text-muted-foreground" />
-            ) : (
-              <ChevronsDown className="h-5 w-5 text-muted-foreground" />
-            )}
-          </button>
-        </div>
-        <p className="text-muted-foreground">Select an example below or type your own prompt</p>
+    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      <div className="flex items-center justify-between px-2">
+        <h2 className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+          <Sparkles className="h-4 w-4 text-primary" />
+          {isExpanded ? 'All Examples' : 'Example Prompts'}
+        </h2>
+        <button
+          onClick={onToggleExpanded}
+          className="text-xs font-medium text-primary hover:text-primary/80 flex items-center gap-1 transition-colors"
+        >
+          {isExpanded ? (
+            <>
+              Show less <ChevronsUp className="h-3.5 w-3.5" />
+            </>
+          ) : (
+            <>
+              Show all <ChevronsDown className="h-3.5 w-3.5" />
+            </>
+          )}
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {(isCoworkMode ? CoworkExamples : EXAMPLES).map((example, idx) => (
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 px-1">
+        {displayedExamples.map((example, idx) => (
           <Card
             key={idx}
-            className="p-3 hover:bg-accent cursor-pointer transition-colors"
+            className="group relative overflow-hidden p-4 hover:shadow-md hover:border-primary/50 cursor-pointer transition-all duration-300 bg-card/50 backdrop-blur-sm border-dashed"
             onClick={() => onSelectPrompt(example.prompt)}
           >
-            {isExpanded ? (
-              <div className="flex items-start gap-3">
-                <div className="p-2 rounded-lg bg-primary/10 text-primary">{example.icon}</div>
-                <div className="flex-1 space-y-1">
-                  <div className="flex items-center justify-between gap-2">
-                    <h3 className="font-semibold text-sm flex-1">{example.title}</h3>
-                    <span className="text-xs text-muted-foreground px-2 py-1 rounded-full bg-secondary">
-                      {example.category}
-                    </span>
-                  </div>
-                  <p className="text-xs text-muted-foreground">{example.prompt}</p>
-                </div>
+            <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
+            <div className="flex items-start gap-3 relative z-10">
+              <div className="mt-0.5 p-2.5 rounded-xl bg-primary/10 text-primary group-hover:scale-110 transition-transform duration-300">
+                {example.icon}
               </div>
-            ) : (
-              <h3 className="font-semibold text-sm">{example.title}</h3>
-            )}
+              <div className="flex-1 min-w-0 space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-sm truncate group-hover:text-primary transition-colors">
+                    {example.title}
+                  </h3>
+                  <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary transition-colors">
+                    {example.category}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                  {example.prompt}
+                </p>
+              </div>
+            </div>
           </Card>
         ))}
       </div>
-
-      <Card className="p-4 bg-muted/50">
-        <div className="space-y-2">
-          <h3 className="font-semibold text-sm">Pro Tips:</h3>
-          <ul className="text-xs text-muted-foreground space-y-1 list-disc list-inside">
-            <li>Be specific about what you want Claude to do</li>
-            <li>Claude can read, write, and edit files in your project</li>
-            <li>You can ask Claude to run tests and commands</li>
-            <li>Use interrupt button to stop ongoing tasks</li>
-          </ul>
-        </div>
-      </Card>
     </div>
   );
 }

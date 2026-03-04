@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { useCCStore, CCMessage as CCMessageType } from '@/stores/ccStore';
 import { Card } from '@/components/ui/card';
@@ -10,6 +10,7 @@ import { CCScrollControls } from '@/components/cc/CCScrollControls';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useCCInputStore } from '@/stores/useCCInputStore';
 import { ccInterrupt, ccSendMessage } from '@/services';
+import { ProjectSelector } from '../project-selector';
 
 export default function CCView() {
   const {
@@ -17,10 +18,8 @@ export default function CCView() {
     messages,
     isConnected,
     isLoading,
-    showExamples,
     addMessage,
     setLoading,
-    setShowExamples,
     setConnected,
     clearMessages,
   } = useCCStore();
@@ -50,8 +49,7 @@ export default function CCView() {
     clearMessages();
     setConnected(false);
     setLoading(false);
-    setShowExamples(true);
-  }, [cwd, activeSessionId, clearMessages, setConnected, setLoading, setShowExamples]);
+  }, [cwd, activeSessionId, clearMessages, setConnected, setLoading]);
 
   // Listen to message events
   useEffect(() => {
@@ -108,7 +106,6 @@ export default function CCView() {
 
     setInput('');
     setLoading(true);
-    setShowExamples(false);
 
     try {
       // Backend will connect automatically on first message if not connected
@@ -150,7 +147,6 @@ export default function CCView() {
   const handleExamplePrompt = (prompt: string) => {
     // Append to input instead of replacing
     setInput((prev) => (prev ? prev + '\n\n' + prompt : prompt));
-    setShowExamples(false);
   };
 
   const handleScrollUp = () => {
@@ -171,15 +167,42 @@ export default function CCView() {
     }
   };
 
+  const [isPromptsExpanded, setIsPromptsExpanded] = useState(false);
+
   return (
-    <div className="flex flex-col h-full min-h-0">
+    <div className="flex flex-col h-full min-h-0 max-w-4xl mx-auto">
       {/* Scrollable content area */}
       <div className="flex-1 min-h-0 overflow-hidden relative">
-        <div ref={scrollContainerRef} className="h-full overflow-y-auto">
-          <div className="flex flex-col gap-2 p-2">
-            {messages.length === 0 && !isLoading && !showExamples && (
-              <div className="border-b">
-                <ExamplePrompts onSelectPrompt={handleExamplePrompt} />
+        <div ref={scrollContainerRef} className="h-full overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:display-none">
+          <div className="flex flex-col gap-4 p-4">
+            {messages.length === 0 && (
+              <div className={`flex-1 flex flex-col items-center max-w-2xl mx-auto py-8 text-center animate-in fade-in duration-500 ${isPromptsExpanded ? 'justify-start mt-4' : 'justify-center'}`}>
+                {!isPromptsExpanded && (
+                  <>
+                    <div className="mb-4 space-y-3 animate-in fade-in zoom-in-95 duration-500">
+                      <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/50 bg-clip-text text-transparent">
+                        let&apos;s build
+                      </h1>
+                    </div>
+
+                    <div className="flex justify-center mb-12 animate-in fade-in zoom-in-95 duration-500">
+                      <ProjectSelector
+                        variant="hero"
+                        className="h-11 max-w-64 gap-2 px-4 bg-background hover:bg-accent shadow-sm border-none transition-all rounded-xl font-medium"
+                        triggerMode="project-name"
+                        showChevron
+                      />
+                    </div>
+                  </>
+                )}
+
+                <div className="w-full">
+                  <ExamplePrompts
+                    onSelectPrompt={handleExamplePrompt}
+                    isExpanded={isPromptsExpanded}
+                    onToggleExpanded={() => setIsPromptsExpanded(!isPromptsExpanded)}
+                  />
+                </div>
               </div>
             )}
             {messages.map((msg, idx) => (
@@ -195,7 +218,9 @@ export default function CCView() {
           </div>
         </div>
 
-        <CCScrollControls onScrollUp={handleScrollUp} onScrollDown={handleScrollDown} />
+        {messages.length > 0 && (
+          <CCScrollControls onScrollUp={handleScrollUp} onScrollDown={handleScrollDown} />
+        )}
       </div>
 
       <CCInput

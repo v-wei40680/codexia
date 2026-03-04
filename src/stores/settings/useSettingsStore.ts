@@ -5,8 +5,6 @@ export type TaskDetail = 'steps' | 'stepsWithCommand' | 'stepsWithOutput';
 export type TaskCompleteBeepMode = 'never' | 'unfocused' | 'always';
 
 export interface SettingState {
-  isCoworkMode: boolean;
-  setIsCoworkMode: (isCoworkMode: boolean) => void;
   hiddenNames: string[];
   showExplorer: boolean;
   taskDetail: TaskDetail;
@@ -65,8 +63,6 @@ const DEFAULT_HIDDEN_NAMES = [
 export const useSettingsStore = create<SettingState>()(
   persist(
     (set) => ({
-      isCoworkMode: false,
-      setIsCoworkMode: (isCoworkMode: boolean) => set({ isCoworkMode }),
       hiddenNames: DEFAULT_HIDDEN_NAMES,
       showExplorer: true,
       taskDetail: 'steps',
