@@ -18,7 +18,7 @@ import { useLayoutStore } from '@/stores';
 import { useCodexStore, useCurrentThread } from '@/stores/codex';
 import { useCCSessionManager } from '@/hooks/useCCSessionManager';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
-import { GitStatsIndicator } from '@/components/features/GitStatsIndicator';
+import { GitStatsIndicator } from '@/components/features/git';
 import { useGitStatsStore } from '@/stores/useGitStatsStore';
 import { useGitWatch } from '@/hooks/useGitWatch';
 import { useSettingsStore } from '@/stores/settings';
@@ -115,11 +115,10 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
             aria-label={isConnected ? 'Connected' : 'Ready'}
           >
             <Circle
-              className={`size-3 ${
-                isConnected
+              className={`size-3 ${isConnected
                   ? 'fill-emerald-500 text-emerald-500'
                   : 'fill-transparent text-emerald-500/80'
-              }`}
+                }`}
             />
           </span>
         )}
@@ -136,15 +135,15 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
         {selectedAgent === 'codex' &&
           currentThreadId &&
           (view === 'codex' || view === 'history') && (
-          <Button
-            variant={isHistoryView ? 'secondary' : 'ghost'}
-            size="icon"
-            onClick={handleToggleHistoryMode}
-            title={isHistoryView ? 'Exit history mode' : 'Enter history mode'}
-          >
-            <History />
-          </Button>
-        )}
+            <Button
+              variant={isHistoryView ? 'secondary' : 'ghost'}
+              size="icon"
+              onClick={handleToggleHistoryMode}
+              title={isHistoryView ? 'Exit history mode' : 'Enter history mode'}
+            >
+              <History />
+            </Button>
+          )}
         <ProjectSelector forcedMode="browse" triggerMode="project-name" />
       </div>
       <div className="flex items-center gap-2">
