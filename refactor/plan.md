@@ -222,7 +222,8 @@ Meningkatkan kesiapan rilis dengan validasi build penuh dan mengurangi beban ini
   - Terdeteksi horizontal overflow (`rootScrollWidth = 50000`) pada semua viewport.
 - Status akhir smoke:
   - Functional backend-dependent flow belum bisa dianggap pass tanpa app-server live.
-  - UI overflow issue terkonfirmasi dan masuk kandidat patch berikutnya.
+  - UI overflow issue terkonfirmasi dan sudah dipatch di `BottomTerminal` (deferred xterm init saat panel tertutup).
+  - Re-run smoke setelah patch menunjukkan overflow sudah hilang di semua viewport (`rootScrollWidth == rootClientWidth`).
 
 ---
 

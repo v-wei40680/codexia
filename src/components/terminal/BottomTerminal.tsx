@@ -41,7 +41,7 @@ export function BottomTerminal({ open, onOpenChange }: BottomTerminalProps) {
   }, [sessionId]);
 
   useEffect(() => {
-    if (!containerRef.current || terminalRef.current) {
+    if (!open || !containerRef.current || terminalRef.current) {
       return;
     }
 
@@ -80,7 +80,7 @@ export function BottomTerminal({ open, onOpenChange }: BottomTerminalProps) {
       terminalRef.current = null;
       fitAddonRef.current = null;
     };
-  }, []);
+  }, [open]);
 
   const startSession = async () => {
     const term = terminalRef.current;
@@ -164,6 +164,9 @@ export function BottomTerminal({ open, onOpenChange }: BottomTerminalProps) {
 
   useEffect(() => {
     const fitAndResize = () => {
+      if (!open) {
+        return;
+      }
       const term = terminalRef.current;
       const fitAddon = fitAddonRef.current;
       const current = sessionIdRef.current;
@@ -177,15 +180,19 @@ export function BottomTerminal({ open, onOpenChange }: BottomTerminalProps) {
     };
 
     const observer = new ResizeObserver(fitAndResize);
-    if (containerRef.current) {
+    if (open && containerRef.current) {
       observer.observe(containerRef.current);
     }
-    window.addEventListener('resize', fitAndResize);
+    if (open) {
+      window.addEventListener('resize', fitAndResize);
+    }
     return () => {
       observer.disconnect();
-      window.removeEventListener('resize', fitAndResize);
+      if (open) {
+        window.removeEventListener('resize', fitAndResize);
+      }
     };
-  }, []);
+  }, [open]);
 
   useEffect(() => {
     return () => {

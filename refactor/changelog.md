@@ -77,10 +77,12 @@ Semua perubahan di dokumen ini mengikuti semantic versioning.
 - `AppLayout` melakukan lazy loading untuk view non-kritis guna menurunkan beban initial load.
 - Menambahkan `Suspense` fallback ringan saat perpindahan ke view async.
 - View utama (`codex`, `history`) tetap eager untuk menjaga responsivitas alur utama.
+- `BottomTerminal` hanya menginisialisasi `xterm` saat panel terbuka untuk mencegah perhitungan layout saat hidden state.
 
 ### Validation
 
 - ✅ `npx tsc --noEmit`
 - ✅ `npm run build`
 - ℹ️ `bunx tsc --noEmit` tidak tersedia di environment saat validasi.
-- ⚠️ Headless smoke test (`390x844`, `768x1024`, `1366x768`) dijalankan via static preview; ditemukan 404/ws backend dependency, runtime error `transformCallback/dimensions`, dan overflow lebar root.
+- ⚠️ Headless smoke test (`390x844`, `768x1024`, `1366x768`) dijalankan via static preview; ditemukan 404/ws backend dependency dan runtime error `transformCallback` yang perlu investigasi lanjutan.
+- ✅ Re-run smoke setelah patch terminal menghilangkan horizontal overflow root di semua viewport.
