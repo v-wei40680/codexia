@@ -93,3 +93,5 @@ Semua perubahan di dokumen ini mengikuti semantic versioning.
 - ✅ Re-run smoke setelah patch terminal menghilangkan horizontal overflow root di semua viewport.
 - ✅ Investigasi lanjutan menuntaskan error `transformCallback` (root cause: unguarded Tauri listener di web mode).
 - ℹ️ Re-run smoke terbaru menyisakan error `Request failed: 404` karena backend app-server tidak aktif saat static preview.
+- ✅ Smoke dev-mode dengan backend mock pada port `7420` lulus (`pageErrors` kosong di mobile/tablet/desktop).
+- ℹ️ CLI `codex app-server` pada environment ini tidak expose mode long-running server; validasi backend dilakukan dengan mock HTTP kompatibel endpoint startup.

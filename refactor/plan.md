@@ -225,6 +225,8 @@ Meningkatkan kesiapan rilis dengan validasi build penuh dan mengurangi beban ini
   - UI overflow issue terkonfirmasi dan sudah dipatch di `BottomTerminal` (deferred xterm init saat panel tertutup).
   - Re-run smoke setelah patch menunjukkan overflow sudah hilang di semua viewport (`rootScrollWidth == rootClientWidth`).
   - Re-run smoke setelah patch listener guard menunjukkan error `transformCallback` tidak muncul lagi; tersisa error `404` backend dependency.
+  - Menjalankan smoke dev-mode dengan backend mock (`127.0.0.1:7420`) menghasilkan `passed: true` tanpa `pageErrors`.
+  - Sisa warning hanya handshake WebSocket `/ws` (mock belum implement endpoint ws), tidak memunculkan runtime exception.
 
 ---
 
