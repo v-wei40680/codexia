@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 import { terminalResize, terminalStart, terminalStop, terminalWrite } from '@/services/tauri';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { isTauri } from '@/hooks/runtime';
 
 type BottomTerminalProps = {
   open: boolean;
@@ -28,6 +29,7 @@ type TerminalExitPayload = {
 export function BottomTerminal({ open, onOpenChange }: BottomTerminalProps) {
   const { cwd } = useWorkspaceStore();
   const isMobile = useIsMobile();
+  const isTauriRuntime = isTauri();
   const [shell, setShell] = useState('');
   const [sessionId, setSessionId] = useState<string | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -85,7 +87,7 @@ export function BottomTerminal({ open, onOpenChange }: BottomTerminalProps) {
   const startSession = async () => {
     const term = terminalRef.current;
     const fitAddon = fitAddonRef.current;
-    if (!term || !fitAddon || sessionIdRef.current || isStartingRef.current) {
+    if (!isTauriRuntime || !term || !fitAddon || sessionIdRef.current || isStartingRef.current) {
       return;
     }
     isStartingRef.current = true;
@@ -105,6 +107,9 @@ export function BottomTerminal({ open, onOpenChange }: BottomTerminalProps) {
   };
 
   const stopSession = async () => {
+    if (!isTauriRuntime) {
+      return;
+    }
     const current = sessionIdRef.current;
     if (!current) {
       return;
@@ -129,6 +134,10 @@ export function BottomTerminal({ open, onOpenChange }: BottomTerminalProps) {
   }, [open]);
 
   useEffect(() => {
+    if (!isTauriRuntime) {
+      return;
+    }
+
     let unlistenData: (() => void) | null = null;
     let unlistenExit: (() => void) | null = null;
 
@@ -160,7 +169,7 @@ export function BottomTerminal({ open, onOpenChange }: BottomTerminalProps) {
         unlistenExit();
       }
     };
-  }, []);
+  }, [isTauriRuntime]);
 
   useEffect(() => {
     const fitAndResize = () => {
@@ -174,7 +183,7 @@ export function BottomTerminal({ open, onOpenChange }: BottomTerminalProps) {
         return;
       }
       fitAddon.fit();
-      if (current) {
+      if (isTauriRuntime && current) {
         void terminalResize(current, Math.max(term.cols, 2), Math.max(term.rows, 2));
       }
     };
@@ -192,16 +201,20 @@ export function BottomTerminal({ open, onOpenChange }: BottomTerminalProps) {
         window.removeEventListener('resize', fitAndResize);
       }
     };
-  }, [open]);
+  }, [isTauriRuntime, open]);
 
   useEffect(() => {
+    if (!isTauriRuntime) {
+      return;
+    }
+
     return () => {
       const current = sessionIdRef.current;
       if (current) {
         void terminalStop(current);
       }
     };
-  }, []);
+  }, [isTauriRuntime]);
 
   return (
     <div

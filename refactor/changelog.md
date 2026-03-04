@@ -78,6 +78,11 @@ Semua perubahan di dokumen ini mengikuti semantic versioning.
 - Menambahkan `Suspense` fallback ringan saat perpindahan ke view async.
 - View utama (`codex`, `history`) tetap eager untuk menjaga responsivitas alur utama.
 - `BottomTerminal` hanya menginisialisasi `xterm` saat panel terbuka untuk mencegah perhitungan layout saat hidden state.
+- Menambahkan guard runtime Tauri untuk listener event pada:
+  - `BottomTerminal`
+  - `FileViewer`
+  - `CodexAuth`
+  sehingga mode web tidak lagi memanggil `@tauri-apps/api/event.listen` saat runtime bukan Tauri.
 
 ### Validation
 
@@ -86,3 +91,5 @@ Semua perubahan di dokumen ini mengikuti semantic versioning.
 - ℹ️ `bunx tsc --noEmit` tidak tersedia di environment saat validasi.
 - ⚠️ Headless smoke test (`390x844`, `768x1024`, `1366x768`) dijalankan via static preview; ditemukan 404/ws backend dependency dan runtime error `transformCallback` yang perlu investigasi lanjutan.
 - ✅ Re-run smoke setelah patch terminal menghilangkan horizontal overflow root di semua viewport.
+- ✅ Investigasi lanjutan menuntaskan error `transformCallback` (root cause: unguarded Tauri listener di web mode).
+- ℹ️ Re-run smoke terbaru menyisakan error `Request failed: 404` karena backend app-server tidak aktif saat static preview.

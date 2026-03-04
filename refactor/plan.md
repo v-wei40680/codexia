@@ -218,12 +218,13 @@ Meningkatkan kesiapan rilis dengan validasi build penuh dan mengurangi beban ini
 - Temuan utama:
   - Request API `404` di mode static preview (backend app-server tidak aktif).
   - WebSocket `/ws` handshake gagal di preview static (expected jika endpoint backend tidak ada).
-  - Muncul runtime error `transformCallback/dimensions` yang perlu investigasi lanjutan.
+  - Runtime error `transformCallback` sudah ditrace ke unguarded `@tauri-apps/api/event.listen` di web mode dan dipatch.
   - Terdeteksi horizontal overflow (`rootScrollWidth = 50000`) pada semua viewport.
 - Status akhir smoke:
   - Functional backend-dependent flow belum bisa dianggap pass tanpa app-server live.
   - UI overflow issue terkonfirmasi dan sudah dipatch di `BottomTerminal` (deferred xterm init saat panel tertutup).
   - Re-run smoke setelah patch menunjukkan overflow sudah hilang di semua viewport (`rootScrollWidth == rootClientWidth`).
+  - Re-run smoke setelah patch listener guard menunjukkan error `transformCallback` tidak muncul lagi; tersisa error `404` backend dependency.
 
 ---
 

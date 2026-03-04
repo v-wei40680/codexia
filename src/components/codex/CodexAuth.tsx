@@ -15,10 +15,12 @@ import { GetAccountResponse } from '@/bindings/v2';
 import type { ServerNotification } from '@/bindings/ServerNotification';
 import { open } from '@tauri-apps/plugin-shell';
 import { getAccountWithParams, loginAccount } from '@/services';
+import { isTauri } from '@/hooks/runtime';
 
 const LOGIN_LABEL = 'Start ChatGPT login';
 
 export function CodexAuth() {
+  const isTauriRuntime = isTauri();
   const [account, setAccount] = useState<GetAccountResponse | null>(null);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [lastStatus, setLastStatus] = useState<string | null>(null);
@@ -64,6 +66,10 @@ export function CodexAuth() {
   }, [refreshAccount]);
 
   useEffect(() => {
+    if (!isTauriRuntime) {
+      return;
+    }
+
     const unlistenPromise = listen<ServerNotification>('codex:notification', (event) => {
       const { method, params } = event.payload;
       if (method === 'account/updated') {
@@ -81,7 +87,7 @@ export function CodexAuth() {
     return () => {
       unlistenPromise.then((unlisten) => unlisten());
     };
-  }, [refreshAccount]);
+  }, [isTauriRuntime, refreshAccount]);
 
   const accountType = account?.account?.type ?? 'none';
 

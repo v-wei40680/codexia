@@ -17,6 +17,7 @@ import {
   stopWatchDirectory,
   writeFile,
 } from '@/services';
+import { isTauri } from '@/hooks/runtime';
 
 interface FileViewerProps {
   filePath: string;
@@ -26,6 +27,7 @@ interface FileViewerProps {
 }
 
 export function FileViewer({ filePath, addToNotepad, headerLeadingAction }: FileViewerProps) {
+  const isTauriRuntime = isTauri();
   const [content, setContent] = useState<string>('');
   const [filename, setFilename] = useState<string>('');
   const [loading, setLoading] = useState(false);
@@ -167,6 +169,10 @@ export function FileViewer({ filePath, addToNotepad, headerLeadingAction }: File
 
   // Watch parent directory of the open file so we reliably get fs_change events
   useEffect(() => {
+    if (!isTauriRuntime) {
+      return;
+    }
+
     const parentDir = filePath.includes('/')
       ? filePath.slice(0, filePath.lastIndexOf('/'))
       : filePath;
@@ -193,10 +199,14 @@ export function FileViewer({ filePath, addToNotepad, headerLeadingAction }: File
         } catch {}
       })();
     };
-  }, [filePath]);
+  }, [filePath, isTauriRuntime]);
 
   // Listen to fs_change to detect disk updates for the open file
   useEffect(() => {
+    if (!isTauriRuntime) {
+      return;
+    }
+
     let unlisten: UnlistenFn | null = null;
     const setup = async () => {
       unlisten = await listen<{ path: string; kind: string }>('fs_change', async (event) => {
@@ -217,7 +227,7 @@ export function FileViewer({ filePath, addToNotepad, headerLeadingAction }: File
     return () => {
       if (unlisten) unlisten();
     };
-  }, [filePath, canonicalFile, content, currentContent]);
+  }, [filePath, canonicalFile, content, currentContent, isTauriRuntime]);
 
   return (
     <div

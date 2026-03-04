@@ -118,7 +118,7 @@ export const codexService = {
     } catch (error: any) {
       console.error('[CodexService] Failed to load threads:', error);
       useCodexStore.getState().setThreadListNextCursor(null);
-      throw error;
+      useCodexStore.getState().setThreads([]);
     }
   },
   async loadMoreThreads(cwd: string, sortKey: 'created_at' | 'updated_at' = 'updated_at') {
@@ -152,7 +152,7 @@ export const codexService = {
       setThreadListNextCursor(nextCursor);
     } catch (error: any) {
       console.error('[CodexService] Failed to load more threads:', error);
-      throw error;
+      setThreadListNextCursor(null);
     }
   },
   async archiveThread(threadId: string) {
