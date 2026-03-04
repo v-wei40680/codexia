@@ -1,67 +1,185 @@
-@echo off
-setlocal EnableExtensions EnableDelayedExpansion
+name: Publish Web Packages
 
-set "ROOT_DIR=%~dp0.."
-for %%I in ("%ROOT_DIR%") do set "ROOT_DIR=%%~fI"
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
 
-for /f "usebackq delims=" %%V in (`powershell -NoProfile -Command "(Get-Content -Raw '%ROOT_DIR%\package.json' | ConvertFrom-Json).version"`) do set "VERSION=%%V"
+env:
+  VITE_REDIRECT_URL: ${{ secrets.VITE_REDIRECT_URL }}
+  VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+  VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
 
-set "OS=windows"
-set "ARCH=%PROCESSOR_ARCHITECTURE%"
-if /I "%ARCH%"=="AMD64" set "ARCH=x86_64"
-if /I "%ARCH%"=="ARM64" set "ARCH=aarch64"
+jobs:
+  publish-web-linux:
+    permissions:
+      contents: write
+    env:
+      PKG_CONFIG_ALLOW_CROSS: "1"
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-unknown-linux-gnu
+            arch: x86_64
+            libc: gnu
+    runs-on: ubuntu-24.04
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v4
 
-set "STAGE_DIR=%TEMP%\dist-web"
-set "OUT_FILE=%TEMP%\codexia-web-%VERSION%-%OS%-%ARCH%.zip"
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
 
-if exist "%STAGE_DIR%" rmdir /s /q "%STAGE_DIR%"
-if exist "%OUT_FILE%" del /f /q "%OUT_FILE%"
-mkdir "%STAGE_DIR%"
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
 
-if not defined VITE_WEB_PORT set "VITE_WEB_PORT=7420"
-call bun run build || exit /b 1
-call cargo build --release --manifest-path "%ROOT_DIR%\src-tauri\Cargo.toml" || exit /b 1
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-unknown-linux-gnu
 
-xcopy /e /i /y "%ROOT_DIR%\dist\*" "%STAGE_DIR%\dist\" >nul || exit /b 1
-copy /y "%ROOT_DIR%\src-tauri\target\release\codexia.exe" "%STAGE_DIR%\codexia.exe" >nul || exit /b 1
-(
-  echo @echo off
-  echo setlocal EnableExtensions
-  echo cd /d "%%~dp0"
-  echo .\codexia.exe --web %%*
-) > "%STAGE_DIR%\start-server.bat"
-(
-  echo #!/usr/bin/env bash
-  echo set -euo pipefail
-  echo script_dir="^$(cd "^$(dirname '^${BASH_SOURCE[0]}')" ^&^& pwd)"
-  echo cd "^${script_dir}"
-  echo ./codexia --web "^$@"
-) > "%STAGE_DIR%\start-server.sh"
-echo Stage dir: %STAGE_DIR%
-echo Dist index: %STAGE_DIR%\dist\index.html
-if exist "%STAGE_DIR%\dist\index.html" (
-  echo Dist index exists.
-) else (
-  echo Dist index missing.
-)
-echo Binary: %STAGE_DIR%\codexia.exe
-if exist "%STAGE_DIR%\codexia.exe" (
-  echo Binary exists.
-) else (
-  echo Binary missing.
-)
-echo Start script (bat): %STAGE_DIR%\start-server.bat
-if exist "%STAGE_DIR%\start-server.bat" (
-  echo Start script bat exists.
-) else (
-  echo Start script bat missing.
-)
-echo Start script (sh): %STAGE_DIR%\start-server.sh
-if exist "%STAGE_DIR%\start-server.sh" (
-  echo Start script sh exists.
-) else (
-  echo Start script sh missing.
-)
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "src-tauri"
 
-powershell -NoProfile -Command "Compress-Archive -Path '%STAGE_DIR%\*' -DestinationPath '%OUT_FILE%' -Force" || exit /b 1
-echo Wrote %OUT_FILE%
+      - name: install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf
+
+      - name: install frontend dependencies
+        run: bun install
+
+      - name: Export TS bindings
+        run: |
+          bun add -g @openai/codex
+          codex app-server generate-ts -o src/bindings
+
+      - name: Package web
+        run: |
+          WEB_TARGET_TRIPLE="${{ matrix.target }}" \
+          WEB_ARCH="${{ matrix.arch }}" \
+          WEB_LIBC="${{ matrix.libc }}" \
+          bash scripts/package-web.sh
+
+      - name: Resolve package path
+        shell: bash
+        run: |
+          version="$(node -e "console.log(require('./package.json').version)")"
+          package_path="/tmp/codexia-web-${version}-linux-${{ matrix.arch }}-${{ matrix.libc }}.tar.gz"
+          echo "WEB_PACKAGE_PATH=${package_path}" >> "$GITHUB_ENV"
+
+      - name: Upload web package to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.WEB_PACKAGE_PATH }}
+          tag_name: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-web-macos:
+    permissions:
+      contents: write
+    runs-on: macos-latest
+    if: false # Temporarily disabled
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "src-tauri"
+
+      - name: install frontend dependencies
+        run: bun install
+
+      - name: Export TS bindings
+        run: |
+          bun add -g @openai/codex
+          codex app-server generate-ts -o src/bindings
+
+      - name: Package web
+        run: |
+          WEB_TARGET_TRIPLE="aarch64-apple-darwin" \
+          WEB_ARCH="aarch64" \
+          bash scripts/package-web.sh
+
+      - name: Resolve package path
+        shell: bash
+        run: |
+          version="$(node -e "console.log(require('./package.json').version)")"
+          package_path="/tmp/codexia-web-${version}-darwin-aarch64.tar.gz"
+          echo "WEB_PACKAGE_PATH=${package_path}" >> "$GITHUB_ENV"
+
+      - name: Upload web package to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.WEB_PACKAGE_PATH }}
+          tag_name: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-web-windows:
+    permissions:
+      contents: write
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: setup node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "src-tauri"
+
+      - name: install frontend dependencies
+        run: bun install
+
+      - name: Package web for Windows
+        shell: cmd
+        run: scripts\package-web.bat
+
+      - name: Resolve package path
+        shell: pwsh
+        run: |
+          $version = (Get-Content -Raw package.json | ConvertFrom-Json).version
+          $path = Join-Path $env:TEMP "codexia-web-$version-windows-x86_64.zip"
+          "WEB_PACKAGE_PATH=$path" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+
+      - name: Upload web package to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ env.WEB_PACKAGE_PATH }}
+          tag_name: ${{ github.ref_name }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
