@@ -1,4 +1,6 @@
 use std::sync::Arc;
+use std::sync::atomic::Ordering;
+use std::time::Instant;
 
 use serde_json::Value;
 use tokio::sync::broadcast;
@@ -7,7 +9,7 @@ use super::{router::create_router, types::WebServerState};
 use crate::cc::CCState;
 use crate::cc::scan::start_session_scanner;
 use crate::codex::scan::start_history_scanner;
-use crate::codex::{AppState, connect_codex, initialize_codex};
+use crate::codex::{AppState, CodexInitializationState, connect_codex, initialize_codex};
 use crate::features::event_sink::{EventSink, WebSocketEventSink};
 use crate::features::sleep::SleepState;
 use crate::web_server::filesystem_watch::WebWatchState;
@@ -59,17 +61,40 @@ pub async fn start_web_server_with_events(
 }
 
 pub async fn start_web_server(port: u16) -> Result<(), Box<dyn std::error::Error>> {
+    let boot_started_at = Instant::now();
     let (event_tx, _) = broadcast::channel(100);
     let event_sink: Arc<dyn EventSink> = Arc::new(WebSocketEventSink::new(event_tx.clone()));
+    let init_state = CodexInitializationState::new(Arc::clone(&event_sink));
 
+    let connect_started_at = Instant::now();
     let codex = connect_codex(Arc::clone(&event_sink))
         .await
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
-    initialize_codex(&codex, Arc::clone(&event_sink))
-        .await
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+    println!(
+        "[web] startup timing: connect_codex finished in {:?}",
+        connect_started_at.elapsed()
+    );
+
+    if !init_state.initialized.load(Ordering::SeqCst) {
+        let _guard = init_state.init_lock.lock().await;
+        if !init_state.initialized.load(Ordering::SeqCst) {
+            let initialize_started_at = Instant::now();
+            initialize_codex(&codex, Arc::clone(&init_state.event_sink))
+                .await
+                .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+            println!(
+                "[web] startup timing: initialize_codex finished in {:?}",
+                initialize_started_at.elapsed()
+            );
+            init_state.initialized.store(true, Ordering::SeqCst);
+        }
+    }
 
     let codex_state = Arc::new(AppState { codex });
     let cc_state = Arc::new(CCState::new());
+    println!(
+        "[web] boot completed in {:?}",
+        boot_started_at.elapsed()
+    );
     start_web_server_with_events(codex_state, cc_state, event_tx, port).await
 }
