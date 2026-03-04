@@ -20,7 +20,7 @@ mkdir "%STAGE_DIR%"
 
 if not defined VITE_WEB_PORT set "VITE_WEB_PORT=7420"
 call bun run build || exit /b 1
-call cargo build --release --manifest-path "%ROOT_DIR%\src-tauri\Cargo.toml" || exit /b 1
+call cargo build --release --manifest-path "%ROOT_DIR%\src-tauri\Cargo.toml" --no-default-features --features web || exit /b 1
 
 xcopy /e /i /y "%ROOT_DIR%\dist\*" "%STAGE_DIR%\dist\" >nul || exit /b 1
 copy /y "%ROOT_DIR%\src-tauri\target\release\codexia.exe" "%STAGE_DIR%\codexia.exe" >nul || exit /b 1
