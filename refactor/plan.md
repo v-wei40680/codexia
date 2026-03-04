@@ -29,6 +29,7 @@ Roadmap versi:
 - `v0.26.0` → Refactor wave utama (mobile foundation + bindings compatibility)
 - `v0.26.1` → Stabilization patch (typing cleanup & edge-case UX)
 - `v0.27.0` → Enhancement wave (mobile UX phase lanjutan)
+- `v0.27.1` → Validation + performance hardening
 
 ---
 
@@ -157,12 +158,49 @@ Menurunkan technical debt pasca compatibility patch.
 
 ---
 
+## Phase 5 — Validation & Performance Hardening (`v0.27.1`, Completed)
+
+### Objective
+
+Meningkatkan kesiapan rilis dengan validasi build penuh dan mengurangi beban initial load.
+
+### Implemented
+
+- Melakukan audit hasil bundle production untuk mengidentifikasi hotspot module berat.
+- Mengubah import view non-kritis di `AppLayout` menjadi lazy loading + `Suspense` fallback:
+  - `SettingsView`
+  - `AgentsView`
+  - `UsageView`
+  - `MarketplaceView`
+  - `CCView`
+  - `LoginView`
+  - `LearnView`
+  - `AutoMationsView`
+- Menjaga view inti (`codex`, `history`) tetap eager agar UX utama tetap responsif.
+- Menambahkan loading fallback ringan untuk transisi view asynchronous.
+
+### Validation Notes
+
+- `bunx tsc --noEmit` tidak tersedia di environment ini (`bunx: command not found`).
+- Validasi TS fallback berhasil melalui `npx tsc --noEmit`.
+- Production build berhasil melalui `npm run build`.
+- Output build menunjukkan chunk split view berjalan (chunk per-view terpisah muncul).
+
+### Success Criteria
+
+- Initial bundle tidak lagi membawa seluruh view sekaligus.
+- Validasi compile/build tetap hijau pasca-optimasi.
+
+---
+
 ## Validation Checklist
 
 - [x] Generate bindings berhasil
 - [x] TypeScript check (`npx tsc --noEmit`) hijau
 - [x] Phase 3A compile check (`npx tsc --noEmit`) hijau
 - [x] Phase 3B compile check (`npx tsc --noEmit`) hijau
+- [x] Phase 5 compile check (`npx tsc --noEmit`) hijau
+- [x] Phase 5 production build (`npm run build`) hijau
 - [ ] Mobile manual smoke test (390x844)
 - [ ] Tablet smoke test (768x1024)
 - [ ] Desktop regression sanity check

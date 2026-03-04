@@ -70,10 +70,16 @@ Semua perubahan di dokumen ini mengikuti semantic versioning.
 
 ---
 
-## [0.27.1] - Planned
+## [0.27.1] - 2026-03-03
 
-### Planned
+### Changed
 
-- Mobile UX enhancement wave:
-  - Additional touch accessibility pass
-  - Interaction micro-polish untuk tablet landscape
+- `AppLayout` melakukan lazy loading untuk view non-kritis guna menurunkan beban initial load.
+- Menambahkan `Suspense` fallback ringan saat perpindahan ke view async.
+- View utama (`codex`, `history`) tetap eager untuk menjaga responsivitas alur utama.
+
+### Validation
+
+- ✅ `npx tsc --noEmit`
+- ✅ `npm run build`
+- ℹ️ `bunx tsc --noEmit` tidak tersedia di environment saat validasi.

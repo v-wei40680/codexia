@@ -1,24 +1,39 @@
-import { useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import type { ImperativePanelHandle } from 'react-resizable-panels';
 import { useLayoutStore } from '@/stores';
-import { SettingsView } from '@/components/settings';
 import { SideBar } from '@/components/layout/SideBar';
 import { RightPanel } from '@/components/layout/RightPanel';
 import { MainHeader } from '@/components/layout/MainHeader';
 import { ChatInterface } from '@/components/codex/ChatInterface';
 import { History } from '@/components/codex/history';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import UsageView from '@/views/UsageView';
-import CCView from '@/views/CCView';
-import { MarketplaceView } from '@/views/MarketplaceView';
-import AgentsView from '@/views/AgentsView';
-import LoginView from '@/views/LoginView';
-import { AutoMationsView } from '../features/automations';
 import { BottomTerminal } from '@/components/terminal/BottomTerminal';
-import { LearnView } from '@/views/LearnView';
 import { Button } from '@/components/ui/button';
 import { PanelLeft } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+
+const SettingsView = lazy(() =>
+  import('@/components/settings').then((module) => ({ default: module.SettingsView })),
+);
+const UsageView = lazy(() => import('@/views/UsageView'));
+const CCView = lazy(() => import('@/views/CCView'));
+const MarketplaceView = lazy(() =>
+  import('@/views/MarketplaceView').then((module) => ({ default: module.MarketplaceView })),
+);
+const AgentsView = lazy(() => import('@/views/AgentsView'));
+const LoginView = lazy(() => import('@/views/LoginView'));
+const AutoMationsView = lazy(() =>
+  import('../features/automations').then((module) => ({ default: module.AutoMationsView })),
+);
+const LearnView = lazy(() =>
+  import('@/views/LearnView').then((module) => ({ default: module.LearnView })),
+);
+
+const ViewLoadingFallback = () => (
+  <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
+    Loading view...
+  </div>
+);
 
 export function AppLayout() {
   const MIN_SIDEBAR_WIDTH = 220;
@@ -185,7 +200,7 @@ export function AppLayout() {
   const showMainHeader = view === 'codex' || view === 'cc' || view === 'history';
 
   const activeView = (
-    <>
+    <Suspense fallback={<ViewLoadingFallback />}>
       {view === 'agents' && <AgentsView />}
       {view === 'automations' && <AutoMationsView />}
       {view === 'codex' && <ChatInterface />}
@@ -195,7 +210,7 @@ export function AppLayout() {
       {view === 'marketplace' && <MarketplaceView />}
       {view === 'usage' && <UsageView />}
       {view === 'cc' && <CCView />}
-    </>
+    </Suspense>
   );
 
   const mainContent = (
@@ -210,7 +225,9 @@ export function AppLayout() {
   return (
     <div ref={layoutRef} className="h-[100dvh] w-full overflow-hidden">
       {view === 'settings' ? (
-        <SettingsView />
+        <Suspense fallback={<ViewLoadingFallback />}>
+          <SettingsView />
+        </Suspense>
       ) : isMobile ? (
         <div className="relative h-full w-full bg-background">
           <div className="flex h-full w-full flex-col min-h-0 min-w-0">
