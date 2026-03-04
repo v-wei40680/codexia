@@ -30,7 +30,6 @@ copy /y "%ROOT_DIR%\src-tauri\target\release\codexia.exe" "%STAGE_DIR%\codexia.e
   echo cd /d "%%~dp0"
   echo .\codexia.exe --web %%*
 ) > "%STAGE_DIR%\start-server.bat"
-powershell -NoProfile -Command "$content = @('#!/usr/bin/env bash', 'set -euo pipefail', 'script_dir=$(cd $(dirname $0) && pwd)', 'cd ${script_dir}', './codexia --web $@'); [System.IO.File]::WriteAllLines('%STAGE_DIR%\start-server.sh', $content)" || exit /b 1
 echo Stage dir: %STAGE_DIR%
 echo Dist index: %STAGE_DIR%\dist\index.html
 if exist "%STAGE_DIR%\dist\index.html" (
@@ -50,12 +49,5 @@ if exist "%STAGE_DIR%\start-server.bat" (
 ) else (
   echo Start script bat missing.
 )
-echo Start script (sh): %STAGE_DIR%\start-server.sh
-if exist "%STAGE_DIR%\start-server.sh" (
-  echo Start script sh exists.
-) else (
-  echo Start script sh missing.
-)
-
 powershell -NoProfile -Command "Compress-Archive -Path '%STAGE_DIR%\*' -DestinationPath '%OUT_FILE%' -Force" || exit /b 1
 echo Wrote %OUT_FILE%
