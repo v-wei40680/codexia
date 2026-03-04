@@ -26,6 +26,7 @@ import type {
   ReviewStartParams,
   SandboxMode,
   SandboxPolicy,
+  ReadOnlyAccess,
 } from '@/bindings/v2';
 import type { ThreadListItem } from '@/types/codex/ThreadListItem';
 import { useCodexStore, useConfigStore, type ModeKind } from '@/stores/codex';
@@ -34,13 +35,15 @@ import { convertThreadHistoryToEvents } from '@/utils/threadHistoryConverter';
 import { getErrorMessage } from '@/utils/errorUtils';
 
 const sandboxModeToPolicy = (mode: SandboxMode): SandboxPolicy => {
+  const fullReadOnlyAccess: ReadOnlyAccess = { type: 'fullAccess' };
   switch (mode) {
     case 'read-only':
-      return { type: 'readOnly' };
+      return { type: 'readOnly', access: fullReadOnlyAccess };
     case 'workspace-write':
       return {
         type: 'workspaceWrite',
         writableRoots: [],
+        readOnlyAccess: fullReadOnlyAccess,
         networkAccess: false,
         excludeTmpdirEnvVar: false,
         excludeSlashTmp: false,
@@ -71,6 +74,15 @@ const isExperimentalRawEventsCapabilityError = (error: unknown): boolean =>
   getErrorMessage(error).includes('experimentalRawEvents requires experimentalApi capability');
 
 type ThreadLike = Thread & { updatedAt?: number };
+const threadSourceToString = (source: ThreadLike['source']): string => {
+  if (typeof source === 'string') {
+    return source;
+  }
+  if (!source) {
+    return '';
+  }
+  return JSON.stringify(source);
+};
 
 export const codexService = {
   normalizeThreadItem(thread: ThreadLike): ThreadListItem {
@@ -81,7 +93,7 @@ export const codexService = {
       preview: thread.preview ?? '',
       cwd: thread.cwd ?? '',
       path: thread.path ?? '',
-      source: thread.source ?? '',
+      source: threadSourceToString(thread.source),
       createdAt,
       updatedAt,
     };
@@ -115,7 +127,7 @@ export const codexService = {
       const { setThreads, setThreadListNextCursor } = useCodexStore.getState();
       setThreads(workingDirThreads);
       setThreadListNextCursor(nextCursor);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] Failed to load threads:', error);
       useCodexStore.getState().setThreadListNextCursor(null);
       useCodexStore.getState().setThreads([]);
@@ -150,7 +162,7 @@ export const codexService = {
         null;
       appendThreads(workingDirThreads);
       setThreadListNextCursor(nextCursor);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] Failed to load more threads:', error);
       setThreadListNextCursor(null);
     }
@@ -158,7 +170,7 @@ export const codexService = {
   async archiveThread(threadId: string) {
     try {
       await threadArchive(threadId);
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] archiveThread error:', error);
       throw error;
     }
@@ -195,7 +207,7 @@ export const codexService = {
           inputFocusTrigger: state.inputFocusTrigger + 1,
         }));
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] setCurrentThread error:', error);
       throw error;
     }
@@ -234,6 +246,7 @@ export const codexService = {
           'features.multi_agents': true,
         },
         experimentalRawEvents: true,
+        persistExtendedHistory: true,
       };
       let response;
       try {
@@ -261,7 +274,7 @@ export const codexService = {
 
       console.log('[CodexService] threadStart completed successfully');
       return thread;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] threadStart error:', error);
       throw error;
     }
@@ -284,6 +297,7 @@ export const codexService = {
         config: null,
         baseInstructions: null,
         developerInstructions: null,
+        persistExtendedHistory: true,
       });
       console.log(response.thread.turns);
 
@@ -304,7 +318,7 @@ export const codexService = {
         },
         inputFocusTrigger: state.inputFocusTrigger + 1,
       }));
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] threadResume error:', error);
       throw error;
     }
@@ -339,6 +353,7 @@ export const codexService = {
         },
         baseInstructions: null,
         developerInstructions: null,
+        persistExtendedHistory: true,
       };
       const response = await threadFork(params);
       const forkedThreadId = response.thread.id;
@@ -361,7 +376,7 @@ export const codexService = {
         inputFocusTrigger: state.inputFocusTrigger + 1,
       }));
       return normalized;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] threadFork error:', error);
       throw error;
     }
@@ -394,7 +409,7 @@ export const codexService = {
         inputFocusTrigger: state.inputFocusTrigger + 1,
       }));
       return normalized;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] threadRollback error:', error);
       throw error;
     }
@@ -411,7 +426,7 @@ export const codexService = {
       const userInputs: UserInput[] = [];
 
       if (input.trim()) {
-        userInputs.push({ type: 'text', text: input });
+        userInputs.push({ type: 'text', text: input, text_elements: [] });
       }
 
       for (const imagePath of images) {
@@ -420,7 +435,7 @@ export const codexService = {
 
       // If both are empty? Assuming input area checks this, but if so, send empty text?
       if (userInputs.length === 0) {
-        userInputs.push({ type: 'text', text: '' });
+        userInputs.push({ type: 'text', text: '', text_elements: [] });
       }
 
       const { model, reasoningEffort, approvalPolicy, sandbox } =
@@ -441,7 +456,7 @@ export const codexService = {
 
       set({ currentTurnId: response.turn.id });
       return response.turn;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] turnStart error:', error);
       throw error;
     }
@@ -452,7 +467,7 @@ export const codexService = {
     try {
       await turnInterrupt({ threadId, turnId });
       set({ currentTurnId: null });
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] turnInterrupt error:', error);
       throw error;
     }
@@ -463,7 +478,7 @@ export const codexService = {
       const response = await skillList(cwd);
       console.log('[CodexService] listSkills response:', response.data);
       return response.data;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] listSkills error:', error);
       throw error;
     }
@@ -473,7 +488,7 @@ export const codexService = {
       const response = await tauriFuzzyFileSearch(params);
       console.log('[CodexService] fuzzyFileSearch response:', response.files);
       return response.files;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] fuzzyFileSearch error:', error);
       throw error;
     }
@@ -483,7 +498,7 @@ export const codexService = {
       const response = await tauriSkillsConfigWrite(path, enabled);
       console.log('[CodexService] skillsConfigWrite response:', response);
       return response;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] skillsConfigWrite error:', error);
       throw error;
     }
@@ -493,7 +508,7 @@ export const codexService = {
       const response = await tauriLoginChatGpt();
       console.log('[CodexService] loginChatGpt response:', response);
       return response;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] loginChatGpt error:', error);
       throw error;
     }
@@ -503,7 +518,7 @@ export const codexService = {
       const response = await tauriGetAccount();
       console.log('[CodexService] getAccount response:', response);
       return response;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] getAccount error:', error);
       throw error;
     }
@@ -513,7 +528,7 @@ export const codexService = {
       const response = await reviewStart(params);
       console.log('[CodexService] startReview response:', response);
       return response;
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[CodexService] startReview error:', error);
       throw error;
     }
