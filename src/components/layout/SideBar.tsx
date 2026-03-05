@@ -295,7 +295,7 @@ export function SideBar() {
                 setActiveSidebarTab('codex');
               }}
             >
-              codex
+              Codex
             </Button>
             <Button
               variant="ghost"
@@ -306,7 +306,7 @@ export function SideBar() {
                 setActiveSidebarTab('cc');
               }}
             >
-              cc
+              Claude
             </Button>
           </span>
           <span className="flex">
