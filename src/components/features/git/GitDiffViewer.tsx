@@ -4,6 +4,7 @@ import { DiffModeEnum, DiffView } from '@git-diff-view/react';
 import { ChevronDown, ChevronUp, Columns2, Minus, Plus, Send, Undo2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import type { GitFileDiffMetaResponse, GitFileDiffResponse } from '@/services/tauri';
+import { useThemeContext } from '@/contexts/ThemeContext';
 import { useInputStore } from '@/stores';
 import type { DiffSection, DiffSource } from './types';
 import { formatBytes } from './utils';
@@ -65,6 +66,7 @@ export function GitDiffViewer({
   onStageUnstageCurrentFile,
   revertLoading,
 }: GitDiffViewerProps) {
+  const { resolvedTheme } = useThemeContext();
   const [splitModeEnabled, setSplitModeEnabled] = useState(false);
   const [selection, setSelection] = useState<{
     text: string;
@@ -96,13 +98,13 @@ export function GitDiffViewer({
             hunks: diffHunks,
           }}
           diffViewMode={splitModeEnabled ? DiffModeEnum.Split : DiffModeEnum.Unified}
-          diffViewTheme="dark"
+          diffViewTheme={resolvedTheme === 'dark' ? 'dark' : 'light'}
           diffViewHighlight={false}
           diffViewWrap={wordWrapEnabled}
         />
       </div>
     );
-  }, [selectedDiffPath, diffData, diffHunks, splitModeEnabled, wordWrapEnabled]);
+  }, [selectedDiffPath, diffData, diffHunks, splitModeEnabled, wordWrapEnabled, resolvedTheme]);
 
   useEffect(() => {
     setSelection(null);
