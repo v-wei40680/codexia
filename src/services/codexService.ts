@@ -34,17 +34,17 @@ import { useWorkspaceStore } from '@/stores';
 import { convertThreadHistoryToEvents } from '@/utils/threadHistoryConverter';
 import { getErrorMessage } from '@/utils/errorUtils';
 
-const sandboxModeToPolicy = (mode: SandboxMode): SandboxPolicy => {
+const sandboxModeToPolicy = (mode: SandboxMode, networkAccess: boolean): SandboxPolicy => {
   const fullReadOnlyAccess: ReadOnlyAccess = { type: 'fullAccess' };
   switch (mode) {
     case 'read-only':
-      return { type: 'readOnly', access: fullReadOnlyAccess };
+      return { type: 'readOnly', access: fullReadOnlyAccess, networkAccess };
     case 'workspace-write':
       return {
         type: 'workspaceWrite',
         writableRoots: [],
         readOnlyAccess: fullReadOnlyAccess,
-        networkAccess: false,
+        networkAccess,
         excludeTmpdirEnvVar: false,
         excludeSlashTmp: false,
       };
@@ -438,7 +438,7 @@ export const codexService = {
         userInputs.push({ type: 'text', text: '', text_elements: [] });
       }
 
-      const { model, reasoningEffort, approvalPolicy, sandbox } =
+      const { model, reasoningEffort, approvalPolicy, sandbox, webSearchRequest } =
         useConfigStore.getState();
       void collaborationModeOverride;
 
@@ -447,7 +447,7 @@ export const codexService = {
         input: userInputs,
         cwd: resolveThreadCwd(threadId),
         approvalPolicy,
-        sandboxPolicy: sandboxModeToPolicy(sandbox),
+        sandboxPolicy: sandboxModeToPolicy(sandbox, webSearchRequest),
         model: model || null,
         effort: reasoningEffort ?? null,
         summary: null,
