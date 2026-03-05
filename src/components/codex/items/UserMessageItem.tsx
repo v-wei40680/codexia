@@ -45,9 +45,9 @@ export const UserMessageItem = ({ content, onEdit, editDisabled = false }: UserM
   };
 
   return (
-    <div className="flex justify-end">
-      <div className="group flex flex-col items-end gap-1">
-        <div className="flex flex-col gap-2 border rounded-md p-2 bg-gray-100 dark:bg-gray-700">
+    <div className="flex justify-end min-w-0">
+      <div className="group flex w-full min-w-0 max-w-full flex-col items-end gap-1">
+        <div className="box-border flex w-fit min-w-0 max-w-full self-end flex-col gap-2 break-words rounded-md border bg-gray-100 p-2 dark:bg-gray-700">
           {(images.length > 0 || localImages.length > 0) && (
             <div className="flex flex-wrap gap-2">
               {images.map((src, index) => (
@@ -68,10 +68,10 @@ export const UserMessageItem = ({ content, onEdit, editDisabled = false }: UserM
               ))}
             </div>
           )}
-          {text.length > 0 && <Markdown value={text} />}
+          {text.length > 0 && <Markdown className="min-w-0 max-w-full" value={text} />}
         </div>
         <div
-          className={`flex items-center gap-1 px-1 transition-opacity ${
+          className={`flex min-w-0 items-center gap-1 px-1 transition-opacity ${
             copied ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
           }`}
         >

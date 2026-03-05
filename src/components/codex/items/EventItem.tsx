@@ -2,8 +2,8 @@ import { Badge } from '@/components/ui/badge';
 import { CommandAction, FileUpdateChange } from '@/bindings/v2';
 import type { ServerNotification } from '@/bindings';
 import { Markdown } from '@/components/Markdown';
-import { Brain } from 'lucide-react';
 import { TurnPlan } from './TurnPlan';
+import { ReasoningItem } from './ReasoningItem';
 import { EditableUserMessageItem } from './UserMessageItem';
 import { AgentMessageItem } from './AgentMessageItem';
 import { CommandActionItem } from './CommandActionItem';
@@ -122,12 +122,7 @@ export const renderEvent = (event: ServerNotification, context?: RenderEventCont
         case 'agentMessage':
           return <AgentMessageItem text={item.text} />;
         case 'reasoning':
-          if (item.summary.length > 0) {
-            return <span className='flex items-center gap-2'><Brain className='h-4 w-4' />
-              <Markdown value={item.summary.join('')} />
-            </span>;
-          }
-          return null;
+          return <ReasoningItem item={item} />;
         case 'userMessage':
         case 'commandExecution':
           return null;

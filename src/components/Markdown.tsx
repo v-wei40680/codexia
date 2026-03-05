@@ -102,7 +102,7 @@ export const Markdown = memo<MarkdownProps>(({ value, className = '', inline = f
   return (
     <div
       className={cn(
-        'text-sm text-foreground leading-relaxed prose prose-sm max-w-full overflow-auto break-words select-text',
+        'w-full min-w-0 max-w-full text-sm leading-relaxed text-foreground prose prose-sm break-words [overflow-wrap:anywhere] select-text [&_p]:max-w-full [&_p]:break-words [&_li]:break-words [&_a]:break-all [&_pre]:max-w-full [&_pre]:overflow-x-auto [&_pre_code]:whitespace-pre-wrap [&_pre_code]:break-all [&_code]:break-all [&_table]:block [&_table]:w-full [&_table]:max-w-full [&_table]:table-fixed [&_table]:overflow-x-auto',
         resolvedTheme === 'dark' && 'prose-invert',
         inline && 'inline align-baseline [&_p]:inline [&_p]:m-0',
         className

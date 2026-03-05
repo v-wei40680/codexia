@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
 import { Markdown } from '@/components/Markdown';
 import { Streamdown } from 'streamdown';
 
@@ -32,13 +31,6 @@ export const ReasoningItem = ({
         className="flex items-center gap-2 cursor-pointer hover:text-foreground text-muted-foreground transition-colors group"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <span className="flex items-center justify-center w-5 h-5 rounded hover:bg-muted transition-colors">
-          {isExpanded ? (
-            <ChevronDown className="w-3.5 h-3.5" />
-          ) : (
-            <ChevronRight className="w-3.5 h-3.5" />
-          )}
-        </span>
         <span className="text-sm font-medium flex items-center gap-1.5 py-1">
           <span className="text-xs">🧠</span>
           <Streamdown className="select-text" mode="static">
