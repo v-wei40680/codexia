@@ -1,6 +1,5 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { SendIcon, Square, X } from 'lucide-react';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { FileSearchPopover } from './selector';
@@ -9,6 +8,20 @@ import type { FuzzyFileSearchResult } from '@/bindings';
 import { useInputStore } from '@/stores/useInputStore';
 import { getFilename } from '@/utils/getFilename';
 import { useIsMobile } from '@/hooks/use-mobile';
+
+// MDXEditor imports
+import {
+  MDXEditor,
+  headingsPlugin,
+  listsPlugin,
+  quotePlugin,
+  thematicBreakPlugin,
+  markdownShortcutPlugin,
+  linkPlugin,
+  type MDXEditorMethods,
+} from '@mdxeditor/editor';
+import '@mdxeditor/editor/style.css';
+import '@/mdx-input.css';
 
 interface InputAreaProps {
   currentThreadId: string | null;
@@ -35,125 +48,183 @@ export function InputArea({
   const isMobile = useIsMobile();
   const isDev = import.meta.env.DEV;
   const debug = (...args: unknown[]) => {
-    if (isDev) {
-      console.log('[InputArea]', ...args);
-    }
+    if (isDev) console.log('[InputArea]', ...args);
   };
 
   const { inputValue, setInputValue } = useInputStore();
   const [showFileSearch, setShowFileSearch] = useState(false);
   const [fileSearchQuery, setFileSearchQuery] = useState('');
-  const [fileSearchPosition, setFileSearchPosition] = useState({
-    top: 0,
-    left: 0,
-  });
+  const [fileSearchPosition, setFileSearchPosition] = useState({ top: 0, left: 0 });
   const [atSymbolPosition, setAtSymbolPosition] = useState(-1);
-  const [isComposing, setIsComposing] = useState(false);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // IME composition tracking — attached to the editor's contenteditable
+  const isComposing = useRef(false);
+
+  const editorRef = useRef<MDXEditorMethods>(null);
+  const editorWrapperRef = useRef<HTMLDivElement>(null);
   const fileSearchRef = useRef<FileSearchPopoverHandle>(null);
 
-  // Focus textarea when thread changes or when triggered explicitly
+  // Focus the editor when thread changes or triggered externally
   useEffect(() => {
-    textareaRef.current?.focus();
+    editorRef.current?.focus();
   }, [currentThreadId, inputFocusTrigger]);
 
+  // Attach IME listeners to the underlying contenteditable after mount
   useEffect(() => {
-    if (!showFileSearch) return;
-    debug('file search visibility changed', {
-      showFileSearch,
-      fileSearchQuery,
-      fileSearchPosition,
-      inputLength: inputValue.length,
-    });
-  }, [showFileSearch, fileSearchPosition, fileSearchQuery, inputValue.length]);
+    const wrapper = editorWrapperRef.current;
+    if (!wrapper) return;
 
-  // Handle input changes and detect @ symbol
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newValue = e.target.value;
-    const cursorPosition = e.target.selectionStart;
+    const editable = wrapper.querySelector('[contenteditable="true"]') as HTMLElement | null;
+    if (!editable) return;
 
-    // First update the input value
-    setInputValue(newValue);
+    const onCompositionStart = () => {
+      isComposing.current = true;
+    };
+    const onCompositionEnd = () => {
+      // Brief delay to match macOS IME Enter misfire pattern
+      setTimeout(() => {
+        isComposing.current = false;
+      }, 50);
+    };
 
-    // Then detect @ symbol
-    // Find the last @ symbol before cursor
-    const textBeforeCursor = newValue.substring(0, cursorPosition);
-    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+    editable.addEventListener('compositionstart', onCompositionStart);
+    editable.addEventListener('compositionend', onCompositionEnd);
 
-    if (lastAtIndex !== -1) {
-      // Check if there's a space after the @ (if so, close the popover)
-      const textAfterAt = textBeforeCursor.substring(lastAtIndex + 1);
-      const hasSpace = textAfterAt.includes(' ') || textAfterAt.includes('\n');
+    return () => {
+      editable.removeEventListener('compositionstart', onCompositionStart);
+      editable.removeEventListener('compositionend', onCompositionEnd);
+    };
+  }, []);
 
-      if (!hasSpace) {
-        // Extract query after @
-        const query = textAfterAt;
+  // Intercept Enter key on the editor wrapper to handle send / file search navigation
+  const handleWrapperKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      // File search navigation takes priority
+      if (showFileSearch) {
+        if (e.key === 'ArrowUp') {
+          e.preventDefault();
+          fileSearchRef.current?.moveSelection(-1);
+          return;
+        }
+        if (e.key === 'ArrowDown') {
+          e.preventDefault();
+          fileSearchRef.current?.moveSelection(1);
+          return;
+        }
+        if (e.key === 'Enter' || e.key === 'Tab') {
+          e.preventDefault();
+          fileSearchRef.current?.selectCurrent();
+          return;
+        }
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          setShowFileSearch(false);
+          return;
+        }
+      }
 
-        // Calculate popover position
-        if (textareaRef.current) {
-          const rect = textareaRef.current.getBoundingClientRect();
-          setFileSearchPosition({
-            top: rect.top,
-            left: rect.left,
-          });
+      // Enter without Shift = send (unless IME is active)
+      if (e.key === 'Enter' && !e.shiftKey) {
+        if (isComposing.current || (e.nativeEvent as KeyboardEvent & { isComposing?: boolean }).isComposing) {
+          return;
+        }
+        e.preventDefault();
+        handleSend();
+      }
+    },
+    [showFileSearch, isComposing]
+  );
+
+  // Detect @ mentions in the markdown string returned by MDXEditor onChange
+  const handleEditorChange = useCallback(
+    (markdown: string) => {
+      setInputValue(markdown);
+
+      // Use the raw markdown to find @ position (simple last-@ heuristic)
+      const lastAtIndex = markdown.lastIndexOf('@');
+      if (lastAtIndex !== -1) {
+        const textAfterAt = markdown.substring(lastAtIndex + 1);
+        const hasBreak = textAfterAt.includes(' ') || textAfterAt.includes('\n');
+
+        if (!hasBreak) {
+          const wrapper = editorWrapperRef.current;
+          if (wrapper) {
+            const rect = wrapper.getBoundingClientRect();
+            setFileSearchPosition({ top: rect.top, left: rect.left });
+          }
+          setFileSearchQuery(textAfterAt);
+          setAtSymbolPosition(lastAtIndex);
+          setShowFileSearch(true);
+          debug('@ file search open', { query: textAfterAt });
+          return;
+        }
+      }
+
+      setShowFileSearch(false);
+    },
+    [setInputValue]
+  );
+
+  // Replace `@query` with a markdown file link using Lexical's own update mechanism.
+  // This avoids setMarkdown (which resets cursor) and DOM hacks (which confuse Lexical).
+  const handleFileSelect = useCallback(
+    (file: FuzzyFileSearchResult) => {
+      if (atSymbolPosition === -1) return;
+
+      const fileRef = `[${getFilename(file.path)}](${file.path})\u00A0`;
+
+      // Build the new markdown string
+      const current = inputValue;
+      const before = current.substring(0, atSymbolPosition);
+      const after = current.substring(atSymbolPosition + 1 + fileSearchQuery.length);
+      const next = `${before}${fileRef}${after}`;
+
+      // Update markdown state and editor content
+      setInputValue(next);
+      editorRef.current?.setMarkdown(next);
+
+      // After setMarkdown flushes, place cursor inside the last text node
+      setTimeout(() => {
+        const editable = editorWrapperRef.current?.querySelector(
+          '[contenteditable="true"]'
+        ) as HTMLElement | null;
+        if (!editable) return;
+        editable.focus();
+
+        // Find the deepest last text node so cursor lands inside inline content
+        const walker = document.createTreeWalker(editable, NodeFilter.SHOW_TEXT);
+        let lastTextNode: Text | null = null;
+        while (walker.nextNode()) {
+          lastTextNode = walker.currentNode as Text;
         }
 
-        // Update state to show popover
-        debug('open file search', {
-          query,
-          atSymbolPosition: lastAtIndex,
-          fileSearchPosition,
-          cursorPosition,
-        });
-        setFileSearchQuery(query);
-        setAtSymbolPosition(lastAtIndex);
-        setShowFileSearch(true);
-      } else {
-        debug('close file search due to space/newline');
-        setShowFileSearch(false);
-      }
-    } else {
+        const domSel = window.getSelection();
+        if (domSel && lastTextNode) {
+          const range = document.createRange();
+          range.setStart(lastTextNode, lastTextNode.length);
+          range.collapse(true);
+          domSel.removeAllRanges();
+          domSel.addRange(range);
+        }
+      }, 0);
+
       setShowFileSearch(false);
-    }
-  };
-
-  // Handle file selection
-  const handleFileSelect = (file: FuzzyFileSearchResult) => {
-    if (atSymbolPosition === -1) return;
-
-    const currentValue = inputValue;
-    // Replace from @ to cursor position with the file path
-    const beforeAt = currentValue.substring(0, atSymbolPosition);
-    const afterCursor = currentValue.substring(
-      textareaRef.current?.selectionStart || currentValue.length
-    );
-    const fileReference = `[${getFilename(file.path)}](${file.path}) `;
-    const newValue = `${beforeAt}${fileReference}${afterCursor}`;
-
-    setInputValue(newValue);
-    debug('file selected', {
-      selectedPath: file.path,
-      newValueLength: newValue.length,
-    });
-    setShowFileSearch(false);
-    setAtSymbolPosition(-1);
-
-    // Focus back on textarea
-    setTimeout(() => {
-      textareaRef.current?.focus();
-      const newCursorPos = beforeAt.length + fileReference.length;
-      textareaRef.current?.setSelectionRange(newCursorPos, newCursorPos);
-    }, 0);
-  };
+      setAtSymbolPosition(-1);
+      debug('file selected', { path: file.path });
+    },
+    [atSymbolPosition, fileSearchQuery, inputValue, setInputValue]
+  );
 
   const handleSend = async () => {
-    if ((!inputValue.trim() && images.length === 0) || isProcessing) return;
+    const markdown = inputValue.trim().replace(/\u00A0/g, ' ');
+    if (!markdown && images.length === 0) return;
+    if (isProcessing) return;
 
-    const message = inputValue.trim();
     setInputValue('');
+    editorRef.current?.setMarkdown('');
 
     try {
-      await onSend(message);
+      await onSend(markdown);
     } catch (error) {
       console.error('Failed to send message:', error);
     }
@@ -161,7 +232,6 @@ export function InputArea({
 
   const handleStop = async () => {
     if (!currentThreadId || !currentTurnId) return;
-
     try {
       await onStop();
     } catch (error) {
@@ -169,52 +239,10 @@ export function InputArea({
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    // Don't handle Enter when file search is open (let the popover handle it)
-    if (
-      showFileSearch &&
-      (e.key === 'Enter' ||
-        e.key === 'Tab' ||
-        e.key === 'ArrowUp' ||
-        e.key === 'ArrowDown' ||
-        e.key === 'Escape')
-    ) {
-      e.preventDefault();
-
-      if (e.key === 'ArrowUp') {
-        fileSearchRef.current?.moveSelection(-1);
-        return;
-      }
-      if (e.key === 'ArrowDown') {
-        fileSearchRef.current?.moveSelection(1);
-        return;
-      }
-      if (e.key === 'Enter' || e.key === 'Tab') {
-        fileSearchRef.current?.selectCurrent();
-        return;
-      }
-      if (e.key === 'Escape') {
-        debug('close file search via escape');
-        setShowFileSearch(false);
-      }
-      return;
-    }
-
-    if (e.key === 'Enter') {
-      // If IME is active, do NOT send
-      if (isComposing || (e.nativeEvent as any).isComposing) {
-        return;
-      }
-      if (e.shiftKey) {
-        return;
-      }
-      e.preventDefault();
-      handleSend();
-    }
-  };
-
   return (
-    <div className={`${isMobile ? 'px-2 pb-[env(safe-area-inset-bottom)]' : 'px-4'} bg-background`}>
+    <div
+      className={`${isMobile ? 'px-2 pb-[env(safe-area-inset-bottom)]' : 'px-4'} bg-background`}
+    >
       {showFileSearch && (
         <FileSearchPopover
           ref={fileSearchRef}
@@ -224,7 +252,9 @@ export function InputArea({
           position={fileSearchPosition}
         />
       )}
+
       <div className="max-w-6xl mx-auto relative border rounded-xl bg-background shadow-sm focus-within:ring-1 focus-within:ring-ring transition-all">
+        {/* Image attachments */}
         {images.length > 0 && (
           <div className="flex gap-2 p-3 pb-0 overflow-x-auto">
             {images.map((path, index) => (
@@ -244,24 +274,37 @@ export function InputArea({
             ))}
           </div>
         )}
-        <Textarea
-          ref={textareaRef}
-          value={inputValue}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          onCompositionStart={() => setIsComposing(true)}
-          onCompositionEnd={() => {
-            // Keep composing state briefly to avoid macOS IME Enter misfire
-            setIsComposing(true);
-            setTimeout(() => {
-              setIsComposing(false);
-            }, 50);
-          }}
-          placeholder="Ask anything..."
-          className={`w-full resize-none border-0 bg-transparent text-base shadow-none focus-visible:ring-0 ${isMobile ? 'min-h-[72px] max-h-[180px] py-3' : 'min-h-[60px] max-h-[200px] py-4'}`}
-        />
-        <div className={`flex items-center justify-between rounded-b-xl bg-muted/20 ${isMobile ? 'gap-2 px-2 py-1.5' : 'p-0 pl-3'}`}>
-          <div className={`flex items-center ${isMobile ? 'flex-wrap gap-1' : ''}`}>{children}</div>
+
+        {/* MDXEditor WYSIWYG input */}
+        <div
+          ref={editorWrapperRef}
+          onKeyDown={handleWrapperKeyDown}
+          className={`mdx-input-wrapper ${isMobile ? 'min-h-[72px] max-h-[180px]' : 'min-h-[60px] max-h-[200px]'} overflow-y-auto`}
+        >
+          <MDXEditor
+            ref={editorRef}
+            markdown={inputValue}
+            onChange={handleEditorChange}
+            placeholder="Ask anything... @file"
+            plugins={[
+              headingsPlugin(),
+              listsPlugin(),
+              quotePlugin(),
+              thematicBreakPlugin(),
+              linkPlugin(),
+              markdownShortcutPlugin(),
+            ]}
+            contentEditableClassName="mdx-input-editable"
+          />
+        </div>
+
+        {/* Toolbar row */}
+        <div
+          className={`flex items-center justify-between rounded-b-xl bg-muted/20 ${isMobile ? 'gap-2 px-2 py-1.5' : 'p-0 pl-3'}`}
+        >
+          <div className={`flex items-center ${isMobile ? 'flex-wrap gap-1' : ''}`}>
+            {children}
+          </div>
           <div>
             {isProcessing ? (
               <Button
@@ -275,7 +318,7 @@ export function InputArea({
             ) : (
               <Button
                 onClick={handleSend}
-                disabled={!inputValue.trim()}
+                disabled={!inputValue.trim() && images.length === 0}
                 size="icon"
                 className={`${isMobile ? 'h-10 w-10' : 'h-8 w-8'} rounded-lg`}
               >
