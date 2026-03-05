@@ -18,14 +18,15 @@ pub async fn start_web_server_with_events(
     codex_state: Arc<AppState>,
     cc_state: Arc<CCState>,
     event_tx: broadcast::Sender<(String, Value)>,
+    host: &str,
     port: u16,
 ) -> Result<(), Box<dyn std::error::Error>> {
     if let Ok(cwd) = std::env::current_dir() {
-        println!("[web] startup cwd: {}", cwd.display());
+        log::info!("[web] startup cwd: {}", cwd.display());
     } else {
-        println!("[web] startup cwd: <unavailable>");
+        log::info!("[web] startup cwd: <unavailable>");
     }
-    println!("[web] requested port: {}", port);
+    log::info!("[web] requested port: {}", port);
 
     let automation_sink: Arc<dyn EventSink> = Arc::new(WebSocketEventSink::new(event_tx.clone()));
     crate::features::automation::initialize_automation_runtime(
@@ -51,16 +52,16 @@ pub async fn start_web_server_with_events(
     };
 
     let app = create_router(state);
-    let listener = tokio::net::TcpListener::bind(format!("0.0.0.0:{}", port)).await?;
+    let listener = tokio::net::TcpListener::bind(format!("{}:{}", host, port)).await?;
 
-    println!("Web server listening on http://0.0.0.0:{}", port);
+    log::info!("Web server listening on http://{}:{}", host, port);
 
     axum::serve(listener, app).await?;
 
     Ok(())
 }
 
-pub async fn start_web_server(port: u16) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn start_web_server(host: &str, port: u16) -> Result<(), Box<dyn std::error::Error>> {
     let boot_started_at = Instant::now();
     let (event_tx, _) = broadcast::channel(100);
     let event_sink: Arc<dyn EventSink> = Arc::new(WebSocketEventSink::new(event_tx.clone()));
@@ -70,7 +71,7 @@ pub async fn start_web_server(port: u16) -> Result<(), Box<dyn std::error::Error
     let codex = connect_codex(Arc::clone(&event_sink))
         .await
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
-    println!(
+    log::info!(
         "[web] startup timing: connect_codex finished in {:?}",
         connect_started_at.elapsed()
     );
@@ -82,7 +83,7 @@ pub async fn start_web_server(port: u16) -> Result<(), Box<dyn std::error::Error
             initialize_codex(&codex, Arc::clone(&init_state.event_sink))
                 .await
                 .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
-            println!(
+            log::info!(
                 "[web] startup timing: initialize_codex finished in {:?}",
                 initialize_started_at.elapsed()
             );
@@ -92,9 +93,9 @@ pub async fn start_web_server(port: u16) -> Result<(), Box<dyn std::error::Error
 
     let codex_state = Arc::new(AppState { codex });
     let cc_state = Arc::new(CCState::new());
-    println!(
+    log::info!(
         "[web] boot completed in {:?}",
         boot_started_at.elapsed()
     );
-    start_web_server_with_events(codex_state, cc_state, event_tx, port).await
+    start_web_server_with_events(codex_state, cc_state, event_tx, host, port).await
 }

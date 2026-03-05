@@ -7,7 +7,12 @@ This guide covers local web-mode and packaging for Codexia web server without GU
 ### Linux or Windows
 
 ```sh
-codexia --web
+codexia --web # default port is 7420
+```
+
+You can specify a custom port with the `--port` flag, and use `--host` to allow external access (binds to `0.0.0.0` instead of `127.0.0.1`):
+```sh
+codexia --web --port 7420 --host
 ```
 
 ### macOS

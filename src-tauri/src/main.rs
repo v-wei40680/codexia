@@ -5,8 +5,9 @@
 const DEFAULT_WEB_PORT: u16 = 7420;
 
 #[cfg(all(feature = "tauri", feature = "web"))]
-fn parse_web_options() -> (bool, Option<u16>) {
+fn parse_web_options() -> (bool, String, Option<u16>) {
     let mut web = false;
+    let mut host = "127.0.0.1".to_string();
     let mut port: Option<u16> = std::env::var("VITE_WEB_PORT")
         .ok()
         .and_then(|value| value.parse().ok());
@@ -15,6 +16,7 @@ fn parse_web_options() -> (bool, Option<u16>) {
     while let Some(arg) = args.next() {
         match arg.as_str() {
             "web" | "--web" => web = true,
+            "--host" => host = "0.0.0.0".to_string(),
             "--port" | "--web-port" => {
                 if let Some(value) = args.next() {
                     if let Ok(parsed) = value.parse::<u16>() {
@@ -33,7 +35,7 @@ fn parse_web_options() -> (bool, Option<u16>) {
         }
     }
 
-    (web, port)
+    (web, host, port)
 }
 
 #[cfg(feature = "tauri")]
@@ -45,9 +47,9 @@ fn main() {
     #[cfg(all(feature = "tauri", feature = "web"))]
     {
         init_tauri_env();
-        let (web, port) = parse_web_options();
+        let (web, host, port) = parse_web_options();
         if web {
-            codexia_lib::web::start_server(port.unwrap_or(DEFAULT_WEB_PORT));
+            codexia_lib::web::start_server(&host, port.unwrap_or(DEFAULT_WEB_PORT));
             return;
         }
         codexia_lib::gui::run();
@@ -64,6 +66,7 @@ fn main() {
     #[cfg(all(feature = "web", not(feature = "tauri")))]
     {
         codexia_lib::web::start_server(
+            "127.0.0.1",
             std::env::var("VITE_WEB_PORT")
                 .ok()
                 .and_then(|value| value.parse().ok())
