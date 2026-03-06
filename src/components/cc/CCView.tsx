@@ -149,23 +149,6 @@ export default function CCView() {
     setInput((prev) => (prev ? prev + '\n\n' + prompt : prompt));
   };
 
-  const handleScrollUp = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTo({
-        top: 0,
-        behavior: 'smooth',
-      });
-    }
-  };
-
-  const handleScrollDown = () => {
-    if (scrollContainerRef.current) {
-      scrollContainerRef.current.scrollTo({
-        top: scrollContainerRef.current.scrollHeight,
-        behavior: 'smooth',
-      });
-    }
-  };
 
   const [isPromptsExpanded, setIsPromptsExpanded] = useState(false);
 
@@ -219,7 +202,7 @@ export default function CCView() {
         </div>
 
         {messages.length > 0 && (
-          <CCScrollControls onScrollUp={handleScrollUp} onScrollDown={handleScrollDown} />
+          <CCScrollControls scrollContainerRef={scrollContainerRef} />
         )}
       </div>
 
