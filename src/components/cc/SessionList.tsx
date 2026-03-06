@@ -20,7 +20,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 interface Props {
   project?: string;
   sessions?: SessionData[];
-  onSelectSession?: (sessionId: string) => void;
+  onSelectSession?: (sessionId: string, project?: string) => void;
 }
 
 export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Props) {
@@ -119,7 +119,7 @@ export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Pr
     setSelectedAgent('cc');
     setView('cc');
     if (onSelectSession) {
-      onSelectSession(session.sessionId);
+      onSelectSession(session.sessionId, session.project);
     }
   };
 

@@ -26,7 +26,7 @@ interface CCInputProps {
 }
 
 export function CCInput({ input, setInput, onSendMessage, onInterrupt }: CCInputProps) {
-  const { isLoading, setShowExamples, options, updateOptions } = useCCStore();
+  const { isLoading, options, updateOptions } = useCCStore();
   const { appendFileLinks } = useInputStore();
   const [showCommands, setShowCommands] = useState(false);
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
@@ -88,7 +88,6 @@ export function CCInput({ input, setInput, onSendMessage, onInterrupt }: CCInput
                 }
               }
             }}
-            onFocus={() => setShowExamples(false)}
             placeholder="Ask Claude to do anything..."
             className="min-h-16 w-full pb-11 pr-2 resize-none"
             disabled={isLoading}

@@ -12,6 +12,8 @@ import { useCCInputStore } from '@/stores/useCCInputStore';
 import { ccInterrupt, ccSendMessage } from '@/services';
 import { ProjectSelector } from '../project-selector';
 
+const CC_LISTENER_READY_EVENT = 'cc-session-listener-ready';
+
 export default function CCView() {
   const {
     activeSessionId,
@@ -65,6 +67,11 @@ export default function CCView() {
       if (message.type === 'result') {
         setLoading(false);
       }
+    });
+    void unlisten.then(() => {
+      window.dispatchEvent(
+        new CustomEvent(CC_LISTENER_READY_EVENT, { detail: { sessionId: activeSessionId } })
+      );
     });
 
     return () => {
@@ -151,6 +158,7 @@ export default function CCView() {
 
 
   const [isPromptsExpanded, setIsPromptsExpanded] = useState(false);
+  const shouldShowWelcome = messages.length === 0 && !activeSessionId;
 
   return (
     <div className="flex flex-col h-full min-h-0 max-w-4xl mx-auto">
@@ -158,7 +166,7 @@ export default function CCView() {
       <div className="flex-1 min-h-0 overflow-hidden relative">
         <div ref={scrollContainerRef} className="h-full overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:display-none">
           <div className="flex flex-col gap-4 p-4">
-            {messages.length === 0 && (
+            {shouldShowWelcome && (
               <div className={`flex-1 flex flex-col items-center max-w-2xl mx-auto py-8 text-center animate-in fade-in duration-500 ${isPromptsExpanded ? 'justify-start mt-4' : 'justify-center'}`}>
                 {!isPromptsExpanded && (
                   <>

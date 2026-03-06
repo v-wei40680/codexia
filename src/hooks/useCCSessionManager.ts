@@ -3,6 +3,36 @@ import { useCCStore } from '@/stores/ccStore';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { ccNewSession, ccResumeSession, ccSendMessage } from '@/services';
 
+const CC_LISTENER_READY_EVENT = 'cc-session-listener-ready';
+
+function waitForSessionListenerReady(sessionId: string, timeoutMs = 400): Promise<void> {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined') {
+      resolve();
+      return;
+    }
+
+    let done = false;
+    const cleanup = () => {
+      if (done) return;
+      done = true;
+      window.removeEventListener(CC_LISTENER_READY_EVENT, handleReady as EventListener);
+      clearTimeout(timer);
+      resolve();
+    };
+
+    const handleReady = (event: Event) => {
+      const customEvent = event as CustomEvent<{ sessionId?: string }>;
+      if (customEvent.detail?.sessionId === sessionId) {
+        cleanup();
+      }
+    };
+
+    const timer = setTimeout(cleanup, timeoutMs);
+    window.addEventListener(CC_LISTENER_READY_EVENT, handleReady as EventListener);
+  });
+}
+
 /**
  * Custom hook for managing Claude Code sessions
  * Handles session creation, resumption, and selection
@@ -87,9 +117,10 @@ export function useCCSessionManager() {
     }
   };
 
-  const handleResumeSession = async (sessionId: string) => {
+  const handleResumeSession = async (sessionId: string, projectPath?: string) => {
     try {
-      console.info('[useCCSessionManager] Resume session start', { sessionId, cwd });
+      const effectiveCwd = projectPath ?? useWorkspaceStore.getState().cwd ?? cwd;
+      console.info('[useCCSessionManager] Resume session start', { sessionId, cwd: effectiveCwd });
       setIsLoading(true);
       setLoading(true);
       setMessages([]);
@@ -98,11 +129,12 @@ export function useCCSessionManager() {
       // Set session ID FIRST to ensure event listener is set up
       setActiveSessionId(sessionId);
 
-      // Wait a tick to ensure the event listener is registered
+      // Wait for CC view listener readiness before replaying historical messages.
       await new Promise((resolve) => setTimeout(resolve, 0));
+      await waitForSessionListenerReady(sessionId);
 
       const ClaudeAgentOptions: any = {
-        cwd,
+        cwd: effectiveCwd,
         permissionMode: options.permissionMode,
       };
 
@@ -125,22 +157,22 @@ export function useCCSessionManager() {
         ClaudeAgentOptions.disallowedTools = options.disallowedTools;
 
       await ccResumeSession(sessionId, ClaudeAgentOptions);
-      console.info('[useCCSessionManager] Resume session success', { sessionId, cwd });
+      console.info('[useCCSessionManager] Resume session success', { sessionId, cwd: effectiveCwd });
 
       // Session history loaded, but not connected yet
       // Connection will happen when user sends first message
       setConnected(false);
     } catch (error) {
-      console.error('[useCCSessionManager] Failed to resume session', { sessionId, cwd, error });
+      console.error('[useCCSessionManager] Failed to resume session', { sessionId, cwd: projectPath ?? cwd, error });
     } finally {
       setLoading(false);
       setIsLoading(false);
     }
   };
 
-  const handleSessionSelect = async (sessionId: string) => {
-    console.info('[useCCSessionManager] Session selected', { sessionId, cwd });
-    await handleResumeSession(sessionId);
+  const handleSessionSelect = async (sessionId: string, projectPath?: string) => {
+    console.info('[useCCSessionManager] Session selected', { sessionId, cwd: projectPath ?? cwd });
+    await handleResumeSession(sessionId, projectPath);
   };
 
   return {
