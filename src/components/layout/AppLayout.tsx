@@ -197,7 +197,7 @@ export function AppLayout() {
       setRightPanelSize(nextSize);
     }
   };
-  const showMainHeader = view === 'codex' || view === 'cc' || view === 'history';
+  const showMainHeader = view === 'codex' || view === 'cc' || view === 'history' || view === 'marketplace';
 
   const activeView = (
     <Suspense fallback={<ViewLoadingFallback />}>

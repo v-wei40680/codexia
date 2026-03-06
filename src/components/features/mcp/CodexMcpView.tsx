@@ -19,7 +19,7 @@ import {
 
 export function CodexMcpView() {
   const [servers, setServers] = useState<Record<string, McpServerConfig>>({});
-  const [activeTab, setActiveTab] = useState('quick');
+  const [activeTab, setActiveTab] = useState('configured');
   const [newServerName, setNewServerName] = useState('');
   const [newServerProtocol, setNewServerProtocol] = useState<'stdio' | 'http' | 'sse'>('stdio');
   const [commandConfig, setCommandConfig] = useState({
@@ -174,7 +174,7 @@ export function CodexMcpView() {
   };
 
   return (
-    <div className="container mx-auto py-4">
+    <div className="container mx-auto">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold">Codex MCP Server Management</h1>
         <McpLinkerButton />
@@ -183,8 +183,8 @@ export function CodexMcpView() {
       <div className="space-y-6">
         <Tabs value={activeTab} onValueChange={handleTabChange}>
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="quick">Quick</TabsTrigger>
             <TabsTrigger value="configured">Configured</TabsTrigger>
+            <TabsTrigger value="quick">Quick</TabsTrigger>
             <TabsTrigger value="add">
               <Plus className="h-4 w-4 mr-2" />
               Add

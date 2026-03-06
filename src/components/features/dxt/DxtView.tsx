@@ -242,7 +242,7 @@ export default function DxtView() {
   return (
     <div className="h-full flex flex-col min-h-0">
       <div className="flex-1 overflow-auto">
-        <div className="p-4">
+        <div>
           {/* loading indicator */}
           {loading && (
             <div className="mb-4 text-center">
