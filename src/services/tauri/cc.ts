@@ -129,3 +129,28 @@ export async function ccMcpDisable(name: string, workingDir: string) {
   }
   await postJson('/api/cc/mcp/disable', { name, working_dir: workingDir });
 }
+
+export async function ccResolvePermission(requestId: string, decision: string): Promise<void> {
+  if (isTauri()) {
+    return invokeTauri('cc_resolve_permission', { requestId, decision });
+  } else {
+    const port = import.meta.env.VITE_WEB_PORT || 8094;
+    const response = await fetch(`http://127.0.0.1:${port}/api/cc/resolve-permission`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ request_id: requestId, decision }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to resolve permission: ${response.statusText}`);
+    }
+  }
+}
+
+export async function ccSetPermissionMode(sessionId: string, mode: string) {
+  if (isTauri()) {
+    await invokeTauri('cc_set_permission_mode', { sessionId, mode });
+    return;
+  }
+  await postNoContent('/api/cc/set-permission-mode', { session_id: sessionId, mode });
+}

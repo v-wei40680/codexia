@@ -84,6 +84,8 @@ pub fn run() {
             crate::cc::cc_get_installed_skills,
             crate::cc::cc_get_settings,
             crate::cc::cc_update_settings,
+            crate::cc::cc_resolve_permission,
+            crate::cc::cc_set_permission_mode,
             // cc mcp
             crate::cc::cc_mcp_list,
             crate::cc::cc_mcp_get,

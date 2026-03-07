@@ -42,6 +42,7 @@ interface CCStoreState {
   addActiveSessionId: (id: string) => void;
   removeActiveSessionId: (id: string) => void;
   addMessage: (message: CCMessage) => void;
+  updateMessage: (index: number, message: Partial<CCMessage>) => void;
   setMessages: (messages: CCMessage[]) => void;
   updateOptions: (options: Partial<CCOptions>) => void;
   setConnected: (connected: boolean) => void;
@@ -84,6 +85,12 @@ export const useCCStore = create<CCStoreState>()(
           activeSessionId: state.activeSessionId === id ? null : state.activeSessionId,
         })),
       addMessage: (message) => set((state) => ({ messages: [...state.messages, message] })),
+      updateMessage: (index, message) =>
+        set((state) => ({
+          messages: state.messages.map((m, i) =>
+            i === index ? { ...m, ...message } as CCMessage : m
+          ),
+        })),
       setMessages: (messages) => set({ messages }),
       updateOptions: (newOptions) =>
         set((state) => ({

@@ -116,6 +116,16 @@ export interface StreamEvent {
   parent_tool_use_id?: string;
 }
 
+/** Permission request message - specific to interactive mode */
+export interface PermissionRequestMessage {
+  type: 'permission_request';
+  requestId: string;
+  sessionId: string;
+  toolName: string;
+  toolInput: Record<string, any>;
+  resolved?: 'allow' | 'allow_always' | 'allow_always_project' | 'deny';
+}
+
 /** Control cancel request (internal protocol) */
 export interface ControlCancelRequest {
   type: 'control_cancel_request';
@@ -129,6 +139,7 @@ export type CCMessage =
   | ResultMessage
   | StreamEvent
   | UserMessage
+  | PermissionRequestMessage
   | ControlCancelRequest;
 
 /** Type guards */

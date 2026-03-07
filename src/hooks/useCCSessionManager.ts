@@ -4,6 +4,7 @@ import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { ccNewSession, ccResumeSession, ccSendMessage } from '@/services';
 
 const CC_LISTENER_READY_EVENT = 'cc-session-listener-ready';
+const CC_PERMISSION_LISTENER_READY_EVENT = 'cc-permission-listener-ready';
 
 function waitForSessionListenerReady(sessionId: string, timeoutMs = 400): Promise<void> {
   return new Promise((resolve) => {
@@ -30,6 +31,40 @@ function waitForSessionListenerReady(sessionId: string, timeoutMs = 400): Promis
 
     const timer = setTimeout(cleanup, timeoutMs);
     window.addEventListener(CC_LISTENER_READY_EVENT, handleReady as EventListener);
+  });
+}
+
+function waitForPermissionListenerReady(sessionId: string, timeoutMs = 400): Promise<void> {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined') {
+      resolve();
+      return;
+    }
+
+    let done = false;
+    const cleanup = () => {
+      if (done) return;
+      done = true;
+      window.removeEventListener(
+        CC_PERMISSION_LISTENER_READY_EVENT,
+        handleReady as EventListener
+      );
+      clearTimeout(timer);
+      resolve();
+    };
+
+    const handleReady = (event: Event) => {
+      const customEvent = event as CustomEvent<{ sessionId?: string }>;
+      if (customEvent.detail?.sessionId === sessionId) {
+        cleanup();
+      }
+    };
+
+    const timer = setTimeout(cleanup, timeoutMs);
+    window.addEventListener(
+      CC_PERMISSION_LISTENER_READY_EVENT,
+      handleReady as EventListener
+    );
   });
 }
 
@@ -98,6 +133,22 @@ export function useCCSessionManager() {
       setActiveSessionId(newSessionId);
       setMessages([]);
       setShowExamples(false);
+      console.info('[useCCSessionManager] New session created', {
+        newSessionId,
+        permissionMode: options.permissionMode,
+      });
+
+      // Wait for CC view listeners to bind before first message, otherwise
+      // early permission requests can be missed by the UI.
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      console.info('[useCCSessionManager] Waiting for listeners (new session)', {
+        newSessionId,
+      });
+      await waitForSessionListenerReady(newSessionId);
+      await waitForPermissionListenerReady(newSessionId);
+      console.info('[useCCSessionManager] Listeners ready (new session)', {
+        newSessionId,
+      });
 
       // Connection will happen automatically when sending the first message
       addMessage({
@@ -131,7 +182,10 @@ export function useCCSessionManager() {
 
       // Wait for CC view listener readiness before replaying historical messages.
       await new Promise((resolve) => setTimeout(resolve, 0));
+      console.info('[useCCSessionManager] Waiting for listeners (resume)', { sessionId });
       await waitForSessionListenerReady(sessionId);
+      await waitForPermissionListenerReady(sessionId);
+      console.info('[useCCSessionManager] Listeners ready (resume)', { sessionId });
 
       const ClaudeAgentOptions: any = {
         cwd: effectiveCwd,

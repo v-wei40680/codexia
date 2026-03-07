@@ -13,6 +13,7 @@ import { ccInterrupt, ccSendMessage } from '@/services';
 import { ProjectSelector } from '../project-selector';
 
 const CC_LISTENER_READY_EVENT = 'cc-session-listener-ready';
+const CC_PERMISSION_LISTENER_READY_EVENT = 'cc-permission-listener-ready';
 
 export default function CCView() {
   const {
@@ -69,6 +70,7 @@ export default function CCView() {
       }
     });
     void unlisten.then(() => {
+      console.info('[CCView] Message listener ready', { activeSessionId, eventName });
       window.dispatchEvent(
         new CustomEvent(CC_LISTENER_READY_EVENT, { detail: { sessionId: activeSessionId } })
       );
@@ -78,6 +80,50 @@ export default function CCView() {
       unlisten.then((fn) => fn());
     };
   }, [activeSessionId, addMessage, setLoading]);
+
+  // Listen for permission requests
+  useEffect(() => {
+    if (!activeSessionId) return;
+
+    console.info('[CCView] Bind permission listener', { activeSessionId });
+    const unlisten = listen<{
+      requestId: string;
+      sessionId: string;
+      toolName: string;
+      toolInput: any;
+    }>('cc-permission-request', (event) => {
+      const { requestId, sessionId, toolName, toolInput } = event.payload;
+      console.info('[CCView] Received permission request', { requestId, sessionId });
+
+      if (sessionId === activeSessionId) {
+        addMessage({
+          type: 'permission_request',
+          requestId,
+          sessionId,
+          toolName,
+          toolInput,
+        });
+      } else {
+        console.warn('[CCView] Ignore permission request for inactive session', {
+          activeSessionId,
+          requestId,
+          sessionId,
+        });
+      }
+    });
+    void unlisten.then(() => {
+      console.info('[CCView] Permission listener ready', { activeSessionId });
+      window.dispatchEvent(
+        new CustomEvent(CC_PERMISSION_LISTENER_READY_EVENT, {
+          detail: { sessionId: activeSessionId },
+        })
+      );
+    });
+
+    return () => {
+      unlisten.then((fn) => fn());
+    };
+  }, [activeSessionId, addMessage]);
 
   useEffect(() => {
     console.info('[CCView] Active session changed', { activeSessionId, cwd });

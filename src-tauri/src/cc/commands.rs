@@ -13,8 +13,16 @@ use super::types::{AgentOptions, CCConnectParams};
 use tauri::{AppHandle, Emitter, State};
 
 #[tauri::command]
-pub async fn cc_connect(params: CCConnectParams, state: State<'_, CCState>) -> Result<(), String> {
-    session_service::connect(params, &state).await
+pub async fn cc_connect(
+    params: CCConnectParams,
+    app: AppHandle,
+    state: State<'_, CCState>,
+) -> Result<(), String> {
+    let app_clone = app.clone();
+    let emitter = std::sync::Arc::new(move |event: String, payload: serde_json::Value| {
+        let _ = app_clone.emit(&event, &payload);
+    });
+    session_service::connect(params, &state, emitter).await
 }
 
 #[tauri::command]
@@ -42,9 +50,14 @@ pub async fn cc_disconnect(session_id: String, state: State<'_, CCState>) -> Res
 #[tauri::command]
 pub async fn cc_new_session(
     options: AgentOptions,
+    app: AppHandle,
     state: State<'_, CCState>,
 ) -> Result<String, String> {
-    session_service::new_session(options, &state).await
+    let app_clone = app.clone();
+    let emitter = std::sync::Arc::new(move |event: String, payload: serde_json::Value| {
+        let _ = app_clone.emit(&event, &payload);
+    });
+    session_service::new_session_with_emitter(options, &state, emitter).await
 }
 
 #[tauri::command]
@@ -65,9 +78,15 @@ pub async fn cc_resume_session(
     state: State<'_, CCState>,
 ) -> Result<(), String> {
     let event_name = format!("cc-message:{}", session_id);
+    let app_clone = app.clone();
+    let app_handle = app.clone();
 
-    session_service::resume_session(session_id, options, &state, move |msg| {
-        if let Err(e) = app.emit(&event_name, &msg) {
+    let emitter = std::sync::Arc::new(move |event: String, payload: serde_json::Value| {
+        let _ = app_handle.emit(&event, &payload);
+    });
+
+    session_service::resume_session(session_id, options, &state, emitter, move |msg| {
+        if let Err(e) = app_clone.emit(&event_name, &msg) {
             log::error!("Failed to emit historical message: {}", e);
         }
     })
@@ -145,4 +164,21 @@ pub async fn cc_mcp_enable(
     working_dir: String,
 ) -> Result<ClaudeCodeResponse, String> {
     mcp_cc_mcp_enable(name, working_dir).await
+}
+#[tauri::command]
+pub async fn cc_resolve_permission(
+    request_id: String,
+    decision: String,
+    state: State<'_, CCState>,
+) -> Result<(), String> {
+    state.resolve_permission(&request_id, decision)
+}
+
+#[tauri::command]
+pub async fn cc_set_permission_mode(
+    session_id: String,
+    mode: String,
+    state: State<'_, CCState>,
+) -> Result<(), String> {
+    session_service::set_permission_mode(&session_id, &mode, &state).await
 }

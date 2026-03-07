@@ -12,7 +12,7 @@ import {
 import { Slash, CircleStop, Send, Plus } from 'lucide-react';
 import { useCCStore, ModelType } from '@/stores/ccStore';
 import { useInputStore } from '@/stores/useInputStore';
-import { ccGetInstalledSkills } from '@/services';
+import { ccGetInstalledSkills, ccSetPermissionMode } from '@/services';
 import { CCPermissionModeSelect } from '@/components/cc/CCPermissionModeSelect';
 import { SelectFilesMenuItem } from '@/components/codex/selector/AttachmentSelector';
 
@@ -144,7 +144,15 @@ export function CCInput({ input, setInput, onSendMessage, onInterrupt }: CCInput
             </Popover>
             <CCPermissionModeSelect
               value={options.permissionMode}
-              onChange={(value) => updateOptions({ permissionMode: value })}
+              onChange={(value) => {
+                updateOptions({ permissionMode: value });
+                const { activeSessionId } = useCCStore.getState();
+                if (activeSessionId) {
+                  ccSetPermissionMode(activeSessionId, value).catch((err: unknown) => {
+                    console.error('Failed to update permission mode:', err);
+                  });
+                }
+              }}
             />
           </div>
 

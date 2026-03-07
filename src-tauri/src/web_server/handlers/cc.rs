@@ -1,8 +1,8 @@
 use super::to_error_response;
 use super::types::{
     CcMcpAddParams, CcMcpGetParams, CcMcpListParams, CcMcpRemoveParams, CcMcpToggleParams,
-    CcNewSessionParams, CcResumeSessionParams, CcSendMessageParams, CcSessionIdParams,
-    CcUpdateSettingsParams,
+    CcNewSessionParams, CcResolvePermissionParams, CcResumeSessionParams, CcSendMessageParams,
+    CcSessionIdParams, CcSetPermissionModeParams, CcUpdateSettingsParams,
 };
 use axum::{Json, extract::State as AxumState, http::StatusCode};
 use serde_json::Value;
@@ -21,7 +21,12 @@ pub(crate) async fn api_cc_connect(
     AxumState(state): AxumState<WebServerState>,
     Json(params): Json<CCConnectParams>,
 ) -> Result<StatusCode, ErrorResponse> {
-    cc_session_service::connect(params, state.cc_state.as_ref())
+    let event_tx = state.event_tx.clone();
+    let emitter = std::sync::Arc::new(move |event: String, payload: serde_json::Value| {
+        let _ = event_tx.send((event, payload));
+    });
+
+    cc_session_service::connect(params, state.cc_state.as_ref(), emitter)
         .await
         .map_err(to_error_response)?;
     Ok(StatusCode::OK)
@@ -69,9 +74,18 @@ pub(crate) async fn api_cc_new_session(
     AxumState(state): AxumState<WebServerState>,
     Json(params): Json<CcNewSessionParams>,
 ) -> Result<Json<String>, ErrorResponse> {
-    let session_id = cc_session_service::new_session(params.options, state.cc_state.as_ref())
-        .await
-        .map_err(to_error_response)?;
+    let event_tx = state.event_tx.clone();
+    let emitter = std::sync::Arc::new(move |event: String, payload: serde_json::Value| {
+        let _ = event_tx.send((event, payload));
+    });
+
+    let session_id = cc_session_service::new_session_with_emitter(
+        params.options,
+        state.cc_state.as_ref(),
+        emitter,
+    )
+    .await
+    .map_err(to_error_response)?;
     Ok(Json(session_id))
 }
 
@@ -103,10 +117,16 @@ pub(crate) async fn api_cc_resume_session(
     let session_id = params.session_id;
     let options = params.options;
 
+    let event_tx_clone = event_tx.clone();
+    let emitter = std::sync::Arc::new(move |event: String, payload: serde_json::Value| {
+        let _ = event_tx_clone.send((event, payload));
+    });
+
     cc_session_service::resume_session(
         session_id.clone(),
         options,
         state.cc_state.as_ref(),
+        emitter,
         move |msg| match serde_json::to_value(msg) {
             Ok(payload) => {
                 if event_tx.send((event_name.clone(), payload)).is_err() {
@@ -149,6 +169,31 @@ pub(crate) async fn api_cc_update_settings(
 pub(crate) async fn api_cc_get_sessions() -> Result<Json<Vec<SessionData>>, ErrorResponse> {
     let sessions = cc_session_service::get_sessions().map_err(to_error_response)?;
     Ok(Json(sessions))
+}
+
+pub(crate) async fn api_cc_resolve_permission(
+    AxumState(state): AxumState<WebServerState>,
+    Json(params): Json<CcResolvePermissionParams>,
+) -> Result<StatusCode, ErrorResponse> {
+    state
+        .cc_state
+        .resolve_permission(&params.request_id, params.decision)
+        .map_err(to_error_response)?;
+    Ok(StatusCode::OK)
+}
+
+pub(crate) async fn api_cc_set_permission_mode(
+    AxumState(state): AxumState<WebServerState>,
+    Json(params): Json<CcSetPermissionModeParams>,
+) -> Result<StatusCode, ErrorResponse> {
+    cc_session_service::set_permission_mode(
+        &params.session_id,
+        &params.mode,
+        state.cc_state.as_ref(),
+    )
+    .await
+    .map_err(to_error_response)?;
+    Ok(StatusCode::OK)
 }
 pub(crate) async fn api_cc_mcp_list(
     Json(params): Json<CcMcpListParams>,

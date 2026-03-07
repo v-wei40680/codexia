@@ -180,6 +180,20 @@ pub(crate) struct CcUpdateSettingsParams {
 }
 
 #[derive(Deserialize)]
+pub(crate) struct CcResolvePermissionParams {
+    #[serde(rename = "request_id", alias = "requestId")]
+    pub(crate) request_id: String,
+    pub(crate) decision: String,
+}
+
+#[derive(Deserialize)]
+pub(crate) struct CcSetPermissionModeParams {
+    #[serde(rename = "session_id", alias = "sessionId")]
+    pub(crate) session_id: String,
+    pub(crate) mode: String,
+}
+
+#[derive(Deserialize)]
 pub(crate) struct CcMcpListParams {
     #[serde(rename = "working_dir", alias = "workingDir")]
     pub(crate) working_dir: String,
