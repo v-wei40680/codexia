@@ -14,6 +14,7 @@ import { playBeep } from '@/utils/beep';
 import { allowSleep, preventSleep } from '@/services/tauri';
 import { getAccountWithParams } from '@/services';
 import { buildWsUrl, isTauri } from '@/hooks/runtime';
+import { CodexParseErrorEvent, CodexStderrEvent } from '@/components/codex/CodexInternalEvent';
 
 function shouldPlayCompletionBeep(
   mode: 'never' | 'unfocused' | 'always',
@@ -152,6 +153,7 @@ export function useCodexEvents(enabled = true) {
         if (
           payload.method !== 'account/rateLimits/updated' &&
           payload.method !== 'account/updated' &&
+          payload.method !== 'error' &&
           payload.method !== 'account/login/completed'
         ) {
           console.warn('[useCodexEvents] No threadId found in payload:', payload);
@@ -178,6 +180,18 @@ export function useCodexEvents(enabled = true) {
       unlistenPromises.push(
         listen<ServerNotification>('codex:notification', (event) => {
           handleServerNotification(event.payload);
+        })
+      );
+
+      unlistenPromises.push(
+        listen<CodexStderrEvent>('codex:stderr', (event) => {
+          console.error('[useCodexEvents] codex stderr:', event.payload.message);
+        })
+      );
+
+      unlistenPromises.push(
+        listen<CodexParseErrorEvent>('codex:parseError', (event) => {
+          console.error('[useCodexEvents] codex parseError:', event.payload.error, event.payload.raw);
         })
       );
 

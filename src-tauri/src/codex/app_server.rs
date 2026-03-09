@@ -2,6 +2,7 @@ use super::server_request::handle_server_request;
 use crate::features::event_sink::EventSink;
 use crate::features::automation::sync_automation_run_status;
 use codex_app_server_protocol::{
+    ClientInfo, InitializeCapabilities, InitializeParams, InitializeResponse,
     JSONRPCMessage, JSONRPCResponse, RequestId, ServerNotification, ServerRequest,
 };
 use serde_json::Value;
@@ -131,13 +132,10 @@ pub async fn connect_codex(event_sink: Arc<dyn EventSink>) -> Result<Arc<CodexAp
             let value: Value = match serde_json::from_str(&line) {
                 Ok(v) => v,
                 Err(err) => {
-                    log::warn!("codex:notification (parseError): {:?}", err);
+                    log::warn!("codex:parseError: {:?}", err);
                     event_sink_clone.emit(
-                        "codex:notification",
-                        serde_json::json!({
-                            "method": "codex/parseError",
-                            "params": { "error": err.to_string(), "raw": line }
-                        }),
+                        "codex:parseError",
+                        serde_json::json!({ "error": err.to_string(), "raw": line }),
                     );
                     continue;
                 }
@@ -223,13 +221,10 @@ pub async fn connect_codex(event_sink: Arc<dyn EventSink>) -> Result<Arc<CodexAp
             if line.trim().is_empty() {
                 continue;
             }
-            log::warn!("codex:notification (stderr): {}", line);
+            log::warn!("codex:stderr: {}", line);
             event_sink_clone.emit(
-                "codex:notification",
-                serde_json::json!({
-                    "method": "codex/stderr",
-                    "params": { "message": line }
-                }),
+                "codex:stderr",
+                serde_json::json!({ "message": line }),
             );
         }
     });
@@ -242,31 +237,30 @@ pub async fn initialize_codex(
     event_sink: Arc<dyn EventSink>,
 ) -> Result<(), String> {
     log::info!("Initializing codex app-server session");
-    let params = serde_json::json!({
-        "clientInfo": {
-            "name": "codexia",
-            "title": "Codexia",
-            "version": env!("CARGO_PKG_VERSION")
+    let params = InitializeParams {
+        client_info: ClientInfo {
+            name: "codexia".to_string(),
+            title: Some("Codexia".to_string()),
+            version: env!("CARGO_PKG_VERSION").to_string(),
         },
-        "capabilities": {
-            "experimentalApi": true
-        },
-    });
+        capabilities: Some(InitializeCapabilities {
+            experimental_api: true,
+            opt_out_notification_methods: None,
+        }),
+    };
+    let params_value = serde_json::to_value(&params).map_err(|e| e.to_string())?;
 
-    let result = codex.send_request("initialize", params).await?;
-    log::info!("Codex initialized successfully: {:?}", result);
+    let result = codex.send_request("initialize", params_value).await?;
+    let response: InitializeResponse =
+        serde_json::from_value(result).map_err(|e| e.to_string())?;
+    log::info!("Codex initialized successfully, userAgent: {}", response.user_agent);
 
     if let Err(err) = codex.send_notification("initialized", None).await {
         log::error!("Failed to send initialized notification: {}", err);
     }
 
-    event_sink.emit(
-        "codex:notification",
-        serde_json::json!({
-            "method": "codex/connected",
-            "params": {}
-        }),
-    );
+    let response_value = serde_json::to_value(&response).map_err(|e| e.to_string())?;
+    event_sink.emit("codex:initialized", response_value);
 
     Ok(())
 }

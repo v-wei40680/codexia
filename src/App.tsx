@@ -7,6 +7,7 @@ import { AppLayout } from '@/components/layout';
 import { isTauri } from '@/hooks/runtime';
 import { HistoryProjectsDialog } from '@/components/project-selector';
 import { initializeCodexAsync } from '@/services/tauri';
+import type { InitializeResponse } from './bindings';
 
 function AppShell() {
   useEffect(() => {
@@ -18,12 +19,9 @@ function AppShell() {
       console.warn('Failed to initialize codex asynchronously', error);
     });
 
-    // Listen for codex connected event
-    const unlisten = listen('codex:notification', (event: any) => {
-      const notification = event.payload;
-      if (notification?.method === 'codex/connected') {
-        console.log('Codex connected and initialized');
-      }
+    // Listen for codex initialized event
+    const unlisten = listen<InitializeResponse>('codex:initialized', (event) => {
+      console.log('[App] Codex initialized, userAgent:', event.payload.userAgent);
     });
 
     return () => {
