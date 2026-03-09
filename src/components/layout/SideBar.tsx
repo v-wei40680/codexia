@@ -178,7 +178,8 @@ export function SideBar() {
       return;
     }
     addProject(projectPath);
-  }, [addProject]);
+    setCwd(projectPath);
+  }, [addProject, setCwd]);
 
   useEffect(() => {
     const isEditableTarget = (target: EventTarget | null): boolean => {
