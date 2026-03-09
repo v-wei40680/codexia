@@ -5,7 +5,11 @@ import { useCodexStore, useThreadListStore } from '@/stores/codex';
 import { useLayoutStore, useNoteStore, useWorkspaceStore } from '@/stores';
 import { isTauri } from '@/hooks/runtime';
 
-export function useThreadList() {
+interface UseThreadListOptions {
+  enabled?: boolean;
+}
+
+export function useThreadList({ enabled = true }: UseThreadListOptions = {}) {
   const { cwd } = useWorkspaceStore();
   const { setView } = useLayoutStore();
   const { setSelectedNoteId } = useNoteStore();
@@ -19,7 +23,10 @@ export function useThreadList() {
     await codexService.setCurrentThread(null);
   }, [setView, setSelectedNoteId]);
 
+  // Only listen for file changes and load threads when enabled (i.e. codex tab is active)
   useEffect(() => {
+    if (!enabled) return;
+
     const scheduleRefresh = () => {
       if (refreshTimerRef.current) {
         clearTimeout(refreshTimerRef.current);
@@ -60,11 +67,12 @@ export function useThreadList() {
       }
       window.removeEventListener('thread/list-updated', onThreadListUpdated as EventListener);
     };
-  }, [triggerThreadListRefresh]);
+  }, [enabled, triggerThreadListRefresh]);
 
   useEffect(() => {
+    if (!enabled) return;
     codexService.loadThreads(cwd, false, sortKey);
-  }, [cwd, sortKey, threadListRefreshToken]);
+  }, [enabled, cwd, sortKey, threadListRefreshToken]);
 
   return { searchTerm, setSearchTerm, sortKey, setSortKey, handleNewThread };
 }

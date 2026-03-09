@@ -66,7 +66,10 @@ export function SideBar() {
     activeSidebarTab,
     setActiveSidebarTab,
   } = useLayoutStore();
-  const { searchTerm, setSearchTerm, sortKey, setSortKey, handleNewThread } = useThreadList();
+  // Only watch codex file changes when the codex tab is active
+  const { searchTerm, setSearchTerm, sortKey, setSortKey, handleNewThread } = useThreadList({
+    enabled: activeSidebarTab === 'codex',
+  });
   const { handleSessionSelect, handleNewSession } = useCCSessionManager();
   const { activeSessionId } = useCCStore();
   const { showSidebarMarketplace } = useSettingsStore();
