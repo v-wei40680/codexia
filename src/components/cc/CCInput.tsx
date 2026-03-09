@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -12,9 +12,11 @@ import {
 import { Slash, CircleStop, Send, Plus } from 'lucide-react';
 import { useCCStore, ModelType } from '@/stores/ccStore';
 import { useInputStore } from '@/stores/useInputStore';
+import { useWorkspaceStore } from '@/stores';
 import { ccGetInstalledSkills, ccSetPermissionMode } from '@/services';
 import { CCPermissionModeSelect } from '@/components/cc/CCPermissionModeSelect';
 import { SelectFilesMenuItem } from '@/components/codex/selector/AttachmentSelector';
+import { CCFileMentionPopover } from '@/components/cc/CCFileMentionPopover';
 
 const CC_INPUT_FOCUS_EVENT = 'cc-input-focus-request';
 
@@ -30,8 +32,11 @@ export function CCInput({ input, setInput, onSendMessage, onInterrupt }: CCInput
   const { appendFileLinks } = useInputStore();
   const [showCommands, setShowCommands] = useState(false);
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
+  const [showFileMention, setShowFileMention] = useState(false);
+  const [mentionQuery, setMentionQuery] = useState('');
   const [installedSkills, setInstalledSkills] = useState<string[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const hiddenTriggerRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     const loadSkills = async () => {
@@ -72,6 +77,106 @@ export function CCInput({ input, setInput, onSendMessage, onInterrupt }: CCInput
     }
   };
 
+  // Handle @ mention detection based on cursor position
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const checkMentionPosition = () => {
+      const cursorPos = textarea.selectionStart;
+      const textBeforeCursor = input.slice(0, cursorPos);
+
+      // Find the last @ before cursor
+      const lastAtPos = textBeforeCursor.lastIndexOf('@');
+
+      if (lastAtPos === -1) {
+        setShowFileMention(false);
+        setMentionQuery('');
+        return;
+      }
+
+      // Check if there's a newline between @ and cursor
+      const textAfterAt = textBeforeCursor.slice(lastAtPos + 1);
+      if (textAfterAt.includes('\n')) {
+        setShowFileMention(false);
+        setMentionQuery('');
+        return;
+      }
+
+      // Check if there's a space after @
+      const spacePos = textAfterAt.indexOf(' ');
+      if (spacePos !== -1) {
+        // There's a space after @, don't show popover
+        setShowFileMention(false);
+        setMentionQuery('');
+        return;
+      }
+
+      // Valid mention position
+      setShowFileMention(true);
+      setMentionQuery(textAfterAt);
+    };
+
+    checkMentionPosition();
+  }, [input]);
+
+  const handleFileMentionSelect = useCallback(
+    (filePath: string, fileName: string) => {
+      const textarea = textareaRef.current;
+      if (!textarea) {
+        setShowFileMention(false);
+        setMentionQuery('');
+        return;
+      }
+
+      const cursorPos = textarea.selectionStart;
+      const textBeforeCursor = input.slice(0, cursorPos);
+      const lastAtPos = textBeforeCursor.lastIndexOf('@');
+
+      if (lastAtPos !== -1) {
+        // Replace "@query" with a relative file link anchored to cwd
+        const { cwd } = useWorkspaceStore.getState();
+        const toPosix = (v: string) => v.replace(/\\/g, '/');
+        const normalizedCwd = toPosix(cwd).replace(/\/+$/, '');
+        const normalizedPath = toPosix(filePath);
+        const relativePath =
+          normalizedCwd && normalizedPath.startsWith(`${normalizedCwd}/`)
+            ? normalizedPath.slice(normalizedCwd.length + 1)
+            : normalizedPath;
+        const link = `[${fileName}](${relativePath})`;
+
+        const before = input.slice(0, lastAtPos);
+        const after = input.slice(cursorPos);
+        setInput(`${before}${link} ${after}`);
+
+        // Move cursor to after the inserted link
+        requestAnimationFrame(() => {
+          const newPos = lastAtPos + link.length + 1;
+          textarea.selectionStart = newPos;
+          textarea.selectionEnd = newPos;
+          textarea.focus();
+        });
+      } else {
+        textarea.focus();
+      }
+
+      setShowFileMention(false);
+      setMentionQuery('');
+    },
+    [input, setInput]
+  );
+
+  const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (!isLoading) {
+        onSendMessage();
+      }
+    } else if (e.key === 'Escape' && showFileMention) {
+      setShowFileMention(false);
+    }
+  };
+
   return (
     <>
       <div className="shrink-0 p-2 border-t bg-background">
@@ -80,17 +185,16 @@ export function CCInput({ input, setInput, onSendMessage, onInterrupt }: CCInput
             ref={textareaRef}
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                if (!isLoading) {
-                  onSendMessage();
-                }
-              }
-            }}
+            onKeyDown={handleTextareaKeyDown}
             placeholder="Ask Claude to do anything..."
             className="min-h-16 w-full pb-11 pr-2 resize-none"
-            disabled={isLoading}
+          />
+
+          {/* Hidden anchor for @ mention popover positioning */}
+          <span
+            ref={hiddenTriggerRef}
+            className="absolute bottom-11 left-2 pointer-events-none opacity-0"
+            aria-hidden="true"
           />
 
           <div className="absolute left-1 bottom-1 flex items-center gap-0.5">
@@ -171,10 +275,10 @@ export function CCInput({ input, setInput, onSendMessage, onInterrupt }: CCInput
                   Auto (Default)
                 </SelectItem>
                 <SelectItem value="sonnet" className="text-xs">
-                  Sonnet 4.5
+                  Sonnet 4.6
                 </SelectItem>
                 <SelectItem value="opus" className="text-xs">
-                  Opus 4.5
+                  Opus 4.6
                 </SelectItem>
                 <SelectItem value="haiku" className="text-xs">
                   Haiku 4.5
@@ -197,6 +301,14 @@ export function CCInput({ input, setInput, onSendMessage, onInterrupt }: CCInput
           </div>
         </div>
       </div>
+
+      <CCFileMentionPopover
+        open={showFileMention}
+        onOpenChange={setShowFileMention}
+        triggerElement={hiddenTriggerRef.current}
+        query={mentionQuery}
+        onSelect={handleFileMentionSelect}
+      />
     </>
   );
 }
