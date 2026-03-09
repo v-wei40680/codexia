@@ -2,6 +2,7 @@ import { Badge } from '../ui/badge';
 import type { ContentBlock } from '@/types/cc/cc-messages';
 import { DiffMessage } from './DiffMessage';
 import { CCTodoList } from './CCTodoList';
+import { getFilename } from '@/utils/getFilename';
 
 interface Props {
   block: ContentBlock;
@@ -46,10 +47,7 @@ export function CCMessageBlock({ block, index }: Props) {
           key={blockKey}
           className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-3 max-w-full overflow-hidden"
         >
-          <div className="flex items-center gap-2 mb-3">
-            <div className="text-xs font-semibold text-purple-600 dark:text-purple-400">
-              TOOL USE
-            </div>
+          <div className="flex items-center gap-2">
             <Badge
               variant="secondary"
               className="text-[10px] h-4 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-none"
@@ -61,7 +59,7 @@ export function CCMessageBlock({ block, index }: Props) {
                 variant="outline"
                 className="text-[10px] h-4 border-purple-200/50 dark:border-purple-800/50 text-purple-600 dark:text-purple-400"
               >
-                {block.input?.file_path}
+                {getFilename(block.input?.file_path)}
               </Badge>
             )}
             {block.name === 'Read' && (
