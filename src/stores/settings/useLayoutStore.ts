@@ -24,8 +24,8 @@ interface LayoutStore {
   setRightPanelSize: (size: number) => void;
   view: viewType;
   setView: (view: viewType) => void;
-  activeSidebarTab: 'codex' | 'cc' | 'explorer';
-  setActiveSidebarTab: (tab: 'codex' | 'cc' | 'explorer') => void;
+  activeSidebarTab: 'codex' | 'cc';
+  setActiveSidebarTab: (tab: 'codex' | 'cc') => void;
   activeRightPanelTab: 'diff' | 'note' | 'files' | 'webpreview';
   setActiveRightPanelTab: (tab: 'diff' | 'note' | 'files' | 'webpreview') => void;
   isConfigLess: boolean;
