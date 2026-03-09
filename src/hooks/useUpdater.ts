@@ -144,15 +144,12 @@ export function useUpdater({ enabled = true, onDebug }: UseUpdaterOptions) {
 
   useEffect(() => {
     if (!enabled) {
-      log("skip check: updater disabled");
       return;
     }
     if (import.meta.env.DEV) {
-      log("skip check: running in dev mode");
       return;
     }
     if (!isTauri()) {
-      log("skip check: not running in tauri");
       return;
     }
     log("updater effect mounted, triggering initial check");
