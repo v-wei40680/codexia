@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { FileIcon, defaultStyles } from 'react-file-icon';
@@ -11,16 +11,14 @@ import type { TauriFileEntry } from '@/services/tauri/shared';
 interface FileItem {
   name: string;
   path: string;
-  // Relative path from cwd, shown as hint (e.g. "src/main.rs")
   relativePath: string;
 }
 
 interface CCFileMentionPopoverProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
+  input: string;
+  setInput: (v: string) => void;
+  textareaRef: React.RefObject<HTMLTextAreaElement | null>;
   triggerElement: HTMLElement | null;
-  query: string;
-  onSelect: (filePath: string, fileName: string) => void;
 }
 
 const getExtension = (name: string) => {
@@ -34,7 +32,6 @@ const SKIP_DIRS = new Set([
   '__pycache__', '.venv', 'venv',
 ]);
 
-// Recursively collect all files into a flat list
 async function collectFiles(
   dirPath: string,
   rootPath: string,
@@ -65,7 +62,6 @@ async function collectFiles(
   }
 }
 
-// Score a file against query — higher is better
 function scoreFile(file: FileItem, query: string): number {
   if (!query) return 0;
   const q = query.toLowerCase();
@@ -79,20 +75,54 @@ function scoreFile(file: FileItem, query: string): number {
 }
 
 export function CCFileMentionPopover({
-  open,
-  onOpenChange,
+  input,
+  setInput,
+  textareaRef,
   triggerElement,
-  query,
-  onSelect,
 }: CCFileMentionPopoverProps) {
   const { cwd } = useWorkspaceStore();
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
   const [allFiles, setAllFiles] = useState<FileItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
-  // Load all files recursively when popover opens
+  // Detect `@query` pattern based on cursor position
+  useEffect(() => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    const cursorPos = textarea.selectionStart;
+    const textBeforeCursor = input.slice(0, cursorPos);
+    const lastAtPos = textBeforeCursor.lastIndexOf('@');
+
+    if (lastAtPos === -1) {
+      setOpen(false);
+      setQuery('');
+      return;
+    }
+
+    const textAfterAt = textBeforeCursor.slice(lastAtPos + 1);
+
+    if (textAfterAt.includes('\n')) {
+      setOpen(false);
+      setQuery('');
+      return;
+    }
+
+    if (textAfterAt.includes(' ')) {
+      setOpen(false);
+      setQuery('');
+      return;
+    }
+
+    setOpen(true);
+    setQuery(textAfterAt);
+  }, [input, textareaRef]);
+
+  // Load all files when popover opens
   useEffect(() => {
     if (!open || !cwd) return;
     let isActive = true;
@@ -113,10 +143,8 @@ export function CCFileMentionPopover({
     return () => { isActive = false; };
   }, [open, cwd]);
 
-  // Filter + rank files by query
   const visibleFiles = (() => {
     if (!query.trim()) {
-      // No query: show all files sorted alphabetically by name
       return [...allFiles].sort((a, b) => a.name.localeCompare(b.name)).slice(0, 50);
     }
     return allFiles
@@ -127,8 +155,51 @@ export function CCFileMentionPopover({
       .slice(0, 50);
   })();
 
-  // Reset selection to 0 whenever list changes
   useEffect(() => { setSelectedIndex(0); }, [query, open]);
+
+  const handleSelect = useCallback(
+    (filePath: string, fileName: string) => {
+      const textarea = textareaRef.current;
+      if (!textarea) {
+        setOpen(false);
+        setQuery('');
+        return;
+      }
+
+      const cursorPos = textarea.selectionStart;
+      const textBeforeCursor = input.slice(0, cursorPos);
+      const lastAtPos = textBeforeCursor.lastIndexOf('@');
+
+      if (lastAtPos !== -1) {
+        const { cwd: currentCwd } = useWorkspaceStore.getState();
+        const toPosix = (v: string) => v.replace(/\\/g, '/');
+        const normalizedCwd = toPosix(currentCwd).replace(/\/+$/, '');
+        const normalizedPath = toPosix(filePath);
+        const relativePath =
+          normalizedCwd && normalizedPath.startsWith(`${normalizedCwd}/`)
+            ? normalizedPath.slice(normalizedCwd.length + 1)
+            : normalizedPath;
+        const link = `[${fileName}](${relativePath})`;
+
+        const before = input.slice(0, lastAtPos);
+        const after = input.slice(cursorPos);
+        setInput(`${before}${link} ${after}`);
+
+        requestAnimationFrame(() => {
+          const newPos = lastAtPos + link.length + 1;
+          textarea.selectionStart = newPos;
+          textarea.selectionEnd = newPos;
+          textarea.focus();
+        });
+      } else {
+        textarea.focus();
+      }
+
+      setOpen(false);
+      setQuery('');
+    },
+    [input, setInput, textareaRef]
+  );
 
   // Keyboard navigation
   useEffect(() => {
@@ -144,18 +215,17 @@ export function CCFileMentionPopover({
       } else if (e.key === 'Enter' || e.key === 'Tab') {
         e.preventDefault(); e.stopPropagation();
         const f = visibleFiles[selectedIndex];
-        if (f) { onSelect(f.path, f.name); onOpenChange(false); }
+        if (f) handleSelect(f.path, f.name);
       } else if (e.key === 'Escape') {
         e.preventDefault(); e.stopPropagation();
-        onOpenChange(false);
+        setOpen(false);
       }
     };
     document.addEventListener('keydown', handleKeyDown, true);
     return () => document.removeEventListener('keydown', handleKeyDown, true);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, selectedIndex, visibleFiles, onSelect, onOpenChange]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, selectedIndex, visibleFiles, handleSelect]);
 
-  // Scroll selected into view
   useEffect(() => {
     itemRefs.current[selectedIndex]?.scrollIntoView({ block: 'nearest' });
   }, [selectedIndex]);
@@ -163,7 +233,7 @@ export function CCFileMentionPopover({
   const shouldUseSvgFileIcon = isTauri();
 
   return (
-    <Popover open={open} onOpenChange={onOpenChange} modal={false}>
+    <Popover open={open} onOpenChange={setOpen} modal={false}>
       <PopoverTrigger asChild>
         <span
           ref={(el) => {
@@ -211,7 +281,7 @@ export function CCFileMentionPopover({
                   ref={(el) => { itemRefs.current[index] = el; }}
                   variant={isSelected ? 'secondary' : 'ghost'}
                   className="w-full justify-start gap-2 h-auto py-1.5 px-3 text-xs rounded-none"
-                  onClick={() => { onSelect(file.path, file.name); onOpenChange(false); }}
+                  onClick={() => handleSelect(file.path, file.name)}
                   onMouseEnter={() => setSelectedIndex(index)}
                 >
                   <span className="shrink-0 w-4 h-4 flex items-center justify-center">
