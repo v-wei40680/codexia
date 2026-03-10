@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ShieldAlert, Check, X, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ToolInputDisplay } from './ToolInputDisplay';
 
 export type PermissionDecision = 'allow' | 'allow_always' | 'deny';
 
@@ -36,12 +37,10 @@ export function PermissionRequestCard({ msg, onResolve }: Props) {
             {msg.toolName}
           </code>
         </div>
-        <div>
-          <span className="font-medium text-muted-foreground block mb-1">Parameters:</span>
-          <pre className="font-mono p-2 bg-muted/30 rounded border border-border/50 overflow-auto max-h-64 text-[10px] text-foreground/80 break-all whitespace-pre-wrap">
-            <code>{JSON.stringify(msg.toolInput, null, 2)}</code>
-          </pre>
-        </div>
+        <ToolInputDisplay
+          input={msg.toolInput}
+          highlightKeys={['file_path', 'path', 'command']}
+        />
       </div>
 
       {/* Resolved state */}

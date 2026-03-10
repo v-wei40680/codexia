@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import type { ContentBlock, ToolUseBlock } from '../types/messages';
 import { DiffMessage } from './DiffMessage';
 import { CCTodoList } from './CCTodoList';
+import { CommandValue } from './ToolInputDisplay';
 import { getFilename } from '@/utils/getFilename';
 import { ChevronDown, ChevronRight, FileCode, Folder, Search } from 'lucide-react';
 import { Markdown } from '@/components/Markdown';
@@ -23,12 +24,14 @@ function stripErrorTags(s: string) {
   return s.replace(/^<tool_use_error>\s*/, '').replace(/\s*<\/tool_use_error>$/, '');
 }
 
-function ToolUseBadges({ block, showDiff, onToggleDiff, showWrite, onToggleWrite, hasError, showError, onToggleError }: {
+function ToolUseBadges({ block, showDiff, onToggleDiff, showWrite, onToggleWrite, showBash, onToggleBash, hasError, showError, onToggleError }: {
   block: ToolUseBlock;
   showDiff: boolean;
   onToggleDiff: () => void;
   showWrite: boolean;
   onToggleWrite: () => void;
+  showBash: boolean;
+  onToggleBash: () => void;
   hasError: boolean;
   showError: boolean;
   onToggleError: () => void;
@@ -73,6 +76,11 @@ function ToolUseBadges({ block, showDiff, onToggleDiff, showWrite, onToggleWrite
       {block.name === 'Bash' && block.input?.description && (
         <Badge variant="outline" className="text-[10px] h-4">{block.input.description}</Badge>
       )}
+      {block.name === 'Bash' && block.input?.command && (
+        <Button variant="ghost" size="icon" onClick={onToggleBash} className="h-4 w-4">
+          {showBash ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+        </Button>
+      )}
       {/* Error chevron — same row, after all badges */}
       {hasError && (
         <Button variant="ghost" size="icon" onClick={onToggleError} className="h-4 w-4 text-red-500 hover:text-red-600">
@@ -87,6 +95,7 @@ export function CCMessageBlock({ block, index, toolName, inlineError }: Props) {
   const blockKey = `block-${index}`;
   const [showEditDiff, setShowEditDiff] = useState(false);
   const [showWriteResult, setShowWriteResult] = useState(false);
+  const [showBashCommand, setShowBashCommand] = useState(false);
   const [showError, setShowError] = useState(false);
 
   switch (block.type) {
@@ -113,6 +122,7 @@ export function CCMessageBlock({ block, index, toolName, inlineError }: Props) {
             block={block}
             showDiff={showEditDiff} onToggleDiff={() => setShowEditDiff((p) => !p)}
             showWrite={showWriteResult} onToggleWrite={() => setShowWriteResult((p) => !p)}
+            showBash={showBashCommand} onToggleBash={() => setShowBashCommand((p) => !p)}
             hasError={!!inlineError} showError={showError} onToggleError={() => setShowError((p) => !p)}
           />
           {!NO_RAW_INPUT_TOOLS.includes(block.name) && (
@@ -130,8 +140,10 @@ export function CCMessageBlock({ block, index, toolName, inlineError }: Props) {
               <code>{block.input.content}</code>
             </pre>
           )}
-          {block.name === 'Bash' && block.input?.command && (
-            <div className="mt-1 text-xs font-mono text-muted-foreground break-all">{block.input.command}</div>
+          {block.name === 'Bash' && block.input?.command && showBashCommand && (
+            <div className="mt-2">
+              <CommandValue value={block.input.command} />
+            </div>
           )}
           {block.name === 'TodoWrite' && block.input?.todos && (
             <CCTodoList todos={block.input.todos} />
