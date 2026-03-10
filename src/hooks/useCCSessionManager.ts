@@ -82,6 +82,7 @@ export function useCCSessionManager() {
     setLoading,
     setShowExamples,
     addMessage,
+    switchToSession,
   } = useCCStore();
 
   const [isLoading, setIsLoading] = useState(false);
@@ -226,6 +227,15 @@ export function useCCSessionManager() {
 
   const handleSessionSelect = async (sessionId: string, projectPath?: string) => {
     console.info('[useCCSessionManager] Session selected', { sessionId, cwd: projectPath ?? cwd });
+
+    // If session is already active (in activeSessionIds), just switch to it — no backend resume needed
+    const currentActiveSessionIds = useCCStore.getState().activeSessionIds;
+    if (currentActiveSessionIds.includes(sessionId)) {
+      console.info('[useCCSessionManager] Session already active, switching without resume', { sessionId });
+      switchToSession(sessionId);
+      return;
+    }
+
     await handleResumeSession(sessionId, projectPath);
   };
 

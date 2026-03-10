@@ -30,6 +30,7 @@ interface CCStoreState {
   activeSessionId: string | null;
   activeSessionIds: string[];
   messages: CCMessage[];
+  sessionMessagesMap: Record<string, CCMessage[]>;
   options: CCOptions;
   isConnected: boolean;
   isLoading: boolean;
@@ -38,6 +39,8 @@ interface CCStoreState {
   setActiveSessionId: (id: string | null) => void;
   addActiveSessionId: (id: string) => void;
   removeActiveSessionId: (id: string) => void;
+  switchToSession: (id: string) => void;
+  saveCurrentSessionMessages: () => void;
   addMessage: (message: CCMessage) => void;
   updateMessage: (index: number, message: Partial<CCMessage>) => void;
   setMessages: (messages: CCMessage[]) => void;
@@ -54,6 +57,7 @@ export const useCCStore = create<CCStoreState>()(
       activeSessionId: null,
       activeSessionIds: [],
       messages: [],
+      sessionMessagesMap: {},
       options: {
         model: undefined,
         permissionMode: 'default',
@@ -81,7 +85,42 @@ export const useCCStore = create<CCStoreState>()(
           activeSessionIds: state.activeSessionIds.filter((sid) => sid !== id),
           activeSessionId: state.activeSessionId === id ? null : state.activeSessionId,
         })),
-      addMessage: (message) => set((state) => ({ messages: [...state.messages, message] })),
+      // Save current session's messages to the map, then switch to target session and restore its messages
+      switchToSession: (id) =>
+        set((state) => {
+          const updatedMap = { ...state.sessionMessagesMap };
+          // Persist current session messages before switching
+          if (state.activeSessionId) {
+            updatedMap[state.activeSessionId] = state.messages;
+          }
+          const restoredMessages = updatedMap[id] ?? [];
+          return {
+            activeSessionId: id,
+            sessionMessagesMap: updatedMap,
+            messages: restoredMessages,
+            isLoading: false,
+            isConnected: true,
+          };
+        }),
+      // Persist current session messages to map without switching
+      saveCurrentSessionMessages: () =>
+        set((state) => {
+          if (!state.activeSessionId) return {};
+          return {
+            sessionMessagesMap: {
+              ...state.sessionMessagesMap,
+              [state.activeSessionId]: state.messages,
+            },
+          };
+        }),
+      addMessage: (message) =>
+        set((state) => {
+          const newMessages = [...state.messages, message];
+          const updatedMap = state.activeSessionId
+            ? { ...state.sessionMessagesMap, [state.activeSessionId]: newMessages }
+            : state.sessionMessagesMap;
+          return { messages: newMessages, sessionMessagesMap: updatedMap };
+        }),
       updateMessage: (index, message) =>
         set((state) => ({
           messages: state.messages.map((m, i) =>
