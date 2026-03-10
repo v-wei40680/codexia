@@ -6,6 +6,7 @@ import { DiffMessage } from './DiffMessage';
 import { CCTodoList } from './CCTodoList';
 import { getFilename } from '@/utils/getFilename';
 import { ChevronDown, ChevronRight, FileCode, Folder, Search } from 'lucide-react';
+import { Markdown } from '@/components/Markdown';
 
 const FILE_TOOLS = ['Read', 'Edit', 'Write'] as const;
 const NO_RAW_INPUT_TOOLS = ['Read', 'Edit', 'Glob', 'Write', 'Bash', 'TodoWrite', 'Grep'];
@@ -17,10 +18,12 @@ interface Props {
   toolName?: string;
 }
 
-function ToolUseBadges({ block, showDiff, onToggleDiff }: {
+function ToolUseBadges({ block, showDiff, onToggleDiff, showWrite, onToggleWrite }: {
   block: ToolUseBlock;
   showDiff: boolean;
   onToggleDiff: () => void;
+  showWrite: boolean;
+  onToggleWrite: () => void;
 }) {
   const isFileTool = (FILE_TOOLS as readonly string[]).includes(block.name);
   return (
@@ -41,6 +44,11 @@ function ToolUseBadges({ block, showDiff, onToggleDiff }: {
       {block.name === 'Edit' && (
         <Button variant="ghost" size="icon" onClick={onToggleDiff} className="h-4 w-4">
           {showDiff ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+        </Button>
+      )}
+      {block.name === 'Write' && (
+        <Button variant="ghost" size="icon" onClick={onToggleWrite} className="h-4 w-4">
+          {showWrite ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         </Button>
       )}
 
@@ -70,7 +78,7 @@ export function CCMessageBlock({ block, index, toolName }: Props) {
     case 'text':
       return (
         <div key={blockKey} className="text-sm text-foreground whitespace-pre-wrap break-words px-1">
-          {block.text}
+          <Markdown value={block.text} />
         </div>
       );
 
@@ -86,7 +94,7 @@ export function CCMessageBlock({ block, index, toolName }: Props) {
     case 'tool_use':
       return (
         <div key={blockKey} className="overflow-auto">
-          <ToolUseBadges block={block} showDiff={showEditDiff} onToggleDiff={() => setShowEditDiff((p) => !p)} />
+          <ToolUseBadges block={block} showDiff={showEditDiff} onToggleDiff={() => setShowEditDiff((p) => !p)} showWrite={showWriteResult} onToggleWrite={() => setShowWriteResult((p) => !p)} />
           {!NO_RAW_INPUT_TOOLS.includes(block.name) && (
             <pre className="mt-2 text-xs overflow-auto bg-background/50 rounded-md p-3 max-h-60 break-all whitespace-pre-wrap font-mono">
               <code>{JSON.stringify(block.input, null, 2)}</code>
@@ -97,8 +105,8 @@ export function CCMessageBlock({ block, index, toolName }: Props) {
               <DiffMessage oldString={block.input?.old_string || ''} newString={block.input?.new_string || ''} />
             </div>
           )}
-          {block.name === 'Write' && block.input?.content && (
-            <pre className="mt-2 text-xs overflow-auto bg-background/50 rounded-md p-3 max-h-60 break-all whitespace-pre-wrap font-mono">
+          {block.name === 'Write' && showWriteResult && (
+            <pre className="mt-2 text-xs overflow-auto bg-background/50 rounded-md p-3 max-h-60 break-all whitespace-pre-wrap font-mono bg-gray-200 dark:bg-gray-800">
               <code>{block.input.content}</code>
             </pre>
           )}
