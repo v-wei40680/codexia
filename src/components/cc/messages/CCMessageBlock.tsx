@@ -5,11 +5,11 @@ import type { ContentBlock, ToolUseBlock } from '../types/messages';
 import { DiffMessage } from './DiffMessage';
 import { CCTodoList } from './CCTodoList';
 import { getFilename } from '@/utils/getFilename';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, FileCode, Folder, Search } from 'lucide-react';
 
 const FILE_TOOLS = ['Read', 'Edit', 'Write'] as const;
-const NO_RAW_INPUT_TOOLS = ['Read', 'Edit', 'Glob', 'Write', 'Bash', 'TodoWrite'];
-const SILENT_RESULT_TOOLS = ['Read', 'Glob'];
+const NO_RAW_INPUT_TOOLS = ['Read', 'Edit', 'Glob', 'Write', 'Bash', 'TodoWrite', 'Grep'];
+const SILENT_RESULT_TOOLS = ['Read', 'Glob', 'Grep'];
 
 interface Props {
   block: ContentBlock;
@@ -29,8 +29,13 @@ function ToolUseBadges({ block, showDiff, onToggleDiff }: {
         {block.name}
       </Badge>
       {isFileTool && (
-        <Badge variant="outline" className="text-[10px] h-4 border-purple-200/50 dark:border-purple-800/50 text-purple-600 dark:text-purple-400">
-          {getFilename(block.input?.file_path)}
+        <Badge variant="outline">
+          {getFilename(block.input?.file_path)} {block.name === 'Read' && (
+            <>:
+              {block.input?.offset && <>{block.input.offset}</>}-
+              {block.input?.limit && <>{block.input.limit}</>}
+            </>
+          )}
         </Badge>
       )}
       {block.name === 'Edit' && (
@@ -38,14 +43,16 @@ function ToolUseBadges({ block, showDiff, onToggleDiff }: {
           {showDiff ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
         </Button>
       )}
-      {block.name === 'Read' && (
-        <>
-          {block.input?.offset && <Badge variant="outline" className="text-[10px] h-4">offset: {block.input.offset}</Badge>}
-          {block.input?.limit && <Badge variant="outline" className="text-[10px] h-4">limit: {block.input.limit}</Badge>}
-        </>
+
+      {block.name === 'Glob' && (
+        <Badge variant="outline">{block.input.pattern}</Badge>
       )}
-      {block.name === 'Glob' && block.input?.pattern && (
-        <Badge variant="outline" className="text-[10px] h-4">{block.input.pattern}</Badge>
+      {block.name === 'Grep' && (
+        <span>
+          <Badge variant="outline"><Search className="h-3 w-3" />{block.input.pattern}</Badge> in
+          <Badge variant="outline"><Folder className="h-3 w-3" />{block.input.path}</Badge>
+          {block.input.glob && <Badge variant="outline"><FileCode className="h-3 w-3" />{block.input.glob}</Badge>}
+        </span>
       )}
       {block.name === 'Bash' && block.input?.description && (
         <Badge variant="outline" className="text-[10px] h-4">{block.input.description}</Badge>
@@ -60,7 +67,6 @@ export function CCMessageBlock({ block, index, toolName }: Props) {
   const [showWriteResult, setShowWriteResult] = useState(false);
 
   switch (block.type) {
-    // ── Text: plain assistant prose, no label needed ──────────────────────────
     case 'text':
       return (
         <div key={blockKey} className="text-sm text-foreground whitespace-pre-wrap break-words px-1">
@@ -68,7 +74,6 @@ export function CCMessageBlock({ block, index, toolName }: Props) {
         </div>
       );
 
-    // ── Thinking: subtle italic aside ────────────────────────────────────────
     case 'thinking':
       return (
         <div key={blockKey} className="rounded-md border-l-2 border-amber-400/50 pl-3 py-1 max-w-full overflow-hidden">
@@ -78,7 +83,6 @@ export function CCMessageBlock({ block, index, toolName }: Props) {
         </div>
       );
 
-    // ── Tool use: badges only, no header label ───────────────────────────────
     case 'tool_use':
       return (
         <div key={blockKey} className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-3 max-w-full overflow-hidden">
@@ -107,7 +111,6 @@ export function CCMessageBlock({ block, index, toolName }: Props) {
         </div>
       );
 
-    // ── Tool result: error only, color speaks for itself ─────────────────────
     case 'tool_result': {
       const isString = typeof block.content === 'string';
       const content = block.content;
