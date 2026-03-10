@@ -18,6 +18,9 @@ pub struct CCState {
     pub pending_permissions: Arc<DashMap<String, oneshot::Sender<String>>>,
     /// Session metadata (permission_mode, etc.)
     pub session_metadata: Arc<DashMap<ClientId, SessionMetadata>>,
+    /// Aliases for session IDs: real_sdk_id -> temp_uuid (internal client key).
+    /// Used when the SDK assigns its own session_id that differs from our temp UUID.
+    pub session_aliases: Arc<DashMap<String, String>>,
 }
 
 impl CCState {
@@ -26,12 +29,26 @@ impl CCState {
             clients: Arc::new(Mutex::new(HashMap::new())),
             pending_permissions: Arc::new(DashMap::new()),
             session_metadata: Arc::new(DashMap::new()),
+            session_aliases: Arc::new(DashMap::new()),
         }
     }
 
     pub async fn get_client(&self, client_id: &str) -> Option<Arc<Mutex<ClaudeClient>>> {
         let clients = self.clients.lock().await;
-        clients.get(client_id).cloned()
+        if let Some(client) = clients.get(client_id) {
+            return Some(client.clone());
+        }
+        // Fall back to alias lookup (real SDK session_id → temp UUID key)
+        if let Some(canonical) = self.session_aliases.get(client_id) {
+            return clients.get(canonical.as_str()).cloned();
+        }
+        None
+    }
+
+    /// Register an alias so that `alias` resolves to the client stored under `canonical`.
+    /// Used when the SDK assigns a real session_id that differs from our temp UUID.
+    pub fn add_session_alias(&self, alias: &str, canonical: &str) {
+        self.session_aliases.insert(alias.to_string(), canonical.to_string());
     }
 
     pub async fn create_client(
@@ -68,6 +85,8 @@ impl CCState {
             client.disconnect().await.map_err(|e| e.to_string())?;
         }
         self.session_metadata.remove(client_id);
+        // Remove any aliases that point to this client
+        self.session_aliases.retain(|_, v| v.as_str() != client_id);
         Ok(())
     }
 

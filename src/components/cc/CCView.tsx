@@ -77,6 +77,7 @@ function shouldSkipUserMessage(msg: CCMessageType): boolean {
 export default function CCView() {
   const {
     activeSessionId,
+    resolvedSessionIds,
     messages,
     isConnected,
     isLoading,
@@ -84,6 +85,7 @@ export default function CCView() {
     setLoading,
     setConnected,
     clearMessages,
+    resolveSessionId,
   } = useCCStore();
   const { cwd } = useWorkspaceStore();
   const { inputValue: input, setInputValue: setInput } = useCCInputStore();
@@ -124,6 +126,19 @@ export default function CCView() {
     return () => { void unlistenPromise.then((fn) => fn()); };
   }, [activeSessionId, addMessage, setLoading]);
 
+  // Listen for the backend reconciling a temp UUID with the real SDK session_id.
+  useEffect(() => {
+    const unlistenPromise = listen<{ tempId: string; sessionId: string }>(
+      'cc-session-resolved',
+      (event) => {
+        const { tempId, sessionId } = event.payload;
+        console.info('[CCView] Session ID resolved', { tempId, sessionId });
+        resolveSessionId(tempId, sessionId);
+      },
+    );
+    return () => { void unlistenPromise.then((fn) => fn()); };
+  }, [resolveSessionId]);
+
   // Bind Tauri permission request listener for the active session.
   useEffect(() => {
     if (!activeSessionId) return;
@@ -136,7 +151,9 @@ export default function CCView() {
       toolInput: any;
     }>('cc-permission-request', (event) => {
       const { requestId, sessionId, toolName, toolInput } = event.payload;
-      if (sessionId !== activeSessionId) {
+      // The permission hook captures the temp UUID, so also match via the resolved map.
+      const effectiveSessionId = resolvedSessionIds[sessionId] ?? sessionId;
+      if (effectiveSessionId !== activeSessionId) {
         console.warn('[CCView] Ignoring permission request for inactive session', {
           activeSessionId,
           requestId,
@@ -157,7 +174,7 @@ export default function CCView() {
     });
 
     return () => { void unlistenPromise.then((fn) => fn()); };
-  }, [activeSessionId, addMessage]);
+  }, [activeSessionId, resolvedSessionIds, addMessage]);
 
 
   const handleSendMessage = useCallback(async (messageText?: string) => {
