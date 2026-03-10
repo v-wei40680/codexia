@@ -85,7 +85,7 @@ export function CCMessageBlock({ block, index, toolName }: Props) {
 
     case 'tool_use':
       return (
-        <div key={blockKey} className="rounded-lg border border-purple-500/20 bg-purple-500/5 p-3 max-w-full overflow-hidden">
+        <div key={blockKey} className="overflow-auto">
           <ToolUseBadges block={block} showDiff={showEditDiff} onToggleDiff={() => setShowEditDiff((p) => !p)} />
           {!NO_RAW_INPUT_TOOLS.includes(block.name) && (
             <pre className="mt-2 text-xs overflow-auto bg-background/50 rounded-md p-3 max-h-60 break-all whitespace-pre-wrap font-mono">
