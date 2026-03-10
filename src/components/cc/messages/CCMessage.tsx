@@ -1,7 +1,8 @@
 import { useCCStore } from '@/stores/ccStore';
-import type { CCMessage as CCMessageType } from '../types/messages';
+import type { CCMessage as CCMessageType, ContentBlock, ToolResultBlock } from '../types/messages';
+import { isToolResultBlock } from '../types/messages';
 import { CCMessageContent } from './CCMessageContent';
-import { PermissionRequestCard } from './PermissionRequestCard';
+import { PermissionRequestCard, type PermissionDecision } from './PermissionRequestCard';
 import { SystemInitCard } from './SystemInitCard';
 import { ResultCard } from './ResultCard';
 import { safeStringify } from './utils';
@@ -10,7 +11,7 @@ import { Card } from '@/components/ui/card';
 interface CCMessageProps {
   message: CCMessageType;
   index: number;
-  inlineErrors?: Record<string, any>;
+  inlineErrors?: Record<string, ToolResultBlock>;
 }
 
 const isToolBlock = (b: { type: string }) =>
@@ -19,7 +20,7 @@ const isToolBlock = (b: { type: string }) =>
 export function CCMessage({ message: msg, index: idx, inlineErrors }: CCMessageProps) {
   const { updateMessage } = useCCStore();
 
-  const handleResolvePermission = async (requestId: string, decision: any) => {
+  const handleResolvePermission = async (requestId: string, decision: PermissionDecision) => {
     const { ccResolvePermission } = await import('@/services');
     try {
       await ccResolvePermission(requestId, decision);
@@ -33,7 +34,7 @@ export function CCMessage({ message: msg, index: idx, inlineErrors }: CCMessageP
     case 'assistant':
       return (
         <CCMessageContent
-          msg={msg as any}
+          msg={msg}
           index={idx}
           isToolBlock={isToolBlock}
           inlineErrors={inlineErrors}
@@ -41,11 +42,8 @@ export function CCMessage({ message: msg, index: idx, inlineErrors }: CCMessageP
       );
 
     case 'user': {
-      const text =
-        msg.text ??
-        (typeof (msg as any).message?.content === 'string'
-          ? (msg as any).message.content
-          : null);
+      const msgContent = msg.message?.content;
+      const text = msg.text ?? (typeof msgContent === 'string' ? msgContent : null);
       if (text) {
         return (
           <Card className="p-3 bg-blue-50 dark:bg-blue-950">
@@ -53,15 +51,9 @@ export function CCMessage({ message: msg, index: idx, inlineErrors }: CCMessageP
           </Card>
         );
       }
-      const blocks =
-        (msg as any).content ??
-        (Array.isArray((msg as any).message?.content)
-          ? (msg as any).message.content
-          : null);
-      const errors =
-        blocks?.filter(
-          (b: any) => b.type === 'tool_result' && b.is_error,
-        ) ?? [];
+      const blocks: ContentBlock[] | null =
+        msg.content ?? (Array.isArray(msgContent) ? (msgContent as ContentBlock[]) : null);
+      const errors = blocks?.filter((b) => isToolResultBlock(b) && b.is_error) ?? [];
       if (errors.length === 0) return null;
       // Errors are rendered inline in the preceding assistant message's ToolUseBadges
       return null;
@@ -70,18 +62,18 @@ export function CCMessage({ message: msg, index: idx, inlineErrors }: CCMessageP
     case 'permission_request':
       return (
         <PermissionRequestCard
-          msg={msg as any}
+          msg={msg}
           onResolve={handleResolvePermission}
         />
       );
 
     case 'system':
-      return (msg as any).subtype === 'init' ? (
-        <SystemInitCard msg={msg as any} />
+      return msg.subtype === 'init' ? (
+        <SystemInitCard msg={msg} />
       ) : null;
 
     case 'result':
-      return <ResultCard msg={msg as any} />;
+      return <ResultCard msg={msg} />;
 
     case 'stream_event':
       return null;

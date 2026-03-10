@@ -31,7 +31,7 @@ export interface ToolUseBlock {
 }
 
 /** Tool result content */
-export type ToolResultContent = string | Array<Record<string, any>>;
+export type ToolResultContent = string | Array<Record<string, unknown>>;
 
 /** Tool result block */
 export interface ToolResultBlock {
@@ -41,8 +41,19 @@ export interface ToolResultBlock {
   is_error?: boolean;
 }
 
+/** Image source — matches Rust ImageSource (base64 or url) */
+export type ImageSource =
+  | { type: 'base64'; media_type: string; data: string }
+  | { type: 'url'; url: string };
+
+/** Image block */
+export interface ImageBlock {
+  type: 'image';
+  source: ImageSource;
+}
+
 /** Content block types */
-export type ContentBlock = TextBlock | ThinkingBlock | ToolUseBlock | ToolResultBlock;
+export type ContentBlock = TextBlock | ThinkingBlock | ToolUseBlock | ToolResultBlock | ImageBlock;
 
 /** User message */
 export interface UserMessage {
@@ -51,12 +62,11 @@ export interface UserMessage {
   content?: ContentBlock[];
   uuid?: string;
   parent_tool_use_id?: string;
-  // Legacy format from Claude Code history
+  // Legacy format from Claude Code history (resume)
   message?: {
     role: 'user';
     content: string | ContentBlock[];
   };
-  [key: string]: any; // extra fields
 }
 
 /** Inner assistant message content */
@@ -85,11 +95,10 @@ export interface SystemMessage {
   cwd?: string;
   session_id?: string;
   tools?: string[];
-  mcp_servers?: Array<Record<string, any>>;
+  mcp_servers?: Array<Record<string, unknown>>;
   model?: string;
   permission_mode?: string;
   uuid?: string;
-  [key: string]: any; // data fields
 }
 
 /** Result message indicating query completion */
@@ -177,4 +186,12 @@ export function isToolUseBlock(block: ContentBlock): block is ToolUseBlock {
 
 export function isToolResultBlock(block: ContentBlock): block is ToolResultBlock {
   return block.type === 'tool_result';
+}
+
+export function isImageBlock(block: ContentBlock): block is ImageBlock {
+  return block.type === 'image';
+}
+
+export function isPermissionRequestMessage(msg: CCMessage): msg is PermissionRequestMessage {
+  return msg.type === 'permission_request';
 }

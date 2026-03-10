@@ -1,14 +1,14 @@
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { ContentBlock, ToolUseBlock } from '../types/messages';
+import type { ContentBlock, ToolResultBlock, ToolUseBlock } from '../types/messages';
 import { DiffMessage } from './DiffMessage';
 import { CCTodoList } from './CCTodoList';
 import { CommandValue } from './ToolInputDisplay';
 import { getFilename } from '@/utils/getFilename';
 import { ChevronDown, ChevronRight, FileCode, Folder, Search } from 'lucide-react';
-import { Markdown } from '@/components/Markdown';
 import { useCCSettingsStore } from '@/stores/settings';
+import { Streamdown } from 'streamdown';
 
 const FILE_TOOLS = ['Read', 'Edit', 'Write'] as const;
 const NO_RAW_INPUT_TOOLS = ['Read', 'Edit', 'Glob', 'Write', 'Bash', 'TodoWrite', 'Grep'];
@@ -18,7 +18,7 @@ interface Props {
   block: ContentBlock;
   index: number;
   toolName?: string;
-  inlineError?: { content: string | any; is_error: boolean } | null;
+  inlineError?: ToolResultBlock | null;
 }
 
 function stripErrorTags(s: string) {
@@ -104,7 +104,7 @@ export function CCMessageBlock({ block, index, toolName, inlineError }: Props) {
     case 'text':
       return (
         <div key={blockKey} className="text-sm text-foreground whitespace-pre-wrap break-words px-1">
-          <Markdown value={block.text} />
+          <Streamdown>{block.text}</Streamdown>
         </div>
       );
 

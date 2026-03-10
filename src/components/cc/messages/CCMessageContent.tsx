@@ -1,12 +1,13 @@
 import { CCMessageBlock } from '@/components/cc/messages/CCMessageBlock';
-import type { AssistantMessage, CCMessage } from '../types/messages';
+import type { AssistantMessage, ToolResultBlock, ToolUseBlock } from '../types/messages';
+import { isToolUseBlock } from '../types/messages';
 import { useCCStore } from '@/stores/ccStore';
 
 interface Props {
   msg: AssistantMessage;
   index: number;
   isToolBlock: (b: { type: string }) => boolean;
-  inlineErrors?: Record<string, any>;
+  inlineErrors?: Record<string, ToolResultBlock>;
 }
 
 export function CCMessageContent({ msg, index, isToolBlock, inlineErrors }: Props) {
@@ -14,15 +15,15 @@ export function CCMessageContent({ msg, index, isToolBlock, inlineErrors }: Prop
 
   const resolveToolName = (toolUseId: string): string | undefined => {
     const inMsg = msg.message.content.find(
-      (b) => b.type === 'tool_use' && (b as any).id === toolUseId,
-    ) as any;
-    if (inMsg?.name) return inMsg.name;
-    for (const m of messages as CCMessage[]) {
+      (b): b is ToolUseBlock => b.type === 'tool_use' && b.id === toolUseId,
+    );
+    if (inMsg) return inMsg.name;
+    for (const m of messages) {
       if (m.type !== 'assistant') continue;
-      const found = (m as AssistantMessage).message.content.find(
-        (b: any) => b.type === 'tool_use' && (b as any).id === toolUseId,
-      ) as any;
-      if (found?.name) return found.name;
+      const found = m.message.content.find(
+        (b): b is ToolUseBlock => b.type === 'tool_use' && b.id === toolUseId,
+      );
+      if (found) return found.name;
     }
   };
 
@@ -44,21 +45,21 @@ export function CCMessageContent({ msg, index, isToolBlock, inlineErrors }: Prop
               ? 'mt-0.5'
               : 'mt-2';
 
-        const inlineError = block.type === 'tool_use'
-          ? inlineErrors?.[(block as any).id] ?? null
+        const inlineError = isToolUseBlock(block)
+          ? inlineErrors?.[block.id] ?? null
           : null;
 
         return (
           <div key={`${index}-${i}`} className={mt}>
             <CCMessageBlock
-              block={block as any}
+              block={block}
               index={i}
               inlineError={inlineError}
               toolName={
                 block.type === 'tool_use'
-                  ? (block as any).name
+                  ? block.name
                   : block.type === 'tool_result'
-                    ? resolveToolName((block as any).tool_use_id)
+                    ? resolveToolName(block.tool_use_id)
                     : undefined
               }
             />

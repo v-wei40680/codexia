@@ -6,7 +6,8 @@ import { useCCStore } from '@/stores/ccStore';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useCCInputStore } from '@/stores/useCCInputStore';
 
-import type { CCMessage as CCMessageType } from './types/messages';
+import type { CCMessage as CCMessageType, ContentBlock, ToolResultBlock } from './types/messages';
+import { isToolResultBlock, isPermissionRequestMessage } from './types/messages';
 import { CCMessage } from '@/components/cc/messages';
 import { CCInput } from '@/components/cc/composer';
 import { CCScrollControls } from '@/components/cc/CCScrollControls';
@@ -27,21 +28,21 @@ const CC_PERMISSION_LISTENER_READY_EVENT = 'cc-permission-listener-ready';
 function collectInlineErrors(
   messages: CCMessageType[],
   idx: number,
-): Record<string, any> | undefined {
+): Record<string, ToolResultBlock> | undefined {
   const msg = messages[idx];
   if (msg.type !== 'assistant') return undefined;
 
   const next = messages[idx + 1];
   if (!next || next.type !== 'user') return undefined;
 
-  const blocks: any[] =
-    (next as any).content ??
-    (Array.isArray((next as any).message?.content) ? (next as any).message.content : []) ??
-    [];
+  const msgContent = next.message?.content;
+  const blocks: ContentBlock[] =
+    next.content ??
+    (Array.isArray(msgContent) ? (msgContent as ContentBlock[]) : []);
 
-  const errors: Record<string, any> = {};
+  const errors: Record<string, ToolResultBlock> = {};
   for (const b of blocks) {
-    if (b.type === 'tool_result' && b.is_error && b.tool_use_id) {
+    if (isToolResultBlock(b) && b.is_error && b.tool_use_id) {
       errors[b.tool_use_id] = b;
     }
   }
@@ -54,17 +55,18 @@ function collectInlineErrors(
  */
 function shouldSkipUserMessage(msg: CCMessageType): boolean {
   if (msg.type !== 'user') return false;
-  if ((msg as any).text) return false;
-  if (typeof (msg as any).message?.content === 'string') return false;
+  if (msg.text) return false;
 
-  const blocks: any[] =
-    (msg as any).content ??
-    (Array.isArray((msg as any).message?.content) ? (msg as any).message.content : []) ??
-    [];
+  const msgContent = msg.message?.content;
+  if (typeof msgContent === 'string') return false;
+
+  const blocks: ContentBlock[] =
+    msg.content ??
+    (Array.isArray(msgContent) ? (msgContent as ContentBlock[]) : []);
 
   return (
     blocks.length > 0 &&
-    blocks.every((b: any) => b.type === 'tool_result' && b.is_error)
+    blocks.every((b) => isToolResultBlock(b) && b.is_error)
   );
 }
 
@@ -144,7 +146,7 @@ export default function CCView() {
       requestId: string;
       sessionId: string;
       toolName: string;
-      toolInput: any;
+      toolInput: Record<string, unknown>;
     }>('cc-permission-request', (event) => {
       const { requestId, sessionId, toolName, toolInput } = event.payload;
       // The permission hook captures the temp UUID, so also match via the resolved map.
@@ -176,11 +178,17 @@ export default function CCView() {
   // Pre-compute inline errors map to avoid recalculating inside the render loop.
   const inlineErrorsMap = useMemo(
     () =>
-      messages.reduce<Record<number, Record<string, any>>>((acc, _, idx) => {
+      messages.reduce<Record<number, Record<string, ToolResultBlock>>>((acc, _, idx) => {
         const errors = collectInlineErrors(messages, idx);
         if (errors) acc[idx] = errors;
         return acc;
       }, {}),
+    [messages],
+  );
+
+  // Hide the input while a permission card is waiting for a decision.
+  const hasPendingPermission = useMemo(
+    () => messages.some((m) => isPermissionRequestMessage(m) && !m.resolved),
     [messages],
   );
 
@@ -256,7 +264,7 @@ export default function CCView() {
         )}
       </div>
 
-      <CCInput />
+      {!hasPendingPermission && <CCInput />}
     </div>
   );
 }
