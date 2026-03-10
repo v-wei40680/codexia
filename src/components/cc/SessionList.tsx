@@ -34,7 +34,6 @@ export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Pr
   const isMobile = useIsMobile();
 
   const loadSessions = useCallback(async () => {
-    setLoading(true);
     setError(null);
     try {
       const fetched = await getSessions();

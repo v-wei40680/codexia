@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::path::Path;
 use std::sync::{Arc, Mutex, Once, OnceLock};
 use std::time::{Duration, Instant};
@@ -53,6 +54,12 @@ pub fn start_session_scanner(event_sink: Arc<dyn EventSink>) {
                 return;
             }
 
+            // Pre-populate known IDs so Modify events on existing sessions don't re-emit.
+            let mut known_session_ids: HashSet<String> = read_sessions()
+                .into_iter()
+                .map(|s| s.session_id)
+                .collect();
+
             let mut last_scan = Instant::now() - Duration::from_secs(60);
             let mut pending_rescan = false;
 
@@ -67,7 +74,7 @@ pub fn start_session_scanner(event_sink: Arc<dyn EventSink>) {
                             pending_rescan = true;
                         } else {
                             last_scan = Instant::now();
-                            emit_sessions_to_sinks(&sinks);
+                            emit_sessions_if_changed(&sinks, &mut known_session_ids);
                             pending_rescan = false;
                         }
                     }
@@ -80,7 +87,7 @@ pub fn start_session_scanner(event_sink: Arc<dyn EventSink>) {
 
                 if pending_rescan && last_scan.elapsed() >= Duration::from_millis(500) {
                     last_scan = Instant::now();
-                    emit_sessions_to_sinks(&sinks);
+                    emit_sessions_if_changed(&sinks, &mut known_session_ids);
                     pending_rescan = false;
                 }
             }
@@ -133,6 +140,25 @@ fn emit_sessions_to_sink(event_sink: &dyn EventSink) {
         "data": sessions,
     });
     event_sink.emit("session/list-updated", payload);
+}
+
+/// Only emit `session/list-updated` when the set of session IDs actually changes.
+/// This prevents spurious refreshes caused by Modify events on active session files.
+fn emit_sessions_if_changed(sinks: &EventSinks, known_ids: &mut HashSet<String>) {
+    let sessions = read_sessions();
+    let new_ids: HashSet<String> = sessions.iter().map(|s| s.session_id.clone()).collect();
+    if new_ids == *known_ids {
+        return;
+    }
+    *known_ids = new_ids;
+    let payload = json!({ "data": sessions });
+    let sink_list = match sinks.lock() {
+        Ok(guarded) => guarded.clone(),
+        Err(_) => Vec::new(),
+    };
+    for sink in sink_list {
+        sink.emit("session/list-updated", payload.clone());
+    }
 }
 
 fn emit_sessions_to_sinks(sinks: &EventSinks) {
