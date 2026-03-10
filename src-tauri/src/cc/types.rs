@@ -70,6 +70,8 @@ pub struct AgentOptions {
     pub allowed_tools: Option<Vec<String>>,
     pub disallowed_tools: Option<Vec<String>>,
     pub mcp_servers: Option<HashMap<String, McpServerConfigSerde>>,
+    pub resume: Option<String>,
+    pub continue_conversation: Option<bool>,
 }
 
 impl AgentOptions {
@@ -107,7 +109,8 @@ impl AgentOptions {
             disallowed_tools: self.disallowed_tools.clone().unwrap_or_default(),
             plugins,
             mcp_servers,
-            resume: resume_id,
+            resume: resume_id.or_else(|| self.resume.clone()),
+            continue_conversation: self.continue_conversation.unwrap_or(false),
             stderr_callback: Some(Arc::new(|msg| {
                 log::error!("[CC STDERR] {}", msg);
             })),
@@ -123,5 +126,87 @@ pub fn parse_permission_mode(mode: &str) -> Option<PermissionMode> {
         "plan" => Some(PermissionMode::Plan),
         "bypassPermissions" => Some(PermissionMode::BypassPermissions),
         _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn base_options(cwd: &str) -> AgentOptions {
+        AgentOptions {
+            cwd: cwd.to_string(),
+            ..Default::default()
+        }
+    }
+
+    // --- AgentOptions::to_claude_options ---
+
+    #[test]
+    fn resume_from_options_field() {
+        let opts = AgentOptions {
+            resume: Some("session-abc".to_string()),
+            ..base_options("/tmp/proj")
+        };
+        let claude = opts.to_claude_options(None);
+        assert_eq!(claude.resume.as_deref(), Some("session-abc"));
+    }
+
+    #[test]
+    fn resume_id_param_takes_priority_over_field() {
+        let opts = AgentOptions {
+            resume: Some("from-field".to_string()),
+            ..base_options("/tmp/proj")
+        };
+        let claude = opts.to_claude_options(Some("from-param".to_string()));
+        assert_eq!(claude.resume.as_deref(), Some("from-param"));
+    }
+
+    #[test]
+    fn continue_conversation_propagates() {
+        let opts = AgentOptions {
+            continue_conversation: Some(true),
+            ..base_options("/tmp/proj")
+        };
+        assert!(opts.to_claude_options(None).continue_conversation);
+    }
+
+    #[test]
+    fn continue_conversation_defaults_false() {
+        assert!(!base_options("/tmp/proj").to_claude_options(None).continue_conversation);
+    }
+
+    #[test]
+    fn cwd_is_set_as_pathbuf() {
+        let claude = base_options("/my/project").to_claude_options(None);
+        assert_eq!(claude.cwd, Some(PathBuf::from("/my/project")));
+    }
+
+    #[test]
+    fn permission_mode_acceptedits_maps_correctly() {
+        let opts = AgentOptions {
+            permission_mode: Some("acceptEdits".to_string()),
+            ..base_options("/tmp")
+        };
+        assert!(matches!(
+            opts.to_claude_options(None).permission_mode,
+            Some(PermissionMode::AcceptEdits)
+        ));
+    }
+
+    // --- parse_permission_mode ---
+
+    #[test]
+    fn parse_all_known_modes() {
+        assert!(matches!(parse_permission_mode("default"), Some(PermissionMode::Default)));
+        assert!(matches!(parse_permission_mode("acceptEdits"), Some(PermissionMode::AcceptEdits)));
+        assert!(matches!(parse_permission_mode("plan"), Some(PermissionMode::Plan)));
+        assert!(matches!(parse_permission_mode("bypassPermissions"), Some(PermissionMode::BypassPermissions)));
+    }
+
+    #[test]
+    fn parse_unknown_mode_returns_none() {
+        assert!(parse_permission_mode("unknown").is_none());
+        assert!(parse_permission_mode("").is_none());
     }
 }

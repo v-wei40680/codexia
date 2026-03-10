@@ -1,5 +1,5 @@
 import { useCCStore } from '@/stores/ccStore';
-import type { CCMessage as CCMessageType, ContentBlock, ToolResultBlock } from '../types/messages';
+import type { CCMessage as CCMessageType, ToolResultBlock } from '../types/messages';
 import { isToolResultBlock } from '../types/messages';
 import { CCMessageContent } from './CCMessageContent';
 import { PermissionRequestCard, type PermissionDecision } from './PermissionRequestCard';
@@ -42,18 +42,14 @@ export function CCMessage({ message: msg, index: idx, inlineErrors }: CCMessageP
       );
 
     case 'user': {
-      const msgContent = msg.message?.content;
-      const text = msg.text ?? (typeof msgContent === 'string' ? msgContent : null);
-      if (text) {
+      if (msg.text) {
         return (
           <Card className="p-3 bg-blue-50 dark:bg-blue-950">
-            <div className="whitespace-pre-wrap text-sm">{text}</div>
+            <div className="whitespace-pre-wrap text-sm">{msg.text}</div>
           </Card>
         );
       }
-      const blocks: ContentBlock[] | null =
-        msg.content ?? (Array.isArray(msgContent) ? (msgContent as ContentBlock[]) : null);
-      const errors = blocks?.filter((b) => isToolResultBlock(b) && b.is_error) ?? [];
+      const errors = msg.content?.filter((b) => isToolResultBlock(b) && b.is_error) ?? [];
       if (errors.length === 0) return null;
       // Errors are rendered inline in the preceding assistant message's ToolUseBadges
       return null;

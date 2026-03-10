@@ -1,7 +1,7 @@
 use crate::cc::db::{SessionDB, SessionData};
 use crate::cc::state::CCState;
 use claude_agent_sdk_rs::{
-    HookInput, HookJsonOutput, HookSpecificOutput, Hooks, Message, PreToolUseHookSpecificOutput,
+    HookInput, HookJsonOutput, HookSpecificOutput, Hooks, PreToolUseHookSpecificOutput,
     SyncHookJsonOutput,
 };
 use std::collections::HashSet;
@@ -245,29 +245,48 @@ pub async fn resume_session(
     options: AgentOptions,
     state: &CCState,
     emitter: CCEmitter,
-    message_callback: impl Fn(Message) + Send + 'static,
 ) -> Result<(), String> {
-    let dir = options.cwd.replace("/", "-").replace("\\", "-");
-    let home = dirs::home_dir().ok_or("Failed to get home directory")?;
-    let history_path = home
-        .join(".claude").join("projects").join(&dir)
-        .join(format!("{}.jsonl", session_id));
-
-    if history_path.exists() {
-        let file = fs::File::open(&history_path)
-            .map_err(|e| format!("Failed to open history file: {}", e))?;
-        let reader = std::io::BufReader::new(file);
-        for line in reader.lines() {
-            let line = line.map_err(|e| format!("Failed to read line: {}", e))?;
-            let sanitized = line.replace('\u{0000}', "").trim().to_string();
-            if sanitized.is_empty() || !sanitized.ends_with('}') { continue; }
-            if let Ok(msg) = serde_json::from_str::<Message>(&sanitized) {
-                message_callback(msg);
+    // Replay historical messages from JSONL to the frontend as raw JSON values.
+    // Using raw serde_json::Value avoids the SDK Message type losing user message content
+    // (JSONL user messages use a nested `message.content` format the SDK doesn't model).
+    let event_name = format!("cc-message:{}", session_id);
+    if let Ok(db) = SessionDB::new() {
+        if let Ok(Some(file_path)) = db.get_file_path(&session_id) {
+            if let Ok(file) = fs::File::open(&file_path) {
+                let reader = BufReader::new(file);
+                for line in reader.lines().filter_map(|l| l.ok()) {
+                    let sanitized = line.replace('\u{0000}', "").trim().to_string();
+                    if sanitized.is_empty() || !sanitized.ends_with('}') { continue; }
+                    if let Ok(mut val) = serde_json::from_str::<serde_json::Value>(&sanitized) {
+                        let msg_type = val.get("type").and_then(|t| t.as_str()).unwrap_or("").to_string();
+                        if !matches!(msg_type.as_str(), "user" | "assistant" | "system" | "result") {
+                            continue;
+                        }
+                        // JSONL user messages use {"message":{"role":"user","content":"..."}}
+                        // Normalize to SDK format with top-level `text` field.
+                        if msg_type == "user" {
+                            if let Some(content) = val.get("message").and_then(|m| m.get("content")).cloned() {
+                                let obj = val.as_object_mut().unwrap();
+                                match &content {
+                                    serde_json::Value::String(s) => {
+                                        obj.insert("text".to_string(), serde_json::Value::String(s.clone()));
+                                    }
+                                    serde_json::Value::Array(_) => {
+                                        obj.insert("content".to_string(), content);
+                                    }
+                                    _ => {}
+                                }
+                                obj.remove("message");
+                            }
+                        }
+                        emitter(event_name.clone(), val);
+                    }
+                }
             }
         }
     }
 
-    let mut claude_options = options.to_claude_options(Some(session_id.clone()));
+    let mut claude_options = options.to_claude_options(None);
 
     if needs_permission_callback(options.permission_mode.as_deref()) {
         claude_options.hooks = Some(build_permission_hooks(

@@ -35,10 +35,7 @@ function collectInlineErrors(
   const next = messages[idx + 1];
   if (!next || next.type !== 'user') return undefined;
 
-  const msgContent = next.message?.content;
-  const blocks: ContentBlock[] =
-    next.content ??
-    (Array.isArray(msgContent) ? (msgContent as ContentBlock[]) : []);
+  const blocks: ContentBlock[] = next.content ?? [];
 
   const errors: Record<string, ToolResultBlock> = {};
   for (const b of blocks) {
@@ -57,17 +54,8 @@ function shouldSkipUserMessage(msg: CCMessageType): boolean {
   if (msg.type !== 'user') return false;
   if (msg.text) return false;
 
-  const msgContent = msg.message?.content;
-  if (typeof msgContent === 'string') return false;
-
-  const blocks: ContentBlock[] =
-    msg.content ??
-    (Array.isArray(msgContent) ? (msgContent as ContentBlock[]) : []);
-
-  return (
-    blocks.length > 0 &&
-    blocks.every((b) => isToolResultBlock(b) && b.is_error)
-  );
+  const blocks: ContentBlock[] = msg.content ?? [];
+  return blocks.length > 0 && blocks.every((b) => isToolResultBlock(b) && b.is_error);
 }
 
 // ---------------------------------------------------------------------------
@@ -109,6 +97,7 @@ export default function CCView() {
     console.info('[CCView] Bind message listener', { activeSessionId, eventName });
 
     const unlistenPromise = listen<CCMessageType>(eventName, (event) => {
+      console.info('[CCView] Received message', event);
       const message = event.payload;
       addMessage(message);
       if (message.type === 'result') setLoading(false);
@@ -206,9 +195,8 @@ export default function CCView() {
             {/* Welcome / empty state */}
             {shouldShowWelcome && (
               <div
-                className={`flex-1 flex flex-col items-center max-w-2xl mx-auto py-8 text-center animate-in fade-in duration-500 ${
-                  isPromptsExpanded ? 'justify-start mt-4' : 'justify-center'
-                }`}
+                className={`flex-1 flex flex-col items-center max-w-2xl mx-auto py-8 text-center animate-in fade-in duration-500 ${isPromptsExpanded ? 'justify-start mt-4' : 'justify-center'
+                  }`}
               >
                 {!isPromptsExpanded && (
                   <>

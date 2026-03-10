@@ -112,12 +112,10 @@ pub(crate) async fn api_cc_resume_session(
     AxumState(state): AxumState<WebServerState>,
     Json(params): Json<CcResumeSessionParams>,
 ) -> Result<StatusCode, ErrorResponse> {
-    let event_name = format!("cc-message:{}", params.session_id);
-    let event_tx = state.event_tx.clone();
     let session_id = params.session_id;
     let options = params.options;
 
-    let event_tx_clone = event_tx.clone();
+    let event_tx_clone = state.event_tx.clone();
     let emitter = std::sync::Arc::new(move |event: String, payload: serde_json::Value| {
         let _ = event_tx_clone.send((event, payload));
     });
@@ -127,16 +125,6 @@ pub(crate) async fn api_cc_resume_session(
         options,
         state.cc_state.as_ref(),
         emitter,
-        move |msg| match serde_json::to_value(msg) {
-            Ok(payload) => {
-                if event_tx.send((event_name.clone(), payload)).is_err() {
-                    log::debug!("No subscribers for CC event {}", event_name);
-                }
-            }
-            Err(err) => {
-                log::error!("Failed to serialize CC history event: {}", err);
-            }
-        },
     )
     .await
     .map_err(to_error_response)?;

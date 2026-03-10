@@ -62,6 +62,14 @@ impl SessionDB {
         Ok(())
     }
 
+    pub fn get_file_path(&self, session_id: &str) -> Result<Option<String>> {
+        let mut stmt = self
+            .conn
+            .prepare("SELECT file_path FROM sessions WHERE session_id = ?1")?;
+        let mut rows = stmt.query([session_id])?;
+        Ok(rows.next()?.map(|row| row.get(0)).transpose()?)
+    }
+
     pub fn get_all_sessions(&self) -> Result<Vec<SessionData>> {
         let mut stmt = self.conn.prepare(
             "SELECT session_id, project, display, timestamp FROM sessions ORDER BY timestamp DESC",

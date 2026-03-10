@@ -62,11 +62,6 @@ export interface UserMessage {
   content?: ContentBlock[];
   uuid?: string;
   parent_tool_use_id?: string;
-  // Legacy format from Claude Code history (resume)
-  message?: {
-    role: 'user';
-    content: string | ContentBlock[];
-  };
 }
 
 /** Inner assistant message content */
@@ -97,7 +92,7 @@ export interface SystemMessage {
   tools?: string[];
   mcp_servers?: Array<Record<string, unknown>>;
   model?: string;
-  permission_mode?: string;
+  permissionMode?: string;
   uuid?: string;
 }
 

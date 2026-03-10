@@ -191,6 +191,8 @@ export function useCCSessionManager() {
       const ClaudeAgentOptions: any = {
         cwd: effectiveCwd,
         permissionMode: options.permissionMode,
+        resume: sessionId,
+        continueConversation: true,
       };
 
       // Only include model if specified (otherwise use CLI default)

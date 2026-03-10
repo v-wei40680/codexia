@@ -97,20 +97,12 @@ pub async fn cc_resume_session(
     app: AppHandle,
     state: State<'_, CCState>,
 ) -> Result<(), String> {
-    let event_name = format!("cc-message:{}", session_id);
-    let app_clone = app.clone();
     let app_handle = app.clone();
-
     let emitter = std::sync::Arc::new(move |event: String, payload: serde_json::Value| {
         let _ = app_handle.emit(&event, &payload);
     });
 
-    session_service::resume_session(session_id, options, &state, emitter, move |msg| {
-        if let Err(e) = app_clone.emit(&event_name, &msg) {
-            log::error!("Failed to emit historical message: {}", e);
-        }
-    })
-    .await
+    session_service::resume_session(session_id, options, &state, emitter).await
 }
 
 #[tauri::command]
