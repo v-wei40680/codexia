@@ -1,13 +1,10 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import type { CCMessage } from '@/types/cc/cc-messages';
+import type { CCMessage } from '@/components/cc/types/messages';
 import type { CCMcpServers } from '@/types/cc/cc-mcp';
 
 export type PermissionMode = 'default' | 'acceptEdits' | 'plan' | 'bypassPermissions';
 export type ModelType = 'sonnet' | 'haiku' | 'opus';
-
-// Re-export message types for convenience
-export type { CCMessage } from '@/types/cc/cc-messages';
 
 export interface CCPluginConfig {
   path: string;

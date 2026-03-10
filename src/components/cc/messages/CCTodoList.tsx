@@ -2,7 +2,7 @@ import { CheckCircle2, Circle, Loader2, ChevronDown, ChevronRight } from 'lucide
 import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { useState } from 'react';
-import { Button } from '../ui/button';
+import { Button } from '@/components/ui/button';
 
 export interface TodoItem {
   activeForm: string;

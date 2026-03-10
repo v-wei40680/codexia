@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { useCCStore, CCMessage as CCMessageType } from '@/stores/ccStore';
+import { useCCStore } from '@/stores/ccStore';
+import { CCMessage as CCMessageType } from './types/messages';
 import { Card } from '@/components/ui/card';
-import { CCMessage } from '@/components/cc/CCMessage';
+import { CCMessage } from '@/components/cc/messages';
 import { ExamplePrompts } from '@/components/cc/ExamplePrompts';
 import { useCCSessionManager } from '@/hooks/useCCSessionManager';
 import { CCInput } from '@/components/cc/CCInput';
@@ -211,7 +212,7 @@ export default function CCView() {
       {/* Scrollable content area */}
       <div className="flex-1 min-h-0 overflow-hidden relative">
         <div ref={scrollContainerRef} className="h-full overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:display-none">
-          <div className="flex flex-col gap-4 p-4">
+          <div className="flex flex-col gap-2 p-4">
             {shouldShowWelcome && (
               <div className={`flex-1 flex flex-col items-center max-w-2xl mx-auto py-8 text-center animate-in fade-in duration-500 ${isPromptsExpanded ? 'justify-start mt-4' : 'justify-center'}`}>
                 {!isPromptsExpanded && (

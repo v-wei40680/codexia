@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button } from '../ui/button';
+import { Button } from '@/components/ui/button';
 import { GitCompare, FileText, FilePlus } from 'lucide-react';
 import * as Diff from 'diff';
 
@@ -93,13 +93,12 @@ export function DiffMessage({ oldString, newString }: DiffMessageProps) {
                     }
                   >
                     <td
-                      className={`w-8 text-center select-none font-medium border-r border-border/50 ${
-                        line.type === 'add'
-                          ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
-                          : line.type === 'remove'
-                            ? 'bg-red-500/20 text-red-600 dark:text-red-400'
-                            : 'bg-muted/50 text-muted-foreground/50'
-                      }`}
+                      className={`w-8 text-center select-none font-medium border-r border-border/50 ${line.type === 'add'
+                        ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400'
+                        : line.type === 'remove'
+                          ? 'bg-red-500/20 text-red-600 dark:text-red-400'
+                          : 'bg-muted/50 text-muted-foreground/50'
+                        }`}
                     >
                       {line.type === 'add' ? '+' : line.type === 'remove' ? '-' : ''}
                     </td>
