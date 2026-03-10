@@ -1,17 +1,19 @@
 import { useEffect, useRef, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { useCCStore } from '@/stores/ccStore';
-import { CCMessage as CCMessageType } from './types/messages';
 import { Card } from '@/components/ui/card';
-import { CCMessage } from '@/components/cc/messages';
-import { ExamplePrompts } from '@/components/cc/ExamplePrompts';
-import { useCCSessionManager } from '@/hooks/useCCSessionManager';
-import { CCInput } from '@/components/cc/CCInput';
-import { CCScrollControls } from '@/components/cc/CCScrollControls';
+
+import { useCCStore } from '@/stores/ccStore';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useCCInputStore } from '@/stores/useCCInputStore';
+
+import { CCMessage as CCMessageType } from './types/messages';
+import { CCMessage } from '@/components/cc/messages';
+import { useCCSessionManager } from '@/hooks/useCCSessionManager';
+import { CCInput } from '@/components/cc/composer';
+import { CCScrollControls } from '@/components/cc/CCScrollControls';
 import { ccInterrupt, ccSendMessage } from '@/services';
 import { ProjectSelector } from '../project-selector';
+import { ExamplePrompts } from '@/components/cc/ExamplePrompts';
 
 const CC_LISTENER_READY_EVENT = 'cc-session-listener-ready';
 const CC_PERMISSION_LISTENER_READY_EVENT = 'cc-permission-listener-ready';

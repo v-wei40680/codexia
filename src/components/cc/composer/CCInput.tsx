@@ -2,21 +2,15 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+
 import { Slash, CircleStop, Send, Plus } from 'lucide-react';
-import { useCCStore, ModelType } from '@/stores/ccStore';
+import { useCCStore } from '@/stores/ccStore';
 import { useInputStore } from '@/stores/useInputStore';
 import { useCCInputStore, useWorkspaceStore } from '@/stores';
 import { ccGetInstalledSkills, ccSetPermissionMode } from '@/services';
-import { CCPermissionModeSelect } from '@/components/cc/CCPermissionModeSelect';
+import { CCPermissionModeSelect, CCFileMentionPopover } from '@/components/cc/composer';
 import { SelectFilesMenuItem } from '@/components/codex/selector/AttachmentSelector';
-import { CCFileMentionPopover } from '@/components/cc/CCFileMentionPopover';
+import { ModelSelector } from './ModelSelector';
 
 const CC_INPUT_FOCUS_EVENT = 'cc-input-focus-request';
 
@@ -260,30 +254,7 @@ export function CCInput({ onSendMessage, onInterrupt }: CCInputProps) {
           </div>
 
           <div className="absolute right-1 bottom-1 flex items-center gap-1.5 px-1 bg-background/50 backdrop-blur-sm rounded-md">
-            <Select
-              value={options.model ?? 'default'}
-              onValueChange={(value) =>
-                updateOptions({ model: value === 'default' ? undefined : (value as ModelType) })
-              }
-            >
-              <SelectTrigger className="h-7 w-[96px] text-[10px] bg-transparent border-none focus:ring-0 focus:ring-offset-0 pr-0">
-                <SelectValue placeholder="Auto" />
-              </SelectTrigger>
-              <SelectContent side="top">
-                <SelectItem value="default" className="text-xs">
-                  Auto (Default)
-                </SelectItem>
-                <SelectItem value="sonnet" className="text-xs">
-                  Sonnet 4.6
-                </SelectItem>
-                <SelectItem value="opus" className="text-xs">
-                  Opus 4.6
-                </SelectItem>
-                <SelectItem value="haiku" className="text-xs">
-                  Haiku 4.5
-                </SelectItem>
-              </SelectContent>
-            </Select>
+            <ModelSelector />
             <Button
               onClick={isLoading ? onInterrupt : () => onSendMessage()}
               size="icon"
