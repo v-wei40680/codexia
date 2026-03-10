@@ -8,6 +8,7 @@ import { CommandValue } from './ToolInputDisplay';
 import { getFilename } from '@/utils/getFilename';
 import { ChevronDown, ChevronRight, FileCode, Folder, Search } from 'lucide-react';
 import { Markdown } from '@/components/Markdown';
+import { useCCSettingsStore } from '@/stores/settings';
 
 const FILE_TOOLS = ['Read', 'Edit', 'Write'] as const;
 const NO_RAW_INPUT_TOOLS = ['Read', 'Edit', 'Glob', 'Write', 'Bash', 'TodoWrite', 'Grep'];
@@ -97,6 +98,7 @@ export function CCMessageBlock({ block, index, toolName, inlineError }: Props) {
   const [showWriteResult, setShowWriteResult] = useState(false);
   const [showBashCommand, setShowBashCommand] = useState(false);
   const [showError, setShowError] = useState(false);
+  const { enabledThinking } = useCCSettingsStore();
 
   switch (block.type) {
     case 'text':
@@ -107,6 +109,7 @@ export function CCMessageBlock({ block, index, toolName, inlineError }: Props) {
       );
 
     case 'thinking':
+      if (!enabledThinking) return null
       return (
         <div key={blockKey} className="rounded-md border-l-2 border-amber-400/50 pl-3 py-1 max-w-full overflow-hidden">
           <div className="text-xs text-amber-700 dark:text-amber-300 whitespace-pre-wrap break-words italic opacity-75">
