@@ -14,10 +14,35 @@ use super::super::{AgentOptions, CCConnectParams, parse_permission_mode};
 
 pub type CCEmitter = Arc<dyn Fn(String, serde_json::Value) + Send + Sync + 'static>;
 
-/// Tools automatically approved in `acceptEdits` mode.
-const ACCEPT_EDITS_AUTO_APPROVE: &[&str] = &[
-    "Edit", "Write", "MultiEdit", "NotebookEdit", "Read",
+/// Tools that are always read-only — auto-approved in all modes except bypassPermissions
+/// (which never reaches the hook). Read is included here but gated by sensitive file check.
+const READ_ONLY_TOOLS: &[&str] = &["Glob", "Grep", "LS", "TodoRead"];
+
+/// Tools auto-approved in `acceptEdits` mode (file write/edit operations).
+const ACCEPT_EDITS_AUTO_APPROVE: &[&str] = &["Edit", "Write", "MultiEdit", "NotebookEdit"];
+
+/// Filename patterns that are always considered sensitive — Read on these always asks.
+const SENSITIVE_PATTERNS: &[&str] = &[
+    ".env", ".env.", "id_rsa", "id_ed25519", "id_ecdsa", "id_dsa",
+    ".pem", ".key", ".p12", ".pfx", ".secret",
 ];
+
+fn is_sensitive_path(path: &str) -> bool {
+    let lower = path.to_lowercase();
+    // Match exact filename or prefix (e.g. .env.local, .env.production)
+    let filename = std::path::Path::new(&lower)
+        .file_name()
+        .and_then(|f| f.to_str())
+        .unwrap_or(&lower);
+    SENSITIVE_PATTERNS.iter().any(|pat| {
+        if pat.ends_with('.') {
+            // prefix match: .env. matches .env.local
+            filename.starts_with(pat)
+        } else {
+            filename == *pat || filename.ends_with(pat)
+        }
+    })
+}
 
 /// Only `bypassPermissions` skips all prompts.
 fn needs_permission_callback(permission_mode: Option<&str>) -> bool {
@@ -36,11 +61,14 @@ fn permission_hook_output(decision: &str, reason: &str) -> HookJsonOutput {
 }
 
 /// Build `PreToolUse` hooks that handle per-mode auto-approval and UI prompting.
+///
+/// IMPORTANT: permission_mode is intentionally NOT captured in the closure.
+/// It is always read fresh from `state` on every invocation so that runtime
+/// changes via `set_permission_mode` are reflected immediately.
 fn build_permission_hooks(
     state: CCState,
     emitter: CCEmitter,
     session_id: String,
-    permission_mode: Option<String>,
 ) -> std::collections::HashMap<
     claude_agent_sdk_rs::HookEvent,
     Vec<claude_agent_sdk_rs::HookMatcher>,
@@ -53,49 +81,66 @@ fn build_permission_hooks(
         let state = state.clone();
         let emitter = emitter.clone();
         let session_id = session_id.clone();
-        let permission_mode = permission_mode.clone();
         let session_allowed = session_allowed.clone();
 
         async move {
             let pre_tool = match input {
                 HookInput::PreToolUse(v) => v,
-                _ => {
-                    return HookJsonOutput::Sync(Default::default());
-                }
+                _ => return HookJsonOutput::Sync(Default::default()),
             };
             let tool_name = pre_tool.tool_name;
             let tool_input = pre_tool.tool_input;
 
-            // Check if we need to get permission mode from state if not provided
-            let effective_permission_mode = permission_mode.or_else(|| state.get_permission_mode(&session_id));
+            // Always read permission mode fresh from state so runtime changes take effect.
+            let permission_mode = state.get_permission_mode(&session_id);
+
             log::info!(
-                "[cc permission hook] tool request incoming: session_id={} tool={} mode={:?}",
-                session_id,
-                tool_name,
-                effective_permission_mode
+                "[cc permission hook] tool={} mode={:?} session={}",
+                tool_name, permission_mode, session_id
             );
 
-            // acceptEdits: auto-approve file tools
-            if effective_permission_mode.as_deref() == Some("acceptEdits")
+            // bypassPermissions: allow everything (should not reach here, but guard anyway).
+            if permission_mode.as_deref() == Some("bypassPermissions") {
+                return permission_hook_output("allow", "bypassPermissions mode");
+            }
+
+            // Read is auto-approved unless it targets a sensitive file.
+            if tool_name == "Read" {
+                let file_path = tool_input
+                    .get("file_path")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("");
+                if !is_sensitive_path(file_path) {
+                    return permission_hook_output("allow", "Read on non-sensitive file");
+                }
+                // Fall through to UI prompt for sensitive files.
+            }
+
+            // Glob / Grep / LS / TodoRead — always safe, auto-approve.
+            if READ_ONLY_TOOLS.contains(&tool_name.as_str()) {
+                return permission_hook_output("allow", "Read-only tool, auto-approved");
+            }
+
+            // acceptEdits: auto-approve file write/edit tools.
+            if permission_mode.as_deref() == Some("acceptEdits")
                 && ACCEPT_EDITS_AUTO_APPROVE.contains(&tool_name.as_str())
             {
                 return permission_hook_output("allow", "Auto-approved in acceptEdits mode");
             }
 
-            // Check session-scoped always-allow
+            // Check session-scoped always-allow (set when user clicks "Always Allow").
             if session_allowed.lock().unwrap().contains(&tool_name) {
                 return permission_hook_output("allow", "Always allow for this session");
             }
 
-            // Show UI prompt
+            // Show UI prompt for everything else.
             let request_id = uuid::Uuid::new_v4().to_string();
             let (tx, rx) = tokio::sync::oneshot::channel::<String>();
             state.pending_permissions.insert(request_id.clone(), tx);
+
             log::info!(
-                "[cc permission hook] emit request: request_id={} session_id={} tool={}",
-                request_id,
-                session_id,
-                tool_name
+                "[cc permission hook] emitting request: request_id={} tool={}",
+                request_id, tool_name
             );
 
             emitter("cc-permission-request".to_string(), serde_json::json!({
@@ -107,11 +152,8 @@ fn build_permission_hooks(
 
             let decision = rx.await.unwrap_or_else(|_| "deny".to_string());
             log::info!(
-                "[cc permission hook] resolved: request_id={} session_id={} tool={} decision={}",
-                request_id,
-                session_id,
-                tool_name,
-                decision
+                "[cc permission hook] resolved: request_id={} tool={} decision={}",
+                request_id, tool_name, decision
             );
 
             match decision.as_str() {
@@ -119,14 +161,11 @@ fn build_permission_hooks(
                     session_allowed.lock().unwrap().insert(tool_name);
                     permission_hook_output("allow", "Allowed and saved for this session")
                 }
-                "allow" | "allow_always_project" => {
-                    permission_hook_output("allow", "Allowed by user")
-                }
+                "allow" => permission_hook_output("allow", "Allowed by user"),
                 _ => permission_hook_output("deny", "Denied by user"),
             }
         }
-    })
-    ;
+    });
 
     hooks.build()
 }
@@ -144,7 +183,6 @@ pub async fn connect(params: CCConnectParams, state: &CCState, emitter: CCEmitte
     if needs_permission_callback(agent_options.permission_mode.as_deref()) {
         options.hooks = Some(build_permission_hooks(
             state.clone(), emitter, params.session_id.clone(),
-            agent_options.permission_mode.clone(),
         ));
     }
 
@@ -172,7 +210,6 @@ pub async fn new_session_with_emitter(
     if needs_permission_callback(options.permission_mode.as_deref()) {
         claude_options.hooks = Some(build_permission_hooks(
             state.clone(), emitter, session_id.clone(),
-            options.permission_mode.clone(),
         ));
     }
 
@@ -182,10 +219,11 @@ pub async fn new_session_with_emitter(
 
 pub async fn set_permission_mode(session_id: &str, mode: &str, state: &CCState) -> Result<(), String> {
     let permission_mode = parse_permission_mode(mode).ok_or("Invalid permission mode")?;
-    
-    // Update the session metadata in state
+
+    // Update session metadata — the hook closure reads this on every invocation.
     state.set_permission_mode(session_id, mode.to_string());
-    
+
+    // Also forward to CLI so it respects the new mode for its own internal decisions.
     let client = state.get_client(session_id).await.ok_or("Client not found")?;
     let client = client.lock().await;
     client.set_permission_mode(permission_mode).await.map_err(|e| e.to_string())
@@ -234,7 +272,6 @@ pub async fn resume_session(
     if needs_permission_callback(options.permission_mode.as_deref()) {
         claude_options.hooks = Some(build_permission_hooks(
             state.clone(), emitter, session_id.clone(),
-            options.permission_mode.clone(),
         ));
     }
 

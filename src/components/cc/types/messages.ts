@@ -123,7 +123,7 @@ export interface PermissionRequestMessage {
   sessionId: string;
   toolName: string;
   toolInput: Record<string, any>;
-  resolved?: 'allow' | 'allow_always' | 'allow_always_project' | 'deny';
+  resolved?: 'allow' | 'allow_always' | 'deny';
 }
 
 /** Control cancel request (internal protocol) */
