@@ -1,14 +1,25 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { PermissionMode } from '@/stores/ccStore';
+import { useCCStore } from '@/stores';
+import { ccSetPermissionMode } from '@/services';
 
-interface CCPermissionModeSelectProps {
-  value: PermissionMode;
-  onChange: (value: PermissionMode) => void;
-}
+export function CCPermissionModeSelect() {
+  const { options, updateOptions, activeSessionId } = useCCStore();
+  const { permissionMode } = options;
 
-export function CCPermissionModeSelect({ value, onChange }: CCPermissionModeSelectProps) {
+  const handlePermissionChange = async (value: string) => {
+    const permissionValue = value as PermissionMode;
+    updateOptions({ permissionMode: permissionValue });
+    if (!activeSessionId) return;
+    try {
+      await ccSetPermissionMode(activeSessionId, permissionValue);
+    } catch (error) {
+      console.error('Failed to set permission mode:', error);
+    }
+  };
+
   return (
-    <Select value={value} onValueChange={(nextValue) => onChange(nextValue as PermissionMode)}>
+    <Select value={permissionMode} onValueChange={handlePermissionChange}>
       <SelectTrigger className="h-7 w-[108px] text-[10px] bg-transparent border-none focus:ring-0 focus:ring-offset-0 pr-0">
         <SelectValue />
       </SelectTrigger>

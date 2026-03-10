@@ -7,7 +7,7 @@ import { Slash, CircleStop, Send, Plus } from 'lucide-react';
 import { useCCStore } from '@/stores/ccStore';
 import { useInputStore } from '@/stores/useInputStore';
 import { useCCInputStore, useWorkspaceStore } from '@/stores';
-import { ccGetInstalledSkills, ccSetPermissionMode } from '@/services';
+import { ccGetInstalledSkills } from '@/services';
 import { CCPermissionModeSelect, CCFileMentionPopover } from '@/components/cc/composer';
 import { SelectFilesMenuItem } from '@/components/codex/selector/AttachmentSelector';
 import { ModelSelector } from './ModelSelector';
@@ -20,7 +20,7 @@ interface CCInputProps {
 }
 
 export function CCInput({ onSendMessage, onInterrupt }: CCInputProps) {
-  const { isLoading, options, updateOptions } = useCCStore();
+  const { isLoading } = useCCStore();
   const { inputValue: input, setInputValue: setInput } = useCCInputStore();
   const { appendFileLinks } = useInputStore();
   const [showCommands, setShowCommands] = useState(false);
@@ -239,18 +239,7 @@ export function CCInput({ onSendMessage, onInterrupt }: CCInputProps) {
                 </div>
               </PopoverContent>
             </Popover>
-            <CCPermissionModeSelect
-              value={options.permissionMode}
-              onChange={(value) => {
-                updateOptions({ permissionMode: value });
-                const { activeSessionId } = useCCStore.getState();
-                if (activeSessionId) {
-                  ccSetPermissionMode(activeSessionId, value).catch((err: unknown) => {
-                    console.error('Failed to update permission mode:', err);
-                  });
-                }
-              }}
-            />
+            <CCPermissionModeSelect />
           </div>
 
           <div className="absolute right-1 bottom-1 flex items-center gap-1.5 px-1 bg-background/50 backdrop-blur-sm rounded-md">
