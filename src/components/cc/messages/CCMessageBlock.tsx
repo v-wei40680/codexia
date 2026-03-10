@@ -24,13 +24,13 @@ function ToolUseBadges({ block, showDiff, onToggleDiff }: {
 }) {
   const isFileTool = (FILE_TOOLS as readonly string[]).includes(block.name);
   return (
-    <div className="flex items-center gap-2 flex-wrap">
+    <div className="flex items-center flex-wrap">
       <Badge variant="secondary" className="text-[10px] h-4 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-none">
         {block.name}
       </Badge>
       {isFileTool && (
-        <Badge variant="outline">
-          {getFilename(block.input?.file_path)} {block.name === 'Read' && (
+        <Badge variant="outline" title={block.input?.file_path}>
+          {getFilename(block.input?.file_path)}{block.name === 'Read' && (
             <>:
               {block.input?.offset && <>{block.input.offset}</>}-
               {block.input?.limit && <>{block.input.limit}</>}
