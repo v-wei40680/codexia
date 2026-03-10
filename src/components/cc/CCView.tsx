@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { Card } from '@/components/ui/card';
 
@@ -8,10 +8,8 @@ import { useCCInputStore } from '@/stores/useCCInputStore';
 
 import type { CCMessage as CCMessageType } from './types/messages';
 import { CCMessage } from '@/components/cc/messages';
-import { useCCSessionManager } from '@/hooks/useCCSessionManager';
 import { CCInput } from '@/components/cc/composer';
 import { CCScrollControls } from '@/components/cc/CCScrollControls';
-import { ccInterrupt, ccSendMessage } from '@/services';
 import { ProjectSelector } from '../project-selector';
 import { ExamplePrompts } from '@/components/cc/ExamplePrompts';
 
@@ -79,7 +77,6 @@ export default function CCView() {
     activeSessionId,
     resolvedSessionIds,
     messages,
-    isConnected,
     isLoading,
     addMessage,
     setLoading,
@@ -88,8 +85,7 @@ export default function CCView() {
     resolveSessionId,
   } = useCCStore();
   const { cwd } = useWorkspaceStore();
-  const { inputValue: input, setInputValue: setInput } = useCCInputStore();
-  const { handleNewSession } = useCCSessionManager();
+  const { setInputValue: setInput } = useCCInputStore();
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isPromptsExpanded, setIsPromptsExpanded] = useState(false);
@@ -177,43 +173,6 @@ export default function CCView() {
   }, [activeSessionId, resolvedSessionIds, addMessage]);
 
 
-  const handleSendMessage = useCallback(async (messageText?: string) => {
-    const text = (messageText ?? input).trim();
-    if (!text || isLoading) return;
-
-    if (!activeSessionId) {
-      await handleNewSession(text);
-      return;
-    }
-
-    addMessage({ type: 'user', text });
-    setInput('');
-    setLoading(true);
-
-    try {
-      await ccSendMessage(activeSessionId, text);
-      if (!isConnected) setConnected(true);
-    } catch (error) {
-      console.error('[CCView] Failed to send message:', error);
-      setLoading(false);
-      addMessage({
-        type: 'assistant',
-        message: { content: [{ type: 'text', text: `Error: ${error}` }] },
-      });
-    }
-  }, [input, isLoading, activeSessionId, isConnected, addMessage, setInput, setLoading, setConnected, handleNewSession]);
-
-  const handleInterrupt = useCallback(async () => {
-    if (!activeSessionId) return;
-    try {
-      await ccInterrupt(activeSessionId);
-    } catch (error) {
-      console.error('[CCView] Failed to interrupt:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [activeSessionId, setLoading]);
-
   // Pre-compute inline errors map to avoid recalculating inside the render loop.
   const inlineErrorsMap = useMemo(
     () =>
@@ -297,7 +256,7 @@ export default function CCView() {
         )}
       </div>
 
-      <CCInput onSendMessage={handleSendMessage} onInterrupt={handleInterrupt} />
+      <CCInput />
     </div>
   );
 }

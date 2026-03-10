@@ -8,17 +8,22 @@ import { CCPermissionModeSelect, CCFileMentionPopover } from '@/components/cc/co
 import { ModelSelector } from './ModelSelector';
 import { CCAttachmentButton } from './CCAttachmentButton';
 import { CCSlashCommandPopover } from './CCSlashCommandPopover';
+import { useCCSessionManager } from '@/hooks/useCCSessionManager';
+import { ccInterrupt, ccSendMessage } from '@/services';
 
 const CC_INPUT_FOCUS_EVENT = 'cc-input-focus-request';
 
-interface CCInputProps {
-  onSendMessage: (text?: string) => void;
-  onInterrupt: () => void;
-}
-
-export function CCInput({ onSendMessage, onInterrupt }: CCInputProps) {
-  const { isLoading } = useCCStore();
+export function CCInput() {
+  const {
+    activeSessionId,
+    isConnected,
+    isLoading,
+    addMessage,
+    setLoading,
+    setConnected,
+  } = useCCStore();
   const { inputValue: input, setInputValue: setInput } = useCCInputStore();
+  const { handleNewSession } = useCCSessionManager();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const hiddenTriggerRef = useRef<HTMLSpanElement>(null);
   const [triggerEl, setTriggerEl] = useState<HTMLElement | null>(null);
@@ -38,12 +43,48 @@ export function CCInput({ onSendMessage, onInterrupt }: CCInputProps) {
     setTriggerEl(hiddenTriggerRef.current);
   }, []);
 
+  const handleSendMessage = useCallback(async (messageText?: string) => {
+    const text = (messageText ?? input).trim();
+    if (!text || isLoading) return;
+
+    if (!activeSessionId) {
+      await handleNewSession(text);
+      return;
+    }
+
+    addMessage({ type: 'user', text });
+    setInput('');
+    setLoading(true);
+
+    try {
+      await ccSendMessage(activeSessionId, text);
+      if (!isConnected) setConnected(true);
+    } catch (error) {
+      console.error('[CCInput] Failed to send message:', error);
+      setLoading(false);
+      addMessage({
+        type: 'assistant',
+        message: { content: [{ type: 'text', text: `Error: ${error}` }] },
+      });
+    }
+  }, [input, isLoading, activeSessionId, isConnected, addMessage, setInput, setLoading, setConnected, handleNewSession]);
+
+  const handleInterrupt = useCallback(async () => {
+    if (!activeSessionId) return;
+    try {
+      await ccInterrupt(activeSessionId);
+    } catch (error) {
+      console.error('[CCInput] Failed to interrupt:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [activeSessionId, setLoading]);
+
   const handleSend = useCallback(() => {
     if (!isLoading && input.trim()) {
-      onSendMessage();
-      setInput('');
+      handleSendMessage();
     }
-  }, [isLoading, input, onSendMessage, setInput]);
+  }, [isLoading, input, handleSendMessage]);
 
   const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -80,7 +121,7 @@ export function CCInput({ onSendMessage, onInterrupt }: CCInputProps) {
           <div className="absolute right-1 bottom-1 flex items-center gap-1.5 px-1 bg-background/50 backdrop-blur-sm rounded-md">
             <ModelSelector />
             <Button
-              onClick={isLoading ? onInterrupt : handleSend}
+              onClick={isLoading ? handleInterrupt : handleSend}
               size="icon"
               className="h-7 w-7"
               variant={isLoading ? 'destructive' : 'default'}
