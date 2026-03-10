@@ -159,12 +159,17 @@ export function CCInput({ onSendMessage, onInterrupt }: CCInputProps) {
     [input, setInput]
   );
 
+  const handleSend = useCallback(() => {
+    if (!isLoading && input.trim()) {
+      onSendMessage();
+      setInput('');
+    }
+  }, [isLoading, input, onSendMessage, setInput]);
+
   const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      if (!isLoading) {
-        onSendMessage();
-      }
+      handleSend();
     } else if (e.key === 'Escape' && showFileMention) {
       setShowFileMention(false);
     }
@@ -245,7 +250,7 @@ export function CCInput({ onSendMessage, onInterrupt }: CCInputProps) {
           <div className="absolute right-1 bottom-1 flex items-center gap-1.5 px-1 bg-background/50 backdrop-blur-sm rounded-md">
             <ModelSelector />
             <Button
-              onClick={isLoading ? onInterrupt : () => onSendMessage()}
+              onClick={isLoading ? onInterrupt : handleSend}
               size="icon"
               className="h-7 w-7"
               variant={isLoading ? 'destructive' : 'default'}
