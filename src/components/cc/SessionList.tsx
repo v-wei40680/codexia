@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { useCCStore } from '@/stores/ccStore';
 import { getSessions, SessionData } from '@/lib/sessions';
-import { MoreVertical, Copy } from 'lucide-react';
+import { MoreVertical, Copy, Loader2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,7 +29,7 @@ export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Pr
   const [error, setError] = useState<string | null>(null);
   const { cwd, setCwd, setSelectedAgent } = useWorkspaceStore();
   const { setView } = useLayoutStore();
-  const { activeSessionIds, activeSessionId } = useCCStore();
+  const { activeSessionIds, activeSessionId, isLoading } = useCCStore();
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
@@ -151,9 +151,11 @@ export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Pr
               onClick={() => handleSessionClick(session)}
             >
               <div className="relative h-6 flex items-center justify-center">
-                {isActive && (
+                {isActive && isSelected && isLoading ? (
+                  <Loader2 className="w-3.5 h-3.5 text-green-500 animate-spin shrink-0" />
+                ) : isActive ? (
                   <div className="w-2 h-2 rounded-full bg-green-500 shrink-0 shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
-                )}
+                ) : null}
               </div>
 
               <div
