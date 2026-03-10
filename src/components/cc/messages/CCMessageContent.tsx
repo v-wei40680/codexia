@@ -6,9 +6,10 @@ interface Props {
   msg: AssistantMessage;
   index: number;
   isToolBlock: (b: { type: string }) => boolean;
+  inlineErrors?: Record<string, any>;
 }
 
-export function CCMessageContent({ msg, index, isToolBlock }: Props) {
+export function CCMessageContent({ msg, index, isToolBlock, inlineErrors }: Props) {
   const { messages } = useCCStore();
 
   const resolveToolName = (toolUseId: string): string | undefined => {
@@ -42,11 +43,17 @@ export function CCMessageContent({ msg, index, isToolBlock }: Props) {
             : isToolBlock(block) && prev && isToolBlock(prev)
               ? 'mt-0.5'
               : 'mt-2';
+
+        const inlineError = block.type === 'tool_use'
+          ? inlineErrors?.[(block as any).id] ?? null
+          : null;
+
         return (
           <div key={`${index}-${i}`} className={mt}>
             <CCMessageBlock
               block={block as any}
               index={i}
+              inlineError={inlineError}
               toolName={
                 block.type === 'tool_use'
                   ? (block as any).name

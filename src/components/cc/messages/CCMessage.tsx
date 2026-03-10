@@ -10,12 +10,13 @@ import { Card } from '@/components/ui/card';
 interface CCMessageProps {
   message: CCMessageType;
   index: number;
+  inlineErrors?: Record<string, any>;
 }
 
 const isToolBlock = (b: { type: string }) =>
   b.type === 'tool_use' || b.type === 'tool_result';
 
-export function CCMessage({ message: msg, index: idx }: CCMessageProps) {
+export function CCMessage({ message: msg, index: idx, inlineErrors }: CCMessageProps) {
   const { updateMessage } = useCCStore();
 
   const handleResolvePermission = async (requestId: string, decision: any) => {
@@ -35,6 +36,7 @@ export function CCMessage({ message: msg, index: idx }: CCMessageProps) {
           msg={msg as any}
           index={idx}
           isToolBlock={isToolBlock}
+          inlineErrors={inlineErrors}
         />
       );
 
@@ -61,20 +63,8 @@ export function CCMessage({ message: msg, index: idx }: CCMessageProps) {
           (b: any) => b.type === 'tool_result' && b.is_error,
         ) ?? [];
       if (errors.length === 0) return null;
-      return (
-        <div className="space-y-1">
-          {errors.map((b: any, i: number) => (
-            <div
-              key={i}
-              className="rounded-lg border border-red-500/20 bg-red-500/5 p-3 text-xs whitespace-pre-wrap break-words text-foreground/80"
-            >
-              {typeof b.content === 'string'
-                ? b.content
-                : JSON.stringify(b.content)}
-            </div>
-          ))}
-        </div>
-      );
+      // Errors are rendered inline in the preceding assistant message's ToolUseBadges
+      return null;
     }
 
     case 'permission_request':

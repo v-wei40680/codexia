@@ -215,9 +215,34 @@ export default function CCView() {
                 </div>
               </div>
             )}
-            {messages.map((msg, idx) => (
-              <CCMessage key={idx} message={msg} index={idx} />
-            ))}
+            {messages.map((msg, idx) => {
+              // Skip user messages that are pure tool_result errors — rendered inline in preceding assistant message
+              if (
+                msg.type === 'user' &&
+                !(msg as any).text &&
+                typeof (msg as any).message?.content !== 'string'
+              ) {
+                const blocks = (msg as any).content ?? (msg as any).message?.content ?? [];
+                const hasOnlyErrors = Array.isArray(blocks) && blocks.length > 0 && blocks.every((b: any) => b.type === 'tool_result' && b.is_error);
+                if (hasOnlyErrors) return null;
+              }
+
+              // Collect errors from next user message to pass as inlineErrors to assistant
+              const nextMsg = messages[idx + 1];
+              const inlineErrors: Record<string, any> = {};
+              if (msg.type === 'assistant' && nextMsg?.type === 'user') {
+                const nextBlocks = (nextMsg as any).content ?? (nextMsg as any).message?.content ?? [];
+                if (Array.isArray(nextBlocks)) {
+                  for (const b of nextBlocks) {
+                    if (b.type === 'tool_result' && b.is_error && b.tool_use_id) {
+                      inlineErrors[b.tool_use_id] = b;
+                    }
+                  }
+                }
+              }
+
+              return <CCMessage key={idx} message={msg} index={idx} inlineErrors={Object.keys(inlineErrors).length ? inlineErrors : undefined} />;
+            })}
             {isLoading && (
               <Card className="p-3 bg-gray-50 dark:bg-gray-900">
                 <div className="text-xs text-muted-foreground animate-pulse">
