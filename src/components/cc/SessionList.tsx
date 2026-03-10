@@ -94,14 +94,19 @@ export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Pr
     };
   }, [loadSessions, sessions]);
 
+  const [expanded, setExpanded] = useState(false);
+  const DEFAULT_VISIBLE = 3;
+
   const normalizedProject = useMemo(() => project?.replace(/\\/g, '/'), [project]);
   const allSessions = sessions ?? loadedSessions;
-  const visibleSessions = useMemo(() => {
+  const filteredSessions = useMemo(() => {
     if (!normalizedProject) {
       return allSessions;
     }
     return allSessions.filter((session) => session.project.replace(/\\/g, '/') === normalizedProject);
   }, [allSessions, normalizedProject]);
+  const visibleSessions = expanded ? filteredSessions : filteredSessions.slice(0, DEFAULT_VISIBLE);
+  const hasMore = filteredSessions.length > DEFAULT_VISIBLE;
 
   if (loading) {
     return <div className="text-sm text-muted-foreground p-2">Loading sessions...</div>;
@@ -130,7 +135,7 @@ export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Pr
     });
   };
 
-  if (visibleSessions.length === 0) {
+  if (filteredSessions.length === 0) {
     return <div className="text-sm text-muted-foreground p-2">No sessions in this project</div>;
   }
 
@@ -192,6 +197,14 @@ export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Pr
           );
         })}
       </div>
+      {hasMore && (
+        <button
+          className="w-full text-xs text-muted-foreground hover:text-foreground py-1 transition-colors"
+          onClick={() => setExpanded((v) => !v)}
+        >
+          {expanded ? `Show less` : `Show ${filteredSessions.length - DEFAULT_VISIBLE} more`}
+        </button>
+      )}
     </div>
   );
 }
