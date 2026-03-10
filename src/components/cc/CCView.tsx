@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { useCCStore } from '@/stores/ccStore';
 import { CCMessage as CCMessageType } from './types/messages';
@@ -28,22 +28,10 @@ export default function CCView() {
     clearMessages,
   } = useCCStore();
   const { cwd } = useWorkspaceStore();
-  const { inputValue: input, setInputValue } = useCCInputStore();
+  const { inputValue: input, setInputValue: setInput } = useCCInputStore();
 
   const { handleNewSession } = useCCSessionManager();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-
-  const setInput = useCallback(
-    (value: string | ((prev: string) => string)) => {
-      if (typeof value === 'function') {
-        const nextValue = value(useCCInputStore.getState().inputValue);
-        setInputValue(nextValue);
-        return;
-      }
-      setInputValue(value);
-    },
-    [setInputValue]
-  );
 
   // Reset transient UI state when directory changes, but keep selected session.
   useEffect(() => {
@@ -134,18 +122,6 @@ export default function CCView() {
     let textToSend = messageText || input;
     if (!textToSend.trim() || isLoading) return;
 
-    // Convert slash commands to natural language
-    if (textToSend.startsWith('/')) {
-      const parts = textToSend.slice(1).split(/\s+/, 1);
-      const skillName = parts[0];
-      const restOfMessage = textToSend.slice(skillName.length + 2).trim();
-
-      // Transform slash command to natural language request
-      textToSend = restOfMessage
-        ? `Please use the ${skillName} skill to ${restOfMessage}`
-        : `Please use the ${skillName} skill to help me.`;
-    }
-
     // Create new session if no active session
     if (!activeSessionId) {
       await handleNewSession(textToSend);
@@ -198,12 +174,6 @@ export default function CCView() {
     }
   };
 
-  const handleExamplePrompt = (prompt: string) => {
-    // Append to input instead of replacing
-    setInput((prev) => (prev ? prev + '\n\n' + prompt : prompt));
-  };
-
-
   const [isPromptsExpanded, setIsPromptsExpanded] = useState(false);
   const shouldShowWelcome = messages.length === 0 && !activeSessionId;
 
@@ -236,7 +206,7 @@ export default function CCView() {
 
                 <div className="w-full">
                   <ExamplePrompts
-                    onSelectPrompt={handleExamplePrompt}
+                    onSelectPrompt={setInput}
                     isExpanded={isPromptsExpanded}
                     onToggleExpanded={() => setIsPromptsExpanded(!isPromptsExpanded)}
                   />
@@ -262,8 +232,6 @@ export default function CCView() {
       </div>
 
       <CCInput
-        input={input}
-        setInput={setInput}
         onSendMessage={handleSendMessage}
         onInterrupt={handleInterrupt}
       />

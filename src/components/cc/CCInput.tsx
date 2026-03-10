@@ -12,7 +12,7 @@ import {
 import { Slash, CircleStop, Send, Plus } from 'lucide-react';
 import { useCCStore, ModelType } from '@/stores/ccStore';
 import { useInputStore } from '@/stores/useInputStore';
-import { useWorkspaceStore } from '@/stores';
+import { useCCInputStore, useWorkspaceStore } from '@/stores';
 import { ccGetInstalledSkills, ccSetPermissionMode } from '@/services';
 import { CCPermissionModeSelect } from '@/components/cc/CCPermissionModeSelect';
 import { SelectFilesMenuItem } from '@/components/codex/selector/AttachmentSelector';
@@ -21,14 +21,13 @@ import { CCFileMentionPopover } from '@/components/cc/CCFileMentionPopover';
 const CC_INPUT_FOCUS_EVENT = 'cc-input-focus-request';
 
 interface CCInputProps {
-  input: string;
-  setInput: (value: string | ((prev: string) => string)) => void;
   onSendMessage: (text?: string) => void;
   onInterrupt: () => void;
 }
 
-export function CCInput({ input, setInput, onSendMessage, onInterrupt }: CCInputProps) {
+export function CCInput({ onSendMessage, onInterrupt }: CCInputProps) {
   const { isLoading, options, updateOptions } = useCCStore();
+  const { inputValue: input, setInputValue: setInput } = useCCInputStore();
   const { appendFileLinks } = useInputStore();
   const [showCommands, setShowCommands] = useState(false);
   const [showAttachmentMenu, setShowAttachmentMenu] = useState(false);
