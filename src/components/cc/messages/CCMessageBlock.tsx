@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import type { ContentBlock, ToolResultBlock, ToolUseBlock } from '../types/messages';
 import { DiffMessage } from './DiffMessage';
 import { CCTodoList } from './CCTodoList';
+import { AskUserQuestionCard } from './AskUserQuestionCard';
 import { CommandValue } from './ToolInputDisplay';
 import { getFilename } from '@/utils/getFilename';
 import { ChevronDown, ChevronRight, FileCode, Folder, Search } from 'lucide-react';
@@ -11,7 +12,7 @@ import { useCCSettingsStore } from '@/stores/settings';
 import { Streamdown } from 'streamdown';
 
 const FILE_TOOLS = ['Read', 'Edit', 'Write'] as const;
-const NO_RAW_INPUT_TOOLS = ['Read', 'Edit', 'Glob', 'Write', 'Bash', 'TodoWrite', 'Grep'];
+const NO_RAW_INPUT_TOOLS = ['Read', 'Edit', 'Glob', 'Write', 'Bash', 'TodoWrite', 'Grep', 'AskUserQuestion'];
 const SILENT_RESULT_TOOLS = ['Read', 'Glob', 'Grep'];
 
 interface Props {
@@ -103,7 +104,7 @@ export function CCMessageBlock({ block, index, toolName, inlineError }: Props) {
   switch (block.type) {
     case 'text':
       return (
-        <div key={blockKey} className="text-sm text-foreground whitespace-pre-wrap break-words px-1">
+        <div key={blockKey} className="text-sm">
           <Streamdown>{block.text}</Streamdown>
         </div>
       );
@@ -150,6 +151,11 @@ export function CCMessageBlock({ block, index, toolName, inlineError }: Props) {
           )}
           {block.name === 'TodoWrite' && block.input?.todos && (
             <CCTodoList todos={block.input.todos} />
+          )}
+          {block.name === 'AskUserQuestion' && (
+            <div className="mt-2">
+              <AskUserQuestionCard block={block} />
+            </div>
           )}
           {inlineError && showError && (
             <div className="mt-1 text-xs whitespace-pre-wrap break-words text-red-600 dark:text-red-400 border-t border-red-500/20 pt-1">
