@@ -23,7 +23,6 @@ import { useGitStatsStore } from '@/stores/useGitStatsStore';
 import { useGitWatch } from '@/hooks/useGitWatch';
 import { useSettingsStore } from '@/stores/settings';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { isTauri } from '@/hooks/runtime';
 import { useCCStore } from '@/stores/ccStore';
 
 type MainHeaderProps = {
@@ -64,7 +63,6 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
   const currentThread = useCurrentThread();
   const showTerminalButton = view === 'codex' || view === 'cc';
   const isHistoryView = view === 'history';
-  const shouldUseDesktopDragOffset = isTauri() && !isMobile;
   const openRightPanelTab = (tab: 'diff' | 'note' | 'files' | 'webpreview') => {
     setActiveRightPanelTab(tab);
     setRightPanelOpen(true);
@@ -106,10 +104,20 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
 
   return (
     <div
-      className="flex items-center justify-between h-11 border-b border-white/10 bg-sidebar/20 px-3"
+      className="flex items-center justify-between h-11 border-b border-white/10 bg-sidebar/20"
       data-tauri-drag-region
     >
       <div className="flex min-w-0 items-center gap-2">
+        {shouldShowIcons && (
+          <div className={`flex items-center ${!isMobile ? 'pl-20' : 'pl-2'}`}>
+            <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
+              <PanelLeft />
+            </Button>
+            <Button variant="ghost" onClick={handleNewThread} size="icon">
+              <SquarePen />
+            </Button>
+          </div>
+        )}
         {view === 'cc' && (
           <span
             title={isConnected ? 'Connected' : 'Ready'}
@@ -122,16 +130,6 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
                 }`}
             />
           </span>
-        )}
-        {shouldShowIcons && (
-          <div className={`flex items-center gap-2 ${shouldUseDesktopDragOffset ? 'pl-20' : 'pl-2'}`}>
-            <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
-              <PanelLeft />
-            </Button>
-            <Button variant="ghost" onClick={handleNewThread} size="icon">
-              <SquarePen />
-            </Button>
-          </div>
         )}
         {selectedAgent === 'codex' &&
           currentThreadId &&
