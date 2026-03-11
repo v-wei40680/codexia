@@ -1,5 +1,4 @@
 use super::db::SessionData;
-use claude_agent_sdk_rs::Message as SDKMessage;
 use super::mcp::{
     ClaudeCodeMcpServer, ClaudeCodeResponse, cc_list_projects as mcp_cc_list_projects,
     cc_mcp_add as mcp_cc_mcp_add, cc_mcp_disable as mcp_cc_mcp_disable,
@@ -34,29 +33,9 @@ pub async fn cc_send_message(
     state: State<'_, CCState>,
 ) -> Result<(), String> {
     let event_name = format!("cc-message:{}", session_id);
-    let temp_id = session_id.clone();
-    let state_inner = state.inner().clone();
-
     message_service::send_message(&session_id, &message, &state, move |msg| {
-        // Emit the message to the frontend first
         if let Err(e) = app.emit(&event_name, &msg) {
             log::error!("Failed to emit message: {}", e);
-        }
-        // After emitting a Result, check if the SDK assigned a different real session_id.
-        // If so, register an alias and notify the frontend so it can reconcile the
-        // temp UUID (used for internal routing) with the real SDK session_id (used in
-        // .jsonl files and shown in SessionList).
-        if let SDKMessage::Result(ref result) = msg {
-            if result.session_id != temp_id {
-                let real_id = &result.session_id;
-                state_inner.add_session_alias(real_id, &temp_id);
-                if let Err(e) = app.emit("cc-session-resolved", serde_json::json!({
-                    "tempId": temp_id,
-                    "sessionId": real_id,
-                })) {
-                    log::error!("Failed to emit cc-session-resolved: {}", e);
-                }
-            }
         }
     })
     .await
@@ -70,6 +49,7 @@ pub async fn cc_disconnect(session_id: String, state: State<'_, CCState>) -> Res
 #[tauri::command]
 pub async fn cc_new_session(
     options: AgentOptions,
+    initial_message: String,
     app: AppHandle,
     state: State<'_, CCState>,
 ) -> Result<String, String> {
@@ -77,7 +57,7 @@ pub async fn cc_new_session(
     let emitter = std::sync::Arc::new(move |event: String, payload: serde_json::Value| {
         let _ = app_clone.emit(&event, &payload);
     });
-    session_service::new_session_with_emitter(options, &state, emitter).await
+    session_service::new_session_and_send(options, initial_message, &state, emitter).await
 }
 
 #[tauri::command]

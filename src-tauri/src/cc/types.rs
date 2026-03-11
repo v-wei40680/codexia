@@ -1,10 +1,5 @@
-use claude_agent_sdk_rs::types::mcp::{
-    McpHttpServerConfig, McpServerConfig, McpServers, McpSseServerConfig, McpStdioServerConfig,
-};
-use claude_agent_sdk_rs::{ClaudeAgentOptions, PermissionMode};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::path::PathBuf;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -39,21 +34,6 @@ pub enum McpServerConfigSerde {
     },
 }
 
-impl From<McpServerConfigSerde> for McpServerConfig {
-    fn from(config: McpServerConfigSerde) -> Self {
-        match config {
-            McpServerConfigSerde::Stdio { command, args, env } => {
-                McpServerConfig::Stdio(McpStdioServerConfig { command, args, env })
-            }
-            McpServerConfigSerde::Http { url, headers } => {
-                McpServerConfig::Http(McpHttpServerConfig { url, headers })
-            }
-            McpServerConfigSerde::Sse { url, headers } => {
-                McpServerConfig::Sse(McpSseServerConfig { url, headers })
-            }
-        }
-    }
-}
 
 /// Serializable options for ClaudeAgent
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -74,57 +54,3 @@ pub struct AgentOptions {
     pub continue_conversation: Option<bool>,
 }
 
-impl AgentOptions {
-    pub fn to_claude_options(&self, resume_id: Option<String>) -> ClaudeAgentOptions {
-        use std::sync::Arc;
-
-        let permission_mode = self
-            .permission_mode
-            .as_ref()
-            .and_then(|m| parse_permission_mode(m));
-
-        let plugins = vec![];
-
-        // Convert MCP servers
-        let mcp_servers = if let Some(servers) = &self.mcp_servers {
-            let servers_map: HashMap<String, McpServerConfig> = servers
-                .iter()
-                .map(|(name, config)| (name.clone(), config.clone().into()))
-                .collect();
-            McpServers::Dict(servers_map)
-        } else {
-            McpServers::Empty
-        };
-
-        ClaudeAgentOptions {
-            cwd: Some(PathBuf::from(&self.cwd)),
-            model: self.model.clone(),
-            fallback_model: self.fallback_model.clone(),
-            max_turns: self.max_turns,
-            max_budget_usd: self.max_budget_usd,
-            max_thinking_tokens: self.max_thinking_tokens,
-            settings: self.settings.clone(),
-            permission_mode,
-            allowed_tools: self.allowed_tools.clone().unwrap_or_default(),
-            disallowed_tools: self.disallowed_tools.clone().unwrap_or_default(),
-            plugins,
-            mcp_servers,
-            resume: resume_id.or_else(|| self.resume.clone()),
-            continue_conversation: self.continue_conversation.unwrap_or(false),
-            stderr_callback: Some(Arc::new(|msg| {
-                log::error!("[CC STDERR] {}", msg);
-            })),
-            ..Default::default()
-        }
-    }
-}
-
-pub fn parse_permission_mode(mode: &str) -> Option<PermissionMode> {
-    match mode {
-        "default" => Some(PermissionMode::Default),
-        "acceptEdits" => Some(PermissionMode::AcceptEdits),
-        "plan" => Some(PermissionMode::Plan),
-        "bypassPermissions" => Some(PermissionMode::BypassPermissions),
-        _ => None,
-    }
-}

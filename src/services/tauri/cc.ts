@@ -1,8 +1,8 @@
 import { invokeTauri, isTauri, postNoContent, postJson, getJson } from './shared';
 
-export async function ccNewSession(options: Record<string, unknown>) {
+export async function ccNewSession(options: Record<string, unknown>, initialMessage: string) {
   if (isTauri()) {
-    return await invokeTauri<string>('cc_new_session', { options });
+    return await invokeTauri<string>('cc_new_session', { options, initialMessage });
   }
   return await postJson<string>('/api/cc/new-session', { options });
 }

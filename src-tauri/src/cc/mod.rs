@@ -10,4 +10,4 @@ pub mod types;
 #[cfg(feature = "tauri")]
 pub use commands::*;
 pub use state::CCState;
-pub use types::{AgentOptions, CCConnectParams, parse_permission_mode};
+pub use types::CCConnectParams;

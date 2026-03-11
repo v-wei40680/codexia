@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useCCStore } from '@/stores/ccStore';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
-import { ccNewSession, ccResumeSession, ccSendMessage } from '@/services';
+import { ccNewSession, ccResumeSession } from '@/services';
 
 const CC_LISTENER_READY_EVENT = 'cc-session-listener-ready';
 const CC_PERMISSION_LISTENER_READY_EVENT = 'cc-permission-listener-ready';
@@ -129,38 +129,21 @@ export function useCCSessionManager() {
         ClaudeAgentOptions.disallowedTools = options.disallowedTools;
 
       console.debug('ClaudeAgentOptions', ClaudeAgentOptions);
-      const newSessionId = await ccNewSession(ClaudeAgentOptions);
 
-      setActiveSessionId(newSessionId);
+      // cc_new_session now blocks until System::init and returns the real session_id.
+      // Streaming starts inside the command; we just need to subscribe after returning.
+      const sessionId = await ccNewSession(ClaudeAgentOptions, initialMessage);
+
+      setActiveSessionId(sessionId);
       setMessages([]);
       setShowExamples(false);
+      addMessage({ type: 'user', text: initialMessage });
+      setConnected(true);
+
       console.info('[useCCSessionManager] New session created', {
-        newSessionId,
+        sessionId,
         permissionMode: options.permissionMode,
       });
-
-      // Wait for CC view listeners to bind before first message, otherwise
-      // early permission requests can be missed by the UI.
-      await new Promise((resolve) => setTimeout(resolve, 0));
-      console.info('[useCCSessionManager] Waiting for listeners (new session)', {
-        newSessionId,
-      });
-      await waitForSessionListenerReady(newSessionId);
-      await waitForPermissionListenerReady(newSessionId);
-      console.info('[useCCSessionManager] Listeners ready (new session)', {
-        newSessionId,
-      });
-
-      // Connection will happen automatically when sending the first message
-      addMessage({
-        type: 'user',
-        text: initialMessage,
-      });
-
-      await ccSendMessage(newSessionId, initialMessage);
-
-      // Mark as connected after successfully sending message
-      setConnected(true);
     } catch (error) {
       console.error('Failed to create new session:', error);
       setLoading(false);

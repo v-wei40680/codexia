@@ -31,8 +31,6 @@ interface CCStoreState {
   activeSessionIds: string[];
   messages: CCMessage[];
   sessionMessagesMap: Record<string, CCMessage[]>;
-  /** Maps temp UUID → real SDK session_id assigned after the first message. */
-  resolvedSessionIds: Record<string, string>;
   options: CCOptions;
   isConnected: boolean;
   isLoading: boolean;
@@ -43,12 +41,6 @@ interface CCStoreState {
   removeActiveSessionId: (id: string) => void;
   switchToSession: (id: string) => void;
   saveCurrentSessionMessages: () => void;
-  /**
-   * Reconcile a temp UUID with the real SDK session_id returned after the first
-   * message completes. Updates activeSessionId, activeSessionIds, and moves
-   * cached messages so the SessionList shows the correct highlighted state.
-   */
-  resolveSessionId: (tempId: string, realId: string) => void;
   addMessage: (message: CCMessage) => void;
   updateMessage: (index: number, message: Partial<CCMessage>) => void;
   setMessages: (messages: CCMessage[]) => void;
@@ -66,7 +58,6 @@ export const useCCStore = create<CCStoreState>()(
       activeSessionIds: [],
       messages: [],
       sessionMessagesMap: {},
-      resolvedSessionIds: {},
       options: {
         model: undefined,
         permissionMode: 'default',
@@ -120,33 +111,6 @@ export const useCCStore = create<CCStoreState>()(
               ...state.sessionMessagesMap,
               [state.activeSessionId]: state.messages,
             },
-          };
-        }),
-      resolveSessionId: (tempId, realId) =>
-        set((state) => {
-          if (state.resolvedSessionIds[tempId] === realId) return {};
-
-          // Move cached messages from tempId to realId
-          const updatedMap = { ...state.sessionMessagesMap };
-          if (updatedMap[tempId]) {
-            updatedMap[realId] = updatedMap[tempId];
-            delete updatedMap[tempId];
-          }
-
-          // Replace tempId with realId in activeSessionIds
-          const updatedActiveIds = state.activeSessionIds.map((id) =>
-            id === tempId ? realId : id,
-          );
-
-          // Update activeSessionId if it was the temp one
-          const updatedActiveSessionId =
-            state.activeSessionId === tempId ? realId : state.activeSessionId;
-
-          return {
-            resolvedSessionIds: { ...state.resolvedSessionIds, [tempId]: realId },
-            sessionMessagesMap: updatedMap,
-            activeSessionIds: updatedActiveIds,
-            activeSessionId: updatedActiveSessionId,
           };
         }),
       addMessage: (message) =>

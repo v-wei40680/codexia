@@ -1,18 +1,81 @@
 use crate::cc::db::{SessionDB, SessionData};
 use crate::cc::state::CCState;
+use crate::cc::types::{AgentOptions, CCConnectParams, McpServerConfigSerde};
 use claude_agent_sdk_rs::{
-    HookInput, HookJsonOutput, HookSpecificOutput, Hooks, PreToolUseHookSpecificOutput,
-    SyncHookJsonOutput,
+    ClaudeAgentOptions, HookInput, HookJsonOutput, HookSpecificOutput, Hooks, Message as SDKMessage,
+    PermissionMode, PreToolUseHookSpecificOutput, SyncHookJsonOutput,
 };
-use std::collections::HashSet;
+use claude_agent_sdk_rs::types::mcp::{
+    McpHttpServerConfig, McpServerConfig, McpServers, McpSseServerConfig, McpStdioServerConfig,
+};
+use std::collections::{HashMap, HashSet};
 use std::fs;
 use std::io::{BufRead, BufReader};
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
+use super::message_service;
 use uuid;
 
-use super::super::{AgentOptions, CCConnectParams, parse_permission_mode};
-
 pub type CCEmitter = Arc<dyn Fn(String, serde_json::Value) + Send + Sync + 'static>;
+
+/// Shared session-id that can be updated from temp UUID to real SDK session_id.
+pub type SessionIdArc = Arc<Mutex<String>>;
+
+fn parse_permission_mode(mode: &str) -> Option<PermissionMode> {
+    match mode {
+        "default" => Some(PermissionMode::Default),
+        "acceptEdits" => Some(PermissionMode::AcceptEdits),
+        "plan" => Some(PermissionMode::Plan),
+        "bypassPermissions" => Some(PermissionMode::BypassPermissions),
+        _ => None,
+    }
+}
+
+fn build_claude_options(opts: &AgentOptions, resume_id: Option<String>) -> ClaudeAgentOptions {
+    let permission_mode = opts.permission_mode.as_deref().and_then(parse_permission_mode);
+
+    let mcp_servers = if let Some(servers) = &opts.mcp_servers {
+        let map: HashMap<String, McpServerConfig> = servers
+            .iter()
+            .map(|(name, cfg)| (name.clone(), mcp_config_from_serde(cfg.clone())))
+            .collect();
+        McpServers::Dict(map)
+    } else {
+        McpServers::Empty
+    };
+
+    ClaudeAgentOptions {
+        cwd: Some(PathBuf::from(&opts.cwd)),
+        model: opts.model.clone(),
+        fallback_model: opts.fallback_model.clone(),
+        max_turns: opts.max_turns,
+        max_budget_usd: opts.max_budget_usd,
+        max_thinking_tokens: opts.max_thinking_tokens,
+        settings: opts.settings.clone(),
+        permission_mode,
+        allowed_tools: opts.allowed_tools.clone().unwrap_or_default(),
+        disallowed_tools: opts.disallowed_tools.clone().unwrap_or_default(),
+        mcp_servers,
+        resume: resume_id.or_else(|| opts.resume.clone()),
+        continue_conversation: opts.continue_conversation.unwrap_or(false),
+        stderr_callback: Some(Arc::new(|msg| log::error!("[CC STDERR] {}", msg))),
+        ..Default::default()
+    }
+}
+
+fn mcp_config_from_serde(cfg: McpServerConfigSerde) -> McpServerConfig {
+    match cfg {
+        McpServerConfigSerde::Stdio { command, args, env } => {
+            McpServerConfig::Stdio(McpStdioServerConfig { command, args, env })
+        }
+        McpServerConfigSerde::Http { url, headers } => {
+            McpServerConfig::Http(McpHttpServerConfig { url, headers })
+        }
+        McpServerConfigSerde::Sse { url, headers } => {
+            McpServerConfig::Sse(McpSseServerConfig { url, headers })
+        }
+    }
+}
 
 /// Tools that are always read-only — auto-approved in all modes except bypassPermissions
 /// (which never reaches the hook). Read is included here but gated by sensitive file check.
@@ -68,7 +131,7 @@ fn permission_hook_output(decision: &str, reason: &str) -> HookJsonOutput {
 fn build_permission_hooks(
     state: CCState,
     emitter: CCEmitter,
-    session_id: String,
+    session_id: SessionIdArc,
 ) -> std::collections::HashMap<
     claude_agent_sdk_rs::HookEvent,
     Vec<claude_agent_sdk_rs::HookMatcher>,
@@ -91,12 +154,15 @@ fn build_permission_hooks(
             let tool_name = pre_tool.tool_name;
             let tool_input = pre_tool.tool_input;
 
+            // Read current session_id from Arc (may be updated to real SDK id).
+            let current_session_id = session_id.lock().unwrap().clone();
+
             // Always read permission mode fresh from state so runtime changes take effect.
-            let permission_mode = state.get_permission_mode(&session_id);
+            let permission_mode = state.get_permission_mode(&current_session_id);
 
             log::info!(
                 "[cc permission hook] tool={} mode={:?} session={}",
-                tool_name, permission_mode, session_id
+                tool_name, permission_mode, current_session_id
             );
 
             // bypassPermissions: allow everything (should not reach here, but guard anyway).
@@ -145,7 +211,7 @@ fn build_permission_hooks(
 
             emitter("cc-permission-request".to_string(), serde_json::json!({
                 "requestId": request_id,
-                "sessionId": session_id,
+                "sessionId": current_session_id,
                 "toolName": tool_name,
                 "toolInput": tool_input,
             }));
@@ -171,22 +237,27 @@ fn build_permission_hooks(
 }
 
 pub async fn connect(params: CCConnectParams, state: &CCState, emitter: CCEmitter) -> Result<(), String> {
-    let agent_options = AgentOptions {
-        cwd: params.cwd,
+    let permission_mode = params.permission_mode.as_deref().and_then(parse_permission_mode);
+    let permission_mode_str = params.permission_mode.clone();
+
+    let mut options = ClaudeAgentOptions {
+        cwd: Some(PathBuf::from(&params.cwd)),
         model: params.model,
-        permission_mode: params.permission_mode,
+        resume: params.resume_id,
+        permission_mode,
+        stderr_callback: Some(Arc::new(|msg| log::error!("[CC STDERR] {}", msg))),
         ..Default::default()
     };
 
-    let mut options = agent_options.to_claude_options(params.resume_id);
-
-    if needs_permission_callback(agent_options.permission_mode.as_deref()) {
+    let session_id_arc: SessionIdArc = Arc::new(Mutex::new(params.session_id.clone()));
+    if needs_permission_callback(permission_mode_str.as_deref()) {
         options.hooks = Some(build_permission_hooks(
-            state.clone(), emitter, params.session_id.clone(),
+            state.clone(), emitter, session_id_arc.clone(),
         ));
     }
 
-    state.create_client(params.session_id.clone(), options, agent_options.permission_mode.clone()).await?;
+    state.session_arcs.insert(params.session_id.clone(), session_id_arc);
+    state.create_client(params.session_id.clone(), options, permission_mode_str).await?;
 
     let client = state.get_client(&params.session_id).await.ok_or("Failed to get client")?;
     let mut client = client.lock().await;
@@ -205,16 +276,103 @@ pub async fn new_session_with_emitter(
     emitter: CCEmitter,
 ) -> Result<String, String> {
     let session_id = uuid::Uuid::new_v4().to_string();
-    let mut claude_options = options.to_claude_options(None);
+    let session_id_arc: SessionIdArc = Arc::new(Mutex::new(session_id.clone()));
+    let permission_mode_str = options.permission_mode.clone();
+    let mut claude_options = build_claude_options(&options, None);
 
-    if needs_permission_callback(options.permission_mode.as_deref()) {
+    if needs_permission_callback(permission_mode_str.as_deref()) {
         claude_options.hooks = Some(build_permission_hooks(
-            state.clone(), emitter, session_id.clone(),
+            state.clone(), emitter, session_id_arc.clone(),
         ));
     }
 
-    state.create_client(session_id.clone(), claude_options, options.permission_mode.clone()).await?;
+    state.session_arcs.insert(session_id.clone(), session_id_arc);
+    state.create_client(session_id.clone(), claude_options, permission_mode_str).await?;
     Ok(session_id)
+}
+
+/// Create a new session, send the first message, and block until the real SDK session_id
+/// is known (from `System::init`). Returns the real session_id so the frontend never
+/// sees a temporary UUID.
+pub async fn new_session_and_send(
+    options: AgentOptions,
+    initial_message: String,
+    state: &CCState,
+    emitter: CCEmitter,
+) -> Result<String, String> {
+    let temp_id = uuid::Uuid::new_v4().to_string();
+    let session_id_arc: SessionIdArc = Arc::new(Mutex::new(temp_id.clone()));
+    let permission_mode_str = options.permission_mode.clone();
+    let mut claude_options = build_claude_options(&options, None);
+
+    if needs_permission_callback(permission_mode_str.as_deref()) {
+        claude_options.hooks = Some(build_permission_hooks(
+            state.clone(), emitter.clone(), session_id_arc.clone(),
+        ));
+    }
+
+    state.session_arcs.insert(temp_id.clone(), session_id_arc.clone());
+    state.create_client(temp_id.clone(), claude_options, permission_mode_str).await?;
+
+    let (tx_real_id, rx_real_id) = tokio::sync::oneshot::channel::<String>();
+    let tx_slot: Arc<Mutex<Option<tokio::sync::oneshot::Sender<String>>>> =
+        Arc::new(Mutex::new(Some(tx_real_id)));
+
+    let state_clone = state.clone();
+    let emitter_clone = emitter;
+    let session_id_arc_clone = session_id_arc;
+    let temp_id_clone = temp_id.clone();
+
+    message_service::send_message(
+        &temp_id,
+        &initial_message,
+        state,
+        move |msg| {
+            let current_id = session_id_arc_clone.lock().unwrap().clone();
+
+            // On System::init: resolve temp_id → real SDK session_id.
+            if let SDKMessage::System(ref sys) = msg {
+                if sys.subtype == "init" {
+                    if let Some(ref real_id) = sys.session_id {
+                        if real_id != &temp_id_clone {
+                            *session_id_arc_clone.lock().unwrap() = real_id.clone();
+                            state_clone.add_session_alias(real_id, &temp_id_clone);
+                            if let Some(tx) = tx_slot.lock().unwrap().take() {
+                                let _ = tx.send(real_id.clone());
+                            }
+                            // Emit on real channel so frontend receives this message.
+                            let event_name = format!("cc-message:{}", real_id);
+                            if let Ok(payload) = serde_json::to_value(&msg) {
+                                emitter_clone(event_name, payload);
+                            }
+                            return;
+                        }
+                    }
+                }
+            }
+
+            let event_name = format!("cc-message:{}", current_id);
+            if let Ok(payload) = serde_json::to_value(&msg) {
+                emitter_clone(event_name, payload);
+            }
+        },
+    )
+    .await?;
+
+    // Wait for the real session_id from System::init with a timeout fallback.
+    let real_id = tokio::time::timeout(
+        std::time::Duration::from_secs(10),
+        rx_real_id,
+    )
+    .await
+    .ok()
+    .and_then(|r| r.ok())
+    .unwrap_or_else(|| {
+        log::warn!("[new_session_and_send] Timed out waiting for System::init, using temp_id");
+        temp_id
+    });
+
+    Ok(real_id)
 }
 
 pub async fn set_permission_mode(session_id: &str, mode: &str, state: &CCState) -> Result<(), String> {
@@ -286,15 +444,18 @@ pub async fn resume_session(
         }
     }
 
-    let mut claude_options = options.to_claude_options(None);
+    let permission_mode_str = options.permission_mode.clone();
+    let session_id_arc: SessionIdArc = Arc::new(Mutex::new(session_id.clone()));
+    let mut claude_options = build_claude_options(&options, None);
 
-    if needs_permission_callback(options.permission_mode.as_deref()) {
+    if needs_permission_callback(permission_mode_str.as_deref()) {
         claude_options.hooks = Some(build_permission_hooks(
-            state.clone(), emitter, session_id.clone(),
+            state.clone(), emitter, session_id_arc.clone(),
         ));
     }
 
-    state.create_client(session_id.clone(), claude_options, options.permission_mode.clone()).await?;
+    state.session_arcs.insert(session_id.clone(), session_id_arc);
+    state.create_client(session_id.clone(), claude_options, permission_mode_str).await?;
     Ok(())
 }
 
