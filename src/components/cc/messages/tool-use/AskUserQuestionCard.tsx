@@ -4,7 +4,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { MessageCircleQuestion, CheckCircle2 } from 'lucide-react';
 import { useCCStore } from '@/stores/ccStore';
 import { ccSendMessage } from '@/services';
-import type { ToolUseBlock } from '../types/messages';
+import type { ToolUseBlock } from '../../types/messages';
 
 interface QuestionOption {
   label: string;

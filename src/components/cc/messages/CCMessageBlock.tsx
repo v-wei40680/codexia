@@ -1,17 +1,15 @@
 import { useState } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import type { ContentBlock, ToolResultBlock, ToolUseBlock } from '../types/messages';
-import { DiffMessage } from './DiffMessage';
-import { CCTodoList } from './CCTodoList';
-import { AskUserQuestionCard } from './AskUserQuestionCard';
-import { CommandValue } from './ToolInputDisplay';
-import { getFilename } from '@/utils/getFilename';
-import { ChevronDown, ChevronRight, FileCode, Folder, Search } from 'lucide-react';
+import type { ContentBlock, ToolResultBlock } from '../types/messages';
+import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useCCSettingsStore } from '@/stores/settings';
 import { Streamdown } from 'streamdown';
+import {
+  ReadTool, EditTool, WriteTool, BashTool,
+  GlobTool, GrepTool, TodoWriteTool, AskUserQuestionTool,
+} from './tool-use';
 
-const FILE_TOOLS = ['Read', 'Edit', 'Write'] as const;
 const NO_RAW_INPUT_TOOLS = ['Read', 'Edit', 'Glob', 'Write', 'Bash', 'TodoWrite', 'Grep', 'AskUserQuestion'];
 const SILENT_RESULT_TOOLS = ['Read', 'Glob', 'Grep'];
 
@@ -26,79 +24,10 @@ function stripErrorTags(s: string) {
   return s.replace(/^<tool_use_error>\s*/, '').replace(/\s*<\/tool_use_error>$/, '');
 }
 
-function ToolUseBadges({ block, showDiff, onToggleDiff, showWrite, onToggleWrite, showBash, onToggleBash, hasError, showError, onToggleError }: {
-  block: ToolUseBlock;
-  showDiff: boolean;
-  onToggleDiff: () => void;
-  showWrite: boolean;
-  onToggleWrite: () => void;
-  showBash: boolean;
-  onToggleBash: () => void;
-  hasError: boolean;
-  showError: boolean;
-  onToggleError: () => void;
-}) {
-  const isFileTool = (FILE_TOOLS as readonly string[]).includes(block.name);
-  return (
-    <div className="flex items-center flex-wrap gap-0.5">
-      <Badge variant="secondary" className="text-[10px] h-4 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-none">
-        {block.name}
-      </Badge>
-      {isFileTool && (
-        <Badge variant="outline" title={block.input?.file_path}>
-          {getFilename(block.input?.file_path)}{block.name === 'Read' && (
-            <>:
-              {block.input?.offset && <>{block.input.offset}</>}-
-              {block.input?.limit && <>{block.input.limit}</>}
-            </>
-          )}
-        </Badge>
-      )}
-      {block.name === 'Edit' && (
-        <Button variant="ghost" size="icon" onClick={onToggleDiff} className="h-4 w-4">
-          {showDiff ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-        </Button>
-      )}
-      {block.name === 'Write' && (
-        <Button variant="ghost" size="icon" onClick={onToggleWrite} className="h-4 w-4">
-          {showWrite ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-        </Button>
-      )}
-      {block.name === 'Glob' && (
-        <Badge variant="outline">{block.input.pattern}</Badge>
-      )}
-      {block.name === 'Grep' && (
-        <span className="flex items-center gap-0.5">
-          <Badge variant="outline"><Search className="h-3 w-3" />{block.input.pattern}</Badge>
-          in
-          <Badge variant="outline"><Folder className="h-3 w-3" />{block.input.path}</Badge>
-          {block.input.glob && <Badge variant="outline"><FileCode className="h-3 w-3" />{block.input.glob}</Badge>}
-        </span>
-      )}
-      {block.name === 'Bash' && block.input?.description && (
-        <Badge variant="outline" className="text-[10px] h-4">{block.input.description}</Badge>
-      )}
-      {block.name === 'Bash' && block.input?.command && (
-        <Button variant="ghost" size="icon" onClick={onToggleBash} className="h-4 w-4">
-          {showBash ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-        </Button>
-      )}
-      {/* Error chevron — same row, after all badges */}
-      {hasError && (
-        <Button variant="ghost" size="icon" onClick={onToggleError} className="h-4 w-4 text-red-500 hover:text-red-600">
-          {showError ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
-        </Button>
-      )}
-    </div>
-  );
-}
-
 export function CCMessageBlock({ block, index, toolName, inlineError }: Props) {
   const blockKey = `block-${index}`;
-  const [showEditDiff, setShowEditDiff] = useState(false);
-  const [showWriteResult, setShowWriteResult] = useState(false);
-  const [showBashCommand, setShowBashCommand] = useState(false);
   const [showError, setShowError] = useState(false);
+  const [showWriteResult, setShowWriteResult] = useState(false);
   const { enabledThinking } = useCCSettingsStore();
 
   switch (block.type) {
@@ -119,53 +48,53 @@ export function CCMessageBlock({ block, index, toolName, inlineError }: Props) {
         </div>
       );
 
-    case 'tool_use':
+    case 'tool_use': {
+      const errorProps = { inlineError, showError, onToggleError: () => setShowError((p) => !p) };
+      const toolComponent = (() => {
+        switch (block.name) {
+          case 'Read': return <ReadTool block={block} {...errorProps} />;
+          case 'Edit': return <EditTool block={block} {...errorProps} />;
+          case 'Write': return <WriteTool block={block} {...errorProps} />;
+          case 'Bash': return <BashTool block={block} {...errorProps} />;
+          case 'Glob': return <GlobTool block={block} {...errorProps} />;
+          case 'Grep': return <GrepTool block={block} {...errorProps} />;
+          case 'TodoWrite': return <TodoWriteTool block={block} {...errorProps} />;
+          case 'AskUserQuestion': return <AskUserQuestionTool block={block} {...errorProps} />;
+          default: return null;
+        }
+      })();
+
       return (
         <div key={blockKey} className="overflow-auto">
-          <ToolUseBadges
-            block={block}
-            showDiff={showEditDiff} onToggleDiff={() => setShowEditDiff((p) => !p)}
-            showWrite={showWriteResult} onToggleWrite={() => setShowWriteResult((p) => !p)}
-            showBash={showBashCommand} onToggleBash={() => setShowBashCommand((p) => !p)}
-            hasError={!!inlineError} showError={showError} onToggleError={() => setShowError((p) => !p)}
-          />
-          {!NO_RAW_INPUT_TOOLS.includes(block.name) && (
-            <pre className="mt-2 text-xs overflow-auto bg-background/50 rounded-md p-3 max-h-60 break-all whitespace-pre-wrap font-mono">
-              <code>{JSON.stringify(block.input, null, 2)}</code>
-            </pre>
-          )}
-          {block.name === 'Edit' && showEditDiff && (
-            <div className="mt-2">
-              <DiffMessage oldString={block.input?.old_string || ''} newString={block.input?.new_string || ''} />
-            </div>
-          )}
-          {block.name === 'Write' && showWriteResult && (
-            <pre className="mt-2 text-xs overflow-auto bg-background/50 rounded-md p-3 max-h-60 break-all whitespace-pre-wrap font-mono bg-gray-200 dark:bg-gray-800">
-              <code>{block.input.content}</code>
-            </pre>
-          )}
-          {block.name === 'Bash' && block.input?.command && showBashCommand && (
-            <div className="mt-2">
-              <CommandValue value={block.input.command} />
-            </div>
-          )}
-          {block.name === 'TodoWrite' && block.input?.todos && (
-            <CCTodoList todos={block.input.todos} />
-          )}
-          {block.name === 'AskUserQuestion' && (
-            <div className="mt-2">
-              <AskUserQuestionCard block={block} />
-            </div>
-          )}
-          {inlineError && showError && (
-            <div className="mt-1 text-xs whitespace-pre-wrap break-words text-red-600 dark:text-red-400 border-t border-red-500/20 pt-1">
-              {typeof inlineError.content === 'string'
-                ? stripErrorTags(inlineError.content)
-                : JSON.stringify(inlineError.content)}
-            </div>
+          {toolComponent ?? (
+            <>
+              <div className="flex items-center flex-wrap gap-0.5">
+                <Badge variant="secondary" className="text-[10px] h-4 bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300 border-none">
+                  {block.name}
+                </Badge>
+                {inlineError && (
+                  <Button variant="ghost" size="icon" onClick={() => setShowError((p) => !p)} className="h-4 w-4 text-red-500 hover:text-red-600">
+                    {showError ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                  </Button>
+                )}
+              </div>
+              {!NO_RAW_INPUT_TOOLS.includes(block.name) && (
+                <pre className="mt-2 text-xs overflow-auto bg-background/50 rounded-md p-3 max-h-60 break-all whitespace-pre-wrap font-mono">
+                  <code>{JSON.stringify(block.input, null, 2)}</code>
+                </pre>
+              )}
+              {inlineError && showError && (
+                <div className="mt-1 text-xs whitespace-pre-wrap break-words text-red-600 dark:text-red-400 border-t border-red-500/20 pt-1">
+                  {typeof inlineError.content === 'string'
+                    ? stripErrorTags(inlineError.content)
+                    : JSON.stringify(inlineError.content)}
+                </div>
+              )}
+            </>
           )}
         </div>
       );
+    }
 
     case 'tool_result': {
       const isString = typeof block.content === 'string';
