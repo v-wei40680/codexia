@@ -131,7 +131,7 @@ export function SideBar() {
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex h-full w-[var(--sidebar-width)] min-w-[var(--sidebar-width)] max-w-[var(--sidebar-width)] flex-col border-r border-sidebar-border bg-zinc-100/95 dark:bg-zinc-900/95">
+    <div className="flex h-full w-full flex-col border-r border-sidebar-border bg-zinc-100/95 dark:bg-zinc-900/95">
 
       {/* Top controls */}
       <div className="flex flex-col gap-1 p-2">
