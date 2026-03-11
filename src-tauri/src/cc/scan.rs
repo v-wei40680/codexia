@@ -1,4 +1,6 @@
 use std::collections::HashSet;
+use std::fs;
+use std::io::{BufRead, BufReader};
 use std::path::Path;
 use std::sync::{Arc, Mutex, Once, OnceLock};
 use std::time::{Duration, Instant};
@@ -8,7 +10,7 @@ use serde_json::json;
 
 use crate::features::event_sink::EventSink;
 
-use super::db::SessionData;
+use super::db::{SessionDB, SessionData};
 use super::services::session_service;
 
 type EventSinks = Arc<Mutex<Vec<Arc<dyn EventSink>>>>;
@@ -169,4 +171,120 @@ fn emit_sessions_to_sinks(sinks: &EventSinks) {
     for sink in sink_list {
         emit_sessions_to_sink(&*sink);
     }
+}
+
+/// Scan projects directory and index session files into the database.
+pub fn get_sessions() -> Result<Vec<SessionData>, String> {
+    let db = SessionDB::new().map_err(|e| format!("Failed to open database: {}", e))?;
+    let home = dirs::home_dir().ok_or("Failed to get home directory")?;
+    let projects_dir = home.join(".claude").join("projects");
+
+    if !projects_dir.exists() {
+        return Ok(vec![]);
+    }
+
+    let slash_commands: Vec<&str> = vec!["/ide", "/model", "/status"];
+
+    for entry in fs::read_dir(&projects_dir)
+        .map_err(|e| format!("Failed to read projects dir: {}", e))?
+    {
+        let entry = entry.map_err(|e| format!("Failed to read entry: {}", e))?;
+        let project_dir = entry.path();
+        if !project_dir.is_dir() {
+            continue;
+        }
+
+        for session_entry in fs::read_dir(&project_dir)
+            .map_err(|e| format!("Failed to read project dir: {}", e))?
+        {
+            let session_entry =
+                session_entry.map_err(|e| format!("Failed to read session entry: {}", e))?;
+            let session_path = session_entry.path();
+
+            if session_path.extension().and_then(|s| s.to_str()) != Some("jsonl") {
+                continue;
+            }
+
+            let file_name = session_path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("");
+            if file_name.starts_with("agent-") {
+                continue;
+            }
+
+            let file_path_str = session_path.to_str().unwrap_or("");
+            if db.is_scanned(file_path_str).unwrap_or(false) {
+                continue;
+            }
+
+            if let Ok(file) = fs::File::open(&session_path) {
+                let reader = BufReader::new(file);
+                let mut session_id = String::new();
+                let mut cwd = String::new();
+                let mut timestamp: i64 = 0;
+                let mut display = String::from("Untitled");
+                let mut found_user_message = false;
+
+                for line in reader.lines().filter_map(|l| l.ok()) {
+                    let sanitized = line.replace('\u{0000}', "").trim().to_string();
+                    if sanitized.is_empty() || !sanitized.ends_with('}') {
+                        continue;
+                    }
+
+                    if let Ok(data) = serde_json::from_str::<serde_json::Value>(&sanitized) {
+                        if session_id.is_empty() {
+                            if let Some(sid) = data.get("sessionId").and_then(|s| s.as_str()) {
+                                session_id = sid.to_string();
+                            }
+                        }
+                        if cwd.is_empty() {
+                            if let Some(c) = data.get("cwd").and_then(|c| c.as_str()) {
+                                cwd = c.to_string();
+                            }
+                        }
+
+                        if data.get("type").and_then(|t| t.as_str()) == Some("user") {
+                            timestamp = data
+                                .get("timestamp")
+                                .and_then(|t| t.as_str())
+                                .and_then(|t| chrono::DateTime::parse_from_rfc3339(t).ok())
+                                .map(|dt| dt.timestamp())
+                                .unwrap_or(0);
+
+                            if let Some(msg_display) = data
+                                .get("message")
+                                .and_then(|m| m.get("content"))
+                                .and_then(|c| c.as_str())
+                            {
+                                if slash_commands.contains(&msg_display.trim()) {
+                                    break;
+                                }
+                                display = msg_display
+                                    .lines()
+                                    .next()
+                                    .unwrap_or("Untitled")
+                                    .to_string();
+                                found_user_message = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if found_user_message && !session_id.is_empty() && !cwd.is_empty() {
+                    let session = SessionData {
+                        session_id,
+                        project: cwd,
+                        display,
+                        timestamp,
+                    };
+                    let _ = db.insert_session(&session, file_path_str);
+                }
+            }
+        }
+    }
+
+    db.get_all_sessions()
+        .map_err(|e| format!("Failed to get sessions: {}", e))
 }

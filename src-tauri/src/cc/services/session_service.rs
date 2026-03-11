@@ -1,14 +1,11 @@
-use crate::cc::db::{SessionDB, SessionData};
+use crate::cc::db::SessionDB;
 use crate::cc::state::CCState;
-use crate::cc::types::{AgentOptions, CCConnectParams, McpServerConfigSerde};
+use crate::cc::types::{AgentOptions, CCConnectParams, parse_permission_mode};
 use claude_agent_sdk_rs::{
     ClaudeAgentOptions, HookInput, HookJsonOutput, HookSpecificOutput, Hooks, Message as SDKMessage,
-    PermissionMode, PreToolUseHookSpecificOutput, SyncHookJsonOutput,
+    PreToolUseHookSpecificOutput, SyncHookJsonOutput,
 };
-use claude_agent_sdk_rs::types::mcp::{
-    McpHttpServerConfig, McpServerConfig, McpServers, McpSseServerConfig, McpStdioServerConfig,
-};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::fs;
 use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
@@ -16,66 +13,13 @@ use std::sync::{Arc, Mutex};
 use super::message_service;
 use uuid;
 
+pub use crate::cc::scan::get_sessions;
+
 pub type CCEmitter = Arc<dyn Fn(String, serde_json::Value) + Send + Sync + 'static>;
 
 /// Shared session-id that can be updated from temp UUID to real SDK session_id.
 pub type SessionIdArc = Arc<Mutex<String>>;
 
-fn parse_permission_mode(mode: &str) -> Option<PermissionMode> {
-    match mode {
-        "default" => Some(PermissionMode::Default),
-        "acceptEdits" => Some(PermissionMode::AcceptEdits),
-        "plan" => Some(PermissionMode::Plan),
-        "bypassPermissions" => Some(PermissionMode::BypassPermissions),
-        _ => None,
-    }
-}
-
-fn build_claude_options(opts: &AgentOptions, resume_id: Option<String>) -> ClaudeAgentOptions {
-    let permission_mode = opts.permission_mode.as_deref().and_then(parse_permission_mode);
-
-    let mcp_servers = if let Some(servers) = &opts.mcp_servers {
-        let map: HashMap<String, McpServerConfig> = servers
-            .iter()
-            .map(|(name, cfg)| (name.clone(), mcp_config_from_serde(cfg.clone())))
-            .collect();
-        McpServers::Dict(map)
-    } else {
-        McpServers::Empty
-    };
-
-    ClaudeAgentOptions {
-        cwd: Some(PathBuf::from(&opts.cwd)),
-        model: opts.model.clone(),
-        fallback_model: opts.fallback_model.clone(),
-        max_turns: opts.max_turns,
-        max_budget_usd: opts.max_budget_usd,
-        max_thinking_tokens: opts.max_thinking_tokens,
-        settings: opts.settings.clone(),
-        permission_mode,
-        allowed_tools: opts.allowed_tools.clone().unwrap_or_default(),
-        disallowed_tools: opts.disallowed_tools.clone().unwrap_or_default(),
-        mcp_servers,
-        resume: resume_id.or_else(|| opts.resume.clone()),
-        continue_conversation: opts.continue_conversation.unwrap_or(false),
-        stderr_callback: Some(Arc::new(|msg| log::error!("[CC STDERR] {}", msg))),
-        ..Default::default()
-    }
-}
-
-fn mcp_config_from_serde(cfg: McpServerConfigSerde) -> McpServerConfig {
-    match cfg {
-        McpServerConfigSerde::Stdio { command, args, env } => {
-            McpServerConfig::Stdio(McpStdioServerConfig { command, args, env })
-        }
-        McpServerConfigSerde::Http { url, headers } => {
-            McpServerConfig::Http(McpHttpServerConfig { url, headers })
-        }
-        McpServerConfigSerde::Sse { url, headers } => {
-            McpServerConfig::Sse(McpSseServerConfig { url, headers })
-        }
-    }
-}
 
 /// Tools that are always read-only — auto-approved in all modes except bypassPermissions
 /// (which never reaches the hook). Read is included here but gated by sensitive file check.
@@ -278,7 +222,7 @@ pub async fn new_session_with_emitter(
     let session_id = uuid::Uuid::new_v4().to_string();
     let session_id_arc: SessionIdArc = Arc::new(Mutex::new(session_id.clone()));
     let permission_mode_str = options.permission_mode.clone();
-    let mut claude_options = build_claude_options(&options, None);
+    let mut claude_options = options.to_claude_options(None);
 
     if needs_permission_callback(permission_mode_str.as_deref()) {
         claude_options.hooks = Some(build_permission_hooks(
@@ -303,7 +247,7 @@ pub async fn new_session_and_send(
     let temp_id = uuid::Uuid::new_v4().to_string();
     let session_id_arc: SessionIdArc = Arc::new(Mutex::new(temp_id.clone()));
     let permission_mode_str = options.permission_mode.clone();
-    let mut claude_options = build_claude_options(&options, None);
+    let mut claude_options = options.to_claude_options(None);
 
     if needs_permission_callback(permission_mode_str.as_deref()) {
         claude_options.hooks = Some(build_permission_hooks(
@@ -446,7 +390,7 @@ pub async fn resume_session(
 
     let permission_mode_str = options.permission_mode.clone();
     let session_id_arc: SessionIdArc = Arc::new(Mutex::new(session_id.clone()));
-    let mut claude_options = build_claude_options(&options, None);
+    let mut claude_options = options.to_claude_options(None);
 
     if needs_permission_callback(permission_mode_str.as_deref()) {
         claude_options.hooks = Some(build_permission_hooks(
@@ -457,85 +401,4 @@ pub async fn resume_session(
     state.session_arcs.insert(session_id.clone(), session_id_arc);
     state.create_client(session_id.clone(), claude_options, permission_mode_str).await?;
     Ok(())
-}
-
-pub fn get_sessions() -> Result<Vec<SessionData>, String> {
-    let db = SessionDB::new().map_err(|e| format!("Failed to open database: {}", e))?;
-    let home = dirs::home_dir().ok_or("Failed to get home directory")?;
-    let projects_dir = home.join(".claude").join("projects");
-
-    if !projects_dir.exists() { return Ok(vec![]); }
-
-    let slash_commands: Vec<&str> = vec!["/ide", "/model", "/status"];
-
-    for entry in fs::read_dir(&projects_dir).map_err(|e| format!("Failed to read projects dir: {}", e))? {
-        let entry = entry.map_err(|e| format!("Failed to read entry: {}", e))?;
-        let project_dir = entry.path();
-        if !project_dir.is_dir() { continue; }
-
-        for session_entry in fs::read_dir(&project_dir).map_err(|e| format!("Failed to read project dir: {}", e))? {
-            let session_entry = session_entry.map_err(|e| format!("Failed to read session entry: {}", e))?;
-            let session_path = session_entry.path();
-
-            if session_path.extension().and_then(|s| s.to_str()) != Some("jsonl") { continue; }
-
-            let file_name = session_path.file_name().and_then(|n| n.to_str()).unwrap_or("");
-            if file_name.starts_with("agent-") { continue; }
-
-            let file_path_str = session_path.to_str().unwrap_or("");
-            if db.is_scanned(file_path_str).unwrap_or(false) { continue; }
-
-            if let Ok(file) = fs::File::open(&session_path) {
-                let reader = BufReader::new(file);
-                let mut session_id = String::new();
-                let mut cwd = String::new();
-                let mut timestamp: i64 = 0;
-                let mut display = String::from("Untitled");
-                let mut found_user_message = false;
-
-                for line in reader.lines().filter_map(|l| l.ok()) {
-                    let sanitized = line.replace('\u{0000}', "").trim().to_string();
-                    if sanitized.is_empty() || !sanitized.ends_with('}') { continue; }
-
-                    if let Ok(data) = serde_json::from_str::<serde_json::Value>(&sanitized) {
-                        if session_id.is_empty() {
-                            if let Some(sid) = data.get("sessionId").and_then(|s| s.as_str()) {
-                                session_id = sid.to_string();
-                            }
-                        }
-                        if cwd.is_empty() {
-                            if let Some(c) = data.get("cwd").and_then(|c| c.as_str()) {
-                                cwd = c.to_string();
-                            }
-                        }
-
-                        if data.get("type").and_then(|t| t.as_str()) == Some("user") {
-                            timestamp = data.get("timestamp")
-                                .and_then(|t| t.as_str())
-                                .and_then(|t| chrono::DateTime::parse_from_rfc3339(t).ok())
-                                .map(|dt| dt.timestamp())
-                                .unwrap_or(0);
-
-                            if let Some(msg_display) = data.get("message")
-                                .and_then(|m| m.get("content"))
-                                .and_then(|c| c.as_str())
-                            {
-                                if slash_commands.contains(&msg_display.trim()) { break; }
-                                display = msg_display.lines().next().unwrap_or("Untitled").to_string();
-                                found_user_message = true;
-                                break;
-                            }
-                        }
-                    }
-                }
-
-                if found_user_message && !session_id.is_empty() && !cwd.is_empty() {
-                    let session = SessionData { session_id, project: cwd, display, timestamp };
-                    let _ = db.insert_session(&session, file_path_str);
-                }
-            }
-        }
-    }
-
-    db.get_all_sessions().map_err(|e| format!("Failed to get sessions: {}", e))
 }

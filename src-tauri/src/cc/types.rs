@@ -1,5 +1,11 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use std::path::PathBuf;
+use std::sync::Arc;
+use claude_agent_sdk_rs::{ClaudeAgentOptions, PermissionMode};
+use claude_agent_sdk_rs::types::mcp::{
+    McpHttpServerConfig, McpServerConfig, McpServers, McpSseServerConfig, McpStdioServerConfig,
+};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -54,3 +60,62 @@ pub struct AgentOptions {
     pub continue_conversation: Option<bool>,
 }
 
+pub(crate) fn parse_permission_mode(mode: &str) -> Option<PermissionMode> {
+    match mode {
+        "default" => Some(PermissionMode::Default),
+        "acceptEdits" => Some(PermissionMode::AcceptEdits),
+        "plan" => Some(PermissionMode::Plan),
+        "bypassPermissions" => Some(PermissionMode::BypassPermissions),
+        _ => None,
+    }
+}
+
+impl From<McpServerConfigSerde> for McpServerConfig {
+    fn from(cfg: McpServerConfigSerde) -> Self {
+        match cfg {
+            McpServerConfigSerde::Stdio { command, args, env } => {
+                McpServerConfig::Stdio(McpStdioServerConfig { command, args, env })
+            }
+            McpServerConfigSerde::Http { url, headers } => {
+                McpServerConfig::Http(McpHttpServerConfig { url, headers })
+            }
+            McpServerConfigSerde::Sse { url, headers } => {
+                McpServerConfig::Sse(McpSseServerConfig { url, headers })
+            }
+        }
+    }
+}
+
+impl AgentOptions {
+    pub fn to_claude_options(&self, resume_id: Option<String>) -> ClaudeAgentOptions {
+        let permission_mode = self.permission_mode.as_deref().and_then(parse_permission_mode);
+
+        let mcp_servers = if let Some(servers) = &self.mcp_servers {
+            let map: HashMap<String, McpServerConfig> = servers
+                .iter()
+                .map(|(name, cfg)| (name.clone(), McpServerConfig::from(cfg.clone())))
+                .collect();
+            McpServers::Dict(map)
+        } else {
+            McpServers::Empty
+        };
+
+        ClaudeAgentOptions {
+            cwd: Some(PathBuf::from(&self.cwd)),
+            model: self.model.clone(),
+            fallback_model: self.fallback_model.clone(),
+            max_turns: self.max_turns,
+            max_budget_usd: self.max_budget_usd,
+            max_thinking_tokens: self.max_thinking_tokens,
+            settings: self.settings.clone(),
+            permission_mode,
+            allowed_tools: self.allowed_tools.clone().unwrap_or_default(),
+            disallowed_tools: self.disallowed_tools.clone().unwrap_or_default(),
+            mcp_servers,
+            resume: resume_id.or_else(|| self.resume.clone()),
+            continue_conversation: self.continue_conversation.unwrap_or(false),
+            stderr_callback: Some(Arc::new(|msg| log::error!("[CC STDERR] {}", msg))),
+            ..Default::default()
+        }
+    }
+}
