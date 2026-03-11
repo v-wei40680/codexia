@@ -5,6 +5,7 @@ import type { ContentBlock, ToolResultBlock } from '../types/messages';
 import { ChevronDown, ChevronRight } from 'lucide-react';
 import { useCCSettingsStore } from '@/stores/settings';
 import { Streamdown } from 'streamdown';
+import { safeStringify } from './utils';
 import {
   ReadTool, EditTool, WriteTool, BashTool,
   GlobTool, GrepTool, TodoWriteTool, AskUserQuestionTool,
@@ -60,7 +61,7 @@ export function CCMessageBlock({ block, index, toolName, inlineError }: Props) {
           case 'Grep': return <GrepTool block={block} {...errorProps} />;
           case 'TodoWrite': return <TodoWriteTool block={block} {...errorProps} />;
           case 'AskUserQuestion': return <AskUserQuestionTool block={block} {...errorProps} />;
-          default: return null;
+          default: return <div><Badge>{block.name}</Badge><pre>{safeStringify(block.input)}</pre></div>;
         }
       })();
 

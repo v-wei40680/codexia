@@ -6,9 +6,16 @@ import { useCCStore } from '@/stores/ccStore';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useCCInputStore } from '@/stores/useCCInputStore';
 
-import type { CCMessage as CCMessageType, ContentBlock, ToolResultBlock } from './types/messages';
+import type {
+  AssistantMessage,
+  CCMessage as CCMessageType,
+  ContentBlock,
+  ToolResultBlock,
+  ToolUseBlock,
+} from './types/messages';
 import { isToolResultBlock, isPermissionRequestMessage } from './types/messages';
 import { CCMessage } from '@/components/cc/messages';
+import { ExploredGroup } from '@/components/cc/messages/ExploredGroup';
 import { CCInput } from '@/components/cc/composer';
 import { CCScrollControls } from '@/components/cc/CCScrollControls';
 import { ProjectSelector } from '../project-selector';
@@ -17,9 +24,26 @@ import { ExamplePrompts } from '@/components/cc/ExamplePrompts';
 const CC_LISTENER_READY_EVENT = 'cc-session-listener-ready';
 const CC_PERMISSION_LISTENER_READY_EVENT = 'cc-permission-listener-ready';
 
+const SILENT_TOOLS = new Set(['Read', 'Glob', 'Grep']);
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
+
+/**
+ * Returns true if the assistant message contains only SILENT_TOOL tool_uses
+ * (Read/Grep/Glob) and no non-empty text blocks. These are grouped across
+ * consecutive messages into a single ExploredGroup.
+ */
+function isSilentOnlyMessage(msg: CCMessageType): msg is AssistantMessage {
+  if (msg.type !== 'assistant') return false;
+  const blocks = msg.message.content;
+  const toolUses = blocks.filter((b): b is ToolUseBlock => b.type === 'tool_use');
+  if (toolUses.length === 0) return false;
+  const hasNonSilent = toolUses.some((b) => !SILENT_TOOLS.has(b.name));
+  const hasText = blocks.some((b) => b.type === 'text' && (b as { text: string }).text.trim().length > 0);
+  return !hasNonSilent && !hasText;
+}
 
 /**
  * Collect tool_result errors from a user message that immediately follows an
@@ -32,10 +56,19 @@ function collectInlineErrors(
   const msg = messages[idx];
   if (msg.type !== 'assistant') return undefined;
 
-  const next = messages[idx + 1];
+  // Find the next user message, skipping stream_events / system messages in between.
+  let nextIdx = idx + 1;
+  while (nextIdx < messages.length && messages[nextIdx].type !== 'user' && messages[nextIdx].type !== 'assistant') {
+    nextIdx++;
+  }
+  const next = messages[nextIdx];
   if (!next || next.type !== 'user') return undefined;
 
   const blocks: ContentBlock[] = next.content ?? [];
+
+  // Return undefined if no tool_result blocks in next user message (tools still in progress).
+  const hasToolResults = blocks.some((b) => isToolResultBlock(b) && b.tool_use_id);
+  if (!hasToolResults) return undefined;
 
   const errors: Record<string, ToolResultBlock> = {};
   for (const b of blocks) {
@@ -43,7 +76,8 @@ function collectInlineErrors(
       errors[b.tool_use_id] = b;
     }
   }
-  return Object.keys(errors).length > 0 ? errors : undefined;
+  // Return {} (possibly empty) to signal message is completed even if no errors.
+  return errors;
 }
 
 /**
@@ -56,6 +90,84 @@ function shouldSkipUserMessage(msg: CCMessageType): boolean {
 
   const blocks: ContentBlock[] = msg.content ?? [];
   return blocks.length > 0 && blocks.every((b) => isToolResultBlock(b) && b.is_error);
+}
+
+// ---------------------------------------------------------------------------
+// Message grouping
+// ---------------------------------------------------------------------------
+
+type MessageGroup =
+  | { kind: 'message'; msgIdx: number }
+  | { kind: 'explored'; msgIndices: number[] };
+
+/**
+ * Group consecutive silent-only assistant messages (Read/Grep/Glob only) into
+ * ExploredGroup entries. Pure tool_result user messages between them are
+ * transparent to the grouping logic.
+ */
+function buildMessageGroups(messages: CCMessageType[]): MessageGroup[] {
+  const groups: MessageGroup[] = [];
+  let i = 0;
+
+  while (i < messages.length) {
+    const msg = messages[i];
+
+    if (isSilentOnlyMessage(msg)) {
+      const msgIndices: number[] = [];
+
+      while (i < messages.length) {
+        const m = messages[i];
+        const mType = m.type;
+        if (isSilentOnlyMessage(m)) {
+          msgIndices.push(i);
+          i++;
+        } else if (
+          mType === 'assistant' ||            // non-silent assistant
+          (mType === 'user' && !!(m as { text?: string }).text) ||  // user typed something
+          mType === 'result'                  // session finished
+        ) {
+          break;
+        } else {
+          // Transparent: user tool_results, stream_events, system, etc.
+          i++;
+        }
+      }
+
+      groups.push({ kind: 'explored', msgIndices });
+    } else {
+      if (!shouldSkipUserMessage(msg)) {
+        groups.push({ kind: 'message', msgIdx: i });
+      }
+      i++;
+    }
+  }
+
+  return groups;
+}
+
+// ---------------------------------------------------------------------------
+// CCExploredMessageGroup
+// ---------------------------------------------------------------------------
+
+interface ExploredMessageGroupProps {
+  msgIndices: number[];
+  messages: CCMessageType[];
+  inlineErrorsMap: Record<number, Record<string, ToolResultBlock>>;
+}
+
+function CCExploredMessageGroup({ msgIndices, messages, inlineErrorsMap }: ExploredMessageGroupProps) {
+  const items = msgIndices.flatMap((idx) => {
+    const msg = messages[idx] as AssistantMessage;
+    const errors = inlineErrorsMap[idx];
+    return msg.message.content
+      .filter((b): b is ToolUseBlock => b.type === 'tool_use' && SILENT_TOOLS.has(b.name))
+      .map((block) => ({ block, inlineError: errors?.[block.id] ?? null }));
+  });
+
+  // Group is completed when every message in the group has received tool_results.
+  const isCompleted = msgIndices.every((idx) => inlineErrorsMap[idx] !== undefined);
+
+  return <ExploredGroup items={items} isCompleted={isCompleted} />;
 }
 
 // ---------------------------------------------------------------------------
@@ -146,7 +258,6 @@ export default function CCView() {
     return () => { void unlistenPromise.then((fn) => fn()); };
   }, [activeSessionId, addMessage]);
 
-
   // Pre-compute inline errors map to avoid recalculating inside the render loop.
   const inlineErrorsMap = useMemo(
     () =>
@@ -158,12 +269,17 @@ export default function CCView() {
     [messages],
   );
 
+  // Group messages: consecutive silent-only assistant messages → single ExploredGroup.
+  const messageGroups = useMemo(
+    () => buildMessageGroups(messages),
+    [messages],
+  );
+
   // Hide the input while a permission card is waiting for a decision.
   const hasPendingPermission = useMemo(
     () => messages.some((m) => isPermissionRequestMessage(m) && !m.resolved),
     [messages],
   );
-
 
   return (
     <div className="flex flex-col h-full min-h-0 max-w-4xl mx-auto">
@@ -209,17 +325,23 @@ export default function CCView() {
             )}
 
             {/* Message list */}
-            {messages.map((msg, idx) => {
-              if (shouldSkipUserMessage(msg)) return null;
-              return (
-                <CCMessage
-                  key={idx}
-                  message={msg}
-                  index={idx}
-                  inlineErrors={inlineErrorsMap[idx]}
+            {messageGroups.map((group) =>
+              group.kind === 'explored' ? (
+                <CCExploredMessageGroup
+                  key={`explored-${group.msgIndices[0]}`}
+                  msgIndices={group.msgIndices}
+                  messages={messages}
+                  inlineErrorsMap={inlineErrorsMap}
                 />
-              );
-            })}
+              ) : (
+                <CCMessage
+                  key={group.msgIdx}
+                  message={messages[group.msgIdx]}
+                  index={group.msgIdx}
+                  inlineErrors={inlineErrorsMap[group.msgIdx]}
+                />
+              )
+            )}
 
             {/* Loading indicator */}
             {isLoading && (
