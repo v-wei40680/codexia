@@ -47,13 +47,14 @@ export function CCInput() {
     const text = (messageText ?? input).trim();
     if (!text || isLoading) return;
 
+    setInput('');
+
     if (!activeSessionId) {
       await handleNewSession(text);
       return;
     }
 
     addMessage({ type: 'user', text });
-    setInput('');
     setLoading(true);
 
     try {
