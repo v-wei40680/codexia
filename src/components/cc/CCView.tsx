@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { listen } from '@tauri-apps/api/event';
+import { useCCSessionListener, useCCPermissionListener } from './hooks';
 import { Card } from '@/components/ui/card';
 
 import { useCCStore } from '@/stores/ccStore';
@@ -21,8 +21,7 @@ import { CCScrollControls } from '@/components/cc/CCScrollControls';
 import { ProjectSelector } from '../project-selector';
 import { ExamplePrompts } from '@/components/cc/ExamplePrompts';
 
-const CC_LISTENER_READY_EVENT = 'cc-session-listener-ready';
-const CC_PERMISSION_LISTENER_READY_EVENT = 'cc-permission-listener-ready';
+
 
 const SILENT_TOOLS = new Set(['Read', 'Glob', 'Grep']);
 
@@ -179,7 +178,6 @@ export default function CCView() {
     activeSessionId,
     messages,
     isLoading,
-    addMessage,
     setLoading,
     setConnected,
     clearMessages,
@@ -200,63 +198,9 @@ export default function CCView() {
     setLoading(false);
   }, [cwd, activeSessionId, clearMessages, setConnected, setLoading]);
 
-  // Bind Tauri message stream listener for the active session.
-  useEffect(() => {
-    if (!activeSessionId) return;
-    const eventName = `cc-message:${activeSessionId}`;
-    console.info('[CCView] Bind message listener', { activeSessionId, eventName });
-
-    const unlistenPromise = listen<CCMessageType>(eventName, (event) => {
-      console.info('[CCView] Received message', event);
-      const message = event.payload;
-      addMessage(message);
-      if (message.type === 'result') setLoading(false);
-    });
-
-    void unlistenPromise.then(() => {
-      console.info('[CCView] Message listener ready', { activeSessionId });
-      window.dispatchEvent(
-        new CustomEvent(CC_LISTENER_READY_EVENT, { detail: { sessionId: activeSessionId } }),
-      );
-    });
-
-    return () => { void unlistenPromise.then((fn) => fn()); };
-  }, [activeSessionId, addMessage, setLoading]);
-
-  // Bind Tauri permission request listener for the active session.
-  useEffect(() => {
-    if (!activeSessionId) return;
-    console.info('[CCView] Bind permission listener', { activeSessionId });
-
-    const unlistenPromise = listen<{
-      requestId: string;
-      sessionId: string;
-      toolName: string;
-      toolInput: Record<string, unknown>;
-    }>('cc-permission-request', (event) => {
-      const { requestId, sessionId, toolName, toolInput } = event.payload;
-      if (sessionId !== activeSessionId) {
-        console.warn('[CCView] Ignoring permission request for inactive session', {
-          activeSessionId,
-          requestId,
-          sessionId,
-        });
-        return;
-      }
-      addMessage({ type: 'permission_request', requestId, sessionId, toolName, toolInput });
-    });
-
-    void unlistenPromise.then(() => {
-      console.info('[CCView] Permission listener ready', { activeSessionId });
-      window.dispatchEvent(
-        new CustomEvent(CC_PERMISSION_LISTENER_READY_EVENT, {
-          detail: { sessionId: activeSessionId },
-        }),
-      );
-    });
-
-    return () => { void unlistenPromise.then((fn) => fn()); };
-  }, [activeSessionId, addMessage]);
+  // Bind Tauri message stream and permission listeners.
+  useCCSessionListener();
+  useCCPermissionListener();
 
   // Pre-compute inline errors map to avoid recalculating inside the render loop.
   const inlineErrorsMap = useMemo(
