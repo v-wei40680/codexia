@@ -1,9 +1,8 @@
 import { CCMessageBlock } from '@/components/cc/messages/CCMessageBlock';
 import { ExploredGroup } from '@/components/cc/messages/ExploredGroup';
-import type { AssistantMessage, ContentBlock, ToolResultBlock, ToolUseBlock } from '../types/messages';
+import type { AssistantMessage, ToolResultBlock, ToolUseBlock } from '../types/messages';
 import { useCCStore } from '@/stores/ccStore';
-
-const SILENT_TOOLS = new Set(['Read', 'Glob', 'Grep']);
+import { buildRenderItems } from './group';
 
 interface Props {
   msg: AssistantMessage;
@@ -12,63 +11,6 @@ interface Props {
   inlineErrors?: Record<string, ToolResultBlock>;
 }
 
-type RenderItem =
-  | {
-    kind: 'single';
-    block: ContentBlock;
-    blockIndex: number;
-    inlineError: ToolResultBlock | null;
-    mt: string;
-  }
-  | {
-    kind: 'explored';
-    items: Array<{ block: ToolUseBlock; inlineError: ToolResultBlock | null }>;
-    mt: string;
-    isLocallyCompleted: boolean;
-  };
-
-function buildRenderItems(
-  blocks: ContentBlock[],
-  isToolBlock: (b: { type: string }) => boolean,
-  inlineErrors?: Record<string, ToolResultBlock>,
-): RenderItem[] {
-  const result: RenderItem[] = [];
-  let i = 0;
-
-  while (i < blocks.length) {
-    const block = blocks[i];
-    const prevBlock = i > 0 ? blocks[i - 1] : null;
-    const mt =
-      i === 0
-        ? ''
-        : isToolBlock(block) && prevBlock && isToolBlock(prevBlock)
-          ? 'mt-0.5'
-          : 'mt-2';
-
-    if (block.type === 'tool_use' && SILENT_TOOLS.has(block.name)) {
-      // Collect consecutive SILENT_TOOL tool_use blocks into one ExploredGroup.
-      const groupItems: Array<{ block: ToolUseBlock; inlineError: ToolResultBlock | null }> = [];
-      while (
-        i < blocks.length &&
-        blocks[i].type === 'tool_use' &&
-        SILENT_TOOLS.has((blocks[i] as ToolUseBlock).name)
-      ) {
-        const b = blocks[i] as ToolUseBlock;
-        groupItems.push({ block: b, inlineError: inlineErrors?.[b.id] ?? null });
-        i++;
-      }
-      // If any block follows the group in this message, exploration phase is over.
-      const isLocallyCompleted = i < blocks.length;
-      result.push({ kind: 'explored', items: groupItems, mt, isLocallyCompleted });
-    } else {
-      const inlineError = block.type === 'tool_use' ? inlineErrors?.[block.id] ?? null : null;
-      result.push({ kind: 'single', block, blockIndex: i, inlineError, mt });
-      i++;
-    }
-  }
-
-  return result;
-}
 
 export function CCMessageContent({ msg, isToolBlock, inlineErrors }: Props) {
   const { messages } = useCCStore();

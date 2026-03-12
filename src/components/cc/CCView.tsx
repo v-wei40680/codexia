@@ -7,42 +7,21 @@ import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useCCInputStore } from '@/stores/useCCInputStore';
 
 import type {
-  AssistantMessage,
   CCMessage as CCMessageType,
   ContentBlock,
   ToolResultBlock,
-  ToolUseBlock,
 } from './types/messages';
 import { isToolResultBlock } from './types/messages';
 import { CCMessage } from '@/components/cc/messages';
-import { ExploredGroup } from '@/components/cc/messages/ExploredGroup';
 import { CCInput } from '@/components/cc/composer';
 import { CCScrollControls } from '@/components/cc/CCScrollControls';
 import { ProjectSelector } from '../project-selector';
 import { ExamplePrompts } from '@/components/cc/ExamplePrompts';
-
-
-
-const SILENT_TOOLS = new Set(['Read', 'Glob', 'Grep']);
+import { buildMessageGroups, CCExploredMessageGroup } from './messages/group';
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
-
-/**
- * Returns true if the assistant message contains only SILENT_TOOL tool_uses
- * (Read/Grep/Glob) and no non-empty text blocks. These are grouped across
- * consecutive messages into a single ExploredGroup.
- */
-function isSilentOnlyMessage(msg: CCMessageType): msg is AssistantMessage {
-  if (msg.type !== 'assistant') return false;
-  const blocks = msg.message.content;
-  const toolUses = blocks.filter((b): b is ToolUseBlock => b.type === 'tool_use');
-  if (toolUses.length === 0) return false;
-  const hasNonSilent = toolUses.some((b) => !SILENT_TOOLS.has(b.name));
-  const hasText = blocks.some((b) => b.type === 'text' && (b as { text: string }).text.trim().length > 0);
-  return !hasNonSilent && !hasText;
-}
 
 /**
  * Collect tool_result errors from a user message that immediately follows an
@@ -79,95 +58,7 @@ function collectInlineErrors(
   return errors;
 }
 
-/**
- * Returns true if the user message should be hidden from the message list.
- * Pure tool_result error messages are rendered inline in the preceding assistant message.
- */
-function shouldSkipUserMessage(msg: CCMessageType): boolean {
-  if (msg.type !== 'user') return false;
-  if (msg.text) return false;
 
-  const blocks: ContentBlock[] = msg.content ?? [];
-  return blocks.length > 0 && blocks.every((b) => isToolResultBlock(b) && b.is_error);
-}
-
-// ---------------------------------------------------------------------------
-// Message grouping
-// ---------------------------------------------------------------------------
-
-type MessageGroup =
-  | { kind: 'message'; msgIdx: number }
-  | { kind: 'explored'; msgIndices: number[] };
-
-/**
- * Group consecutive silent-only assistant messages (Read/Grep/Glob only) into
- * ExploredGroup entries. Pure tool_result user messages between them are
- * transparent to the grouping logic.
- */
-function buildMessageGroups(messages: CCMessageType[]): MessageGroup[] {
-  const groups: MessageGroup[] = [];
-  let i = 0;
-
-  while (i < messages.length) {
-    const msg = messages[i];
-
-    if (isSilentOnlyMessage(msg)) {
-      const msgIndices: number[] = [];
-
-      while (i < messages.length) {
-        const m = messages[i];
-        const mType = m.type;
-        if (isSilentOnlyMessage(m)) {
-          msgIndices.push(i);
-          i++;
-        } else if (
-          mType === 'assistant' ||            // non-silent assistant
-          (mType === 'user' && !!(m as { text?: string }).text) ||  // user typed something
-          mType === 'result'                  // session finished
-        ) {
-          break;
-        } else {
-          // Transparent: user tool_results, stream_events, system, etc.
-          i++;
-        }
-      }
-
-      groups.push({ kind: 'explored', msgIndices });
-    } else {
-      if (!shouldSkipUserMessage(msg)) {
-        groups.push({ kind: 'message', msgIdx: i });
-      }
-      i++;
-    }
-  }
-
-  return groups;
-}
-
-// ---------------------------------------------------------------------------
-// CCExploredMessageGroup
-// ---------------------------------------------------------------------------
-
-interface ExploredMessageGroupProps {
-  msgIndices: number[];
-  messages: CCMessageType[];
-  inlineErrorsMap: Record<number, Record<string, ToolResultBlock>>;
-}
-
-function CCExploredMessageGroup({ msgIndices, messages, inlineErrorsMap }: ExploredMessageGroupProps) {
-  const items = msgIndices.flatMap((idx) => {
-    const msg = messages[idx] as AssistantMessage;
-    const errors = inlineErrorsMap[idx];
-    return msg.message.content
-      .filter((b): b is ToolUseBlock => b.type === 'tool_use' && SILENT_TOOLS.has(b.name))
-      .map((block) => ({ block, inlineError: errors?.[block.id] ?? null }));
-  });
-
-  // Group is completed when every message in the group has received tool_results.
-  const isCompleted = msgIndices.every((idx) => inlineErrorsMap[idx] !== undefined);
-
-  return <ExploredGroup items={items} isCompleted={isCompleted} />;
-}
 
 // ---------------------------------------------------------------------------
 // CCView
