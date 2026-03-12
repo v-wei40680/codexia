@@ -219,7 +219,7 @@ pub async fn connect(params: CCConnectParams, state: &CCState, emitter: CCEmitte
     state.create_client(params.session_id.clone(), options, permission_mode_str).await?;
 
     let client = state.get_client(&params.session_id).await.ok_or("Failed to get client")?;
-    let mut client = client.lock().await;
+    let mut client = client.write().await;
     client.connect().await.map_err(|e| e.to_string())?;
 
     Ok(())
@@ -344,13 +344,13 @@ pub async fn set_permission_mode(session_id: &str, mode: &str, state: &CCState) 
 
     // Also forward to CLI so it respects the new mode for its own internal decisions.
     let client = state.get_client(session_id).await.ok_or("Client not found")?;
-    let client = client.lock().await;
+    let client = client.read().await;
     client.set_permission_mode(permission_mode).await.map_err(|e| e.to_string())
 }
 
 pub async fn interrupt(session_id: &str, state: &CCState) -> Result<(), String> {
     let client = state.get_client(session_id).await.ok_or("Client not found")?;
-    let client = client.lock().await;
+    let client = client.read().await;
     client.interrupt().await.map_err(|e| e.to_string())
 }
 

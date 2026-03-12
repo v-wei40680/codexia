@@ -2,7 +2,7 @@ use claude_agent_sdk_rs::{ClaudeAgentOptions, ClaudeClient};
 use dashmap::DashMap;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
-use tokio::sync::{oneshot, Mutex as AsyncMutex};
+use tokio::sync::{oneshot, Mutex as AsyncMutex, RwLock};
 
 pub type ClientId = String;
 
@@ -13,7 +13,7 @@ pub struct SessionMetadata {
 
 #[derive(Clone)]
 pub struct CCState {
-    pub clients: Arc<AsyncMutex<HashMap<ClientId, Arc<AsyncMutex<ClaudeClient>>>>>,
+    pub clients: Arc<AsyncMutex<HashMap<ClientId, Arc<RwLock<ClaudeClient>>>>>,
     /// Pending permission requests: request_id -> oneshot sender for the decision
     pub pending_permissions: Arc<DashMap<String, oneshot::Sender<String>>>,
     /// Session metadata (permission_mode, etc.)
@@ -37,7 +37,7 @@ impl CCState {
         }
     }
 
-    pub async fn get_client(&self, client_id: &str) -> Option<Arc<AsyncMutex<ClaudeClient>>> {
+    pub async fn get_client(&self, client_id: &str) -> Option<Arc<RwLock<ClaudeClient>>> {
         let clients = self.clients.lock().await;
         if let Some(client) = clients.get(client_id) {
             return Some(client.clone());
@@ -66,12 +66,12 @@ impl CCState {
         // Note: we always replace the client to ensure new options (like emitter/hooks) are used.
         // If there was an existing connected client, we should probably disconnect it first.
         if let Some(old_client) = clients.get(&client_id) {
-            let mut old_client = old_client.lock().await;
+            let mut old_client = old_client.write().await;
             let _ = old_client.disconnect().await;
         }
 
         let client = ClaudeClient::new(options);
-        clients.insert(client_id.clone(), Arc::new(AsyncMutex::new(client)));
+        clients.insert(client_id.clone(), Arc::new(RwLock::new(client)));
 
         // Store session metadata
         self.session_metadata.insert(
@@ -85,7 +85,7 @@ impl CCState {
     pub async fn remove_client(&self, client_id: &str) -> Result<(), String> {
         let mut clients = self.clients.lock().await;
         if let Some(client) = clients.remove(client_id) {
-            let mut client = client.lock().await;
+            let mut client = client.write().await;
             client.disconnect().await.map_err(|e| e.to_string())?;
         }
         self.session_metadata.remove(client_id);

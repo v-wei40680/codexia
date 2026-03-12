@@ -14,18 +14,19 @@ pub async fn send_message_and_wait(
         .ok_or("Client not found")?;
 
     {
-        let mut client = client.lock().await;
+        let mut client = client.write().await;
         client.connect().await.map_err(|e| e.to_string())?;
     }
 
     {
-        let mut client = client.lock().await;
+        let mut client = client.write().await;
         client.query(message).await.map_err(|e| e.to_string())?;
     }
 
     loop {
         let result = {
-            let client = client.lock().await;
+            // Use a read lock so interrupt() can acquire a concurrent read lock
+            let client = client.read().await;
             let mut stream = client.receive_response();
             stream.next().await
         };
