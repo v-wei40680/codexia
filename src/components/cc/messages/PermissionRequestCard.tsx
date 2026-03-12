@@ -57,33 +57,31 @@ export function PermissionRequestCard({ msg, onResolve }: Props) {
           {RESOLVED_LABEL[resolved] ?? resolved}
         </div>
       ) : (
-        <div className="flex flex-col gap-2">
+        <div className="flex gap-2">
           {/* Primary actions */}
-          <div className="flex gap-2">
-            <Button
-              size="sm"
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white h-8"
-              onClick={() => onResolve(msg.requestId, 'allow')}
-            >
-              <Check className="w-3.5 h-3.5 mr-1" /> Allow Once
-            </Button>
-            <Button
-              size="sm"
-              variant="outline"
-              className="flex-1 h-8 border-red-500/30 text-red-500 hover:bg-red-500/5"
-              onClick={() => onResolve(msg.requestId, 'deny')}
-            >
-              <X className="w-3.5 h-3.5 mr-1" /> Deny
-            </Button>
-          </div>
+          <Button
+            size="sm"
+            className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white h-8"
+            onClick={() => onResolve(msg.requestId, 'allow')}
+          >
+            Allow Once
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            className="flex-1 h-8 border-red-500/30 text-red-500 hover:bg-red-500/5"
+            onClick={() => onResolve(msg.requestId, 'deny')}
+          >
+            Deny
+          </Button>
           {/* Secondary: always allow for this session */}
           <Button
             size="sm"
             variant="ghost"
-            className="w-full h-7 text-[11px] text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10"
+            className="h-7 text-[11px] text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10"
             onClick={() => onResolve(msg.requestId, 'allow_always')}
           >
-            <ShieldCheck className="w-3 h-3 mr-1" /> Always Allow (this session)
+            <ShieldCheck className="w-3 h-3 mr-1" /> Always Allow (session)
           </Button>
         </div>
       )}
