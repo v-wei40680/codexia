@@ -1,7 +1,6 @@
 import { CCMessageBlock } from '@/components/cc/messages/CCMessageBlock';
 import { ExploredGroup } from '@/components/cc/messages/ExploredGroup';
 import type { AssistantMessage, ContentBlock, ToolResultBlock, ToolUseBlock } from '../types/messages';
-import { isToolUseBlock } from '../types/messages';
 import { useCCStore } from '@/stores/ccStore';
 
 const SILENT_TOOLS = new Set(['Read', 'Glob', 'Grep']);
@@ -15,18 +14,18 @@ interface Props {
 
 type RenderItem =
   | {
-      kind: 'single';
-      block: ContentBlock;
-      blockIndex: number;
-      inlineError: ToolResultBlock | null;
-      mt: string;
-    }
+    kind: 'single';
+    block: ContentBlock;
+    blockIndex: number;
+    inlineError: ToolResultBlock | null;
+    mt: string;
+  }
   | {
-      kind: 'explored';
-      items: Array<{ block: ToolUseBlock; inlineError: ToolResultBlock | null }>;
-      mt: string;
-      isLocallyCompleted: boolean;
-    };
+    kind: 'explored';
+    items: Array<{ block: ToolUseBlock; inlineError: ToolResultBlock | null }>;
+    mt: string;
+    isLocallyCompleted: boolean;
+  };
 
 function buildRenderItems(
   blocks: ContentBlock[],
@@ -62,7 +61,7 @@ function buildRenderItems(
       const isLocallyCompleted = i < blocks.length;
       result.push({ kind: 'explored', items: groupItems, mt, isLocallyCompleted });
     } else {
-      const inlineError = isToolUseBlock(block) ? inlineErrors?.[block.id] ?? null : null;
+      const inlineError = block.type === 'tool_use' ? inlineErrors?.[block.id] ?? null : null;
       result.push({ kind: 'single', block, blockIndex: i, inlineError, mt });
       i++;
     }

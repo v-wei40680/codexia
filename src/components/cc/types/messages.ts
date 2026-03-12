@@ -1,6 +1,3 @@
-// Message types for Claude Code - matches claude-agent-sdk-rs
-
-/** Error types for assistant messages */
 export type AssistantMessageError =
   | 'authentication_failed'
   | 'billing_error'
@@ -9,20 +6,6 @@ export type AssistantMessageError =
   | 'server_error'
   | 'unknown';
 
-/** Text content block */
-export interface TextBlock {
-  type: 'text';
-  text: string;
-}
-
-/** Thinking block (extended thinking) */
-export interface ThinkingBlock {
-  type: 'thinking';
-  thinking: string;
-  signature: string;
-}
-
-/** Tool use block */
 export interface ToolUseBlock {
   type: 'tool_use';
   id: string;
@@ -30,10 +13,8 @@ export interface ToolUseBlock {
   input: Record<string, any>;
 }
 
-/** Tool result content */
 export type ToolResultContent = string | Array<Record<string, unknown>>;
 
-/** Tool result block */
 export interface ToolResultBlock {
   type: 'tool_result';
   tool_use_id: string;
@@ -41,19 +22,16 @@ export interface ToolResultBlock {
   is_error?: boolean;
 }
 
-/** Image source — matches Rust ImageSource (base64 or url) */
 export type ImageSource =
   | { type: 'base64'; media_type: string; data: string }
   | { type: 'url'; url: string };
 
-/** Image block */
-export interface ImageBlock {
-  type: 'image';
-  source: ImageSource;
-}
-
-/** Content block types */
-export type ContentBlock = TextBlock | ThinkingBlock | ToolUseBlock | ToolResultBlock | ImageBlock;
+export type ContentBlock =
+  | { type: 'text'; text: string }
+  | { type: 'thinking'; thinking: string; signature: string }
+  | ToolUseBlock
+  | ToolResultBlock
+  | { type: 'image'; source: ImageSource };
 
 /** User message */
 export interface UserMessage {
@@ -146,47 +124,6 @@ export type CCMessage =
   | PermissionRequestMessage
   | ControlCancelRequest;
 
-/** Type guards */
-export function isAssistantMessage(msg: CCMessage): msg is AssistantMessage {
-  return msg.type === 'assistant';
-}
-
-export function isUserMessage(msg: CCMessage): msg is UserMessage {
-  return msg.type === 'user';
-}
-
-export function isSystemMessage(msg: CCMessage): msg is SystemMessage {
-  return msg.type === 'system';
-}
-
-export function isResultMessage(msg: CCMessage): msg is ResultMessage {
-  return msg.type === 'result';
-}
-
-export function isStreamEvent(msg: CCMessage): msg is StreamEvent {
-  return msg.type === 'stream_event';
-}
-
-export function isTextBlock(block: ContentBlock): block is TextBlock {
-  return block.type === 'text';
-}
-
-export function isThinkingBlock(block: ContentBlock): block is ThinkingBlock {
-  return block.type === 'thinking';
-}
-
-export function isToolUseBlock(block: ContentBlock): block is ToolUseBlock {
-  return block.type === 'tool_use';
-}
-
 export function isToolResultBlock(block: ContentBlock): block is ToolResultBlock {
   return block.type === 'tool_result';
-}
-
-export function isImageBlock(block: ContentBlock): block is ImageBlock {
-  return block.type === 'image';
-}
-
-export function isPermissionRequestMessage(msg: CCMessage): msg is PermissionRequestMessage {
-  return msg.type === 'permission_request';
 }

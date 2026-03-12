@@ -13,7 +13,7 @@ import type {
   ToolResultBlock,
   ToolUseBlock,
 } from './types/messages';
-import { isToolResultBlock, isPermissionRequestMessage } from './types/messages';
+import { isToolResultBlock } from './types/messages';
 import { CCMessage } from '@/components/cc/messages';
 import { ExploredGroup } from '@/components/cc/messages/ExploredGroup';
 import { CCInput } from '@/components/cc/composer';
@@ -277,7 +277,7 @@ export default function CCView() {
 
   // Hide the input while a permission card is waiting for a decision.
   const hasPendingPermission = useMemo(
-    () => messages.some((m) => isPermissionRequestMessage(m) && !m.resolved),
+    () => messages.some((m) => m.type === 'permission_request' && !m.resolved),
     [messages],
   );
 
