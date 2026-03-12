@@ -4,12 +4,17 @@ import { Button } from '@/components/ui/button';
 import { ShieldAlert, X, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ToolInputDisplay } from './ToolInputDisplay';
-
-export type PermissionDecision = 'allow' | 'allow_always' | 'deny';
+import {
+  ReadTool, EditTool, WriteTool, BashTool,
+  GlobTool, GrepTool, TodoWriteTool, AskUserQuestionTool,
+} from './tool-use';
+import { NO_RAW_INPUT_TOOLS } from '.';
+import type { PermissionDecision } from '../types/permission';
 
 const RESOLVED_LABEL: Record<PermissionDecision, string> = {
   allow: 'Allowed Once',
   allow_always: 'Always Allowed (Session)',
+  allow_project: 'Always Allowed (Project)',
   deny: 'Denied',
 };
 
@@ -31,16 +36,41 @@ export function PermissionRequestCard({ msg, onResolve }: Props) {
 
       {/* Tool info */}
       <div className="flex flex-col gap-1.5 p-3 rounded-lg bg-background/50 border border-amber-500/20 text-xs mb-3">
-        <div className="flex items-center gap-2">
-          <span className="font-medium text-muted-foreground">Tool:</span>
-          <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-amber-600 dark:text-amber-400">
-            {msg.toolName}
-          </code>
-        </div>
-        <ToolInputDisplay
-          input={msg.toolInput}
-          highlightKeys={['file_path', 'path', 'command']}
-        />
+        {!NO_RAW_INPUT_TOOLS.includes(msg.toolName) && (
+          <div className="flex items-center gap-2">
+            <span className="font-medium text-muted-foreground">Tool:</span>
+            <code className="bg-muted px-1.5 py-0.5 rounded font-mono text-amber-600 dark:text-amber-400">
+              {msg.toolName}
+            </code>
+          </div>
+        )}
+        {NO_RAW_INPUT_TOOLS.includes(msg.toolName) ? (
+          (() => {
+            const block = {
+              type: 'tool_use',
+              name: msg.toolName,
+              input: msg.toolInput,
+              id: msg.requestId
+            } as any;
+            const errorProps = { inlineError: null, showError: false, onToggleError: () => { } };
+            switch (msg.toolName) {
+              case 'Read': return <ReadTool block={block} {...errorProps} />;
+              case 'Edit': return <EditTool block={block} {...errorProps} />;
+              case 'Write': return <WriteTool block={block} {...errorProps} />;
+              case 'Bash': return <BashTool block={block} {...errorProps} />;
+              case 'Glob': return <GlobTool block={block} {...errorProps} />;
+              case 'Grep': return <GrepTool block={block} {...errorProps} />;
+              case 'TodoWrite': return <TodoWriteTool block={block} {...errorProps} />;
+              case 'AskUserQuestion': return <AskUserQuestionTool block={block} {...errorProps} />;
+              default: return null;
+            }
+          })()
+        ) : (
+          <ToolInputDisplay
+            input={msg.toolInput}
+            highlightKeys={['file_path', 'path', 'command']}
+          />
+        )}
       </div>
 
       {/* Resolved state */}
@@ -58,30 +88,39 @@ export function PermissionRequestCard({ msg, onResolve }: Props) {
         </div>
       ) : (
         <div className="flex gap-2">
-          {/* Primary actions */}
-          <Button
-            size="sm"
-            className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white h-8"
-            onClick={() => onResolve(msg.requestId, 'allow')}
-          >
-            Allow Once
-          </Button>
           <Button
             size="sm"
             variant="outline"
-            className="flex-1 h-8 border-red-500/30 text-red-500 hover:bg-red-500/5"
+            className="h-8 border-red-500/30 text-red-500 hover:bg-red-500/5"
             onClick={() => onResolve(msg.requestId, 'deny')}
           >
             Deny
           </Button>
-          {/* Secondary: always allow for this session */}
+          {msg.alwaysAllowTarget === 'project' ? (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10"
+              onClick={() => onResolve(msg.requestId, 'allow_project')}
+            >
+              <ShieldCheck className="w-3 h-3 mr-1" /> Always Allow (project)
+            </Button>
+          ) : (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-8 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+              onClick={() => onResolve(msg.requestId, 'allow_always')}
+            >
+              <ShieldCheck className="w-3 h-3 mr-1" /> Always Allow (session)
+            </Button>
+          )}
           <Button
             size="sm"
-            variant="ghost"
-            className="h-7 text-[11px] text-emerald-700 dark:text-emerald-400 hover:bg-emerald-500/10"
-            onClick={() => onResolve(msg.requestId, 'allow_always')}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white h-8"
+            onClick={() => onResolve(msg.requestId, 'allow')}
           >
-            <ShieldCheck className="w-3 h-3 mr-1" /> Always Allow (session)
+            Allow Once
           </Button>
         </div>
       )}

@@ -2,11 +2,12 @@ import { useCCStore } from '@/stores/ccStore';
 import type { CCMessage as CCMessageType, ToolResultBlock } from '../types/messages';
 import { isToolResultBlock } from '../types/messages';
 import { CCMessageContent } from './CCMessageContent';
-import { PermissionRequestCard, type PermissionDecision } from './PermissionRequestCard';
+import { PermissionRequestCard } from './PermissionRequestCard';
 import { SystemInitCard } from './SystemInitCard';
 import { ResultCard } from './ResultCard';
 import { safeStringify } from './utils';
 import { Card } from '@/components/ui/card';
+import type { PermissionDecision } from '../types/permission';
 
 interface CCMessageProps {
   message: CCMessageType;

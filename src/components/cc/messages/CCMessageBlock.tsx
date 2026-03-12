@@ -10,8 +10,8 @@ import {
   ReadTool, EditTool, WriteTool, BashTool,
   GlobTool, GrepTool, TodoWriteTool, AskUserQuestionTool,
 } from './tool-use';
+import { NO_RAW_INPUT_TOOLS } from '.';
 
-const NO_RAW_INPUT_TOOLS = ['Read', 'Edit', 'Glob', 'Write', 'Bash', 'TodoWrite', 'Grep', 'AskUserQuestion'];
 const SILENT_RESULT_TOOLS = ['Read', 'Glob', 'Grep'];
 
 interface Props {

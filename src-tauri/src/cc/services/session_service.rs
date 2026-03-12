@@ -97,8 +97,12 @@ fn build_permission_hooks(
             };
             let tool_name = pre_tool.tool_name;
             let tool_input = pre_tool.tool_input;
+            // The SDK always provides the real session_id in the hook input — use it
+            // for the event payload so the frontend's sessionId check always matches.
+            let sdk_session_id = pre_tool.session_id;
+            let cwd = pre_tool.cwd;
 
-            // Read current session_id from Arc (may be updated to real SDK id).
+            // Read current session_id from Arc for permission_mode lookup.
             let current_session_id = session_id.lock().unwrap().clone();
 
             // Always read permission mode fresh from state so runtime changes take effect.
@@ -153,11 +157,16 @@ fn build_permission_hooks(
                 request_id, tool_name
             );
 
+            // Determine whether "always allow" should target project settings or session.
+            // Use "project" whenever cwd is available (permission_storage creates the file).
+            let always_allow_target = if !cwd.is_empty() { "project" } else { "session" };
+
             emitter("cc-permission-request".to_string(), serde_json::json!({
                 "requestId": request_id,
-                "sessionId": current_session_id,
+                "sessionId": sdk_session_id,
                 "toolName": tool_name,
                 "toolInput": tool_input,
+                "alwaysAllowTarget": always_allow_target,
             }));
 
             let decision = rx.await.unwrap_or_else(|_| "deny".to_string());
@@ -170,6 +179,12 @@ fn build_permission_hooks(
                 "allow_always" => {
                     session_allowed.lock().unwrap().insert(tool_name);
                     permission_hook_output("allow", "Allowed and saved for this session")
+                }
+                "allow_project" => {
+                    if let Err(e) = super::permission_storage::add_project_allow_rule(&cwd, &tool_name) {
+                        log::warn!("[cc permission hook] Failed to save project permission: {}", e);
+                    }
+                    permission_hook_output("allow", "Allowed and saved to project settings")
                 }
                 "allow" => permission_hook_output("allow", "Allowed by user"),
                 _ => permission_hook_output("deny", "Denied by user"),

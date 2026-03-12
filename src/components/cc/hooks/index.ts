@@ -52,8 +52,9 @@ export function useCCPermissionListener() {
       sessionId: string;
       toolName: string;
       toolInput: Record<string, unknown>;
+      alwaysAllowTarget?: 'project' | 'session';
     }>('cc-permission-request', (event) => {
-      const { requestId, sessionId, toolName, toolInput } = event.payload;
+      const { requestId, sessionId, toolName, toolInput, alwaysAllowTarget } = event.payload;
       if (sessionId !== activeSessionId) {
         console.warn('[CCView] Ignoring permission request for inactive session', {
           activeSessionId,
@@ -67,6 +68,7 @@ export function useCCPermissionListener() {
         requestId,
         sessionId,
         toolName,
+        alwaysAllowTarget,
         toolInput,
       } as CCMessage);
     });

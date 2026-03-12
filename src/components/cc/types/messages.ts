@@ -105,7 +105,9 @@ export interface PermissionRequestMessage {
   sessionId: string;
   toolName: string;
   toolInput: Record<string, any>;
-  resolved?: 'allow' | 'allow_always' | 'deny';
+  /** Whether "always allow" targets project settings or session memory (only one shown) */
+  alwaysAllowTarget?: 'project' | 'session';
+  resolved?: 'allow' | 'allow_always' | 'allow_project' | 'deny';
 }
 
 /** Control cancel request (internal protocol) */
