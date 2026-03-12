@@ -287,6 +287,7 @@ pub async fn new_session_and_send(
                             // Emit on real channel so frontend receives this message.
                             let event_name = format!("cc-message:{}", real_id);
                             if let Ok(payload) = serde_json::to_value(&msg) {
+                                println!("cc-message init:\n{}", payload);
                                 emitter_clone(event_name, payload);
                             }
                             return;
@@ -297,6 +298,7 @@ pub async fn new_session_and_send(
 
             let event_name = format!("cc-message:{}", current_id);
             if let Ok(payload) = serde_json::to_value(&msg) {
+                println!("cc-message:\n{}", payload);
                 emitter_clone(event_name, payload);
             }
         },
