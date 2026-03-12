@@ -1,7 +1,7 @@
 import type { PermissionRequestMessage } from '../types/messages';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ShieldAlert, Check, X, ShieldCheck } from 'lucide-react';
+import { ShieldAlert, X, ShieldCheck } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ToolInputDisplay } from './ToolInputDisplay';
 
