@@ -72,6 +72,8 @@ export interface SystemMessage {
   model?: string;
   permissionMode?: string;
   uuid?: string;
+  /** Slash commands available in this session (from System::init) */
+  slash_commands?: string[];
 }
 
 /** Result message indicating query completion */

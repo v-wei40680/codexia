@@ -82,6 +82,7 @@ pub fn run() {
             crate::cc::cc_get_projects,
             crate::cc::cc_get_sessions,
             crate::cc::cc_get_installed_skills,
+            crate::cc::cc_get_slash_commands,
             crate::cc::cc_get_settings,
             crate::cc::cc_update_settings,
             crate::cc::cc_resolve_permission,

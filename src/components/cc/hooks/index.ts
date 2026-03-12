@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { useCCStore } from '@/stores/ccStore';
-import type { CCMessage } from '../types/messages';
+import type { CCMessage, SystemMessage } from '../types/messages';
 
 const CC_LISTENER_READY_EVENT = 'cc-session-listener-ready';
 const CC_PERMISSION_LISTENER_READY_EVENT = 'cc-permission-listener-ready';
@@ -10,7 +10,7 @@ const CC_PERMISSION_LISTENER_READY_EVENT = 'cc-permission-listener-ready';
  * Hook to listen for message stream events from the Tauri backend for the active session.
  */
 export function useCCSessionListener() {
-  const { activeSessionId, addMessage, setLoading } = useCCStore();
+  const { activeSessionId, addMessage, setLoading, setSlashCommands } = useCCStore();
 
   useEffect(() => {
     if (!activeSessionId) return;
@@ -20,6 +20,11 @@ export function useCCSessionListener() {
     const unlistenPromise = listen<CCMessage>(eventName, (event) => {
       console.info('[CCView] Received message', event);
       const message = event.payload;
+      // Capture slash commands from System::init
+      if (message.type === 'system' && (message as SystemMessage).subtype === 'init') {
+        const cmds = (message as SystemMessage).slash_commands;
+        if (Array.isArray(cmds)) setSlashCommands(cmds);
+      }
       addMessage(message);
       if (message.type === 'result') setLoading(false);
     });

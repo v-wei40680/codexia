@@ -48,6 +48,14 @@ export async function ccGetInstalledSkills() {
   return await getJson<string[]>('/api/cc/installed-skills');
 }
 
+export async function ccGetSlashCommands(cwd?: string) {
+  if (isTauri()) {
+    return await invokeTauri<string[]>('cc_get_slash_commands', { cwd: cwd ?? null });
+  }
+  const qs = cwd ? `?cwd=${encodeURIComponent(cwd)}` : '';
+  return await getJson<string[]>(`/api/cc/slash-commands${qs}`);
+}
+
 export async function ccGetProjects() {
   if (isTauri()) {
     return await invokeTauri<string[]>('cc_get_projects');

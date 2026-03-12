@@ -8,6 +8,7 @@ import { CCPermissionModeSelect, CCFileMentionPopover } from '@/components/cc/co
 import { ModelSelector } from './ModelSelector';
 import { CCAttachmentButton } from './CCAttachmentButton';
 import { CCSlashCommandPopover } from './CCSlashCommandPopover';
+import { CCSkillsPopover } from './CCSkillsPopover';
 import { useCCSessionManager } from '@/hooks/useCCSessionManager';
 import { ccInterrupt, ccSendMessage } from '@/services';
 
@@ -139,6 +140,13 @@ export function CCInput() {
       </div>
 
       <CCSlashCommandPopover
+        input={input}
+        setInput={setInput}
+        textareaRef={textareaRef}
+        triggerElement={triggerEl}
+      />
+
+      <CCSkillsPopover
         input={input}
         setInput={setInput}
         textareaRef={textareaRef}

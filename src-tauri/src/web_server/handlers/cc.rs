@@ -142,6 +142,14 @@ pub(crate) async fn api_cc_get_installed_skills() -> Result<Json<Vec<String>>, E
     Ok(Json(skills))
 }
 
+pub(crate) async fn api_cc_get_slash_commands(
+    axum::extract::Query(params): axum::extract::Query<std::collections::HashMap<String, String>>,
+) -> Result<Json<Vec<String>>, ErrorResponse> {
+    let cwd = params.get("cwd").map(|s| s.as_str());
+    let commands = cc_skill_service::get_slash_commands(cwd).map_err(to_error_response)?;
+    Ok(Json(commands))
+}
+
 pub(crate) async fn api_cc_get_settings() -> Result<Json<Value>, ErrorResponse> {
     let settings = cc_settings_service::get_settings().map_err(to_error_response)?;
     Ok(Json(settings))

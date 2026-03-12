@@ -35,6 +35,8 @@ interface CCStoreState {
   isConnected: boolean;
   isLoading: boolean;
   showExamples: boolean;
+  /** Slash commands available in the current session (populated from System::init) */
+  slashCommands: string[];
 
   setActiveSessionId: (id: string | null) => void;
   addActiveSessionId: (id: string) => void;
@@ -49,6 +51,7 @@ interface CCStoreState {
   setLoading: (loading: boolean) => void;
   setShowExamples: (show: boolean) => void;
   clearMessages: () => void;
+  setSlashCommands: (commands: string[]) => void;
 }
 
 export const useCCStore = create<CCStoreState>()(
@@ -65,6 +68,7 @@ export const useCCStore = create<CCStoreState>()(
       isConnected: false,
       isLoading: false,
       showExamples: true,
+      slashCommands: [],
 
       setActiveSessionId: (id) =>
         set((state) => {
@@ -136,12 +140,14 @@ export const useCCStore = create<CCStoreState>()(
       setLoading: (loading) => set({ isLoading: loading }),
       setShowExamples: (show) => set({ showExamples: show }),
       clearMessages: () => set({ messages: [] }),
+      setSlashCommands: (commands) => set({ slashCommands: commands }),
     }),
     {
       name: 'cc-store',
       version: 2,
       partialize: (state) => ({
         options: state.options,
+        slashCommands: state.slashCommands,
       }),
     }
   )

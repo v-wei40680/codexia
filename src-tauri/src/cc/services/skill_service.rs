@@ -1,4 +1,70 @@
 use std::fs;
+use std::path::Path;
+
+/// Built-in slash commands shipped with Claude Code CLI.
+/// This list is a reasonable default; the authoritative set is delivered by
+/// System::init when a session starts and will override this in the store.
+const BUILTIN_SLASH_COMMANDS: &[&str] = &[
+    "clear",
+    "compact",
+    "context",
+    "cost",
+    "help",
+    "init",
+    "login",
+    "logout",
+    "model",
+    "pr-comments",
+    "release-notes",
+    "review",
+    "todos",
+];
+
+/// Scan a `commands/` subdirectory and collect names from `*.md` files.
+fn scan_commands_dir(dir: &Path, out: &mut Vec<String>) {
+    if !dir.is_dir() {
+        return;
+    }
+    if let Ok(entries) = fs::read_dir(dir) {
+        for entry in entries.filter_map(|e| e.ok()) {
+            let path = entry.path();
+            if path.extension().and_then(|e| e.to_str()) == Some("md") {
+                if let Some(stem) = path.file_stem().and_then(|s| s.to_str()) {
+                    out.push(stem.to_string());
+                }
+            }
+        }
+    }
+}
+
+/// Return all slash commands visible without a running session:
+/// built-in defaults + user-level `~/.claude/commands/*.md`
+/// + project-level `<cwd>/.claude/commands/*.md`.
+pub fn get_slash_commands(cwd: Option<&str>) -> Result<Vec<String>, String> {
+    let mut commands: Vec<String> = BUILTIN_SLASH_COMMANDS
+        .iter()
+        .map(|s| s.to_string())
+        .collect();
+
+    // User-level custom commands
+    if let Some(home) = dirs::home_dir() {
+        scan_commands_dir(&home.join(".claude").join("commands"), &mut commands);
+    }
+
+    // Project-level custom commands
+    if let Some(cwd_str) = cwd {
+        if !cwd_str.is_empty() {
+            scan_commands_dir(
+                &Path::new(cwd_str).join(".claude").join("commands"),
+                &mut commands,
+            );
+        }
+    }
+
+    commands.sort();
+    commands.dedup();
+    Ok(commands)
+}
 
 pub fn get_installed_skills() -> Result<Vec<String>, String> {
     let home = dirs::home_dir().ok_or("Failed to get home directory")?;

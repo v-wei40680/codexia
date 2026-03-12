@@ -96,6 +96,11 @@ pub fn cc_get_installed_skills() -> Result<Vec<String>, String> {
 }
 
 #[tauri::command]
+pub fn cc_get_slash_commands(cwd: Option<String>) -> Result<Vec<String>, String> {
+    skill_service::get_slash_commands(cwd.as_deref())
+}
+
+#[tauri::command]
 pub fn cc_get_settings() -> Result<serde_json::Value, String> {
     settings_service::get_settings()
 }

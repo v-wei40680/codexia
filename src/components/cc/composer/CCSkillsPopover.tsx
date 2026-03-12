@@ -1,79 +1,71 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { useCCStore } from '@/stores/ccStore';
-import { ccGetSlashCommands } from '@/services';
-import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
+import { ccGetInstalledSkills } from '@/services';
 
-interface CCSlashCommandPopoverProps {
+interface CCSkillsPopoverProps {
   input: string;
   setInput: (v: string) => void;
   textareaRef: React.RefObject<HTMLTextAreaElement | null>;
   triggerElement: HTMLElement | null;
 }
 
-export function CCSlashCommandPopover({
+export function CCSkillsPopover({
   input,
   setInput,
   textareaRef,
   triggerElement,
-}: CCSlashCommandPopoverProps) {
+}: CCSkillsPopoverProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [installedSkills, setInstalledSkills] = useState<string[]>([]);
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
-  const slashCommands = useCCStore((s) => s.slashCommands);
-  const setSlashCommands = useCCStore((s) => s.setSlashCommands);
-  const cwd = useWorkspaceStore((s) => s.cwd);
 
-  // Seed slash commands from disk on mount if the store is empty.
-  // System::init will overwrite with the authoritative list when a session starts.
   useEffect(() => {
-    if (slashCommands.length > 0) return;
-    ccGetSlashCommands(cwd || undefined)
-      .then(setSlashCommands)
-      .catch((err) => console.error('[CCSlashCommandPopover] Failed to load slash commands:', err));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    ccGetInstalledSkills()
+      .then(setInstalledSkills)
+      .catch((err) => console.error('Failed to load skills:', err));
   }, []);
 
-  // Detect `/query` pattern based on cursor position
+  // Detect `$query` pattern based on cursor position
   useEffect(() => {
     const textarea = textareaRef.current;
     if (!textarea) return;
 
     const cursorPos = textarea.selectionStart;
     const textBeforeCursor = input.slice(0, cursorPos);
-    const lastSlashPos = textBeforeCursor.lastIndexOf('/');
+    const lastDollarPos = textBeforeCursor.lastIndexOf('$');
 
-    if (lastSlashPos === -1) {
+    if (lastDollarPos === -1) {
       setOpen(false);
       setQuery('');
       return;
     }
 
-    // `/` must be at start or preceded by whitespace/newline
-    const charBefore = lastSlashPos > 0 ? textBeforeCursor[lastSlashPos - 1] : '';
+    // `$` must be at start or preceded by whitespace/newline
+    const charBefore = lastDollarPos > 0 ? textBeforeCursor[lastDollarPos - 1] : '';
     if (charBefore && charBefore !== ' ' && charBefore !== '\n') {
       setOpen(false);
       setQuery('');
       return;
     }
 
-    const textAfterSlash = textBeforeCursor.slice(lastSlashPos + 1);
+    const textAfterDollar = textBeforeCursor.slice(lastDollarPos + 1);
 
-    // No spaces or newlines after `/` — still typing the command name
-    if (textAfterSlash.includes(' ') || textAfterSlash.includes('\n')) {
+    // No spaces or newlines after `$` — still typing the skill name
+    if (textAfterDollar.includes(' ') || textAfterDollar.includes('\n')) {
       setOpen(false);
       setQuery('');
       return;
     }
 
     setOpen(true);
-    setQuery(textAfterSlash);
+    setQuery(textAfterDollar);
   }, [input, textareaRef]);
 
-  const filteredCommands = slashCommands.filter(
-    (cmd) => !query || cmd.toLowerCase().includes(query.toLowerCase())
+  const filteredSkills = installedSkills.filter(
+    (s) => !query || s.toLowerCase().includes(query.toLowerCase())
   );
 
   useEffect(() => {
@@ -85,21 +77,22 @@ export function CCSlashCommandPopover({
   }, [selectedIndex]);
 
   const handleSelect = useCallback(
-    (commandName: string) => {
+    (skillName: string) => {
       const textarea = textareaRef.current;
       if (!textarea) return;
 
       const cursorPos = textarea.selectionStart;
       const textBeforeCursor = input.slice(0, cursorPos);
-      const lastSlashPos = textBeforeCursor.lastIndexOf('/');
+      const lastDollarPos = textBeforeCursor.lastIndexOf('$');
 
-      if (lastSlashPos !== -1) {
-        const before = input.slice(0, lastSlashPos);
+      if (lastDollarPos !== -1) {
+        const before = input.slice(0, lastDollarPos);
         const after = input.slice(cursorPos);
-        setInput(`${before}/${commandName} ${after}`);
+        // Skills are invoked with `/skillname` by Claude Code CLI
+        setInput(`${before}/${skillName} ${after}`);
 
         requestAnimationFrame(() => {
-          const newPos = lastSlashPos + commandName.length + 2; // `/` + name + space
+          const newPos = lastDollarPos + skillName.length + 2; // `/` + name + space
           textarea.selectionStart = newPos;
           textarea.selectionEnd = newPos;
           textarea.focus();
@@ -116,20 +109,20 @@ export function CCSlashCommandPopover({
   useEffect(() => {
     if (!open) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (filteredCommands.length === 0) return;
+      if (filteredSkills.length === 0) return;
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         e.stopPropagation();
-        setSelectedIndex((p) => (p + 1) % filteredCommands.length);
+        setSelectedIndex((p) => (p + 1) % filteredSkills.length);
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         e.stopPropagation();
-        setSelectedIndex((p) => (p - 1 + filteredCommands.length) % filteredCommands.length);
+        setSelectedIndex((p) => (p - 1 + filteredSkills.length) % filteredSkills.length);
       } else if (e.key === 'Enter' || e.key === 'Tab') {
         e.preventDefault();
         e.stopPropagation();
-        const cmd = filteredCommands[selectedIndex];
-        if (cmd) handleSelect(cmd);
+        const skill = filteredSkills[selectedIndex];
+        if (skill) handleSelect(skill);
       } else if (e.key === 'Escape') {
         e.preventDefault();
         e.stopPropagation();
@@ -139,7 +132,7 @@ export function CCSlashCommandPopover({
     document.addEventListener('keydown', handleKeyDown, true);
     return () => document.removeEventListener('keydown', handleKeyDown, true);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, selectedIndex, filteredCommands, handleSelect]);
+  }, [open, selectedIndex, filteredSkills, handleSelect]);
 
   return (
     <Popover open={open} onOpenChange={setOpen} modal={false}>
@@ -169,21 +162,21 @@ export function CCSlashCommandPopover({
         onKeyDown={(e) => e.stopPropagation()}
       >
         <div className="overflow-y-auto flex-1 py-1">
-          {filteredCommands.length === 0 ? (
+          {filteredSkills.length === 0 ? (
             <div className="text-xs text-muted-foreground text-center py-2">
-              No matches
+              {installedSkills.length === 0 ? 'No skills installed' : 'No matches'}
             </div>
           ) : (
-            filteredCommands.map((cmd, index) => (
+            filteredSkills.map((skill, index) => (
               <Button
-                key={cmd}
+                key={skill}
                 ref={(el) => { itemRefs.current[index] = el; }}
                 variant={index === selectedIndex ? 'secondary' : 'ghost'}
                 className="w-full justify-start text-xs h-7 font-mono rounded-none"
-                onClick={() => handleSelect(cmd)}
+                onClick={() => handleSelect(skill)}
                 onMouseEnter={() => setSelectedIndex(index)}
               >
-                /{cmd}
+                /{skill}
               </Button>
             ))
           )}
