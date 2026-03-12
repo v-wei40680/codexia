@@ -947,8 +947,7 @@ checksum = "3a822ea5bc7590f9d40f1ba12c0dc3c2760f3482c6984db1573ad11031420831"
 [[package]]
 name = "claude-agent-sdk-rs"
 version = "0.6.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b07aee643e9d8f0837ffdb0141e7a902fbc1ea1b40f6ce68bf530f4135b4fc81"
+source = "git+https://github.com/milisp/claude-agent-sdk-rs#52751b51b481b469f953a18d598df26f49f57bc4"
 dependencies = [
  "anyhow",
  "async-stream",
