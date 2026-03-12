@@ -6,63 +6,14 @@ import { useCCStore } from '@/stores/ccStore';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useCCInputStore } from '@/stores/useCCInputStore';
 
-import type {
-  CCMessage as CCMessageType,
-  ContentBlock,
-  ToolResultBlock,
-} from './types/messages';
-import { isToolResultBlock } from './types/messages';
 import { CCMessage } from '@/components/cc/messages';
 import { CCInput } from '@/components/cc/composer';
 import { CCScrollControls } from '@/components/cc/CCScrollControls';
 import { ProjectSelector } from '../project-selector';
 import { ExamplePrompts } from '@/components/cc/ExamplePrompts';
 import { buildMessageGroups, CCExploredMessageGroup } from './messages/group';
+import { buildInlineErrorsMap } from './messages/inlineErrors';
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-/**
- * Collect tool_result errors from a user message that immediately follows an
- * assistant message, so they can be rendered inline in the assistant's tool badges.
- */
-function collectInlineErrors(
-  messages: CCMessageType[],
-  idx: number,
-): Record<string, ToolResultBlock> | undefined {
-  const msg = messages[idx];
-  if (msg.type !== 'assistant') return undefined;
-
-  // Find the next user message, skipping stream_events / system messages in between.
-  let nextIdx = idx + 1;
-  while (nextIdx < messages.length && messages[nextIdx].type !== 'user' && messages[nextIdx].type !== 'assistant') {
-    nextIdx++;
-  }
-  const next = messages[nextIdx];
-  if (!next || next.type !== 'user') return undefined;
-
-  const blocks: ContentBlock[] = next.content ?? [];
-
-  // Return undefined if no tool_result blocks in next user message (tools still in progress).
-  const hasToolResults = blocks.some((b) => isToolResultBlock(b) && b.tool_use_id);
-  if (!hasToolResults) return undefined;
-
-  const errors: Record<string, ToolResultBlock> = {};
-  for (const b of blocks) {
-    if (isToolResultBlock(b) && b.is_error && b.tool_use_id) {
-      errors[b.tool_use_id] = b;
-    }
-  }
-  // Return {} (possibly empty) to signal message is completed even if no errors.
-  return errors;
-}
-
-
-
-// ---------------------------------------------------------------------------
-// CCView
-// ---------------------------------------------------------------------------
 
 export default function CCView() {
   const {
@@ -95,12 +46,7 @@ export default function CCView() {
 
   // Pre-compute inline errors map to avoid recalculating inside the render loop.
   const inlineErrorsMap = useMemo(
-    () =>
-      messages.reduce<Record<number, Record<string, ToolResultBlock>>>((acc, _, idx) => {
-        const errors = collectInlineErrors(messages, idx);
-        if (errors) acc[idx] = errors;
-        return acc;
-      }, {}),
+    () => buildInlineErrorsMap(messages),
     [messages],
   );
 
