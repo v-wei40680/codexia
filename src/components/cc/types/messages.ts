@@ -39,6 +39,7 @@ export interface UserMessage {
   text?: string;
   content?: ContentBlock[];
   uuid?: string;
+  session_id?: string;
   parent_tool_use_id?: string;
 }
 

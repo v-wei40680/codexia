@@ -26,11 +26,14 @@ pub async fn cc_send_message(
     message: String,
     state: State<'_, CCState>,
 ) -> Result<(), String> {
-    let event_name = format!("cc-message:{}", session_id);
     let cc_state = state.inner().clone();
+    let sid = session_id.clone();
     message_service::send_message(&session_id, &message, &state, move |msg| {
-        if let Ok(payload) = serde_json::to_value(&msg) {
-            cc_state.emit(&event_name, payload);
+        if let Ok(mut payload) = serde_json::to_value(&msg) {
+            if let Some(obj) = payload.as_object_mut() {
+                obj.entry("session_id").or_insert_with(|| serde_json::Value::String(sid.clone()));
+            }
+            cc_state.emit("cc-message", payload);
         }
     })
     .await

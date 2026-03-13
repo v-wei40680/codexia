@@ -292,10 +292,12 @@ pub async fn new_session_and_send(
                             if let Some(tx) = tx_slot.lock().unwrap().take() {
                                 let _ = tx.send(real_id.clone());
                             }
-                            // Emit on real channel so frontend receives this message.
-                            if let Ok(payload) = serde_json::to_value(&msg) {
+                            if let Ok(mut payload) = serde_json::to_value(&msg) {
                                 println!("cc-message init:\n{}", payload);
-                                state_clone.emit(&format!("cc-message:{}", real_id), payload);
+                                if let Some(obj) = payload.as_object_mut() {
+                                    obj.entry("session_id").or_insert_with(|| serde_json::Value::String(real_id.clone()));
+                                }
+                                state_clone.emit("cc-message", payload);
                             }
                             return;
                         }
@@ -303,9 +305,12 @@ pub async fn new_session_and_send(
                 }
             }
 
-            if let Ok(payload) = serde_json::to_value(&msg) {
+            if let Ok(mut payload) = serde_json::to_value(&msg) {
                 println!("cc-message:\n{}", payload);
-                state_clone.emit(&format!("cc-message:{}", current_id), payload);
+                if let Some(obj) = payload.as_object_mut() {
+                    obj.entry("session_id").or_insert_with(|| serde_json::Value::String(current_id.clone()));
+                }
+                state_clone.emit("cc-message", payload);
             }
         },
     )
@@ -358,7 +363,6 @@ pub async fn resume_session(
     // Replay historical messages from JSONL to the frontend as raw JSON values.
     // Using raw serde_json::Value avoids the SDK Message type losing user message content
     // (JSONL user messages use a nested `message.content` format the SDK doesn't model).
-    let event_name = format!("cc-message:{}", session_id);
     if let Ok(db) = SessionDB::new() {
         if let Ok(Some(file_path)) = db.get_file_path(&session_id) {
             if let Ok(file) = fs::File::open(&file_path) {
@@ -388,7 +392,11 @@ pub async fn resume_session(
                                 obj.remove("message");
                             }
                         }
-                        state.emit(&event_name, val);
+                        // Ensure session_id is present so the frontend can filter by it.
+                        if let Some(obj) = val.as_object_mut() {
+                            obj.entry("session_id").or_insert_with(|| serde_json::Value::String(session_id.clone()));
+                        }
+                        state.emit("cc-message", val);
                     }
                 }
             }

@@ -14,12 +14,15 @@ export function useCCSessionListener() {
 
   useEffect(() => {
     if (!activeSessionId) return;
-    const eventName = `cc-message:${activeSessionId}`;
-    console.info('[CCView] Bind message listener', { activeSessionId, eventName });
+    console.info('[CCView] Bind message listener', { activeSessionId });
 
-    const unlistenPromise = listen<CCMessage>(eventName, (event) => {
-      console.info('[CCView] Received message', event);
+    const unlistenPromise = listen<CCMessage>('cc-message', (event) => {
       const message = event.payload;
+      // Filter messages that belong to a different session.
+      const msgSessionId = (message as { session_id?: string }).session_id;
+      if (msgSessionId && msgSessionId !== activeSessionId) return;
+
+      console.info('[CCView] Received message', event);
       // Capture slash commands from System::init
       if (message.type === 'system' && (message as SystemMessage).subtype === 'init') {
         const cmds = (message as SystemMessage).slash_commands;
@@ -31,9 +34,7 @@ export function useCCSessionListener() {
 
     void unlistenPromise.then(() => {
       console.info('[CCView] Message listener ready', { activeSessionId });
-      window.dispatchEvent(
-        new CustomEvent(CC_LISTENER_READY_EVENT, { detail: { sessionId: activeSessionId } }),
-      );
+      window.dispatchEvent(new CustomEvent(CC_LISTENER_READY_EVENT, { detail: { sessionId: activeSessionId } }));
     });
 
     return () => {
