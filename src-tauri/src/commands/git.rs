@@ -1,7 +1,22 @@
 pub use crate::features::git::{
-    GitDiffStatsResponse, GitFileDiffMetaResponse, GitFileDiffResponse,
-    GitPrepareThreadWorktreeResponse, GitStatusResponse,
+    GitBranchInfoResponse, GitBranchListResponse, GitDiffStatsResponse, GitFileDiffMetaResponse,
+    GitFileDiffResponse, GitPrepareThreadWorktreeResponse, GitStatusResponse,
 };
+
+#[tauri::command]
+pub async fn git_branch_info(cwd: String) -> Result<GitBranchInfoResponse, String> {
+    crate::features::git::git_branch_info(cwd)
+}
+
+#[tauri::command]
+pub async fn git_list_branches(cwd: String) -> Result<GitBranchListResponse, String> {
+    crate::features::git::git_list_branches(cwd)
+}
+
+#[tauri::command]
+pub async fn git_checkout_branch(cwd: String, branch: String) -> Result<(), String> {
+    crate::features::git::git_checkout_branch(cwd, branch)
+}
 
 #[tauri::command]
 pub async fn git_prepare_thread_worktree(

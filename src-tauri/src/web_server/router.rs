@@ -23,9 +23,10 @@ use super::{
         api_delete_note, api_download_and_extract_manifests, api_fuzzy_file_search,
         api_get_account, api_get_home_directory, api_get_note_by_id, api_get_notes,
         api_get_unsynced_notes,
-        api_git_diff_stats, api_git_file_diff, api_git_file_diff_meta,
-        api_git_prepare_thread_worktree, api_git_reverse_files, api_git_stage_files, api_git_status,
-        api_git_unstage_files, api_git_commit, api_git_push,
+        api_git_branch_info, api_git_checkout_branch, api_git_diff_stats, api_git_file_diff,
+        api_git_file_diff_meta, api_git_list_branches, api_git_prepare_thread_worktree,
+        api_git_reverse_files, api_git_stage_files, api_git_status, api_git_unstage_files,
+        api_git_commit, api_git_push,
         api_list_archived_threads, api_list_threads, api_load_manifest, api_load_manifests,
         api_mark_notes_synced, api_prevent_sleep,
         api_login_account, api_model_list, api_model_list_post, api_read_directory, api_read_file,
@@ -206,6 +207,9 @@ pub(crate) fn create_router(state: WebServerState) -> Router {
             "/api/git/prepare-thread-worktree",
             post(api_git_prepare_thread_worktree),
         )
+        .route("/api/git/branch-info", post(api_git_branch_info))
+        .route("/api/git/list-branches", post(api_git_list_branches))
+        .route("/api/git/checkout-branch", post(api_git_checkout_branch))
         .route("/api/git/status", post(api_git_status))
         .route("/api/git/file-diff", post(api_git_file_diff))
         .route("/api/git/file-diff-meta", post(api_git_file_diff_meta))

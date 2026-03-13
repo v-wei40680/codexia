@@ -39,6 +39,38 @@ export type GitPrepareThreadWorktreeResponse = {
   existed: boolean;
 };
 
+export type GitBranchInfoResponse = {
+  owner: string;
+  repo: string;
+  branch: string;
+};
+
+export type GitBranchListResponse = {
+  current: string;
+  branches: string[];
+};
+
+export async function gitBranchInfo(cwd: string) {
+  if (isTauri()) {
+    return await invokeTauri<GitBranchInfoResponse>('git_branch_info', { cwd });
+  }
+  return await postJson<GitBranchInfoResponse>('/api/git/branch-info', { cwd });
+}
+
+export async function gitListBranches(cwd: string) {
+  if (isTauri()) {
+    return await invokeTauri<GitBranchListResponse>('git_list_branches', { cwd });
+  }
+  return await postJson<GitBranchListResponse>('/api/git/list-branches', { cwd });
+}
+
+export async function gitCheckoutBranch(cwd: string, branch: string) {
+  if (isTauri()) {
+    return await invokeTauri<void>('git_checkout_branch', { cwd, branch });
+  }
+  await postNoContent('/api/git/checkout-branch', { cwd, branch });
+}
+
 export async function gitStatus(cwd: string) {
   if (isTauri()) {
     return await invokeTauri<GitStatusResponse>('git_status', { cwd });

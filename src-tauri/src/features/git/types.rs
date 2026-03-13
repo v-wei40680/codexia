@@ -40,6 +40,19 @@ pub struct GitDiffStatsResponse {
 }
 
 #[derive(Debug, Clone, Serialize)]
+pub struct GitBranchListResponse {
+    pub current: String,
+    pub branches: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct GitBranchInfoResponse {
+    pub owner: String,
+    pub repo: String,
+    pub branch: String,
+}
+
+#[derive(Debug, Clone, Serialize)]
 pub struct GitPrepareThreadWorktreeResponse {
     pub repo_root: String,
     pub worktree_path: String,

@@ -3,10 +3,11 @@ use axum::{Json, http::StatusCode};
 use serde::Deserialize;
 
 use crate::features::git::{
-    GitDiffStatsResponse, GitFileDiffMetaResponse, GitFileDiffResponse,
-    GitPrepareThreadWorktreeResponse, GitStatusResponse, git_diff_stats, git_file_diff,
-    git_file_diff_meta, git_prepare_thread_worktree, git_reverse_files, git_stage_files, git_status,
-    git_unstage_files,
+    GitBranchInfoResponse, GitBranchListResponse, GitDiffStatsResponse, GitFileDiffMetaResponse,
+    GitFileDiffResponse, GitPrepareThreadWorktreeResponse, GitStatusResponse, git_branch_info,
+    git_checkout_branch, git_diff_stats, git_file_diff, git_file_diff_meta,
+    git_list_branches, git_prepare_thread_worktree, git_reverse_files, git_stage_files,
+    git_status, git_unstage_files,
 };
 use crate::web_server::types::ErrorResponse;
 
@@ -51,6 +52,33 @@ pub(crate) async fn api_git_prepare_thread_worktree(
     let result = git_prepare_thread_worktree(params.cwd, params.thread_key)
         .map_err(to_error_response)?;
     Ok(Json(result))
+}
+
+pub(crate) async fn api_git_branch_info(
+    Json(params): Json<GitCwdParams>,
+) -> Result<Json<GitBranchInfoResponse>, ErrorResponse> {
+    let result = git_branch_info(params.cwd).map_err(to_error_response)?;
+    Ok(Json(result))
+}
+
+pub(crate) async fn api_git_list_branches(
+    Json(params): Json<GitCwdParams>,
+) -> Result<Json<GitBranchListResponse>, ErrorResponse> {
+    let result = git_list_branches(params.cwd).map_err(to_error_response)?;
+    Ok(Json(result))
+}
+
+#[derive(Deserialize)]
+pub(crate) struct GitCheckoutBranchParams {
+    cwd: String,
+    branch: String,
+}
+
+pub(crate) async fn api_git_checkout_branch(
+    Json(params): Json<GitCheckoutBranchParams>,
+) -> Result<StatusCode, ErrorResponse> {
+    git_checkout_branch(params.cwd, params.branch).map_err(to_error_response)?;
+    Ok(StatusCode::OK)
 }
 
 pub(crate) async fn api_git_status(
