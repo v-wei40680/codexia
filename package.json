@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc && vite build",
+    "build": "codex app-server generate-ts -o src/bindings && tsc && vite build",
     "preview": "vite preview",
     "tauri": "tauri",
     "lint": "biome check",
