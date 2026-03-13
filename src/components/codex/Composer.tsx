@@ -15,8 +15,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Checkbox } from '@/components/ui/checkbox';
-import { ListChecks, Monitor, Settings, Split } from 'lucide-react';
+
+import { Monitor, Settings, Split } from 'lucide-react';
 import { useLayoutStore } from '@/stores';
 import { useInputStore } from '@/stores/useInputStore';
 import { useConfigStore, type ThreadCwdMode } from '@/stores/codex';
@@ -43,7 +43,7 @@ export function Composer({
   const { isConfigLess, setIsConfigLess } = useLayoutStore();
   const { appendFileLinks } = useInputStore();
   const isMobile = useIsMobile();
-  const { threadCwdMode, setThreadCwdMode, collaborationMode, setCollaborationMode } =
+  const { threadCwdMode, setThreadCwdMode } =
     useConfigStore();
 
   const handleSend = async (message: string) => {
@@ -90,34 +90,25 @@ export function Composer({
           value={threadCwdMode}
           onValueChange={(value) => setThreadCwdMode(value as ThreadCwdMode)}
         >
-          <SelectTrigger className={`h-8 ${isMobile ? 'w-[120px]' : 'w-[140px]'}`}>
+          <SelectTrigger className='w-fit'>
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="local">
               <span className="inline-flex items-center gap-2">
                 <Monitor className="size-4" />
-                <span>local</span>
+                <span>Local</span>
               </span>
             </SelectItem>
             <SelectItem value="worktree">
               <span className="inline-flex items-center gap-2">
                 <Split className="size-4" />
-                <span>worktree</span>
+                <span>Worktree</span>
               </span>
             </SelectItem>
           </SelectContent>
         </Select>
-        <label className="mr-1 inline-flex h-9 cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-xs hover:bg-accent/60">
-          <Checkbox
-            checked={collaborationMode === 'plan'}
-            onCheckedChange={(checked) =>
-              setCollaborationMode(checked === true ? 'plan' : 'default')
-            }
-          />
-          <ListChecks className="h-3.5 w-3.5 text-muted-foreground" />
-          <span>Plan</span>
-        </label>
+
         <AccessModePopover />
       </div>
     </div>
