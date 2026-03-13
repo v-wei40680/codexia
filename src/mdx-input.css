@@ -1,4 +1,3 @@
-
 /* ============================================================
    MDXEditor input area overrides
    Strip the default editor chrome so it blends with the UI
@@ -23,10 +22,11 @@
 
 /* The actual contenteditable area */
 .mdx-input-editable {
-  font-size: 0.875rem;   /* text-sm, matching original textarea */
+  font-size: 0.875rem;
+  /* text-sm, matching original textarea */
   line-height: 1.5;
-  padding: 1rem 0.75rem;
-  min-height: 60px;
+  padding: 0.25rem 0.5rem;
+  min-height: 32px;
   outline: none;
   color: var(--foreground);
   caret-color: var(--foreground);
@@ -52,8 +52,13 @@
 }
 
 /* Bold / italic */
-.mdx-input-editable strong { font-weight: 600; }
-.mdx-input-editable em    { font-style: italic; }
+.mdx-input-editable strong {
+  font-weight: 600;
+}
+
+.mdx-input-editable em {
+  font-style: italic;
+}
 
 /* Lists */
 .mdx-input-editable ul,

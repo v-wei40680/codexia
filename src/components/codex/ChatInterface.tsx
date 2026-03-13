@@ -238,7 +238,7 @@ export function ChatInterface() {
       </div>
 
       {/* Input Area */}
-      <div className="absolute bottom-0 left-0 right-0 border-t border-white/10 bg-background/95 supports-[backdrop-filter]:bg-background/85 backdrop-blur">
+      <div className="absolute bottom-0 left-0 right-0 max-w-3xl mx-auto">
         <Composer
           currentThreadId={currentThreadId}
           currentTurnId={currentTurnId}

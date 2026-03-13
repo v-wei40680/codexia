@@ -253,7 +253,7 @@ export function InputArea({
         />
       )}
 
-      <div className="max-w-6xl mx-auto relative border rounded-xl bg-background shadow-sm focus-within:ring-1 focus-within:ring-ring transition-all">
+      <div className="max-w-3xl mx-auto relative border rounded-xl bg-background shadow-sm focus-within:ring-1 focus-within:ring-ring transition-all">
         {/* Image attachments */}
         {images.length > 0 && (
           <div className="flex gap-2 p-3 pb-0 overflow-x-auto">
@@ -279,7 +279,7 @@ export function InputArea({
         <div
           ref={editorWrapperRef}
           onKeyDown={handleWrapperKeyDown}
-          className={`mdx-input-wrapper ${isMobile ? 'min-h-[72px] max-h-[180px]' : 'min-h-[60px] max-h-[200px]'} overflow-y-auto`}
+          className={`mdx-input-wrapper ${isMobile ? 'min-h-[40px] max-h-[180px]' : 'min-h-[32px] max-h-[200px]'} overflow-y-auto p-2`}
         >
           <MDXEditor
             ref={editorRef}
