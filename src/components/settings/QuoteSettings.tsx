@@ -5,12 +5,10 @@ import { Card, CardContent } from '@/components/ui/card';
 
 const CATEGORIES = [
   'economics',
-  'gfw',
   'history',
   'interest',
   'life',
   'management',
-  'politics',
   'programming',
 ];
 

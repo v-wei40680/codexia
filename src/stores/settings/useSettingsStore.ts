@@ -106,9 +106,9 @@ export const useSettingsStore = create<SettingState>()(
       setShowHeaderFilesButton: (show: boolean) => set({ showHeaderFilesButton: show }),
       showHeaderDiffButton: true,
       setShowHeaderDiffButton: (show: boolean) => set({ showHeaderDiffButton: show }),
-      showQuotes: true,
+      showQuotes: false,
       setShowQuotes: (show: boolean) => set({ showQuotes: show }),
-      showTips: true,
+      showTips: false,
       setShowTips: (show: boolean) => set({ showTips: show }),
     }),
     {

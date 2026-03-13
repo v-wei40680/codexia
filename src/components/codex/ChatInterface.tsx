@@ -196,7 +196,6 @@ export function ChatInterface() {
                 <p className="text-2xl font-semibold tracking-tight">let&apos;s build</p>
                 <div className="flex items-center gap-2">
                   <Button
-                    type="button"
                     variant={showQuotes ? 'secondary' : 'ghost'}
                     size="icon"
                     className="h-10 w-10"
@@ -214,7 +213,6 @@ export function ChatInterface() {
                     showChevron
                   />
                   <Button
-                    type="button"
                     variant={showTips ? 'secondary' : 'ghost'}
                     size="icon"
                     className="h-10 w-10"
