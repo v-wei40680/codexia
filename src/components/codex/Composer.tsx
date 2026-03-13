@@ -4,10 +4,7 @@ import {
   AccessModePopover,
   ModelReasonSelector,
   AttachmentSelector,
-  SkillsPopover,
-  SlashCommandsSelector,
 } from './selector';
-import { Button } from '@/components/ui/button';
 import {
   Select,
   SelectContent,
@@ -16,8 +13,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-import { Monitor, Settings, Split } from 'lucide-react';
-import { useLayoutStore } from '@/stores';
+import { Monitor, Split } from 'lucide-react';
 import { useInputStore } from '@/stores/useInputStore';
 import { useConfigStore, type ThreadCwdMode } from '@/stores/codex';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -40,7 +36,6 @@ export function Composer({
   onStop,
 }: ComposerProps) {
   const [images, setImages] = useState<string[]>([]);
-  const { isConfigLess, setIsConfigLess } = useLayoutStore();
   const { appendFileLinks } = useInputStore();
   const isMobile = useIsMobile();
   const { threadCwdMode, setThreadCwdMode } =
@@ -63,25 +58,10 @@ export function Composer({
         onSend={handleSend}
         onStop={onStop}
       >
-        <Button
-          size="icon"
-          variant="ghost"
-          onClick={() => {
-            setIsConfigLess(!isConfigLess);
-          }}
-        >
-          <Settings />
-        </Button>
-        {isConfigLess ? null : (
-          <>
-            <AttachmentSelector
-              onImagesSelected={(paths) => setImages((prev) => [...prev, ...paths])}
-              onFilesSelected={(paths) => appendFileLinks(paths)}
-            />
-            <SlashCommandsSelector currentThreadId={currentThreadId} />
-            <SkillsPopover />
-          </>
-        )}
+        <AttachmentSelector
+          onImagesSelected={(paths) => setImages((prev) => [...prev, ...paths])}
+          onFilesSelected={(paths) => appendFileLinks(paths)}
+        />
         <ModelReasonSelector />
       </InputArea>
 

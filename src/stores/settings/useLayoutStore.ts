@@ -28,8 +28,6 @@ interface LayoutStore {
   setActiveSidebarTab: (tab: 'codex' | 'cc') => void;
   activeRightPanelTab: 'diff' | 'note' | 'files' | 'webpreview';
   setActiveRightPanelTab: (tab: 'diff' | 'note' | 'files' | 'webpreview') => void;
-  isConfigLess: boolean;
-  setIsConfigLess: (isConfigLess: boolean) => void;
   selectedAutomationTaskId: string | null;
   setSelectedAutomationTaskId: (taskId: string | null) => void;
 }
@@ -51,8 +49,6 @@ export const useLayoutStore = create<LayoutStore>()(
       setActiveSidebarTab: (tab) => set({ activeSidebarTab: tab }),
       activeRightPanelTab: 'note',
       setActiveRightPanelTab: (tab) => set({ activeRightPanelTab: tab }),
-      isConfigLess: false,
-      setIsConfigLess: (isConfigLess) => set({ isConfigLess }),
       selectedAutomationTaskId: null,
       setSelectedAutomationTaskId: (taskId) => set({ selectedAutomationTaskId: taskId }),
     }),
