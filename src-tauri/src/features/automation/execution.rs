@@ -199,7 +199,6 @@ async fn run_task_with_codex(
 async fn run_task_with_cc(
     task: AutomationTask,
     cc_state: CCState,
-    event_sink: Arc<dyn EventSink>,
 ) -> Result<(), String> {
     let targets = if task.projects.is_empty() {
         vec![None]
@@ -220,11 +219,6 @@ async fn run_task_with_cc(
                 .to_string_lossy()
                 .to_string()
         };
-        let sink = Arc::clone(&event_sink);
-        let emitter = Arc::new(move |event: String, payload: serde_json::Value| {
-            sink.emit(&event, payload);
-        });
-
         session_service::connect(
             CCConnectParams {
                 session_id: session_id.clone(),
@@ -238,7 +232,6 @@ async fn run_task_with_cc(
                 resume_id: None,
             },
             &cc_state,
-            emitter,
         )
         .await?;
 
@@ -333,7 +326,7 @@ pub(super) async fn execute_task(
     event_sink: Arc<dyn EventSink>,
 ) {
     if task.agent == "cc" {
-        if let Err(err) = run_task_with_cc(task.clone(), cc_state, Arc::clone(&event_sink)).await {
+        if let Err(err) = run_task_with_cc(task.clone(), cc_state).await {
             log::error!("automation '{}' execution failed: {}", task.id, err);
             event_sink.emit(
                 "automation:run/failed",

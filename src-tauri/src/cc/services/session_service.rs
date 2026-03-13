@@ -15,8 +15,6 @@ use uuid;
 
 pub use crate::cc::scan::get_sessions;
 
-pub type CCEmitter = Arc<dyn Fn(String, serde_json::Value) + Send + Sync + 'static>;
-
 /// Shared session-id that can be updated from temp UUID to real SDK session_id.
 pub type SessionIdArc = Arc<Mutex<String>>;
 
@@ -74,7 +72,6 @@ fn permission_hook_output(decision: &str, reason: &str) -> HookJsonOutput {
 /// changes via `set_permission_mode` are reflected immediately.
 fn build_permission_hooks(
     state: CCState,
-    emitter: CCEmitter,
     session_id: SessionIdArc,
 ) -> std::collections::HashMap<
     claude_agent_sdk_rs::HookEvent,
@@ -86,7 +83,6 @@ fn build_permission_hooks(
     let mut hooks = Hooks::new();
     hooks.add_pre_tool_use(move |input, _tool_use_id, _ctx| {
         let state = state.clone();
-        let emitter = emitter.clone();
         let session_id = session_id.clone();
         let session_allowed = session_allowed.clone();
 
@@ -161,7 +157,7 @@ fn build_permission_hooks(
             // Use "project" whenever cwd is available (permission_storage creates the file).
             let always_allow_target = if !cwd.is_empty() { "project" } else { "session" };
 
-            emitter("cc-permission-request".to_string(), serde_json::json!({
+            state.emit("cc-permission-request", serde_json::json!({
                 "requestId": request_id,
                 "sessionId": sdk_session_id,
                 "toolName": tool_name,
@@ -195,7 +191,7 @@ fn build_permission_hooks(
     hooks.build()
 }
 
-pub async fn connect(params: CCConnectParams, state: &CCState, emitter: CCEmitter) -> Result<(), String> {
+pub async fn connect(params: CCConnectParams, state: &CCState) -> Result<(), String> {
     let permission_mode = params.permission_mode.as_deref().and_then(parse_permission_mode);
     let permission_mode_str = params.permission_mode.clone();
 
@@ -211,7 +207,7 @@ pub async fn connect(params: CCConnectParams, state: &CCState, emitter: CCEmitte
     let session_id_arc: SessionIdArc = Arc::new(Mutex::new(params.session_id.clone()));
     if needs_permission_callback(permission_mode_str.as_deref()) {
         options.hooks = Some(build_permission_hooks(
-            state.clone(), emitter, session_id_arc.clone(),
+            state.clone(), session_id_arc.clone(),
         ));
     }
 
@@ -229,10 +225,9 @@ pub async fn disconnect(session_id: &str, state: &CCState) -> Result<(), String>
     state.remove_client(session_id).await
 }
 
-pub async fn new_session_with_emitter(
+pub async fn new_session(
     options: AgentOptions,
     state: &CCState,
-    emitter: CCEmitter,
 ) -> Result<String, String> {
     let session_id = uuid::Uuid::new_v4().to_string();
     let session_id_arc: SessionIdArc = Arc::new(Mutex::new(session_id.clone()));
@@ -241,7 +236,7 @@ pub async fn new_session_with_emitter(
 
     if needs_permission_callback(permission_mode_str.as_deref()) {
         claude_options.hooks = Some(build_permission_hooks(
-            state.clone(), emitter, session_id_arc.clone(),
+            state.clone(), session_id_arc.clone(),
         ));
     }
 
@@ -257,7 +252,6 @@ pub async fn new_session_and_send(
     options: AgentOptions,
     initial_message: String,
     state: &CCState,
-    emitter: CCEmitter,
 ) -> Result<String, String> {
     let temp_id = uuid::Uuid::new_v4().to_string();
     let session_id_arc: SessionIdArc = Arc::new(Mutex::new(temp_id.clone()));
@@ -266,7 +260,7 @@ pub async fn new_session_and_send(
 
     if needs_permission_callback(permission_mode_str.as_deref()) {
         claude_options.hooks = Some(build_permission_hooks(
-            state.clone(), emitter.clone(), session_id_arc.clone(),
+            state.clone(), session_id_arc.clone(),
         ));
     }
 
@@ -278,7 +272,6 @@ pub async fn new_session_and_send(
         Arc::new(Mutex::new(Some(tx_real_id)));
 
     let state_clone = state.clone();
-    let emitter_clone = emitter;
     let session_id_arc_clone = session_id_arc;
     let temp_id_clone = temp_id.clone();
 
@@ -300,10 +293,9 @@ pub async fn new_session_and_send(
                                 let _ = tx.send(real_id.clone());
                             }
                             // Emit on real channel so frontend receives this message.
-                            let event_name = format!("cc-message:{}", real_id);
                             if let Ok(payload) = serde_json::to_value(&msg) {
                                 println!("cc-message init:\n{}", payload);
-                                emitter_clone(event_name, payload);
+                                state_clone.emit(&format!("cc-message:{}", real_id), payload);
                             }
                             return;
                         }
@@ -311,10 +303,9 @@ pub async fn new_session_and_send(
                 }
             }
 
-            let event_name = format!("cc-message:{}", current_id);
             if let Ok(payload) = serde_json::to_value(&msg) {
                 println!("cc-message:\n{}", payload);
-                emitter_clone(event_name, payload);
+                state_clone.emit(&format!("cc-message:{}", current_id), payload);
             }
         },
     )
@@ -363,7 +354,6 @@ pub async fn resume_session(
     session_id: String,
     options: AgentOptions,
     state: &CCState,
-    emitter: CCEmitter,
 ) -> Result<(), String> {
     // Replay historical messages from JSONL to the frontend as raw JSON values.
     // Using raw serde_json::Value avoids the SDK Message type losing user message content
@@ -398,7 +388,7 @@ pub async fn resume_session(
                                 obj.remove("message");
                             }
                         }
-                        emitter(event_name.clone(), val);
+                        state.emit(&event_name, val);
                     }
                 }
             }
@@ -411,7 +401,7 @@ pub async fn resume_session(
 
     if needs_permission_callback(permission_mode_str.as_deref()) {
         claude_options.hooks = Some(build_permission_hooks(
-            state.clone(), emitter, session_id_arc.clone(),
+            state.clone(), session_id_arc.clone(),
         ));
     }
 

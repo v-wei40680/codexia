@@ -29,7 +29,6 @@ pub fn run() {
         .plugin(tauri_plugin_shell::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
-        .manage(CCState::new())
         .manage(WatchState::new())
         .manage(TerminalState::default())
         .manage(SleepState::default())
@@ -148,6 +147,8 @@ pub fn run() {
             let app_handle = app.handle().clone();
             let event_sink: Arc<dyn crate::features::event_sink::EventSink> =
                 Arc::new(crate::features::event_sink::TauriEventSink::new(app_handle));
+
+            app.manage(CCState::new(Arc::clone(&event_sink)));
 
             let codex_init_started_at = Instant::now();
             let init_result = tauri::async_runtime::block_on(async {

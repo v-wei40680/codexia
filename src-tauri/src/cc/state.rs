@@ -1,5 +1,7 @@
+use crate::features::event_sink::EventSink;
 use claude_agent_sdk_rs::{ClaudeAgentOptions, ClaudeClient};
 use dashmap::DashMap;
+use serde_json::Value;
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
 use tokio::sync::{oneshot, Mutex as AsyncMutex, RwLock};
@@ -24,17 +26,29 @@ pub struct CCState {
     /// Arc<Mutex<String>> for each session's effective ID, shared with permission hooks.
     /// Updated from temp UUID to real SDK session_id when System::init arrives.
     pub session_arcs: Arc<DashMap<String, Arc<Mutex<String>>>>,
+    /// Event sink for emitting events to the frontend (Tauri or WebSocket).
+    pub sink: Arc<dyn EventSink>,
+}
+
+struct NoOpSink;
+impl EventSink for NoOpSink {
+    fn emit(&self, _event: &str, _payload: Value) {}
 }
 
 impl CCState {
-    pub fn new() -> Self {
+    pub fn new(sink: Arc<dyn EventSink>) -> Self {
         Self {
             clients: Arc::new(AsyncMutex::new(HashMap::new())),
             pending_permissions: Arc::new(DashMap::new()),
             session_metadata: Arc::new(DashMap::new()),
             session_aliases: Arc::new(DashMap::new()),
             session_arcs: Arc::new(DashMap::new()),
+            sink,
         }
+    }
+
+    pub fn emit(&self, event: &str, payload: Value) {
+        self.sink.emit(event, payload);
     }
 
     pub async fn get_client(&self, client_id: &str) -> Option<Arc<RwLock<ClaudeClient>>> {
@@ -134,6 +148,6 @@ impl CCState {
 
 impl Default for CCState {
     fn default() -> Self {
-        Self::new()
+        Self::new(Arc::new(NoOpSink))
     }
 }

@@ -92,7 +92,7 @@ pub async fn start_web_server(host: &str, port: u16) -> Result<(), Box<dyn std::
     }
 
     let codex_state = Arc::new(AppState { codex });
-    let cc_state = Arc::new(CCState::new());
+    let cc_state = Arc::new(CCState::new(Arc::new(WebSocketEventSink::new(event_tx.clone()))));
     log::info!(
         "[web] boot completed in {:?}",
         boot_started_at.elapsed()

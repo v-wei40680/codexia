@@ -1,3 +1,4 @@
+use std::sync::Arc;
 use super::to_error_response;
 use super::types::{
     CcMcpAddParams, CcMcpGetParams, CcMcpListParams, CcMcpRemoveParams, CcMcpToggleParams,
@@ -21,12 +22,7 @@ pub(crate) async fn api_cc_connect(
     AxumState(state): AxumState<WebServerState>,
     Json(params): Json<CCConnectParams>,
 ) -> Result<StatusCode, ErrorResponse> {
-    let event_tx = state.event_tx.clone();
-    let emitter = std::sync::Arc::new(move |event: String, payload: serde_json::Value| {
-        let _ = event_tx.send((event, payload));
-    });
-
-    cc_session_service::connect(params, state.cc_state.as_ref(), emitter)
+    cc_session_service::connect(params, state.cc_state.as_ref())
         .await
         .map_err(to_error_response)?;
     Ok(StatusCode::OK)
@@ -37,21 +33,15 @@ pub(crate) async fn api_cc_send_message(
     Json(params): Json<CcSendMessageParams>,
 ) -> Result<StatusCode, ErrorResponse> {
     let event_name = format!("cc-message:{}", params.session_id);
-    let event_tx = state.event_tx.clone();
+    let cc_state = Arc::clone(&state.cc_state);
 
     cc_message_service::send_message(
         &params.session_id,
         &params.message,
         state.cc_state.as_ref(),
         move |msg| match serde_json::to_value(msg) {
-            Ok(payload) => {
-                if event_tx.send((event_name.clone(), payload)).is_err() {
-                    log::debug!("No subscribers for CC event {}", event_name);
-                }
-            }
-            Err(err) => {
-                log::error!("Failed to serialize CC message event: {}", err);
-            }
+            Ok(payload) => cc_state.emit(&event_name, payload),
+            Err(err) => log::error!("Failed to serialize CC message event: {}", err),
         },
     )
     .await
@@ -74,15 +64,9 @@ pub(crate) async fn api_cc_new_session(
     AxumState(state): AxumState<WebServerState>,
     Json(params): Json<CcNewSessionParams>,
 ) -> Result<Json<String>, ErrorResponse> {
-    let event_tx = state.event_tx.clone();
-    let emitter = std::sync::Arc::new(move |event: String, payload: serde_json::Value| {
-        let _ = event_tx.send((event, payload));
-    });
-
-    let session_id = cc_session_service::new_session_with_emitter(
+    let session_id = cc_session_service::new_session(
         params.options,
         state.cc_state.as_ref(),
-        emitter,
     )
     .await
     .map_err(to_error_response)?;
@@ -112,19 +96,10 @@ pub(crate) async fn api_cc_resume_session(
     AxumState(state): AxumState<WebServerState>,
     Json(params): Json<CcResumeSessionParams>,
 ) -> Result<StatusCode, ErrorResponse> {
-    let session_id = params.session_id;
-    let options = params.options;
-
-    let event_tx_clone = state.event_tx.clone();
-    let emitter = std::sync::Arc::new(move |event: String, payload: serde_json::Value| {
-        let _ = event_tx_clone.send((event, payload));
-    });
-
     cc_session_service::resume_session(
-        session_id.clone(),
-        options,
+        params.session_id,
+        params.options,
         state.cc_state.as_ref(),
-        emitter,
     )
     .await
     .map_err(to_error_response)?;

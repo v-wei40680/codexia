@@ -10,32 +10,27 @@ use super::services::{
 };
 use super::state::CCState;
 use super::types::{AgentOptions, CCConnectParams};
-use tauri::{AppHandle, Emitter, State};
+use tauri::State;
 
 #[tauri::command]
 pub async fn cc_connect(
     params: CCConnectParams,
-    app: AppHandle,
     state: State<'_, CCState>,
 ) -> Result<(), String> {
-    let app_clone = app.clone();
-    let emitter = std::sync::Arc::new(move |event: String, payload: serde_json::Value| {
-        let _ = app_clone.emit(&event, &payload);
-    });
-    session_service::connect(params, &state, emitter).await
+    session_service::connect(params, &state).await
 }
 
 #[tauri::command]
 pub async fn cc_send_message(
     session_id: String,
     message: String,
-    app: AppHandle,
     state: State<'_, CCState>,
 ) -> Result<(), String> {
     let event_name = format!("cc-message:{}", session_id);
+    let cc_state = state.inner().clone();
     message_service::send_message(&session_id, &message, &state, move |msg| {
-        if let Err(e) = app.emit(&event_name, &msg) {
-            log::error!("Failed to emit message: {}", e);
+        if let Ok(payload) = serde_json::to_value(&msg) {
+            cc_state.emit(&event_name, payload);
         }
     })
     .await
@@ -50,14 +45,9 @@ pub async fn cc_disconnect(session_id: String, state: State<'_, CCState>) -> Res
 pub async fn cc_new_session(
     options: AgentOptions,
     initial_message: String,
-    app: AppHandle,
     state: State<'_, CCState>,
 ) -> Result<String, String> {
-    let app_clone = app.clone();
-    let emitter = std::sync::Arc::new(move |event: String, payload: serde_json::Value| {
-        let _ = app_clone.emit(&event, &payload);
-    });
-    session_service::new_session_and_send(options, initial_message, &state, emitter).await
+    session_service::new_session_and_send(options, initial_message, &state).await
 }
 
 #[tauri::command]
@@ -74,15 +64,9 @@ pub async fn cc_list_sessions(state: State<'_, CCState>) -> Result<Vec<String>, 
 pub async fn cc_resume_session(
     session_id: String,
     options: AgentOptions,
-    app: AppHandle,
     state: State<'_, CCState>,
 ) -> Result<(), String> {
-    let app_handle = app.clone();
-    let emitter = std::sync::Arc::new(move |event: String, payload: serde_json::Value| {
-        let _ = app_handle.emit(&event, &payload);
-    });
-
-    session_service::resume_session(session_id, options, &state, emitter).await
+    session_service::resume_session(session_id, options, &state).await
 }
 
 #[tauri::command]
