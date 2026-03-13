@@ -38,6 +38,7 @@ export default defineConfig(({ mode }) => {
         // 3. tell vite to ignore watching `src-tauri`
         ignored: [
           "**/src-tauri/**",
+          "**/src/bindings/**",
           "**/target/**",
           "**/dist/**",
           "**/node_modules/**",
