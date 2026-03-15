@@ -36,7 +36,7 @@ export const AddToNote = ({ text, className }: AddToNoteProps) => {
       aria-label="Save to note"
       className={className ?? 'h-6 w-6 text-muted-foreground'}
     >
-      <NotebookPen className="h-4 w-4" />
+      <NotebookPen className="h-3 w-3" />
     </Button>
   );
 };
