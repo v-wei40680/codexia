@@ -24,7 +24,7 @@ export function TodoWriteTool({ block, inlineError, showError, onToggleError }: 
           </Button>
         )}
       </div>
-      {block.input?.todos && <CCTodoList todos={block.input.todos} />}
+      {block.input.todos && <CCTodoList todos={block.input.todos} />}
       {inlineError && showError && (
         <div className="mt-1 text-xs whitespace-pre-wrap break-words text-red-600 dark:text-red-400 border-t border-red-500/20 pt-1">
           {typeof inlineError.content === 'string' ? inlineError.content : JSON.stringify(inlineError.content)}
