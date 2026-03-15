@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import type { UserInput } from '@/bindings/v2';
 import { convertFileSrc } from '@tauri-apps/api/core';
-import { Check, Copy, Pencil } from 'lucide-react';
+import { Pencil } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { Markdown } from '@/components/Markdown';
+import { CopyButton } from '@/components/CopyButton';
+import { AddToNote } from '@/components/AddToNote';
 import { codexService } from '@/services/codexService';
 import { useInputStore } from '@/stores';
 import { useEventPreferencesStore } from '@/stores/codex';
@@ -17,7 +20,6 @@ type UserMessageItemProps = {
 };
 
 export const UserMessageItem = ({ content, onEdit, editDisabled = false }: UserMessageItemProps) => {
-  const [copied, setCopied] = useState(false);
   const images = content.filter((m) => m.type === 'image').map((m) => m.url);
   const localImages = content
     .filter((m) => m.type === 'localImage')
@@ -27,17 +29,6 @@ export const UserMessageItem = ({ content, onEdit, editDisabled = false }: UserM
     .map((m) => m.text)
     .join('');
   const canEdit = !!onEdit && text.length > 0 && !editDisabled;
-
-  const handleCopy = async () => {
-    if (!text.length) return;
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      console.error('Failed to copy:', err);
-    }
-  };
 
   const handleEdit = async () => {
     if (!canEdit || !onEdit) return;
@@ -70,31 +61,21 @@ export const UserMessageItem = ({ content, onEdit, editDisabled = false }: UserM
           )}
           {text.length > 0 && <Markdown className="min-w-0 max-w-full" value={text} />}
         </div>
-        <div
-          className={`flex min-w-0 items-center gap-1 px-1 transition-opacity ${
-            copied ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
-          }`}
-        >
+        <div className="flex min-w-0 items-center gap-1 px-1 opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
           {onEdit && (
-            <button
-              type="button"
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={handleEdit}
               disabled={!canEdit}
               aria-label="Edit message"
-              className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
+              className="h-6 w-6 text-muted-foreground"
             >
               <Pencil className="h-4 w-4" />
-            </button>
+            </Button>
           )}
-          <button
-            type="button"
-            onClick={handleCopy}
-            disabled={!text.length}
-            aria-label={copied ? 'Copied' : 'Copy message'}
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-          </button>
+          <CopyButton text={text} />
+          <AddToNote text={text} />
         </div>
       </div>
     </div>
