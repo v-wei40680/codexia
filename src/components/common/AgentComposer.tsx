@@ -130,8 +130,9 @@ function CodexComposerInput({ isProcessing, onStop }: AgentComposerProps) {
 }
 
 export function AgentComposer({ isProcessing, onStop }: AgentComposerProps) {
-  const [activeAgent, setActiveAgent] = useState<Agent>('cc');
-  const { cwd } = useWorkspaceStore();
+  const { cwd, selectedAgent, setSelectedAgent } = useWorkspaceStore();
+  const activeAgent = selectedAgent;
+  const setActiveAgent = setSelectedAgent;
   const [branchInfo, setBranchInfo] = useState<GitBranchInfoResponse | null>(null);
 
   useEffect(() => {
