@@ -1,19 +1,14 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useCCSessionListener, useCCPermissionListener } from './hooks';
-import { Card } from '@/components/ui/card';
 
 import { useCCStore } from '@/stores/ccStore';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
-import { useCCInputStore } from '@/stores/useCCInputStore';
 
 import { CCMessage } from '@/components/cc/messages';
 import { CCInput } from '@/components/cc/composer';
 import { CCScrollControls } from '@/components/cc/CCScrollControls';
-import { ProjectSelector } from '../project-selector';
-import { ExamplePrompts } from '@/components/cc/ExamplePrompts';
 import { buildMessageGroups, CCExploredMessageGroup } from './messages/group';
 import { buildInlineErrorsMap } from './messages/inlineErrors';
-
 
 export default function CCView() {
   const {
@@ -25,12 +20,13 @@ export default function CCView() {
     clearMessages,
   } = useCCStore();
   const { cwd } = useWorkspaceStore();
-  const { setInputValue: setInput } = useCCInputStore();
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const [isPromptsExpanded, setIsPromptsExpanded] = useState(false);
-
-  const shouldShowWelcome = messages.length === 0 && !activeSessionId;
+  // Whether the user wants auto-scroll (true when near bottom).
+  const shouldAutoScrollRef = useRef(true);
+  // True while a programmatic smooth scroll is animating — prevents the scroll
+  // event from incorrectly flipping shouldAutoScrollRef to false mid-animation.
+  const isProgrammaticScrollRef = useRef(false);
 
   // Reset transient UI state when directory changes, but keep selected session.
   useEffect(() => {
@@ -40,9 +36,34 @@ export default function CCView() {
     setLoading(false);
   }, [cwd, activeSessionId, clearMessages, setConnected, setLoading]);
 
-  // Bind Tauri message stream and permission listeners.
-  useCCSessionListener();
-  useCCPermissionListener();
+  // Track user scroll intent — ignore events caused by our own programmatic scrolls.
+  useEffect(() => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      if (isProgrammaticScrollRef.current) return;
+      shouldAutoScrollRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, []);
+
+  // Smooth-scroll to bottom when messages update, if the user is near the bottom.
+  useEffect(() => {
+    if (!shouldAutoScrollRef.current) return;
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    isProgrammaticScrollRef.current = true;
+    el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+    // After the smooth animation finishes, re-evaluate position and release the lock.
+    const timer = setTimeout(() => {
+      isProgrammaticScrollRef.current = false;
+      if (el) {
+        shouldAutoScrollRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+      }
+    }, 600);
+    return () => clearTimeout(timer);
+  }, [messages, isLoading]);
 
   // Pre-compute inline errors map to avoid recalculating inside the render loop.
   const inlineErrorsMap = useMemo(
@@ -62,6 +83,10 @@ export default function CCView() {
     [messages],
   );
 
+  // Bind Tauri message stream and permission listeners.
+  useCCSessionListener();
+  useCCPermissionListener();
+
   return (
     <div className="flex flex-col h-full min-h-0 w-full max-w-4xl mx-auto">
       {/* Scrollable content area */}
@@ -71,39 +96,6 @@ export default function CCView() {
           className="h-full overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:display-none"
         >
           <div className="flex flex-col gap-2 p-4">
-
-            {/* Welcome / empty state */}
-            {shouldShowWelcome && (
-              <div
-                className={`flex-1 flex flex-col items-center max-w-2xl mx-auto py-8 text-center animate-in fade-in duration-500 ${isPromptsExpanded ? 'justify-start mt-4' : 'justify-center'
-                  }`}
-              >
-                {!isPromptsExpanded && (
-                  <>
-                    <div className="mb-4 space-y-3 animate-in fade-in zoom-in-95 duration-500">
-                      <h1 className="text-4xl font-bold tracking-tight bg-gradient-to-r from-foreground to-foreground/50 bg-clip-text text-transparent">
-                        let&apos;s build
-                      </h1>
-                    </div>
-                    <div className="flex justify-center mb-12 animate-in fade-in zoom-in-95 duration-500">
-                      <ProjectSelector
-                        variant="hero"
-                        className="h-11 max-w-64 gap-2 px-4 bg-background hover:bg-accent shadow-sm border-none transition-all rounded-xl font-medium"
-                        triggerMode="project-name"
-                        showChevron
-                      />
-                    </div>
-                  </>
-                )}
-                <div className="w-full">
-                  <ExamplePrompts
-                    onSelectPrompt={setInput}
-                    isExpanded={isPromptsExpanded}
-                    onToggleExpanded={() => setIsPromptsExpanded((v) => !v)}
-                  />
-                </div>
-              </div>
-            )}
 
             {/* Message list */}
             {messageGroups.map((group) =>
@@ -126,9 +118,7 @@ export default function CCView() {
 
             {/* Loading indicator */}
             {isLoading && (
-              <Card className="p-3 bg-gray-50 dark:bg-gray-900">
-                <div className="text-xs text-muted-foreground animate-pulse">Thinking</div>
-              </Card>
+              <div className="text-xs text-muted-foreground animate-pulse">Thinking</div>
             )}
           </div>
         </div>

@@ -153,7 +153,7 @@ export default function AgentView() {
     return (
       <div className="flex flex-col h-full min-h-0">
         <CardHeader card={card ?? currentCard} onBack={() => setCurrentAgentCard(null)} />
-        <div className="flex flex-col flex-1 min-h-0">
+        <div className="flex flex-col flex-1 min-h-0 h-full overflow-hidden">
           <Suspense fallback={null}>
             {currentCard.kind === 'codex' ? <ChatInterface /> : <CCView />}
           </Suspense>
