@@ -78,9 +78,10 @@ interface CodexGridCardProps {
   onExpand: () => void;
   onRemove: () => void;
   header: React.ReactNode;
+  isSelected?: boolean;
 }
 
-export function CodexGridCard({ card, onExpand, onRemove: _onRemove, header }: CodexGridCardProps) {
+export function CodexGridCard({ card, onExpand, onRemove: _onRemove, header, isSelected }: CodexGridCardProps) {
   const { events, threadLoadingMap } = useCodexStore();
   const { pendingApprovals } = useApprovalStore();
   const { pendingRequests } = useRequestUserInputStore();
@@ -137,6 +138,8 @@ export function CodexGridCard({ card, onExpand, onRemove: _onRemove, header }: C
 
   const attentionBorder = hasPending
     ? 'ring-2 ring-amber-500/70 border-amber-500/30'
+    : isSelected
+    ? 'ring-2 ring-primary/60 border-primary/30'
     : 'border';
 
   return (

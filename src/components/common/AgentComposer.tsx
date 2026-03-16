@@ -39,7 +39,7 @@ function CodexComposerInput({ isProcessing, onStop }: AgentComposerProps) {
   const { appendFileLinks } = useInputStore();
   const { threadCwdMode, setThreadCwdMode } = useConfigStore();
   const { currentThreadId, currentTurnId } = useCodexStore();
-  const { addAgentCard } = useAgentCenterStore();
+  const { addAgentCard, setCurrentAgentCardId } = useAgentCenterStore();
   const isMobile = useIsMobile();
 
   const handleSend = async () => {
@@ -54,6 +54,7 @@ function CodexComposerInput({ isProcessing, onStop }: AgentComposerProps) {
       targetThreadId = thread.id;
     }
     addAgentCard({ kind: 'codex', id: targetThreadId, preview: text });
+    setCurrentAgentCardId(targetThreadId);
     await codexService.turnStart(targetThreadId, text, images);
   };
 
@@ -134,6 +135,14 @@ export function AgentComposer({ isProcessing, onStop }: AgentComposerProps) {
   const activeAgent = selectedAgent;
   const setActiveAgent = setSelectedAgent;
   const [branchInfo, setBranchInfo] = useState<GitBranchInfoResponse | null>(null);
+  const { currentAgentCardId, cards } = useAgentCenterStore();
+
+  // Sync tab to the currently selected card's kind
+  useEffect(() => {
+    if (!currentAgentCardId) return;
+    const card = cards.find((c) => c.id === currentAgentCardId);
+    if (card) setActiveAgent(card.kind);
+  }, [currentAgentCardId]);
 
   useEffect(() => {
     if (!cwd) { setBranchInfo(null); return; }

@@ -9,6 +9,8 @@ interface AgentCenterState {
   cards: AgentCenterCard[];
   addAgentCard: (card: AgentCenterCard) => void;
   removeCard: (card: AgentCenterCard) => void;
+  currentAgentCardId: string | null;
+  setCurrentAgentCardId: (id: string | null) => void;
 }
 
 export const useAgentCenterStore = create<AgentCenterState>()(
@@ -30,6 +32,9 @@ export const useAgentCenterStore = create<AgentCenterState>()(
         set((state) => ({
           cards: state.cards.filter((c) => !(c.kind === card.kind && c.id === card.id)),
         })),
+
+      currentAgentCardId: null,
+      setCurrentAgentCardId: (id) => set({ currentAgentCardId: id }),
     }),
     {
       name: 'agent-center-store',

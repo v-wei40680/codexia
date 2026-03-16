@@ -40,8 +40,8 @@ interface ThreadListProps {
 
 export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
   const { cwd, historyMode, setCwd, setHistoryMode } = useWorkspaceStore();
-  const { setView, setCurrentAgentCard } = useLayoutStore();
-  const { addAgentCard } = useAgentCenterStore();
+  const { setView } = useLayoutStore();
+  const { addAgentCard, setCurrentAgentCardId } = useAgentCenterStore();
   const { threads, currentThreadId, threadListNextCursor } = useCodexStore();
   const { searchTerm, sortKey } = useThreadListStore();
   const isProjectScoped = !!cwdOverride;
@@ -215,11 +215,11 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
 
       setHistoryMode(false);
       addAgentCard({ kind: 'codex', id: threadId, preview });
-      setCurrentAgentCard({ kind: 'codex', id: threadId });
+      setCurrentAgentCardId(threadId);
       setView('agent');
       await handleSelectThread(threadId, { resume: true });
     },
-    [handleSelectThread, historyMode, setHistoryMode, setView, setCurrentAgentCard, addAgentCard]
+    [handleSelectThread, historyMode, setHistoryMode, setView, setCurrentAgentCardId, addAgentCard]
   );
 
   const handleTogglePin = useCallback(
@@ -279,13 +279,13 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
       const preview = mergedThreads.find((t) => t.id === threadId)?.preview;
       await codexService.threadFork(threadId);
       addAgentCard({ kind: 'codex', id: threadId, preview });
-      setCurrentAgentCard({ kind: 'codex', id: threadId });
+      setCurrentAgentCardId(threadId);
       setView('agent');
       if (isProjectScoped) {
         await reloadScopedThreadsRef.current?.();
       }
     },
-    [isProjectScoped, setView, mergedThreads, addAgentCard, setCurrentAgentCard]
+    [isProjectScoped, setView, mergedThreads, addAgentCard, setCurrentAgentCardId]
   );
 
   const handleDeleteThreadByPath = useCallback(

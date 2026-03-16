@@ -86,7 +86,7 @@ export function useCCSessionManager() {
     switchToSession,
     setSessionLoading,
   } = useCCStore();
-  const { addAgentCard } = useAgentCenterStore();
+  const { addAgentCard, setCurrentAgentCardId } = useAgentCenterStore();
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -144,6 +144,7 @@ export function useCCSessionManager() {
       setConnected(true);
       setSessionLoading(sessionId, true);
       addAgentCard({ kind: 'cc', id: sessionId, preview: initialMessage });
+      setCurrentAgentCardId(sessionId);
 
       console.info('[useCCSessionManager] New session created', {
         sessionId,

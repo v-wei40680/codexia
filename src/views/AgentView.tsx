@@ -1,5 +1,6 @@
 import { lazy, Suspense, useState, useMemo } from 'react';
-import { useLayoutStore, useAgentCenterStore } from '@/stores';
+import { useAgentCenterStore } from '@/stores';
+import { useLayoutStore } from '@/stores';
 import { useCodexStore } from '@/stores/codex';
 import { useCCStore } from '@/stores/ccStore';
 
@@ -22,16 +23,21 @@ interface CardHeaderProps {
   card: AgentCenterCard;
   onClose?: () => void;
   onBack?: () => void;
+  onSelect?: () => void;
 }
 
-export function CardHeader({ card, onClose, onBack }: CardHeaderProps) {
+export function CardHeader({ card, onClose, onBack, onSelect }: CardHeaderProps) {
   const title = card.preview?.slice(0, 60) || card.id.slice(0, 12);
 
   return (
-    <div className="flex items-center gap-2 px-2 py-1.5 border-b bg-muted/30 shrink-0">
+    <div
+      className="flex items-center gap-2 px-2 py-1.5 border-b bg-muted/30 shrink-0"
+      onClick={onSelect}
+      style={onSelect ? { cursor: 'pointer' } : undefined}
+    >
       {onBack && (
         <button
-          onClick={onBack}
+          onClick={(e) => { e.stopPropagation(); onBack(); }}
           className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
           aria-label="Back"
         >
@@ -40,7 +46,7 @@ export function CardHeader({ card, onClose, onBack }: CardHeaderProps) {
       )}
       {onClose && (
         <button
-          onClick={onClose}
+          onClick={(e) => { e.stopPropagation(); onClose(); }}
           className="text-destructive/60 hover:text-destructive transition-colors shrink-0"
           aria-label="Remove"
         >
@@ -59,10 +65,18 @@ interface GridCardProps {
   card: AgentCenterCard;
   onExpand: () => void;
   onRemove: () => void;
+  isSelected: boolean;
 }
 
-function GridCard({ card, onExpand, onRemove }: GridCardProps) {
-  const header = <CardHeader card={card} onClose={onRemove} />;
+function GridCard({ card, onExpand, onRemove, isSelected }: GridCardProps) {
+  const { setCurrentAgentCardId } = useAgentCenterStore();
+  const header = (
+    <CardHeader
+      card={card}
+      onClose={onRemove}
+      onSelect={() => setCurrentAgentCardId(card.id)}
+    />
+  );
 
   if (card.kind === 'codex') {
     return (
@@ -71,6 +85,7 @@ function GridCard({ card, onExpand, onRemove }: GridCardProps) {
         onExpand={onExpand}
         onRemove={onRemove}
         header={header}
+        isSelected={isSelected}
       />
     );
   }
@@ -81,6 +96,7 @@ function GridCard({ card, onExpand, onRemove }: GridCardProps) {
       onExpand={onExpand}
       onRemove={onRemove}
       header={header}
+      isSelected={isSelected}
     />
   );
 }
@@ -90,7 +106,7 @@ function GridCard({ card, onExpand, onRemove }: GridCardProps) {
 type TabFilter = 'all' | 'idle' | 'running';
 
 export default function AgentView() {
-  const { cards, removeCard } = useAgentCenterStore();
+  const { cards, removeCard, setCurrentAgentCardId, currentAgentCardId } = useAgentCenterStore();
   const { currentCard, setCurrentAgentCard } = useLayoutStore();
   const { switchToSession, sessionLoadingMap } = useCCStore();
   const { threadLoadingMap, currentThreadId, currentTurnId } = useCodexStore();
@@ -115,6 +131,7 @@ export default function AgentView() {
 
   const expand = async (card: AgentCenterCard) => {
     setCurrentAgentCard({ kind: card.kind, id: card.id });
+    setCurrentAgentCardId(card.id);
     if (card.kind === 'codex') {
       await codexService.setCurrentThread(card.id);
     } else {
@@ -191,6 +208,7 @@ export default function AgentView() {
                 card={card}
                 onExpand={() => void expand(card)}
                 onRemove={() => removeCard(card)}
+                isSelected={card.id === currentAgentCardId}
               />
             ))}
           </div>

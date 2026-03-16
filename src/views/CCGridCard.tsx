@@ -51,9 +51,10 @@ interface CCGridCardProps {
   onExpand: () => void;
   onRemove: () => void;
   header: React.ReactNode;
+  isSelected?: boolean;
 }
 
-export function CCGridCard({ card, onExpand, onRemove: _onRemove, header }: CCGridCardProps) {
+export function CCGridCard({ card, onExpand, onRemove: _onRemove, header, isSelected }: CCGridCardProps) {
   const { sessionMessagesMap, sessionLoadingMap } = useCCStore();
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -115,6 +116,8 @@ export function CCGridCard({ card, onExpand, onRemove: _onRemove, header }: CCGr
 
   const attentionBorder = hasPending
     ? 'ring-2 ring-amber-500/70 border-amber-500/30'
+    : isSelected
+    ? 'ring-2 ring-primary/60 border-primary/30'
     : 'border';
 
   return (

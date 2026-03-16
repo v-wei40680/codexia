@@ -28,8 +28,8 @@ export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Pr
   const [loading, setLoading] = useState(sessions === undefined);
   const [error, setError] = useState<string | null>(null);
   const { cwd, setCwd, setSelectedAgent } = useWorkspaceStore();
-  const { setView, setCurrentAgentCard } = useLayoutStore();
-  const { addAgentCard } = useAgentCenterStore();
+  const { setView } = useLayoutStore();
+  const { addAgentCard, setCurrentAgentCardId } = useAgentCenterStore();
   const { activeSessionIds, activeSessionId, isLoading } = useCCStore();
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -123,7 +123,7 @@ export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Pr
     }
     setSelectedAgent('cc');
     addAgentCard({ kind: 'cc', id: session.sessionId, preview: session.display });
-    setCurrentAgentCard({ kind: 'cc', id: session.sessionId });
+    setCurrentAgentCardId(session.sessionId);
     setView('agent');
     if (onSelectSession) {
       onSelectSession(session.sessionId, session.project);

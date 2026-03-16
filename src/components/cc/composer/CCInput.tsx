@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { CircleStop, Send } from 'lucide-react';
 import { useCCStore } from '@/stores/ccStore';
-import { useCCInputStore } from '@/stores';
+import { useCCInputStore, useAgentCenterStore } from '@/stores';
 import { CCPermissionModeSelect, CCFileMentionPopover } from '@/components/cc/composer';
 import { ModelSelector } from './ModelSelector';
 import { CCAttachmentButton } from './CCAttachmentButton';
@@ -24,6 +24,7 @@ export function CCInput() {
     setConnected,
   } = useCCStore();
   const { inputValue: input, setInputValue: setInput } = useCCInputStore();
+  const { setCurrentAgentCardId } = useAgentCenterStore();
   const { handleNewSession } = useCCSessionManager();
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const hiddenTriggerRef = useRef<HTMLSpanElement>(null);
@@ -55,6 +56,7 @@ export function CCInput() {
       return;
     }
 
+    setCurrentAgentCardId(activeSessionId);
     addMessage({ type: 'user', text });
     setLoading(true);
 
@@ -69,7 +71,7 @@ export function CCInput() {
         message: { content: [{ type: 'text', text: `Error: ${error}` }] },
       });
     }
-  }, [input, isLoading, activeSessionId, isConnected, addMessage, setInput, setLoading, setConnected, handleNewSession]);
+  }, [input, isLoading, activeSessionId, isConnected, addMessage, setInput, setLoading, setConnected, handleNewSession, setCurrentAgentCardId]);
 
   const handleInterrupt = useCallback(async () => {
     if (!activeSessionId) return;
