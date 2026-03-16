@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { codexService } from '@/services/codexService';
 import { useCodexStore, useThreadListStore } from '@/stores/codex';
-import { useLayoutStore, useNoteStore, useWorkspaceStore } from '@/stores';
+import { useAgentCenterStore, useLayoutStore, useNoteStore, useWorkspaceStore } from '@/stores';
 import { isTauri } from '@/hooks/runtime';
 
 interface UseThreadListOptions {
@@ -11,6 +11,7 @@ interface UseThreadListOptions {
 
 export function useThreadList({ enabled = true }: UseThreadListOptions = {}) {
   const { cwd } = useWorkspaceStore();
+  const { setCurrentAgentCardId } = useAgentCenterStore()
   const { setView } = useLayoutStore();
   const { setSelectedNoteId } = useNoteStore();
   const { threadListRefreshToken, triggerThreadListRefresh } = useCodexStore();
@@ -19,9 +20,10 @@ export function useThreadList({ enabled = true }: UseThreadListOptions = {}) {
 
   const handleNewThread = useCallback(async () => {
     setSelectedNoteId(null);
-    setView('codex');
+    setCurrentAgentCardId(null);
+    setView('agent');
     await codexService.setCurrentThread(null);
-  }, [setView, setSelectedNoteId]);
+  }, [setView, setSelectedNoteId, setCurrentAgentCardId]);
 
   // Only listen for file changes and load threads when enabled (i.e. codex tab is active)
   useEffect(() => {

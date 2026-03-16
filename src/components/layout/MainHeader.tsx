@@ -24,6 +24,7 @@ import { useGitWatch } from '@/hooks/useGitWatch';
 import { useSettingsStore } from '@/stores/settings';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useCCStore } from '@/stores/ccStore';
+import { useAgentCenterStore } from '@/stores';
 
 type MainHeaderProps = {
   isTerminalOpen: boolean;
@@ -31,6 +32,7 @@ type MainHeaderProps = {
 };
 
 export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps) {
+  const { setCurrentAgentCardId } = useAgentCenterStore();
   const requestFocusCCInput = () => {
     window.dispatchEvent(new Event('cc-input-focus-request'));
   };
@@ -56,7 +58,7 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
   } = useSettingsStore();
 
   const { handleNewSession } = useCCSessionManager();
-  const isConnected = useCCStore((state) => state.isConnected);
+  const { isConnected } = useCCStore();
   const { currentThreadId, activeThreadIds } = useCodexStore();
   const { refreshStats } = useGitStatsStore();
   const isMobile = useIsMobile();
@@ -80,7 +82,8 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
 
   const handleNewThread = async () => {
     if (selectedAgent === 'cc') {
-      setView('cc');
+      setCurrentAgentCardId(null);
+      setView('agent');
       await handleNewSession();
       requestFocusCCInput();
       return;
@@ -90,7 +93,7 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
   const handleToggleHistoryMode = async () => {
     const nextMode = !isHistoryView;
     setHistoryMode(nextMode);
-    setView(nextMode ? 'history' : 'codex');
+    setView(nextMode ? 'history' : 'agent');
 
     if (!nextMode) {
       const targetThreadId = currentThreadId ?? currentThread?.id ?? null;

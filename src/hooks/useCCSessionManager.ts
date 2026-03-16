@@ -92,6 +92,7 @@ export function useCCSessionManager() {
 
   const handleNewSession = async (initialMessage?: string) => {
     try {
+      setCurrentAgentCardId(null);
       setIsLoading(true);
       setLoading(true);
 

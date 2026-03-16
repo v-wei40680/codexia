@@ -87,7 +87,7 @@ export function SettingsView() {
             variant="ghost"
             size="sm"
             className="h-9 gap-1 px-2"
-            onClick={() => setView('codex')}
+            onClick={() => setView('agent')}
           >
             <ChevronLeft className="h-4 w-4" />
             <span className="text-xs">Back</span>
@@ -138,7 +138,7 @@ export function SettingsView() {
               variant="ghost"
               size="sm"
               className="h-7 gap-1 px-2"
-              onClick={() => setView('codex')}
+              onClick={() => setView('agent')}
             >
               <ChevronLeft className="h-4 w-4" />
               <span className="text-xs">Back to app</span>

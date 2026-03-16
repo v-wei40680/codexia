@@ -1,6 +1,6 @@
 import { BookOpen, BotMessageSquare, ListFilter, Package, PanelLeft, SquarePen, Timer } from 'lucide-react';
 import { useCallback, useEffect } from 'react';
-import { useLayoutStore } from '@/stores';
+import { useAgentCenterStore, useLayoutStore } from '@/stores';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -50,6 +50,7 @@ const SIDEBAR_TABS = [
 
 export function SideBar() {
   const { cwd, setCwd, selectedAgent, setSelectedAgent } = useWorkspaceStore();
+  const { setCurrentAgentCardId } = useAgentCenterStore();
   const { isSidebarOpen, setSidebarOpen, setView, view, activeSidebarTab, setActiveSidebarTab } =
     useLayoutStore();
   const { searchTerm, setSearchTerm, sortKey, setSortKey, handleNewThread } = useThreadList({
@@ -70,7 +71,8 @@ export function SideBar() {
 
       if (selectedAgent === 'cc') {
         setActiveSidebarTab('cc');
-        setView('cc');
+        setCurrentAgentCardId(null);
+        setView('agent');
         await handleNewSession();
         focusCCInput();
         return;
@@ -91,7 +93,7 @@ export function SideBar() {
     async (project: string) => {
       setSelectedAgent('cc');
       setActiveSidebarTab('cc');
-      setView('cc');
+      setView('agent');
       setCwd(project);
       await handleNewSession();
       focusCCInput();
