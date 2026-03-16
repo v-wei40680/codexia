@@ -1,6 +1,4 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { gitBranchInfo, type GitBranchInfoResponse } from '@/services/tauri/git';
-import { BranchSwitcher } from './BranchSwitcher';
 import { useCCSessionListener, useCCPermissionListener } from './hooks';
 import { Card } from '@/components/ui/card';
 
@@ -31,7 +29,6 @@ export default function CCView() {
 
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isPromptsExpanded, setIsPromptsExpanded] = useState(false);
-  const [branchInfo, setBranchInfo] = useState<GitBranchInfoResponse | null>(null);
 
   const shouldShowWelcome = messages.length === 0 && !activeSessionId;
 
@@ -42,24 +39,6 @@ export default function CCView() {
     setConnected(false);
     setLoading(false);
   }, [cwd, activeSessionId, clearMessages, setConnected, setLoading]);
-
-  // Fetch git branch info whenever cwd changes.
-  useEffect(() => {
-    if (!cwd) {
-      setBranchInfo(null);
-      return;
-    }
-    gitBranchInfo(cwd)
-      .then(setBranchInfo)
-      .catch(() => setBranchInfo(null));
-  }, [cwd]);
-
-  function refreshBranchInfo() {
-    if (!cwd) return;
-    gitBranchInfo(cwd)
-      .then(setBranchInfo)
-      .catch(() => setBranchInfo(null));
-  }
 
   // Bind Tauri message stream and permission listeners.
   useCCSessionListener();
@@ -84,7 +63,7 @@ export default function CCView() {
   );
 
   return (
-    <div className="flex flex-col h-full min-h-0 max-w-4xl mx-auto">
+    <div className="flex flex-col h-full min-h-0 w-full max-w-4xl mx-auto">
       {/* Scrollable content area */}
       <div className="flex-1 min-h-0 overflow-hidden relative">
         <div
@@ -160,16 +139,6 @@ export default function CCView() {
       </div>
 
       {!hasPendingPermission && <CCInput />}
-
-      {branchInfo && (
-        <div className="px-4 pb-2">
-          <BranchSwitcher
-            cwd={cwd}
-            branchInfo={branchInfo}
-            onBranchChanged={refreshBranchInfo}
-          />
-        </div>
-      )}
     </div>
   );
 }

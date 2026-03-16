@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useCCStore } from '@/stores/ccStore';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
+import { useAgentCenterStore } from '@/stores/useAgentCenterStore';
 import { ccNewSession, ccResumeSession } from '@/services';
 
 const CC_LISTENER_READY_EVENT = 'cc-session-listener-ready';
@@ -83,7 +84,9 @@ export function useCCSessionManager() {
     setShowExamples,
     addMessage,
     switchToSession,
+    setSessionLoading,
   } = useCCStore();
+  const { addAgentCard } = useAgentCenterStore();
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -139,6 +142,8 @@ export function useCCSessionManager() {
       setShowExamples(false);
       addMessage({ type: 'user', text: initialMessage });
       setConnected(true);
+      setSessionLoading(sessionId, true);
+      addAgentCard({ kind: 'cc', id: sessionId, preview: initialMessage });
 
       console.info('[useCCSessionManager] New session created', {
         sessionId,

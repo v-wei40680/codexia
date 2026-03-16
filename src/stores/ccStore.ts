@@ -31,6 +31,8 @@ interface CCStoreState {
   activeSessionIds: string[];
   messages: CCMessage[];
   sessionMessagesMap: Record<string, CCMessage[]>;
+  /** Per-session loading state, tracks processing for each session independently */
+  sessionLoadingMap: Record<string, boolean>;
   options: CCOptions;
   isConnected: boolean;
   isLoading: boolean;
@@ -44,6 +46,9 @@ interface CCStoreState {
   switchToSession: (id: string) => void;
   saveCurrentSessionMessages: () => void;
   addMessage: (message: CCMessage) => void;
+  /** Add a message to a specific session's map regardless of which session is active */
+  addMessageToSession: (sessionId: string, message: CCMessage) => void;
+  setSessionLoading: (sessionId: string, loading: boolean) => void;
   updateMessage: (index: number, message: Partial<CCMessage>) => void;
   setMessages: (messages: CCMessage[]) => void;
   updateOptions: (options: Partial<CCOptions>) => void;
@@ -61,6 +66,7 @@ export const useCCStore = create<CCStoreState>()(
       activeSessionIds: [],
       messages: [],
       sessionMessagesMap: {},
+      sessionLoadingMap: {},
       options: {
         model: undefined,
         permissionMode: 'default',
@@ -125,6 +131,23 @@ export const useCCStore = create<CCStoreState>()(
             : state.sessionMessagesMap;
           return { messages: newMessages, sessionMessagesMap: updatedMap };
         }),
+      addMessageToSession: (sessionId, message) =>
+        set((state) => {
+          const prev = state.sessionMessagesMap[sessionId] ?? [];
+          const updated = [...prev, message];
+          const isDone = message.type === 'result';
+          const isActive = state.activeSessionId === sessionId;
+          return {
+            sessionMessagesMap: { ...state.sessionMessagesMap, [sessionId]: updated },
+            sessionLoadingMap: { ...state.sessionLoadingMap, [sessionId]: !isDone },
+            ...(isActive ? { messages: updated, isLoading: !isDone } : {}),
+          };
+        }),
+      setSessionLoading: (sessionId, loading) =>
+        set((state) => ({
+          sessionLoadingMap: { ...state.sessionLoadingMap, [sessionId]: loading },
+          ...(state.activeSessionId === sessionId ? { isLoading: loading } : {}),
+        })),
       updateMessage: (index, message) =>
         set((state) => ({
           messages: state.messages.map((m, i) =>
