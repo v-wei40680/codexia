@@ -4,7 +4,7 @@ import { useApprovalStore, useRequestUserInputStore } from '@/stores/codex';
 import { codexService } from '@/services/codexService';
 import { renderEvent } from '@/components/codex/items';
 import { Button } from '@/components/ui/button';
-import { Square } from 'lucide-react';
+import { Square, RotateCcw } from 'lucide-react';
 import type { AgentCenterCard } from '@/stores/useAgentCenterStore';
 import type { ServerNotification } from '@/bindings';
 
@@ -82,13 +82,15 @@ interface CodexGridCardProps {
 }
 
 export function CodexGridCard({ card, onExpand, onRemove: _onRemove, header, isSelected }: CodexGridCardProps) {
-  const { events, threadLoadingMap } = useCodexStore();
+  const { events, threadLoadingMap, activeThreadIds } = useCodexStore();
   const { pendingApprovals } = useApprovalStore();
   const { pendingRequests } = useRequestUserInputStore();
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [resuming, setResuming] = useState(false);
 
   const threadEvents = events[card.id] ?? [];
   const processing = !!threadLoadingMap[card.id];
+  const needsResume = !activeThreadIds.includes(card.id) && threadEvents.length === 0 && !processing;
 
   const hasPending =
     pendingApprovals.some((a) => (a as any).threadId === card.id) ||
@@ -123,6 +125,15 @@ export function CodexGridCard({ card, onExpand, onRemove: _onRemove, header, isS
   const handleStop = async () => {
     const turnId = getCodexActiveTurnId(threadEvents);
     if (turnId) await codexService.turnInterrupt(card.id, turnId);
+  };
+
+  const handleResume = async () => {
+    setResuming(true);
+    try {
+      await codexService.threadResume(card.id);
+    } finally {
+      setResuming(false);
+    }
   };
 
   const codexItems = useMemo(
@@ -165,7 +176,7 @@ export function CodexGridCard({ card, onExpand, onRemove: _onRemove, header, isS
           <span
             className={`text-[10px] font-mono tabular-nums ${processing ? 'text-green-500' : 'text-muted-foreground/50'}`}
           >
-            {processing ? fmtElapsed(elapsed) : 'idle'}
+            {processing ? fmtElapsed(elapsed) : needsResume ? 'not loaded' : 'idle'}
           </span>
           {tokens !== null && (
             <span className="text-[10px] text-muted-foreground/40">{fmtTokens(tokens)} tok</span>
@@ -177,6 +188,18 @@ export function CodexGridCard({ card, onExpand, onRemove: _onRemove, header, isS
         {processing && (
           <Button size="icon" variant="destructive" className="h-6 w-6" onClick={handleStop}>
             <Square className="h-3 w-3" />
+          </Button>
+        )}
+        {needsResume && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-6 px-2 text-[10px] gap-1"
+            disabled={resuming}
+            onClick={(e) => { e.stopPropagation(); void handleResume(); }}
+          >
+            <RotateCcw className={`h-3 w-3 ${resuming ? 'animate-spin' : ''}`} />
+            {resuming ? 'Loading…' : 'Resume'}
           </Button>
         )}
       </div>

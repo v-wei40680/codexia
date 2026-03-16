@@ -1,12 +1,13 @@
 import { useRef, useEffect, useState, useMemo } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { useCCStore } from '@/stores/ccStore';
-import { ccInterrupt } from '@/services/tauri/cc';
+import { ccInterrupt, ccResumeSession } from '@/services/tauri/cc';
 import { CCMessage } from '@/components/cc/messages';
 import { Button } from '@/components/ui/button';
-import { Square } from 'lucide-react';
+import { Square, RotateCcw } from 'lucide-react';
 import type { AgentCenterCard } from '@/stores/useAgentCenterStore';
 import type { CCMessage as CCMessageType } from '@/components/cc/types/messages';
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
@@ -55,13 +56,17 @@ interface CCGridCardProps {
 }
 
 export function CCGridCard({ card, onExpand, onRemove: _onRemove, header, isSelected }: CCGridCardProps) {
-  const { sessionMessagesMap, sessionLoadingMap } = useCCStore();
+  const { sessionMessagesMap, sessionLoadingMap, activeSessionIds, addActiveSessionId, setSessionLoading, options } = useCCStore();
+  const { cwd } = useWorkspaceStore();
   const scrollRef = useRef<HTMLDivElement>(null);
+  // Tracks the full resume phase: API call + history replay
+  const [isResumingSession, setIsResumingSession] = useState(false);
 
   useCCCardListener(card.id);
 
   const messages = sessionMessagesMap[card.id] ?? [];
   const processing = sessionLoadingMap[card.id] ?? false;
+  const needsResume = !activeSessionIds.includes(card.id) && messages.length === 0 && !processing;
 
   const hasPending = messages.some((m) => m.type === 'permission_request' && !m.resolved);
 
@@ -114,6 +119,26 @@ export function CCGridCard({ card, onExpand, onRemove: _onRemove, header, isSele
     await ccInterrupt(card.id);
   };
 
+  const handleResume = async () => {
+    setIsResumingSession(true);
+    try {
+      await ccResumeSession(card.id, {
+        cwd,
+        permissionMode: options.permissionMode,
+        resume: card.id,
+        continueConversation: true,
+        ...(options.model ? { model: options.model } : {}),
+      });
+      addActiveSessionId(card.id);
+      // History replay is synchronous in the backend and all cc-message events are
+      // emitted before the command returns. Reset loading state so an interrupted
+      // session (no result message) doesn't leave the card stuck in "processing".
+      setSessionLoading(card.id, false);
+    } finally {
+      setIsResumingSession(false);
+    }
+  };
+
   const attentionBorder = hasPending
     ? 'ring-2 ring-amber-500/70 border-amber-500/30'
     : isSelected
@@ -143,9 +168,15 @@ export function CCGridCard({ card, onExpand, onRemove: _onRemove, header, isSele
       <div className="flex items-center justify-between px-2 py-1 border-t bg-muted/20 shrink-0">
         <div className="flex items-center gap-2">
           <span
-            className={`text-[10px] font-mono tabular-nums ${processing ? 'text-green-500' : 'text-muted-foreground/50'}`}
+            className={`text-[10px] font-mono tabular-nums ${processing && !isResumingSession ? 'text-green-500' : 'text-muted-foreground/50'}`}
           >
-            {processing ? fmtElapsed(elapsed) : 'idle'}
+            {processing && !isResumingSession
+              ? fmtElapsed(elapsed)
+              : isResumingSession
+              ? 'loading…'
+              : needsResume
+              ? 'not loaded'
+              : 'idle'}
           </span>
           {tokens !== null && (
             <span className="text-[10px] text-muted-foreground/40">{fmtTokens(tokens)} tok</span>
@@ -157,9 +188,21 @@ export function CCGridCard({ card, onExpand, onRemove: _onRemove, header, isSele
             <span className="text-[10px] text-amber-500 animate-pulse">needs input</span>
           )}
         </div>
-        {processing && (
+        {processing && !isResumingSession && (
           <Button size="icon" variant="destructive" className="h-6 w-6" onClick={handleStop}>
             <Square className="h-3 w-3" />
+          </Button>
+        )}
+        {needsResume && (
+          <Button
+            size="sm"
+            variant="outline"
+            className="h-6 px-2 text-[10px] gap-1"
+            disabled={isResumingSession}
+            onClick={(e) => { e.stopPropagation(); void handleResume(); }}
+          >
+            <RotateCcw className={`h-3 w-3 ${isResumingSession ? 'animate-spin' : ''}`} />
+            {isResumingSession ? 'Loading…' : 'Resume'}
           </Button>
         )}
       </div>

@@ -3,6 +3,7 @@ import { useCCSessionListener, useCCPermissionListener } from './hooks';
 
 import { useCCStore } from '@/stores/ccStore';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
+import { ccResumeSession } from '@/services/tauri/cc';
 
 import { CCMessage } from '@/components/cc/messages';
 import { CCInput } from '@/components/cc/composer';
@@ -13,11 +14,14 @@ import { buildInlineErrorsMap } from './messages/inlineErrors';
 export default function CCView() {
   const {
     activeSessionId,
+    activeSessionIds,
+    addActiveSessionId,
     messages,
     isLoading,
     setLoading,
     setConnected,
     clearMessages,
+    options,
   } = useCCStore();
   const { cwd } = useWorkspaceStore();
 
@@ -35,6 +39,18 @@ export default function CCView() {
     setConnected(false);
     setLoading(false);
   }, [cwd, activeSessionId, clearMessages, setConnected, setLoading]);
+
+  // Auto-resume when entering full-screen for a session not yet active.
+  useEffect(() => {
+    if (!activeSessionId || activeSessionIds.includes(activeSessionId) || !cwd) return;
+    void ccResumeSession(activeSessionId, {
+      cwd,
+      permissionMode: options.permissionMode,
+      resume: activeSessionId,
+      continueConversation: true,
+      ...(options.model ? { model: options.model } : {}),
+    }).then(() => addActiveSessionId(activeSessionId));
+  }, [activeSessionId]);
 
   // Track user scroll intent — ignore events caused by our own programmatic scrolls.
   useEffect(() => {
