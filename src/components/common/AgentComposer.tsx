@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { AgentIcon } from './AgentIcon';
 import { CCInput } from '@/components/cc/composer/CCInput';
-import { BranchSwitcher } from '@/components/cc/BranchSwitcher';
+import { WorkspaceSwitcher } from '@/components/cc/WorkspaceSwitcher';
 import { gitBranchInfo, type GitBranchInfoResponse } from '@/services/tauri/git';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useCodexStore } from '@/stores/codex';
@@ -178,9 +178,9 @@ export function AgentComposer({ isProcessing, onStop }: AgentComposerProps) {
       {activeAgent === 'cc' ? (
         <>
           <CCInput />
-          {branchInfo && cwd && (
+          {cwd && (
             <div className="px-4 pb-2">
-              <BranchSwitcher cwd={cwd} branchInfo={branchInfo} onBranchChanged={refreshBranchInfo} />
+              <WorkspaceSwitcher cwd={cwd} branchInfo={branchInfo} onBranchChanged={refreshBranchInfo} />
             </div>
           )}
         </>

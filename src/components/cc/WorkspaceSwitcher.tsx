@@ -1,0 +1,166 @@
+import { useEffect, useState, useCallback } from 'react';
+import { GitBranch, Check, Loader2, FolderOpen, FolderPlus, ChevronDown } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { gitListBranches, gitCheckoutBranch, type GitBranchInfoResponse } from '@/services/tauri/git';
+import { cn } from '@/lib/utils';
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
+import { open } from '@tauri-apps/plugin-dialog';
+
+type Props = {
+  cwd: string;
+  branchInfo?: GitBranchInfoResponse | null;
+  onBranchChanged: () => void;
+};
+
+export function WorkspaceSwitcher({ cwd, branchInfo, onBranchChanged }: Props) {
+  const [projectOpen, setProjectOpen] = useState(false);
+  const [branchOpen, setBranchOpen] = useState(false);
+  const [branches, setBranches] = useState<string[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [switching, setSwitching] = useState<string | null>(null);
+
+  const { projects, addProject, setCwd } = useWorkspaceStore();
+
+  useEffect(() => {
+    if (!branchOpen) return;
+    setLoading(true);
+    gitListBranches(cwd)
+      .then((res) => setBranches(res.branches))
+      .catch(() => setBranches([]))
+      .finally(() => setLoading(false));
+  }, [branchOpen, cwd]);
+
+  async function handleSelectBranch(branch: string) {
+    if (branch === branchInfo?.branch || switching) return;
+    setSwitching(branch);
+    try {
+      await gitCheckoutBranch(cwd, branch);
+      setBranchOpen(false);
+      onBranchChanged();
+    } catch {
+      // error is shown via toast from postNoContent/invokeTauri
+    } finally {
+      setSwitching(null);
+    }
+  }
+
+  const handleSelectProject = useCallback(
+    (project: string) => {
+      setCwd(project);
+      setProjectOpen(false);
+    },
+    [setCwd]
+  );
+
+  const handleChooseFolder = useCallback(async () => {
+    const projectPath = await open({ directory: true, multiple: false });
+    if (!projectPath || Array.isArray(projectPath)) return;
+    addProject(projectPath as string);
+    setCwd(projectPath as string);
+    setProjectOpen(false);
+  }, [addProject, setCwd]);
+
+  const repoLabel = branchInfo
+    ? branchInfo.owner
+      ? `${branchInfo.owner}/${branchInfo.repo}`
+      : branchInfo.repo
+    : (cwd.split('/').filter(Boolean).pop() ?? cwd);
+
+  return (
+    <div className="flex items-center gap-1 font-mono">
+      {/* Left: Project selector */}
+      <Popover open={projectOpen} onOpenChange={setProjectOpen}>
+        <PopoverTrigger asChild>
+          <button className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
+            <FolderOpen className="h-3 w-3 shrink-0" />
+            <span>{repoLabel}</span>
+            <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent side="top" align="start" className="w-64 p-1">
+          <div className="max-h-60 overflow-y-auto">
+            {projects.map((project) => {
+              const isCurrent = project === cwd;
+              return (
+                <button
+                  key={project}
+                  onClick={() => handleSelectProject(project)}
+                  className={cn(
+                    'flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs font-mono transition-colors',
+                    isCurrent
+                      ? 'text-foreground'
+                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                  )}
+                >
+                  {isCurrent ? (
+                    <Check className="h-3 w-3 shrink-0 text-primary" />
+                  ) : (
+                    <span className="h-3 w-3 shrink-0" />
+                  )}
+                  <span className="truncate">{project}</span>
+                </button>
+              );
+            })}
+          </div>
+          <div className="border-t mt-1 pt-1">
+            <button
+              onClick={handleChooseFolder}
+              className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+            >
+              <FolderPlus className="h-3 w-3 shrink-0" />
+              <span>Choose a different folder</span>
+            </button>
+          </div>
+        </PopoverContent>
+      </Popover>
+
+      {/* Right: Branch switcher (only when in a git repo) */}
+      {branchInfo && <Popover open={branchOpen} onOpenChange={setBranchOpen}>
+        <PopoverTrigger asChild>
+          <button className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
+            <GitBranch className="h-3 w-3 shrink-0" />
+            <span>{branchInfo.branch}</span>
+            <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
+          </button>
+        </PopoverTrigger>
+        <PopoverContent side="top" align="start" className="w-56 p-1">
+          {loading ? (
+            <div className="flex items-center justify-center py-4">
+              <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <div className="max-h-60 overflow-y-auto">
+              {branches.map((branch) => {
+                const isCurrent = branch === branchInfo.branch;
+                const isSwitching = switching === branch;
+                return (
+                  <button
+                    key={branch}
+                    onClick={() => handleSelectBranch(branch)}
+                    disabled={!!switching}
+                    className={cn(
+                      'flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs font-mono transition-colors',
+                      isCurrent
+                        ? 'text-foreground'
+                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                      switching && !isSwitching && 'opacity-50'
+                    )}
+                  >
+                    {isSwitching ? (
+                      <Loader2 className="h-3 w-3 shrink-0 animate-spin" />
+                    ) : isCurrent ? (
+                      <Check className="h-3 w-3 shrink-0 text-primary" />
+                    ) : (
+                      <span className="h-3 w-3 shrink-0" />
+                    )}
+                    <span className="truncate">{branch}</span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </PopoverContent>
+      </Popover>}
+    </div>
+  );
+}
