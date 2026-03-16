@@ -8,8 +8,7 @@ import { ResultCard } from './ResultCard';
 import { safeStringify } from './utils';
 import { Card } from '@/components/ui/card';
 import type { PermissionDecision } from '../types/permission';
-import { CopyButton } from '@/components/CopyButton';
-import { AddToNote } from '@/components/AddToNote';
+import { CopyButton, AddToNote } from '@/components/common';
 import { UserMessage } from './UserMessage';
 
 interface CCMessageProps {

@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
-import { useLayoutStore } from '@/stores';
+import { useLayoutStore, useAgentCenterStore } from '@/stores';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { isTauri } from '@/hooks/runtime';
 import { formatThreadAge } from '@/utils/formatThreadAge';
@@ -28,7 +28,8 @@ export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Pr
   const [loading, setLoading] = useState(sessions === undefined);
   const [error, setError] = useState<string | null>(null);
   const { cwd, setCwd, setSelectedAgent } = useWorkspaceStore();
-  const { setView } = useLayoutStore();
+  const { setView, setCurrentAgentCard } = useLayoutStore();
+  const { addAgentCard } = useAgentCenterStore();
   const { activeSessionIds, activeSessionId, isLoading } = useCCStore();
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -121,7 +122,9 @@ export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Pr
       setCwd(session.project);
     }
     setSelectedAgent('cc');
-    setView('cc');
+    addAgentCard({ kind: 'cc', id: session.sessionId, preview: session.display });
+    setCurrentAgentCard({ kind: 'cc', id: session.sessionId });
+    setView('agent');
     if (onSelectSession) {
       onSelectSession(session.sessionId, session.project);
     }

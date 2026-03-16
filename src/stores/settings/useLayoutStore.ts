@@ -6,6 +6,7 @@ export type viewType =
   | 'cc'
   | 'automations'
   | 'agents'
+  | 'agent'
   | 'history'
   | 'learn'
   | 'login'
@@ -24,6 +25,8 @@ interface LayoutStore {
   setRightPanelSize: (size: number) => void;
   view: viewType;
   setView: (view: viewType) => void;
+  currentCard: { kind: 'codex'; id: string } | { kind: 'cc'; id: string } | null;
+  setCurrentAgentCard: (card: { kind: 'codex'; id: string } | { kind: 'cc'; id: string } | null) => void;
   activeSidebarTab: 'codex' | 'cc';
   setActiveSidebarTab: (tab: 'codex' | 'cc') => void;
   activeRightPanelTab: 'diff' | 'note' | 'files' | 'webpreview';
@@ -43,8 +46,10 @@ export const useLayoutStore = create<LayoutStore>()(
       setRightPanelOpen: (open) => set({ isRightPanelOpen: open }),
       rightPanelSize: 45,
       setRightPanelSize: (size) => set({ rightPanelSize: size }),
-      view: 'codex',
+      view: 'agent',
       setView: (view) => set({ view: view }),
+      currentCard: null,
+      setCurrentAgentCard: (card) => set({ currentCard: card }),
       activeSidebarTab: 'codex',
       setActiveSidebarTab: (tab) => set({ activeSidebarTab: tab }),
       activeRightPanelTab: 'note',

@@ -21,6 +21,7 @@ const MarketplaceView = lazy(() =>
   import('@/views/MarketplaceView').then((module) => ({ default: module.MarketplaceView })),
 );
 const AgentsView = lazy(() => import('@/views/AgentsView'));
+const AgentView = lazy(() => import('@/views/AgentView'));
 const LoginView = lazy(() => import('@/views/LoginView'));
 const AutoMationsView = lazy(() =>
   import('../features/automations').then((module) => ({ default: module.AutoMationsView })),
@@ -120,11 +121,12 @@ export function AppLayout() {
   };
 
   const showMainHeader =
-    view === 'codex' || view === 'cc' || view === 'history' || view === 'marketplace';
+    view === 'codex' || view === 'cc' || view === 'agent' || view === 'history' || view === 'marketplace';
 
   const activeView = (
     <Suspense fallback={<ViewLoadingFallback />}>
       {view === 'agents' && <AgentsView />}
+      {view === 'agent' && <AgentView />}
       {view === 'automations' && <AutoMationsView />}
       {view === 'codex' && <ChatInterface />}
       {view === 'history' && <History />}

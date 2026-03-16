@@ -26,7 +26,7 @@ import { Input } from '@/components/ui/input';
 import { formatThreadAge } from '@/utils/formatThreadAge';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import type { ThreadListItem } from '@/types/codex/ThreadListItem';
-import { useLayoutStore } from '@/stores';
+import { useLayoutStore, useAgentCenterStore } from '@/stores';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 type SessionMetaEntry = {
@@ -40,7 +40,8 @@ interface ThreadListProps {
 
 export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
   const { cwd, historyMode, setCwd, setHistoryMode } = useWorkspaceStore();
-  const { setView } = useLayoutStore();
+  const { setView, setCurrentAgentCard } = useLayoutStore();
+  const { addAgentCard } = useAgentCenterStore();
   const { threads, currentThreadId, threadListNextCursor } = useCodexStore();
   const { searchTerm, sortKey } = useThreadListStore();
   const isProjectScoped = !!cwdOverride;
@@ -205,7 +206,7 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
   );
 
   const handleOpenThreadFromList = useCallback(
-    async (threadId: string) => {
+    async (threadId: string, preview?: string) => {
       if (historyMode) {
         setView('history');
         await handleSelectThread(threadId, { resume: false });
@@ -213,10 +214,12 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
       }
 
       setHistoryMode(false);
-      setView('codex');
+      addAgentCard({ kind: 'codex', id: threadId, preview });
+      setCurrentAgentCard({ kind: 'codex', id: threadId });
+      setView('agent');
       await handleSelectThread(threadId, { resume: true });
     },
-    [handleSelectThread, historyMode, setHistoryMode, setView]
+    [handleSelectThread, historyMode, setHistoryMode, setView, setCurrentAgentCard, addAgentCard]
   );
 
   const handleTogglePin = useCallback(
@@ -273,13 +276,16 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
 
   const handleForkThread = useCallback(
     async (threadId: string) => {
+      const preview = mergedThreads.find((t) => t.id === threadId)?.preview;
       await codexService.threadFork(threadId);
-      setView('codex');
+      addAgentCard({ kind: 'codex', id: threadId, preview });
+      setCurrentAgentCard({ kind: 'codex', id: threadId });
+      setView('agent');
       if (isProjectScoped) {
         await reloadScopedThreadsRef.current?.();
       }
     },
-    [isProjectScoped, setView]
+    [isProjectScoped, setView, mergedThreads, addAgentCard, setCurrentAgentCard]
   );
 
   const handleDeleteThreadByPath = useCallback(
@@ -385,10 +391,10 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
   );
 
   const handleRowKeyDown = useCallback(
-    (event: KeyboardEvent<HTMLDivElement>, threadId: string) => {
+    (event: KeyboardEvent<HTMLDivElement>, thread: { id: string; preview?: string }) => {
       if (event.key === 'Enter' || event.key === ' ') {
         event.preventDefault();
-        void handleOpenThreadFromList(threadId);
+        void handleOpenThreadFromList(thread.id, thread.preview);
       }
     },
     [handleOpenThreadFromList]
@@ -427,14 +433,13 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
             <ContextMenuTrigger asChild>
               <div
                 onClick={() => {
-                  void handleOpenThreadFromList(thread.id);
+                  void handleOpenThreadFromList(thread.id, thread.preview);
                 }}
-                onKeyDown={(event) => handleRowKeyDown(event, thread.id)}
+                onKeyDown={(event) => handleRowKeyDown(event, thread)}
                 role="button"
                 tabIndex={0}
-                className={`group relative grid grid-cols-[0.5rem_1fr_auto] items-center gap-3 w-full text-left p-2 rounded-lg transition-colors ${
-                  currentThreadId === thread.id ? 'bg-zinc-700/50' : 'hover:bg-zinc-800/30'
-                }`}
+                className={`group relative grid grid-cols-[0.5rem_1fr_auto] items-center gap-3 w-full text-left p-2 rounded-lg transition-colors ${currentThreadId === thread.id ? 'bg-zinc-700/50' : 'hover:bg-zinc-800/30'
+                  }`}
               >
                 <div className="relative h-6">
                   <button
@@ -444,9 +449,8 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
                       event.stopPropagation();
                       void handleTogglePin(thread.id);
                     }}
-                    className={`absolute left-0 top-1/2 -translate-y-1/2 inline-flex items-center justify-center h-6 w-6 rounded hover:bg-accent/50 transition-colors ${
-                      thread.pinnedAtMs || isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                    } ${thread.pinnedAtMs ? 'text-foreground' : 'text-muted-foreground/40'}`}
+                    className={`absolute left-0 top-1/2 -translate-y-1/2 inline-flex items-center justify-center h-6 w-6 rounded hover:bg-accent/50 transition-colors ${thread.pinnedAtMs || isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
+                      } ${thread.pinnedAtMs ? 'text-foreground' : 'text-muted-foreground/40'}`}
                   >
                     <Pin className="h-4 w-4" />
                   </button>

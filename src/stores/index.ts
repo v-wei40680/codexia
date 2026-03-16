@@ -9,3 +9,4 @@ export * from './useCCInputStore';
 export * from './useInputStore';
 export * from './useNoteStore';
 export * from './useWorkspaceStore';
+export * from './useAgentCenterStore';

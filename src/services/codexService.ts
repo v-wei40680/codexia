@@ -200,10 +200,32 @@ export const codexService = {
       const { activeThreadIds, events } = useCodexStore.getState();
 
       if (!activeThreadIds.includes(threadId) || !events[threadId]) {
-        await codexService.threadResume(threadId);
-      } else {
+        // Optimistically set currentThreadId before the async resume so ChatInterface
+        // renders with the correct (empty) event list instead of a stale thread's state.
         set((state) => ({
           currentThreadId: threadId,
+          currentTurnId: null,
+          inputFocusTrigger: state.inputFocusTrigger + 1,
+        }));
+        await codexService.threadResume(threadId);
+      } else {
+        // Derive the active turn ID from the thread's live events so the Stop button
+        // works correctly when the thread is still processing.
+        const threadEvents = events[threadId] ?? [];
+        let activeTurnId: string | null = null;
+        for (let i = threadEvents.length - 1; i >= 0; i--) {
+          const e = threadEvents[i];
+          if (e.method === 'turn/started') {
+            activeTurnId = (e.params as { turn: { id: string } }).turn.id;
+            break;
+          }
+          if (e.method === 'turn/completed' || e.method === 'error') {
+            break;
+          }
+        }
+        set((state) => ({
+          currentThreadId: threadId,
+          currentTurnId: activeTurnId,
           inputFocusTrigger: state.inputFocusTrigger + 1,
         }));
       }

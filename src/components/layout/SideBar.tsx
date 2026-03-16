@@ -1,4 +1,4 @@
-import { BookOpen, ListFilter, Package, PanelLeft, SquarePen, Timer } from 'lucide-react';
+import { BookOpen, BotMessageSquare, ListFilter, Package, PanelLeft, SquarePen, Timer } from 'lucide-react';
 import { useCallback, useEffect } from 'react';
 import { useLayoutStore } from '@/stores';
 import { Button } from '@/components/ui/button';
@@ -45,7 +45,7 @@ const navBtnCls = (active: boolean) => `${navBtnBase} ${active ? navBtnActive : 
 // Tab definitions for Codex / Claude switcher
 const SIDEBAR_TABS = [
   { key: 'codex', label: 'Codex', agent: 'codex' },
-  { key: 'cc',    label: 'Claude', agent: 'cc'    },
+  { key: 'cc', label: 'Claude', agent: 'cc' },
 ] as const;
 
 export function SideBar() {
@@ -170,6 +170,16 @@ export function SideBar() {
           >
             <SquarePen className="h-4 w-4" />
             {selectedAgent === 'cc' ? 'New Session' : 'New Thread'}
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className={navBtnCls(view === 'agent')}
+            onClick={() => setView('agent')}
+          >
+            <BotMessageSquare className="h-4 w-4" />
+            Agent Center
           </Button>
 
           <Button
