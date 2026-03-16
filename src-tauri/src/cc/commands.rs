@@ -31,7 +31,9 @@ pub async fn cc_send_message(
     message_service::send_message(&session_id, &message, &state, move |msg| {
         if let Ok(mut payload) = serde_json::to_value(&msg) {
             if let Some(obj) = payload.as_object_mut() {
-                obj.entry("session_id").or_insert_with(|| serde_json::Value::String(sid.clone()));
+                // Always override session_id with the caller's sid so that resumed sessions
+                // (which may produce a new SDK session_id) are still routed to the correct card.
+                obj.insert("session_id".to_string(), serde_json::Value::String(sid.clone()));
             }
             cc_state.emit("cc-message", payload);
         }

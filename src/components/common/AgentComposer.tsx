@@ -8,6 +8,7 @@ import { useCodexStore } from '@/stores/codex';
 import { useConfigStore, type ThreadCwdMode } from '@/stores/codex';
 import { codexService } from '@/services/codexService';
 import { useAgentCenterStore } from '@/stores';
+import { useCCStore } from '@/stores/ccStore';
 import { useInputStore } from '@/stores/useInputStore';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
@@ -136,12 +137,17 @@ export function AgentComposer({ isProcessing, onStop }: AgentComposerProps) {
   const setActiveAgent = setSelectedAgent;
   const [branchInfo, setBranchInfo] = useState<GitBranchInfoResponse | null>(null);
   const { currentAgentCardId, cards } = useAgentCenterStore();
+  const { switchToSession } = useCCStore();
 
-  // Sync tab to the currently selected card's kind
+  // Sync tab and active session to the currently selected card
   useEffect(() => {
     if (!currentAgentCardId) return;
     const card = cards.find((c) => c.id === currentAgentCardId);
-    if (card) setActiveAgent(card.kind);
+    if (!card) return;
+    setActiveAgent(card.kind);
+    if (card.kind === 'cc') {
+      switchToSession(card.id);
+    }
   }, [currentAgentCardId]);
 
   useEffect(() => {

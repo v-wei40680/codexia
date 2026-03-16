@@ -38,7 +38,7 @@ export function useCCCardListener(sessionId: string | null) {
     const unlistenPromise = listen<CCMessageType>('cc-message', (event) => {
       const message = event.payload;
       const msgSessionId = (message as CCMessageType & { session_id?: string }).session_id;
-      if (msgSessionId && msgSessionId !== sessionId) return;
+      if (!msgSessionId || msgSessionId !== sessionId) return;
       addMessageToSession(sessionId, message);
     });
     return () => { void unlistenPromise.then((fn) => fn()); };
