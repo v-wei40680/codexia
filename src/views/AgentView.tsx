@@ -8,7 +8,7 @@ import { ArrowLeft, X } from 'lucide-react';
 import type { AgentCenterCard } from '@/stores/useAgentCenterStore';
 import { AgentIcon } from '@/components/common/AgentIcon';
 import { AgentComposer } from '@/components/common';
-import { CodexGridCard, isCodexProcessing } from './CodexGridCard';
+import { CodexGridCard } from './CodexGridCard';
 import { CCGridCard } from './CCGridCard';
 
 const ChatInterface = lazy(() =>
@@ -92,16 +92,15 @@ type TabFilter = 'all' | 'idle' | 'running';
 export default function AgentView() {
   const { cards, removeCard } = useAgentCenterStore();
   const { currentCard, setCurrentAgentCard } = useLayoutStore();
-  const { switchToSession } = useCCStore();
-  const { events, currentThreadId, currentTurnId } = useCodexStore();
-  const { activeSessionId, isLoading } = useCCStore();
+  const { switchToSession, sessionLoadingMap } = useCCStore();
+  const { threadLoadingMap, currentThreadId, currentTurnId } = useCodexStore();
   const [tab, setTab] = useState<TabFilter>('all');
   const [codexSending, setCodexSending] = useState(false);
 
   const isRunning = (card: AgentCenterCard) =>
     card.kind === 'codex'
-      ? isCodexProcessing(events[card.id] ?? [])
-      : isLoading && activeSessionId === card.id;
+      ? !!threadLoadingMap[card.id]
+      : !!sessionLoadingMap[card.id];
 
   const counts = useMemo(
     () => ({
@@ -109,7 +108,7 @@ export default function AgentView() {
       idle: cards.filter((c) => !isRunning(c)).length,
       running: cards.filter((c) => isRunning(c)).length,
     }),
-    [cards, events, activeSessionId, isLoading]
+    [cards, threadLoadingMap, sessionLoadingMap]
   );
 
   const visible = tab === 'all' ? cards : cards.filter((c) => (tab === 'running') === isRunning(c));

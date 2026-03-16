@@ -86,6 +86,8 @@ interface CodexStore {
   currentTurnId: string | null;
   hasAccount: boolean | null;
   events: Record<string, ServerNotification[]>; // Events per thread
+  /** Per-thread processing state derived from turn/started and turn/completed events */
+  threadLoadingMap: Record<string, boolean>;
   activeThreadIds: string[]; // Track resumed/active threads
   inputFocusTrigger: number; // Increment to trigger focus in InputArea
   threadListRefreshToken: number; // Increment to trigger thread list refresh
@@ -107,6 +109,7 @@ export const useCodexStore = create<CodexStore>((set) => ({
   currentTurnId: null,
   hasAccount: null,
   events: {},
+  threadLoadingMap: {},
   activeThreadIds: [],
   inputFocusTrigger: 0,
   threadListRefreshToken: 0,
@@ -164,9 +167,14 @@ export const useCodexStore = create<CodexStore>((set) => ({
         [threadId]: compactedEvents,
       };
 
-      return {
-        events: newEvents,
-      };
+      let threadLoadingMap = state.threadLoadingMap;
+      if (event.method === 'turn/started') {
+        threadLoadingMap = { ...threadLoadingMap, [threadId]: true };
+      } else if (event.method === 'turn/completed' || event.method === 'error') {
+        threadLoadingMap = { ...threadLoadingMap, [threadId]: false };
+      }
+
+      return { events: newEvents, threadLoadingMap };
     });
   },
 

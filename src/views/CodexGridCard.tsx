@@ -10,15 +10,6 @@ import type { ServerNotification } from '@/bindings';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
 
-export function isCodexProcessing(events: ServerNotification[]): boolean {
-  for (let i = events.length - 1; i >= 0; i--) {
-    const m = events[i].method;
-    if (m === 'turn/started') return true;
-    if (m === 'turn/completed' || m === 'error') return false;
-  }
-  return false;
-}
-
 export function getCodexActiveTurnId(events: ServerNotification[]): string | null {
   for (let i = events.length - 1; i >= 0; i--) {
     const e = events[i];
@@ -90,13 +81,13 @@ interface CodexGridCardProps {
 }
 
 export function CodexGridCard({ card, onExpand, onRemove: _onRemove, header }: CodexGridCardProps) {
-  const { events } = useCodexStore();
+  const { events, threadLoadingMap } = useCodexStore();
   const { pendingApprovals } = useApprovalStore();
   const { pendingRequests } = useRequestUserInputStore();
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const threadEvents = events[card.id] ?? [];
-  const processing = isCodexProcessing(threadEvents);
+  const processing = !!threadLoadingMap[card.id];
 
   const hasPending =
     pendingApprovals.some((a) => (a as any).threadId === card.id) ||
