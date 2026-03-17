@@ -1,6 +1,5 @@
 import { useRef, useEffect, type ReactNode } from 'react';
 import { useCodexStore } from '@/stores/codex';
-import { useInputStore } from '@/stores';
 import { codexService } from '@/services/codexService';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { renderEvent } from './items';
@@ -8,23 +7,14 @@ import { ApprovalItem } from './items/ApprovalItem';
 import { RequestUserInputItem } from './items/RequestUserInputItem';
 import { Markdown } from '@/components/Markdown';
 import { Composer } from './Composer';
-import { Tips } from '@/components/Tips';
 import { CodexAuth } from './CodexAuth';
 import { useSettingsStore } from '@/stores/settings';
-import { Quotes } from '../features/Quotes';
 import { toast } from '@/components/ui/use-toast';
 import { getErrorMessage } from '@/utils/errorUtils';
-import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
-import { ProjectSelector } from '@/components/project-selector/ProjectSelector';
-import { Button } from '@/components/ui/button';
-import { CircleHelp, Lightbulb } from 'lucide-react';
 
 export function ChatInterface() {
   const { currentThreadId, currentTurnId, events, inputFocusTrigger, hasAccount } = useCodexStore();
-  const { setInputValue } = useInputStore();
-  const { taskDetail, showReasoning, showQuotes, setShowQuotes, showTips, setShowTips } =
-    useSettingsStore();
-  const { projects } = useWorkspaceStore();
+  const { taskDetail, showReasoning } = useSettingsStore();
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
 
   // Get events for the current thread
@@ -54,8 +44,6 @@ export function ChatInterface() {
     bottomAnchorRef.current?.scrollIntoView({ block: 'end' });
   }, [currentThreadEvents]);
 
-  const isEmptyConversation = currentThreadEvents.length === 0;
-  const showWorkspaceLauncher = isEmptyConversation && hasAccount === true && projects.length > 0;
 
   const renderedEvents: Array<{
     key: string;
@@ -191,46 +179,9 @@ export function ChatInterface() {
             )}
             <ApprovalItem />
             {currentThreadEvents.length === 0 && hasAccount === false && <CodexAuth />}
-            {showWorkspaceLauncher && (
-              <div className="mx-auto my-8 flex w-full max-w-3xl flex-col items-center gap-3 px-4 text-center">
-                <p className="text-2xl font-semibold tracking-tight">let&apos;s build</p>
-                <div className="flex items-center gap-2">
-                  <Button
-                    variant={showQuotes ? 'secondary' : 'ghost'}
-                    size="icon"
-                    className="h-10 w-10"
-                    onClick={() => setShowQuotes(!showQuotes)}
-                    title={showQuotes ? 'Hide quotes' : 'Show quotes'}
-                    aria-label={showQuotes ? 'Hide quotes' : 'Show quotes'}
-                    aria-pressed={showQuotes}
-                  >
-                    <Lightbulb className="h-4 w-4" />
-                  </Button>
-                  <ProjectSelector
-                    variant="hero"
-                    className="h-10 max-w-[220px] gap-2 px-3"
-                    triggerMode="project-name"
-                    showChevron
-                  />
-                  <Button
-                    variant={showTips ? 'secondary' : 'ghost'}
-                    size="icon"
-                    className="h-10 w-10"
-                    onClick={() => setShowTips(!showTips)}
-                    title={showTips ? 'Hide tips' : 'Show tips'}
-                    aria-label={showTips ? 'Hide tips' : 'Show tips'}
-                    aria-pressed={showTips}
-                  >
-                    <CircleHelp className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            )}
-            {currentThreadEvents.length === 0 && hasAccount === true && showQuotes && <Quotes />}
             {isProcessing && (
-              <div className="text-sm text-muted-foreground animate-pulse">thinking...</div>
+              <div className="text-sm text-muted-foreground animate-pulse">Thinking</div>
             )}
-            {currentThreadEvents.length === 0 && showTips && <Tips onTipClick={setInputValue} />}
             <RequestUserInputItem currentThreadId={currentThreadId} />
             <div ref={bottomAnchorRef} aria-hidden="true" />
           </div>

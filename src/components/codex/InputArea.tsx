@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { SendIcon, Square, X } from 'lucide-react';
+import { ArrowUp, Square, X } from 'lucide-react';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { FileSearchPopover, SlashCommandPopover, SkillsInputPopover } from './selector';
 import type { FileSearchPopoverHandle, SlashCommandPopoverHandle } from './selector';
@@ -405,7 +405,7 @@ export function InputArea({
         <div
           ref={editorWrapperRef}
           onKeyDown={handleWrapperKeyDown}
-          className={`mdx-input-wrapper ${isMobile ? 'min-h-[40px] max-h-[180px]' : 'min-h-[32px] max-h-[200px]'} overflow-y-auto p-2`}
+          className={`mdx-input-wrapper max-h-64 overflow-y-auto px-2 pt-2`}
         >
           <MDXEditor
             ref={editorRef}
@@ -426,9 +426,9 @@ export function InputArea({
 
         {/* Toolbar row */}
         <div
-          className={`flex items-center justify-between rounded-b-xl bg-muted/20 ${isMobile ? 'gap-2 px-2 py-1.5' : 'p-0 pl-3'}`}
+          className={`flex items-center justify-between rounded-b-xl bg-muted/20`}
         >
-          <div className={`flex items-center ${isMobile ? 'flex-wrap gap-1' : ''}`}>
+          <div className={`flex items-center`}>
             {children}
           </div>
           <div>
@@ -437,7 +437,7 @@ export function InputArea({
                 onClick={handleStop}
                 variant="destructive"
                 size="icon"
-                className={`${isMobile ? 'h-10 w-10' : 'h-8 w-8'} rounded-lg`}
+                className={`${isMobile ? 'h-10 w-10' : 'h-8 w-8'} rounded-full`}
               >
                 <Square className="w-4 h-4" />
               </Button>
@@ -446,9 +446,9 @@ export function InputArea({
                 onClick={handleSend}
                 disabled={!inputValue.trim() && images.length === 0}
                 size="icon"
-                className={`${isMobile ? 'h-10 w-10' : 'h-8 w-8'} rounded-lg`}
+                className={`${isMobile ? 'h-10 w-10' : 'h-8 w-8'} rounded-full`}
               >
-                <SendIcon className="w-4 h-4" />
+                <ArrowUp className="w-4 h-4" />
               </Button>
             )}
           </div>
