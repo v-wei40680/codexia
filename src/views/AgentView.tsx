@@ -176,14 +176,6 @@ export default function AgentView() {
     }
   };
 
-  if (cards.length === 0) {
-    return (
-      <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-        No agents open. Click a thread or session in the sidebar.
-      </div>
-    );
-  }
-
   // Full-screen mode
   if (currentCard) {
     const card = cards.find((c) => c.kind === currentCard.kind && c.id === currentCard.id);
