@@ -150,8 +150,8 @@ export function CodexGridCard({ card, onExpand, onRemove: _onRemove, header, isS
   const attentionBorder = hasPending
     ? 'ring-2 ring-amber-500/70 border-amber-500/30'
     : isSelected
-    ? 'ring-2 ring-primary/60 border-primary/30'
-    : 'border';
+      ? 'ring-2 ring-primary/60 border-primary/30'
+      : 'border';
 
   return (
     <div className={`flex flex-col ${attentionBorder} rounded-lg bg-background overflow-hidden h-72 transition-shadow`}>
@@ -176,7 +176,7 @@ export function CodexGridCard({ card, onExpand, onRemove: _onRemove, header, isS
           <span
             className={`text-[10px] font-mono tabular-nums ${processing ? 'text-green-500' : 'text-muted-foreground/50'}`}
           >
-            {processing ? fmtElapsed(elapsed) : needsResume ? 'not loaded' : 'idle'}
+            {processing && fmtElapsed(elapsed)}
           </span>
           {tokens !== null && (
             <span className="text-[10px] text-muted-foreground/40">{fmtTokens(tokens)} tok</span>

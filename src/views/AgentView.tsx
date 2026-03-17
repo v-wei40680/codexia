@@ -1,7 +1,7 @@
 import { lazy, Suspense, useState, useMemo } from 'react';
 import { useAgentCenterStore } from '@/stores';
 import { useLayoutStore } from '@/stores';
-import { useCodexStore } from '@/stores/codex';
+import { useCodexStore, useApprovalStore, useRequestUserInputStore } from '@/stores/codex';
 import { useCCStore } from '@/stores/ccStore';
 
 import { codexService } from '@/services/codexService';
@@ -19,15 +19,25 @@ const CCView = lazy(() => import('@/components/cc/CCView'));
 
 // ─── CardHeader ──────────────────────────────────────────────────────────────
 
+type CardStatus = 'running' | 'pending' | 'idle';
+
 interface CardHeaderProps {
   card: AgentCenterCard;
   onClose?: () => void;
   onBack?: () => void;
   onSelect?: () => void;
+  status?: CardStatus;
 }
 
-export function CardHeader({ card, onClose, onBack, onSelect }: CardHeaderProps) {
+export function CardHeader({ card, onClose, onBack, onSelect, status = 'idle' }: CardHeaderProps) {
   const title = card.preview?.slice(0, 60) || card.id.slice(0, 12);
+
+  const dotColor =
+    status === 'running' ? 'bg-green-500' :
+    status === 'pending' ? 'bg-amber-500' :
+    'bg-muted-foreground/40';
+
+  const dotAnimate = status !== 'idle' ? 'animate-pulse' : '';
 
   return (
     <div
@@ -45,12 +55,14 @@ export function CardHeader({ card, onClose, onBack, onSelect }: CardHeaderProps)
         </button>
       )}
       {onClose && (
+        // Shows a status dot by default; reveals the X button on hover.
         <button
           onClick={(e) => { e.stopPropagation(); onClose(); }}
-          className="text-destructive/60 hover:text-destructive transition-colors shrink-0"
+          className="group relative h-3.5 w-3.5 flex items-center justify-center shrink-0"
           aria-label="Remove"
         >
-          <X className="h-3.5 w-3.5" />
+          <span className={`absolute h-2 w-2 rounded-full transition-opacity duration-150 group-hover:opacity-0 ${dotColor} ${dotAnimate}`} />
+          <X className="h-3.5 w-3.5 text-destructive/60 hover:text-destructive absolute opacity-0 group-hover:opacity-100 transition-opacity duration-150" />
         </button>
       )}
       <AgentIcon agent={card.kind} />
@@ -70,11 +82,30 @@ interface GridCardProps {
 
 function GridCard({ card, onExpand, onRemove, isSelected }: GridCardProps) {
   const { setCurrentAgentCardId } = useAgentCenterStore();
+  const { sessionLoadingMap, sessionMessagesMap } = useCCStore();
+  const { threadLoadingMap } = useCodexStore();
+  const { pendingApprovals } = useApprovalStore();
+  const { pendingRequests } = useRequestUserInputStore();
+
+  const running =
+    card.kind === 'codex' ? !!threadLoadingMap[card.id] : !!sessionLoadingMap[card.id];
+
+  const pending =
+    card.kind === 'codex'
+      ? pendingApprovals.some((a) => (a as any).threadId === card.id) ||
+        pendingRequests.some((r) => r.threadId === card.id)
+      : (sessionMessagesMap[card.id] ?? []).some(
+          (m) => m.type === 'permission_request' && !(m as any).resolved
+        );
+
+  const status: CardStatus = running ? 'running' : pending ? 'pending' : 'idle';
+
   const header = (
     <CardHeader
       card={card}
       onClose={onRemove}
       onSelect={() => setCurrentAgentCardId(card.id)}
+      status={status}
     />
   );
 

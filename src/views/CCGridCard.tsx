@@ -142,8 +142,8 @@ export function CCGridCard({ card, onExpand, onRemove: _onRemove, header, isSele
   const attentionBorder = hasPending
     ? 'ring-2 ring-amber-500/70 border-amber-500/30'
     : isSelected
-    ? 'ring-2 ring-primary/60 border-primary/30'
-    : 'border';
+      ? 'ring-2 ring-primary/60 border-primary/30'
+      : 'border';
 
   return (
     <div className={`flex flex-col ${attentionBorder} rounded-lg bg-background overflow-hidden h-72 transition-shadow`}>
@@ -167,17 +167,9 @@ export function CCGridCard({ card, onExpand, onRemove: _onRemove, header, isSele
 
       <div className="flex items-center justify-between px-2 py-1 border-t bg-muted/20 shrink-0">
         <div className="flex items-center gap-2">
-          <span
-            className={`text-[10px] font-mono tabular-nums ${processing && !isResumingSession ? 'text-green-500' : 'text-muted-foreground/50'}`}
-          >
-            {processing && !isResumingSession
-              ? fmtElapsed(elapsed)
-              : isResumingSession
-              ? 'loading…'
-              : needsResume
-              ? 'not loaded'
-              : 'idle'}
-          </span>
+          {processing && !isResumingSession && (
+            <span className="text-[10px] font-mono tabular-nums text-green-500">{fmtElapsed(elapsed)}</span>
+          )}
           {tokens !== null && (
             <span className="text-[10px] text-muted-foreground/40">{fmtTokens(tokens)} tok</span>
           )}
@@ -185,7 +177,7 @@ export function CCGridCard({ card, onExpand, onRemove: _onRemove, header, isSele
             <span className="text-[10px] text-muted-foreground/40">{fmtCost(cost)}</span>
           )}
           {hasPending && !processing && (
-            <span className="text-[10px] text-amber-500 animate-pulse">needs input</span>
+            <span className="text-[10px] text-amber-500">needs input</span>
           )}
         </div>
         {processing && !isResumingSession && (
