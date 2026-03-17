@@ -244,7 +244,11 @@ export default function AgentView() {
       </div>
 
       {/* Shared composer */}
-      <AgentComposer />
+      <div className="flex justify-center">
+        <div className="max-w-3xl w-full px-2">
+          <AgentComposer />
+        </div>
+      </div>
     </div>
   );
 }

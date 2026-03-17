@@ -42,7 +42,7 @@ export function AgentComposer() {
   return (
     <div className="flex flex-col">
       {/* Agent tabs */}
-      <div className="flex items-center gap-1 px-2 pt-1.5 border-t bg-background">
+      <div className="flex items-center">
         {(['cc', 'codex'] as Agent[]).map((agent) => (
           <button
             key={agent}
