@@ -1,4 +1,4 @@
-import { BookOpen, BotMessageSquare, ListFilter, Package, PanelLeft, SquarePen, Timer } from 'lucide-react';
+import { BotMessageSquare, ListFilter, Package, PanelLeft, SquarePen, Timer } from 'lucide-react';
 import { useCallback, useEffect } from 'react';
 import { useAgentCenterStore, useLayoutStore } from '@/stores';
 import { Button } from '@/components/ui/button';
@@ -269,15 +269,6 @@ export function SideBar() {
       {/* Footer */}
       <div className="flex items-center justify-between gap-2 min-h-0 min-w-0 max-w-full overflow-x-hidden">
         <UserInfo />
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          title="open learn view"
-          onClick={() => setView('learn')}
-        >
-          <BookOpen className="h-4 w-4" />
-        </Button>
       </div>
     </div>
   );

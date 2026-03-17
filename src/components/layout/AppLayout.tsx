@@ -26,9 +26,6 @@ const LoginView = lazy(() => import('@/views/LoginView'));
 const AutoMationsView = lazy(() =>
   import('../features/automations').then((module) => ({ default: module.AutoMationsView })),
 );
-const LearnView = lazy(() =>
-  import('@/views/LearnView').then((module) => ({ default: module.LearnView })),
-);
 
 const ViewLoadingFallback = () => (
   <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
@@ -130,7 +127,6 @@ export function AppLayout() {
       {view === 'automations' && <AutoMationsView />}
       {view === 'codex' && <ChatInterface />}
       {view === 'history' && <History />}
-      {view === 'learn' && <LearnView />}
       {view === 'login' && <LoginView />}
       {view === 'marketplace' && <MarketplaceView />}
       {view === 'usage' && <UsageView />}
