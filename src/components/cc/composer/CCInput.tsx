@@ -99,7 +99,7 @@ export function CCInput() {
 
   return (
     <>
-      <div className="shrink-0 p-2 border-t bg-background">
+      <div className="shrink-0">
         <div className="relative group">
           <Textarea
             ref={textareaRef}
