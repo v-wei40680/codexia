@@ -82,16 +82,15 @@ interface GridCardProps {
 
 function GridCard({ card, onExpand, onRemove, isSelected }: GridCardProps) {
   const { setCurrentAgentCardId } = useAgentCenterStore();
-  const { sessionLoadingMap, sessionMessagesMap } = useCCStore();
+  const { sessionLoadingMap, sessionMessagesMap, activeSessionIds } = useCCStore();
   const { threadStatusMap } = useCodexStore();
   const { pendingApprovals } = useApprovalStore();
   const { pendingRequests } = useRequestUserInputStore();
-
   const codexStatus = card.kind === 'codex' ? threadStatusMap[card.id] : undefined;
   const running =
     card.kind === 'codex'
       ? codexStatus?.type === 'active' && codexStatus.activeFlags.length === 0
-      : !!sessionLoadingMap[card.id];
+      : activeSessionIds.includes(card.id) && !!sessionLoadingMap[card.id];
 
   const pending =
     card.kind === 'codex'

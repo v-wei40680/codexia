@@ -33,6 +33,8 @@ interface CCStoreState {
   sessionMessagesMap: Record<string, CCMessage[]>;
   /** Per-session loading state, tracks processing for each session independently */
   sessionLoadingMap: Record<string, boolean>;
+  /** Timestamp (ms) when the first message arrived for each session */
+  sessionStartTimeMap: Record<string, number>;
   options: CCOptions;
   isConnected: boolean;
   isLoading: boolean;
@@ -67,6 +69,7 @@ export const useCCStore = create<CCStoreState>()(
       messages: [],
       sessionMessagesMap: {},
       sessionLoadingMap: {},
+      sessionStartTimeMap: {},
       options: {
         model: undefined,
         permissionMode: 'default',
@@ -125,11 +128,25 @@ export const useCCStore = create<CCStoreState>()(
         }),
       addMessage: (message) =>
         set((state) => {
+          const sid = state.activeSessionId;
           const newMessages = [...state.messages, message];
-          const updatedMap = state.activeSessionId
-            ? { ...state.sessionMessagesMap, [state.activeSessionId]: newMessages }
+          const isDone = message.type === 'result';
+          const updatedMap = sid
+            ? { ...state.sessionMessagesMap, [sid]: newMessages }
             : state.sessionMessagesMap;
-          return { messages: newMessages, sessionMessagesMap: updatedMap };
+          const loadingUpdate = sid
+            ? { sessionLoadingMap: { ...state.sessionLoadingMap, [sid]: !isDone } }
+            : {};
+          let startTimeUpdate: { sessionStartTimeMap?: Record<string, number> } = {};
+          if (sid) {
+            if (isDone) {
+              const { [sid]: _, ...rest } = state.sessionStartTimeMap;
+              startTimeUpdate = { sessionStartTimeMap: rest };
+            } else if (!state.sessionStartTimeMap[sid]) {
+              startTimeUpdate = { sessionStartTimeMap: { ...state.sessionStartTimeMap, [sid]: Date.now() } };
+            }
+          }
+          return { messages: newMessages, isLoading: !isDone, sessionMessagesMap: updatedMap, ...loadingUpdate, ...startTimeUpdate };
         }),
       addMessageToSession: (sessionId, message) =>
         set((state) => {
@@ -137,9 +154,20 @@ export const useCCStore = create<CCStoreState>()(
           const updated = [...prev, message];
           const isDone = message.type === 'result';
           const isActive = state.activeSessionId === sessionId;
+          // Track the start of each processing cycle:
+          // - Clear on result so the next cycle gets a fresh timestamp.
+          // - Set on the first non-result message when no start is recorded.
+          let startTimeUpdate: { sessionStartTimeMap?: Record<string, number> } = {};
+          if (isDone) {
+            const { [sessionId]: _, ...rest } = state.sessionStartTimeMap;
+            startTimeUpdate = { sessionStartTimeMap: rest };
+          } else if (!state.sessionStartTimeMap[sessionId]) {
+            startTimeUpdate = { sessionStartTimeMap: { ...state.sessionStartTimeMap, [sessionId]: Date.now() } };
+          }
           return {
             sessionMessagesMap: { ...state.sessionMessagesMap, [sessionId]: updated },
             sessionLoadingMap: { ...state.sessionLoadingMap, [sessionId]: !isDone },
+            ...startTimeUpdate,
             ...(isActive ? { messages: updated, isLoading: !isDone } : {}),
           };
         }),

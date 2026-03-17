@@ -2,6 +2,9 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { useCCStore } from '@/stores/cc';
 import { getSessions, SessionData } from '@/lib/sessions';
+import { ccGetSessionFilePath } from '@/services/tauri/cc';
+import { readTextFileLines } from '@/services/tauri/filesystem';
+import { parseSessionJsonl } from '@/components/cc/utils/parseSessionJsonl';
 import { MoreVertical, Copy, Loader2 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -30,7 +33,7 @@ export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Pr
   const { cwd, setCwd, setSelectedAgent } = useWorkspaceStore();
   const { setView } = useLayoutStore();
   const { addAgentCard, setCurrentAgentCardId } = useAgentCenterStore();
-  const { activeSessionIds, activeSessionId, isLoading } = useCCStore();
+  const { activeSessionIds, activeSessionId, isLoading, addMessageToSession, sessionMessagesMap } = useCCStore();
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
@@ -127,6 +130,18 @@ export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Pr
     setView('agent');
     if (onSelectSession) {
       onSelectSession(session.sessionId, session.project);
+    }
+    // Load JSONL history immediately so the card shows messages without requiring "Resume".
+    const sid = session.sessionId;
+    if (!sessionMessagesMap[sid]?.length) {
+      void (async () => {
+        const filePath = await ccGetSessionFilePath(sid);
+        if (!filePath) return;
+        const lines = await readTextFileLines(filePath);
+        for (const msg of parseSessionJsonl(lines, sid)) {
+          addMessageToSession(sid, msg);
+        }
+      })();
     }
   };
 

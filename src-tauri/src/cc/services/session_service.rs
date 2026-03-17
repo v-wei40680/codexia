@@ -1,4 +1,3 @@
-use crate::cc::db::SessionDB;
 use crate::cc::state::CCState;
 use crate::cc::types::{AgentOptions, CCConnectParams, parse_permission_mode};
 use claude_agent_sdk_rs::{
@@ -6,8 +5,6 @@ use claude_agent_sdk_rs::{
     PreToolUseHookSpecificOutput, SyncHookJsonOutput,
 };
 use std::collections::HashSet;
-use std::fs;
-use std::io::{BufRead, BufReader};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use super::message_service;
@@ -360,49 +357,6 @@ pub async fn resume_session(
     options: AgentOptions,
     state: &CCState,
 ) -> Result<(), String> {
-    // Replay historical messages from JSONL to the frontend as raw JSON values.
-    // Using raw serde_json::Value avoids the SDK Message type losing user message content
-    // (JSONL user messages use a nested `message.content` format the SDK doesn't model).
-    if let Ok(db) = SessionDB::new() {
-        if let Ok(Some(file_path)) = db.get_file_path(&session_id) {
-            if let Ok(file) = fs::File::open(&file_path) {
-                let reader = BufReader::new(file);
-                for line in reader.lines().filter_map(|l| l.ok()) {
-                    let sanitized = line.replace('\u{0000}', "").trim().to_string();
-                    if sanitized.is_empty() || !sanitized.ends_with('}') { continue; }
-                    if let Ok(mut val) = serde_json::from_str::<serde_json::Value>(&sanitized) {
-                        let msg_type = val.get("type").and_then(|t| t.as_str()).unwrap_or("").to_string();
-                        if !matches!(msg_type.as_str(), "user" | "assistant" | "system" | "result") {
-                            continue;
-                        }
-                        // JSONL user messages use {"message":{"role":"user","content":"..."}}
-                        // Normalize to SDK format with top-level `text` field.
-                        if msg_type == "user" {
-                            if let Some(content) = val.get("message").and_then(|m| m.get("content")).cloned() {
-                                let obj = val.as_object_mut().unwrap();
-                                match &content {
-                                    serde_json::Value::String(s) => {
-                                        obj.insert("text".to_string(), serde_json::Value::String(s.clone()));
-                                    }
-                                    serde_json::Value::Array(_) => {
-                                        obj.insert("content".to_string(), content);
-                                    }
-                                    _ => {}
-                                }
-                                obj.remove("message");
-                            }
-                        }
-                        // Ensure session_id is present so the frontend can filter by it.
-                        if let Some(obj) = val.as_object_mut() {
-                            obj.entry("session_id").or_insert_with(|| serde_json::Value::String(session_id.clone()));
-                        }
-                        state.emit("cc-message", val);
-                    }
-                }
-            }
-        }
-    }
-
     let permission_mode_str = options.permission_mode.clone();
     let session_id_arc: SessionIdArc = Arc::new(Mutex::new(session_id.clone()));
     let mut claude_options = options.to_claude_options(None);

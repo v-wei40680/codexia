@@ -1,58 +1,98 @@
 import { useEffect, useMemo, useRef } from 'react';
+import { listen } from '@tauri-apps/api/event';
 import { useCCSessionListener, useCCPermissionListener } from './hooks';
 
 import { useCCStore } from '@/stores/cc';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
-import { ccResumeSession } from '@/services/tauri/cc';
+import { ccGetSessionFilePath, ccResumeSession } from '@/services/tauri/cc';
+import { readTextFileLines } from '@/services/tauri/filesystem';
+import { parseSessionJsonl } from './utils/parseSessionJsonl';
 
 import { CCMessage } from '@/components/cc/messages';
 import { CCInput } from '@/components/cc/composer';
 import { CCScrollControls } from '@/components/cc/CCScrollControls';
 import { buildMessageGroups, CCExploredMessageGroup } from './messages/group';
 import { buildInlineErrorsMap } from './messages/inlineErrors';
+import type { CCMessage as CCMessageType } from './types/messages';
 
-export default function CCView() {
+interface CCViewProps {
+  /** When provided, renders in embedded (grid-card) mode for this specific session. */
+  sessionId?: string;
+}
+
+export default function CCView({ sessionId }: CCViewProps = {}) {
+  const isEmbedded = !!sessionId;
+
   const {
     activeSessionId,
     activeSessionIds,
     addActiveSessionId,
-    messages,
-    isLoading,
+    messages: globalMessages,
+    sessionMessagesMap,
+    sessionLoadingMap,
+    isLoading: globalIsLoading,
     setLoading,
     setConnected,
     clearMessages,
     options,
+    addMessageToSession,
   } = useCCStore();
   const { cwd } = useWorkspaceStore();
 
+  // In embedded mode use per-session data; otherwise use the global active-session data.
+  const messages = isEmbedded ? (sessionMessagesMap[sessionId!] ?? []) : globalMessages;
+  const isLoading = isEmbedded ? (sessionLoadingMap[sessionId!] ?? false) : globalIsLoading;
+
   const scrollContainerRef = useRef<HTMLDivElement>(null);
-  // Whether the user wants auto-scroll (true when near bottom).
   const shouldAutoScrollRef = useRef(true);
-  // True while a programmatic smooth scroll is animating — prevents the scroll
-  // event from incorrectly flipping shouldAutoScrollRef to false mid-animation.
   const isProgrammaticScrollRef = useRef(false);
 
-  // Reset transient UI state when directory changes, but keep selected session.
+  // Reset transient UI state when directory changes (standalone mode only).
   useEffect(() => {
-    if (!cwd || activeSessionId) return;
+    if (isEmbedded || !cwd || activeSessionId) return;
     clearMessages();
     setConnected(false);
     setLoading(false);
-  }, [cwd, activeSessionId, clearMessages, setConnected, setLoading]);
+  }, [cwd, activeSessionId, clearMessages, setConnected, setLoading, isEmbedded]);
 
-  // Auto-resume when entering full-screen for a session not yet active.
+  // Auto-resume when entering full-screen for a session not yet active (standalone only).
   useEffect(() => {
+    if (isEmbedded) return;
     if (!activeSessionId || activeSessionIds.includes(activeSessionId) || !cwd) return;
-    void ccResumeSession(activeSessionId, {
-      cwd,
-      permissionMode: options.permissionMode,
-      resume: activeSessionId,
-      continueConversation: true,
-      ...(options.model ? { model: options.model } : {}),
-    }).then(() => addActiveSessionId(activeSessionId));
-  }, [activeSessionId]);
+    const sid = activeSessionId;
+    void (async () => {
+      const filePath = await ccGetSessionFilePath(sid);
+      if (filePath) {
+        const lines = await readTextFileLines(filePath);
+        for (const msg of parseSessionJsonl(lines, sid)) {
+          addMessageToSession(sid, msg);
+        }
+      }
+      await ccResumeSession(sid, {
+        cwd,
+        permissionMode: options.permissionMode,
+        resume: sid,
+        continueConversation: true,
+        ...(options.model ? { model: options.model } : {}),
+      });
+      addActiveSessionId(sid);
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeSessionId, isEmbedded]);
 
-  // Track user scroll intent — ignore events caused by our own programmatic scrolls.
+  // Per-session message listener for embedded mode — replaces useCCCardListener.
+  useEffect(() => {
+    if (!isEmbedded || !sessionId) return;
+    const unlistenPromise = listen<CCMessageType>('cc-message', (event) => {
+      const message = event.payload;
+      const msgSessionId = (message as CCMessageType & { session_id?: string }).session_id;
+      if (!msgSessionId || msgSessionId !== sessionId) return;
+      addMessageToSession(sessionId, message);
+    });
+    return () => { void unlistenPromise.then((fn) => fn()); };
+  }, [sessionId, isEmbedded, addMessageToSession]);
+
+  // Track user scroll intent.
   useEffect(() => {
     const el = scrollContainerRef.current;
     if (!el) return;
@@ -64,14 +104,13 @@ export default function CCView() {
     return () => el.removeEventListener('scroll', onScroll);
   }, []);
 
-  // Smooth-scroll to bottom when messages update, if the user is near the bottom.
+  // Smooth-scroll to bottom when messages update.
   useEffect(() => {
     if (!shouldAutoScrollRef.current) return;
     const el = scrollContainerRef.current;
     if (!el) return;
     isProgrammaticScrollRef.current = true;
     el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-    // After the smooth animation finishes, re-evaluate position and release the lock.
     const timer = setTimeout(() => {
       isProgrammaticScrollRef.current = false;
       if (el) {
@@ -81,27 +120,24 @@ export default function CCView() {
     return () => clearTimeout(timer);
   }, [messages, isLoading]);
 
-  // Pre-compute inline errors map to avoid recalculating inside the render loop.
   const inlineErrorsMap = useMemo(
     () => buildInlineErrorsMap(messages),
     [messages],
   );
 
-  // Group messages: consecutive silent-only assistant messages → single ExploredGroup.
   const messageGroups = useMemo(
     () => buildMessageGroups(messages),
     [messages],
   );
 
-  // Hide the input while a permission card is waiting for a decision.
   const hasPendingPermission = useMemo(
     () => messages.some((m) => m.type === 'permission_request' && !m.resolved),
     [messages],
   );
 
-  // Bind Tauri message stream and permission listeners.
-  useCCSessionListener();
-  useCCPermissionListener();
+  // Global active-session listeners (disabled in embedded mode to avoid double-listening).
+  useCCSessionListener(isEmbedded);
+  useCCPermissionListener(isEmbedded);
 
   return (
     <div className="flex flex-col h-full min-h-0 w-full max-w-4xl mx-auto">
@@ -139,12 +175,12 @@ export default function CCView() {
           </div>
         </div>
 
-        {messages.length > 0 && (
+        {!isEmbedded && messages.length > 0 && (
           <CCScrollControls scrollContainerRef={scrollContainerRef} />
         )}
       </div>
 
-      {!hasPendingPermission && <CCInput />}
+      {!isEmbedded && !hasPendingPermission && <CCInput />}
     </div>
   );
 }

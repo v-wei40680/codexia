@@ -9,11 +9,11 @@ const CC_PERMISSION_LISTENER_READY_EVENT = 'cc-permission-listener-ready';
 /**
  * Hook to listen for message stream events from the Tauri backend for the active session.
  */
-export function useCCSessionListener() {
-  const { activeSessionId, addMessage, setLoading, setSlashCommands } = useCCStore();
+export function useCCSessionListener(disabled = false) {
+  const { activeSessionId, addMessage, setSlashCommands } = useCCStore();
 
   useEffect(() => {
-    if (!activeSessionId) return;
+    if (disabled || !activeSessionId) return;
     console.info('[CCView] Bind message listener', { activeSessionId });
 
     const unlistenPromise = listen<CCMessage>('cc-message', (event) => {
@@ -29,7 +29,6 @@ export function useCCSessionListener() {
         if (Array.isArray(cmds)) setSlashCommands(cmds);
       }
       addMessage(message);
-      if (message.type === 'result') setLoading(false);
     });
 
     void unlistenPromise.then(() => {
@@ -40,17 +39,17 @@ export function useCCSessionListener() {
     return () => {
       void unlistenPromise.then((fn) => fn());
     };
-  }, [activeSessionId, addMessage, setLoading]);
+  }, [disabled, activeSessionId, addMessage]);
 }
 
 /**
  * Hook to listen for permission requests from the Tauri backend.
  */
-export function useCCPermissionListener() {
+export function useCCPermissionListener(disabled = false) {
   const { activeSessionId, addMessage } = useCCStore();
 
   useEffect(() => {
-    if (!activeSessionId) return;
+    if (disabled || !activeSessionId) return;
     console.info('[CCView] Bind permission listener', { activeSessionId });
 
     const unlistenPromise = listen<{
@@ -91,5 +90,5 @@ export function useCCPermissionListener() {
     return () => {
       void unlistenPromise.then((fn) => fn());
     };
-  }, [activeSessionId, addMessage]);
+  }, [disabled, activeSessionId, addMessage]);
 }

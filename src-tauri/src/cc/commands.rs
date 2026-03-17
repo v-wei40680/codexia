@@ -105,6 +105,13 @@ pub fn cc_get_sessions() -> Result<Vec<SessionData>, String> {
 }
 
 #[tauri::command]
+pub fn cc_get_session_file_path(session_id: String) -> Result<Option<String>, String> {
+    use crate::cc::db::SessionDB;
+    let db = SessionDB::new().map_err(|e| e.to_string())?;
+    db.get_file_path(&session_id).map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub async fn cc_mcp_list(working_dir: String) -> Result<Vec<ClaudeCodeMcpServer>, String> {
     mcp_cc_mcp_list(working_dir).await
 }

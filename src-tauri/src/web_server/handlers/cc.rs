@@ -142,6 +142,15 @@ pub(crate) async fn api_cc_get_sessions() -> Result<Json<Vec<SessionData>>, Erro
     Ok(Json(sessions))
 }
 
+pub(crate) async fn api_cc_get_session_file_path(
+    Json(params): Json<CcSessionIdParams>,
+) -> Result<Json<Option<String>>, ErrorResponse> {
+    use crate::cc::db::SessionDB;
+    let db = SessionDB::new().map_err(to_error_response)?;
+    let path = db.get_file_path(&params.session_id).map_err(to_error_response)?;
+    Ok(Json(path))
+}
+
 pub(crate) async fn api_cc_resolve_permission(
     AxumState(state): AxumState<WebServerState>,
     Json(params): Json<CcResolvePermissionParams>,
