@@ -21,7 +21,7 @@ export const useAgentCenterStore = create<AgentCenterState>()(
       addAgentCard: (card) =>
         set((state) => {
           const idx = state.cards.findIndex((c) => c.kind === card.kind && c.id === card.id);
-          if (idx === -1) return { cards: [...state.cards, card] };
+          if (idx === -1) return { cards: [card, ...state.cards] };
           if (!card.preview) return {};
           const next = [...state.cards];
           next[idx] = { ...next[idx], preview: card.preview } as AgentCenterCard;
