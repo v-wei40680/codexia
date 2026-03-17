@@ -83,20 +83,24 @@ interface GridCardProps {
 function GridCard({ card, onExpand, onRemove, isSelected }: GridCardProps) {
   const { setCurrentAgentCardId } = useAgentCenterStore();
   const { sessionLoadingMap, sessionMessagesMap } = useCCStore();
-  const { threadLoadingMap } = useCodexStore();
+  const { threadStatusMap } = useCodexStore();
   const { pendingApprovals } = useApprovalStore();
   const { pendingRequests } = useRequestUserInputStore();
 
+  const codexStatus = card.kind === 'codex' ? threadStatusMap[card.id] : undefined;
   const running =
-    card.kind === 'codex' ? !!threadLoadingMap[card.id] : !!sessionLoadingMap[card.id];
+    card.kind === 'codex'
+      ? codexStatus?.type === 'active' && codexStatus.activeFlags.length === 0
+      : !!sessionLoadingMap[card.id];
 
   const pending =
     card.kind === 'codex'
-      ? pendingApprovals.some((a) => (a as any).threadId === card.id) ||
-        pendingRequests.some((r) => r.threadId === card.id)
+      ? codexStatus?.type === 'active' && codexStatus.activeFlags.length > 0
       : (sessionMessagesMap[card.id] ?? []).some(
           (m) => m.type === 'permission_request' && !(m as any).resolved
-        );
+        ) ||
+        pendingApprovals.some((a) => (a as any).threadId === card.id) ||
+        pendingRequests.some((r) => r.threadId === card.id);
 
   const status: CardStatus = running ? 'running' : pending ? 'pending' : 'idle';
 
@@ -140,13 +144,12 @@ export default function AgentView() {
   const { cards, removeCard, setCurrentAgentCardId, currentAgentCardId } = useAgentCenterStore();
   const { currentCard, setCurrentAgentCard } = useLayoutStore();
   const { switchToSession, sessionLoadingMap } = useCCStore();
-  const { threadLoadingMap, currentThreadId, currentTurnId } = useCodexStore();
+  const { threadStatusMap } = useCodexStore();
   const [tab, setTab] = useState<TabFilter>('all');
-  const [codexSending, setCodexSending] = useState(false);
 
   const isRunning = (card: AgentCenterCard) =>
     card.kind === 'codex'
-      ? !!threadLoadingMap[card.id]
+      ? threadStatusMap[card.id]?.type === 'active'
       : !!sessionLoadingMap[card.id];
 
   const counts = useMemo(
@@ -155,7 +158,7 @@ export default function AgentView() {
       idle: cards.filter((c) => !isRunning(c)).length,
       running: cards.filter((c) => isRunning(c)).length,
     }),
-    [cards, threadLoadingMap, sessionLoadingMap]
+    [cards, threadStatusMap, sessionLoadingMap]
   );
 
   const visible = tab === 'all' ? cards : cards.filter((c) => (tab === 'running') === isRunning(c));
@@ -247,14 +250,7 @@ export default function AgentView() {
       </div>
 
       {/* Shared composer */}
-      <AgentComposer
-        isProcessing={codexSending}
-        onStop={async () => {
-          if (!currentThreadId || !currentTurnId) return;
-          await codexService.turnInterrupt(currentThreadId, currentTurnId);
-          setCodexSending(false);
-        }}
-      />
+      <AgentComposer />
     </div>
   );
 }

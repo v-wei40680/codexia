@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import type { ServerNotification } from '@/bindings';
+import type { ThreadStatus } from '@/bindings/v2/ThreadStatus';
 import type { ThreadListItem } from '@/types/codex/ThreadListItem';
 
 type DeltaMethod =
@@ -86,8 +87,8 @@ interface CodexStore {
   currentTurnId: string | null;
   hasAccount: boolean | null;
   events: Record<string, ServerNotification[]>; // Events per thread
-  /** Per-thread processing state derived from turn/started and turn/completed events */
-  threadLoadingMap: Record<string, boolean>;
+  /** Per-thread status derived from thread/status/changed (authoritative) and turn events (fallback) */
+  threadStatusMap: Record<string, ThreadStatus>;
   activeThreadIds: string[]; // Track resumed/active threads
   inputFocusTrigger: number; // Increment to trigger focus in InputArea
   threadListRefreshToken: number; // Increment to trigger thread list refresh
@@ -109,7 +110,7 @@ export const useCodexStore = create<CodexStore>((set) => ({
   currentTurnId: null,
   hasAccount: null,
   events: {},
-  threadLoadingMap: {},
+  threadStatusMap: {},
   activeThreadIds: [],
   inputFocusTrigger: 0,
   threadListRefreshToken: 0,
@@ -167,14 +168,21 @@ export const useCodexStore = create<CodexStore>((set) => ({
         [threadId]: compactedEvents,
       };
 
-      let threadLoadingMap = state.threadLoadingMap;
-      if (event.method === 'turn/started') {
-        threadLoadingMap = { ...threadLoadingMap, [threadId]: true };
+      let threadStatusMap = state.threadStatusMap;
+      if (event.method === 'thread/status/changed') {
+        // Authoritative: use the exact status from the server
+        threadStatusMap = { ...threadStatusMap, [threadId]: event.params.status };
+      } else if (event.method === 'turn/started') {
+        // Fallback: synthesize active status until thread/status/changed arrives
+        threadStatusMap = {
+          ...threadStatusMap,
+          [threadId]: { type: 'active', activeFlags: [] },
+        };
       } else if (event.method === 'turn/completed' || event.method === 'error') {
-        threadLoadingMap = { ...threadLoadingMap, [threadId]: false };
+        threadStatusMap = { ...threadStatusMap, [threadId]: { type: 'idle' } };
       }
 
-      return { events: newEvents, threadLoadingMap };
+      return { events: newEvents, threadStatusMap };
     });
   },
 

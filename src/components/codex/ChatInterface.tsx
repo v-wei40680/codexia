@@ -1,6 +1,6 @@
 import { useRef, useEffect, type ReactNode } from 'react';
 import { useCodexStore } from '@/stores/codex';
-import { codexService } from '@/services/codexService';
+import { useIsProcessing } from '@/hooks/codex';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { renderEvent } from './items';
 import { ApprovalItem } from './items/ApprovalItem';
@@ -9,35 +9,15 @@ import { Markdown } from '@/components/Markdown';
 import { Composer } from './Composer';
 import { CodexAuth } from './CodexAuth';
 import { useSettingsStore } from '@/stores/settings';
-import { toast } from '@/components/ui/use-toast';
-import { getErrorMessage } from '@/utils/errorUtils';
 
 export function ChatInterface() {
-  const { currentThreadId, currentTurnId, events, inputFocusTrigger, hasAccount } = useCodexStore();
+  const { currentThreadId, events, hasAccount } = useCodexStore();
   const { taskDetail, showReasoning } = useSettingsStore();
+  const isProcessing = useIsProcessing();
   const bottomAnchorRef = useRef<HTMLDivElement>(null);
 
   // Get events for the current thread
   const currentThreadEvents = currentThreadId ? events[currentThreadId] || [] : [];
-
-  // Derive isProcessing from the latest event in the current thread
-  let isProcessing = false;
-  if (currentThreadEvents.length > 0) {
-    const lastEvent = currentThreadEvents[currentThreadEvents.length - 1];
-    if (lastEvent.method === 'turn/started') {
-      isProcessing = true;
-    } else if (lastEvent.method === 'turn/completed' || lastEvent.method === 'error') {
-      isProcessing = false;
-    } else {
-      const turnEvents = currentThreadEvents.filter((e) =>
-        ['turn/started', 'turn/completed', 'error'].includes(e.method)
-      );
-      if (turnEvents.length > 0) {
-        const lastTurnEvent = turnEvents[turnEvents.length - 1];
-        isProcessing = lastTurnEvent.method === 'turn/started';
-      }
-    }
-  }
 
   // Auto-scroll to bottom when new events arrive
   useEffect(() => {
@@ -190,39 +170,7 @@ export function ChatInterface() {
 
       {/* Input Area */}
       <div className="absolute bottom-0 left-0 right-0 max-w-3xl mx-auto">
-        <Composer
-          currentThreadId={currentThreadId}
-          currentTurnId={currentTurnId}
-          isProcessing={isProcessing}
-          inputFocusTrigger={inputFocusTrigger}
-          onSend={async (message, images) => {
-            let targetThreadId = currentThreadId;
-            if (!targetThreadId) {
-              try {
-                const thread = await codexService.threadStart();
-                targetThreadId = thread.id;
-              } catch (error) {
-                console.error('Failed to start thread:', error);
-                toast.error('Failed to start thread', {
-                  description: getErrorMessage(error),
-                });
-                return;
-              }
-            }
-            try {
-              await codexService.turnStart(targetThreadId, message, images);
-            } catch (error) {
-              console.error('Failed to send message:', error);
-              toast.error('Failed to send message', {
-                description: getErrorMessage(error),
-              });
-            }
-          }}
-          onStop={async () => {
-            if (!currentThreadId || !currentTurnId) return;
-            await codexService.turnInterrupt(currentThreadId, currentTurnId);
-          }}
-        />
+        <Composer />
       </div>
     </div>
   );

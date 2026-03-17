@@ -6,6 +6,8 @@ import { FileSearchPopover, SlashCommandPopover, SkillsInputPopover } from './se
 import type { FileSearchPopoverHandle, SlashCommandPopoverHandle } from './selector';
 import type { FuzzyFileSearchResult } from '@/bindings';
 import { useInputStore } from '@/stores/useInputStore';
+import { useCodexStore } from '@/stores/codex';
+import { useIsProcessing } from '@/hooks/codex';
 import { getFilename } from '@/utils/getFilename';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -24,27 +26,21 @@ import '@mdxeditor/editor/style.css';
 import '@/mdx-input.css';
 
 interface InputAreaProps {
-  currentThreadId: string | null;
-  currentTurnId: string | null;
-  isProcessing: boolean;
   onSend: (message: string) => Promise<void>;
   onStop: () => Promise<void>;
-  inputFocusTrigger?: number;
   images?: string[];
   onRemoveImage?: (index: number) => void;
 }
 
 export function InputArea({
-  currentThreadId,
-  currentTurnId,
-  isProcessing,
   onSend,
   onStop,
-  inputFocusTrigger,
   children,
   images = [],
   onRemoveImage,
 }: InputAreaProps & { children?: React.ReactNode }) {
+  const { currentThreadId, inputFocusTrigger } = useCodexStore();
+  const isProcessing = useIsProcessing();
   const isMobile = useIsMobile();
   const isDev = import.meta.env.DEV;
   const debug = (...args: unknown[]) => {
@@ -76,13 +72,14 @@ export function InputArea({
 
   const editorRef = useRef<MDXEditorMethods>(null);
   const editorWrapperRef = useRef<HTMLDivElement>(null);
+  const handleSendRef = useRef<() => Promise<void>>(async () => {});
   const fileSearchRef = useRef<FileSearchPopoverHandle>(null);
   const slashCommandRef = useRef<SlashCommandPopoverHandle>(null);
 
   // Focus the editor when thread changes or triggered externally
   useEffect(() => {
     editorRef.current?.focus();
-  }, [currentThreadId, inputFocusTrigger]);
+  }, [currentThreadId, inputFocusTrigger]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Attach IME listeners to the underlying contenteditable after mount
   useEffect(() => {
@@ -175,7 +172,7 @@ export function InputArea({
           return;
         }
         e.preventDefault();
-        handleSend();
+        handleSendRef.current();
       }
     },
     [showFileSearch, showSlashCommands, showSkills, isComposing]
@@ -338,9 +335,9 @@ export function InputArea({
       console.error('Failed to send message:', error);
     }
   };
+  handleSendRef.current = handleSend;
 
   const handleStop = async () => {
-    if (!currentThreadId || !currentTurnId) return;
     try {
       await onStop();
     } catch (error) {

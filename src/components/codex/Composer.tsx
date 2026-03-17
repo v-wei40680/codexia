@@ -15,48 +15,60 @@ import {
 
 import { Monitor, Split } from 'lucide-react';
 import { useInputStore } from '@/stores/useInputStore';
-import { useConfigStore, type ThreadCwdMode } from '@/stores/codex';
+import { useConfigStore, useCodexStore, type ThreadCwdMode } from '@/stores/codex';
+import { useAgentCenterStore } from '@/stores';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { codexService } from '@/services/codexService';
+import { toast } from '@/components/ui/use-toast';
+import { getErrorMessage } from '@/utils/errorUtils';
 
-interface ComposerProps {
-  currentThreadId: string | null;
-  currentTurnId: string | null;
-  isProcessing: boolean;
-  inputFocusTrigger?: number;
-  onSend: (message: string, images: string[]) => Promise<void>;
-  onStop: () => Promise<void>;
-}
-
-export function Composer({
-  currentThreadId,
-  currentTurnId,
-  isProcessing,
-  inputFocusTrigger,
-  onSend,
-  onStop,
-}: ComposerProps) {
+export function Composer() {
   const [images, setImages] = useState<string[]>([]);
   const { appendFileLinks } = useInputStore();
   const isMobile = useIsMobile();
-  const { threadCwdMode, setThreadCwdMode } =
-    useConfigStore();
+  const { threadCwdMode, setThreadCwdMode } = useConfigStore();
+  const { currentThreadId, currentTurnId } = useCodexStore();
+  const { addAgentCard, setCurrentAgentCardId } = useAgentCenterStore();
 
   const handleSend = async (message: string) => {
-    await onSend(message, images);
-    setImages([]);
+    let targetThreadId = currentThreadId;
+    if (!targetThreadId) {
+      try {
+        const thread = await codexService.threadStart();
+        targetThreadId = thread.id;
+      } catch (error) {
+        console.error('Failed to start thread:', error);
+        toast.error('Failed to start thread', {
+          description: getErrorMessage(error),
+        });
+        return;
+      }
+    }
+    addAgentCard({ kind: 'codex', id: targetThreadId, preview: message });
+    setCurrentAgentCardId(targetThreadId);
+    try {
+      await codexService.turnStart(targetThreadId, message, images);
+      setImages([]);
+    } catch (error) {
+      console.error('Failed to send message:', error);
+      toast.error('Failed to send message', {
+        description: getErrorMessage(error),
+      });
+    }
+  };
+
+  const handleStop = async () => {
+    if (!currentThreadId || !currentTurnId) return;
+    await codexService.turnInterrupt(currentThreadId, currentTurnId);
   };
 
   return (
     <div className="space-y-2">
       <InputArea
-        currentThreadId={currentThreadId}
-        currentTurnId={currentTurnId}
-        isProcessing={isProcessing}
-        inputFocusTrigger={inputFocusTrigger}
         images={images}
         onRemoveImage={(index) => setImages((prev) => prev.filter((_, i) => i !== index))}
         onSend={handleSend}
-        onStop={onStop}
+        onStop={handleStop}
       >
         <AttachmentSelector
           onImagesSelected={(paths) => setImages((prev) => [...prev, ...paths])}

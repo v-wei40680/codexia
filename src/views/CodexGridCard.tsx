@@ -82,14 +82,14 @@ interface CodexGridCardProps {
 }
 
 export function CodexGridCard({ card, onExpand, onRemove: _onRemove, header, isSelected }: CodexGridCardProps) {
-  const { events, threadLoadingMap, activeThreadIds } = useCodexStore();
+  const { events, threadStatusMap, activeThreadIds } = useCodexStore();
   const { pendingApprovals } = useApprovalStore();
   const { pendingRequests } = useRequestUserInputStore();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [resuming, setResuming] = useState(false);
 
   const threadEvents = events[card.id] ?? [];
-  const processing = !!threadLoadingMap[card.id];
+  const processing = threadStatusMap[card.id]?.type === 'active';
   const needsResume = !activeThreadIds.includes(card.id) && threadEvents.length === 0 && !processing;
 
   const hasPending =
