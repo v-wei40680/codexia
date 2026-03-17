@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { useCCInputStore } from './useCCInputStore';
+import { useCCInputStore } from './cc/useCCInputStore';
 import { useWorkspaceStore } from './useWorkspaceStore';
 
 interface InputStore {

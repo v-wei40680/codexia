@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useMemo } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { useCCStore } from '@/stores/ccStore';
+import { useCCStore } from '@/stores/cc';
 import { ccInterrupt, ccResumeSession } from '@/services/tauri/cc';
 import { CCMessage } from '@/components/cc/messages';
 import { Button } from '@/components/ui/button';

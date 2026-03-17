@@ -1,7 +1,7 @@
 import { CCMessageBlock } from '@/components/cc/messages/CCMessageBlock';
 import { ExploredGroup } from '@/components/cc/messages/ExploredGroup';
 import type { AssistantMessage, ToolResultBlock, ToolUseBlock } from '../types/messages';
-import { useCCStore } from '@/stores/ccStore';
+import { useCCStore } from '@/stores/cc';
 import { buildRenderItems } from './group';
 
 interface Props {

@@ -2,7 +2,7 @@ import { lazy, Suspense, useState, useMemo } from 'react';
 import { useAgentCenterStore } from '@/stores';
 import { useLayoutStore } from '@/stores';
 import { useCodexStore, useApprovalStore, useRequestUserInputStore } from '@/stores/codex';
-import { useCCStore } from '@/stores/ccStore';
+import { useCCStore } from '@/stores/cc';
 
 import { codexService } from '@/services/codexService';
 import { ArrowLeft, X } from 'lucide-react';
@@ -34,8 +34,8 @@ export function CardHeader({ card, onClose, onBack, onSelect, status = 'idle' }:
 
   const dotColor =
     status === 'running' ? 'bg-green-500' :
-    status === 'pending' ? 'bg-amber-500' :
-    'bg-muted-foreground/40';
+      status === 'pending' ? 'bg-amber-500' :
+        'bg-muted-foreground/40';
 
   const dotAnimate = status !== 'idle' ? 'animate-pulse' : '';
 
@@ -97,10 +97,10 @@ function GridCard({ card, onExpand, onRemove, isSelected }: GridCardProps) {
     card.kind === 'codex'
       ? codexStatus?.type === 'active' && codexStatus.activeFlags.length > 0
       : (sessionMessagesMap[card.id] ?? []).some(
-          (m) => m.type === 'permission_request' && !(m as any).resolved
-        ) ||
-        pendingApprovals.some((a) => (a as any).threadId === card.id) ||
-        pendingRequests.some((r) => r.threadId === card.id);
+        (m) => m.type === 'permission_request' && !(m as any).resolved
+      ) ||
+      pendingApprovals.some((a) => (a as any).threadId === card.id) ||
+      pendingRequests.some((r) => r.threadId === card.id);
 
   const status: CardStatus = running ? 'running' : pending ? 'pending' : 'idle';
 
@@ -214,11 +214,10 @@ export default function AgentView() {
           <button
             key={key}
             onClick={() => setTab(key)}
-            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs transition-colors ${
-              tab === key
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground hover:bg-accent'
-            }`}
+            className={`flex items-center gap-1.5 px-3 py-1 rounded-md text-xs transition-colors ${tab === key
+              ? 'bg-primary text-primary-foreground'
+              : 'text-muted-foreground hover:text-foreground hover:bg-accent'
+              }`}
           >
             {label}
             <span className={`text-[10px] ${tab === key ? 'opacity-80' : 'opacity-50'}`}>

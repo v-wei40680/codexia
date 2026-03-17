@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useCCStore } from '@/stores/ccStore';
+import { useCCStore } from '@/stores/cc';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useAgentCenterStore } from '@/stores/useAgentCenterStore';
 import { ccNewSession, ccResumeSession } from '@/services';

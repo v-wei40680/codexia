@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import { useCCSessionListener, useCCPermissionListener } from './hooks';
 
-import { useCCStore } from '@/stores/ccStore';
+import { useCCStore } from '@/stores/cc';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { ccResumeSession } from '@/services/tauri/cc';
 

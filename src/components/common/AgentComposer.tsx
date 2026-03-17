@@ -5,7 +5,7 @@ import { WorkspaceSwitcher } from '@/components/cc/WorkspaceSwitcher';
 import { gitBranchInfo, type GitBranchInfoResponse } from '@/services/tauri/git';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useAgentCenterStore } from '@/stores';
-import { useCCStore } from '@/stores/ccStore';
+import { useCCStore } from '@/stores/cc';
 import { Composer } from '@/components/codex/Composer';
 
 type Agent = 'codex' | 'cc';
@@ -47,11 +47,10 @@ export function AgentComposer() {
           <button
             key={agent}
             onClick={() => setActiveAgent(agent)}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${
-              activeAgent === agent
-                ? 'bg-muted text-foreground'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-            }`}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${activeAgent === agent
+              ? 'bg-muted text-foreground'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+              }`}
           >
             <AgentIcon agent={agent} />
             <span>{agent === 'cc' ? 'Claude Code' : 'Codex'}</span>

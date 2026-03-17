@@ -4,8 +4,8 @@ export {
   usePromptOptimizerStore,
   useThemeStore,
 } from './settings';
-export { useCCStore } from './ccStore';
-export * from './useCCInputStore';
+export { useCCStore } from './cc';
+export * from './cc/useCCInputStore';
 export * from './useInputStore';
 export * from './useNoteStore';
 export * from './useWorkspaceStore';

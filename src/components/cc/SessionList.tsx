@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { useCCStore } from '@/stores/ccStore';
+import { useCCStore } from '@/stores/cc';
 import { getSessions, SessionData } from '@/lib/sessions';
 import { MoreVertical, Copy, Loader2 } from 'lucide-react';
 import {

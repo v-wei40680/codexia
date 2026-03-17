@@ -23,7 +23,7 @@ import { useGitStatsStore } from '@/stores/useGitStatsStore';
 import { useGitWatch } from '@/hooks/useGitWatch';
 import { useSettingsStore } from '@/stores/settings';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { useCCStore } from '@/stores/ccStore';
+import { useCCStore } from '@/stores/cc';
 import { useAgentCenterStore } from '@/stores';
 
 type MainHeaderProps = {

@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { CircleStop, Send } from 'lucide-react';
-import { useCCStore } from '@/stores/ccStore';
+import { useCCStore } from '@/stores/cc';
 import { useCCInputStore, useAgentCenterStore } from '@/stores';
 import { CCPermissionModeSelect, CCFileMentionPopover } from '@/components/cc/composer';
 import { ModelSelector } from './ModelSelector';

@@ -1,4 +1,4 @@
-import { useCCStore } from '@/stores/ccStore';
+import { useCCStore } from '@/stores/cc';
 import type { CCMessage as CCMessageType, ToolResultBlock } from '../types/messages';
 import { isToolResultBlock } from '../types/messages';
 import { CCMessageContent } from './CCMessageContent';

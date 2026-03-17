@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { MessageCircleQuestion, CheckCircle2 } from 'lucide-react';
-import { useCCStore } from '@/stores/ccStore';
+import { useCCStore } from '@/stores/cc';
 import { ccSendMessage } from '@/services';
 import type { ToolUseBlock } from '../../types/messages';
 

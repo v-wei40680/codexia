@@ -30,7 +30,7 @@ import { toast } from '@/components/ui/use-toast';
 import { getSessions } from '@/lib/sessions';
 import { useCCSessionManager } from '@/hooks/useCCSessionManager';
 import { useLayoutStore } from '@/stores';
-import { useCCStore } from '@/stores/ccStore';
+import { useCCStore } from '@/stores/cc';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { getFilename } from '@/utils/getFilename';
 import { getErrorMessage } from '@/utils/errorUtils';
@@ -156,9 +156,9 @@ function RunRow({
   const status =
     agent === 'codex'
       ? (() => {
-          const fromEvents = deriveRunStatusFromEvents(events);
-          return fromEvents === 'idle' ? storedStatus : fromEvents;
-        })()
+        const fromEvents = deriveRunStatusFromEvents(events);
+        return fromEvents === 'idle' ? storedStatus : fromEvents;
+      })()
       : storedStatus;
   const [isCancelling, setIsCancelling] = useState(false);
   const statusLabel = status === 'idle' ? 'queued' : status;

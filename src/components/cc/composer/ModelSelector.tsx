@@ -1,5 +1,5 @@
 import { useCCStore } from '@/stores';
-import type { ModelType } from '@/stores/ccStore';
+import type { ModelType } from '@/stores/cc';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export function ModelSelector() {

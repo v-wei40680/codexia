@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { useCCStore } from '@/stores/ccStore';
+import { useCCStore } from '@/stores/cc';
 import { ccGetSlashCommands } from '@/services';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 
@@ -33,7 +33,7 @@ export function CCSlashCommandPopover({
     ccGetSlashCommands(cwd || undefined)
       .then(setSlashCommands)
       .catch((err) => console.error('[CCSlashCommandPopover] Failed to load slash commands:', err));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Detect `/query` pattern based on cursor position

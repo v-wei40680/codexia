@@ -1,6 +1,6 @@
 import { useEffect } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { useCCStore } from '@/stores/ccStore';
+import { useCCStore } from '@/stores/cc';
 import type { CCMessage, SystemMessage } from '../types/messages';
 
 const CC_LISTENER_READY_EVENT = 'cc-session-listener-ready';

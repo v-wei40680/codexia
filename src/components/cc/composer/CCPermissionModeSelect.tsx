@@ -1,5 +1,5 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PermissionMode } from '@/stores/ccStore';
+import { PermissionMode } from '@/stores/cc';
 import { useCCStore } from '@/stores';
 import { ccSetPermissionMode } from '@/services';
 
