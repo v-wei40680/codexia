@@ -33,7 +33,7 @@ export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Pr
   const { cwd, setCwd, setSelectedAgent } = useWorkspaceStore();
   const { setView } = useLayoutStore();
   const { addAgentCard, setCurrentAgentCardId } = useAgentCenterStore();
-  const { activeSessionIds, activeSessionId, isLoading, addMessageToSession, sessionMessagesMap } = useCCStore();
+  const { activeSessionIds, activeSessionId, isLoading, addMessageToSession, setSessionLoading, sessionMessagesMap } = useCCStore();
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
@@ -141,6 +141,7 @@ export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Pr
         for (const msg of parseSessionJsonl(lines, sid)) {
           addMessageToSession(sid, msg);
         }
+        setSessionLoading(sid, false);
       })();
     }
   };

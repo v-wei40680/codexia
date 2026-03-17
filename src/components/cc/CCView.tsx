@@ -36,6 +36,7 @@ export default function CCView({ sessionId }: CCViewProps = {}) {
     clearMessages,
     options,
     addMessageToSession,
+    setSessionLoading,
   } = useCCStore();
   const { cwd } = useWorkspaceStore();
 
@@ -67,6 +68,7 @@ export default function CCView({ sessionId }: CCViewProps = {}) {
         for (const msg of parseSessionJsonl(lines, sid)) {
           addMessageToSession(sid, msg);
         }
+        setSessionLoading(sid, false);
       }
       await ccResumeSession(sid, {
         cwd,
