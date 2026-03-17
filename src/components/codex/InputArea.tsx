@@ -72,7 +72,7 @@ export function InputArea({
 
   const editorRef = useRef<MDXEditorMethods>(null);
   const editorWrapperRef = useRef<HTMLDivElement>(null);
-  const handleSendRef = useRef<() => Promise<void>>(async () => {});
+  const handleSendRef = useRef<() => Promise<void>>(async () => { });
   const fileSearchRef = useRef<FileSearchPopoverHandle>(null);
   const slashCommandRef = useRef<SlashCommandPopoverHandle>(null);
 
@@ -347,7 +347,7 @@ export function InputArea({
 
   return (
     <div
-      className={`${isMobile ? 'px-2 pb-[env(safe-area-inset-bottom)]' : 'px-4'} bg-background`}
+      className={`${isMobile && 'pb-[env(safe-area-inset-bottom)]'} bg-background`}
     >
       {showFileSearch && (
         <FileSearchPopover

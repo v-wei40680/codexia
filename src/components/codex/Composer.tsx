@@ -17,15 +17,14 @@ import { Monitor, Split } from 'lucide-react';
 import { useInputStore } from '@/stores/useInputStore';
 import { useConfigStore, useCodexStore, type ThreadCwdMode } from '@/stores/codex';
 import { useAgentCenterStore } from '@/stores';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { codexService } from '@/services/codexService';
 import { toast } from '@/components/ui/use-toast';
 import { getErrorMessage } from '@/utils/errorUtils';
+import { WorkspaceSwitcher } from '../cc/WorkspaceSwitcher';
 
 export function Composer() {
   const [images, setImages] = useState<string[]>([]);
   const { appendFileLinks } = useInputStore();
-  const isMobile = useIsMobile();
   const { threadCwdMode, setThreadCwdMode } = useConfigStore();
   const { currentThreadId, currentTurnId } = useCodexStore();
   const { addAgentCard, setCurrentAgentCardId } = useAgentCenterStore();
@@ -63,7 +62,7 @@ export function Composer() {
   };
 
   return (
-    <div className="space-y-2">
+    <div>
       <InputArea
         images={images}
         onRemoveImage={(index) => setImages((prev) => prev.filter((_, i) => i !== index))}
@@ -77,7 +76,11 @@ export function Composer() {
         <ModelReasonSelector />
       </InputArea>
 
-      <div className={`flex items-center gap-2 ${isMobile ? 'flex-wrap px-2 pb-1' : 'pl-4'}`}>
+      <div className={`flex justify-between items-center gap-2`}>
+        <span className='flex'>
+          <WorkspaceSwitcher />
+          <AccessModePopover />
+        </span>
         <Select
           value={threadCwdMode}
           onValueChange={(value) => setThreadCwdMode(value as ThreadCwdMode)}
@@ -100,8 +103,6 @@ export function Composer() {
             </SelectItem>
           </SelectContent>
         </Select>
-
-        <AccessModePopover />
       </div>
     </div>
   );

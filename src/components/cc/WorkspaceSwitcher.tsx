@@ -1,25 +1,30 @@
 import { useEffect, useState, useCallback } from 'react';
 import { GitBranch, Check, Loader2, FolderOpen, FolderPlus, ChevronDown } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { gitListBranches, gitCheckoutBranch, type GitBranchInfoResponse } from '@/services/tauri/git';
+import { gitListBranches, gitCheckoutBranch, gitBranchInfo, type GitBranchInfoResponse } from '@/services/tauri/git';
 import { cn } from '@/lib/utils';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { open } from '@tauri-apps/plugin-dialog';
 
-type Props = {
-  cwd: string;
-  branchInfo?: GitBranchInfoResponse | null;
-  onBranchChanged: () => void;
-};
-
-export function WorkspaceSwitcher({ cwd, branchInfo, onBranchChanged }: Props) {
+export function WorkspaceSwitcher() {
   const [projectOpen, setProjectOpen] = useState(false);
   const [branchOpen, setBranchOpen] = useState(false);
   const [branches, setBranches] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [switching, setSwitching] = useState<string | null>(null);
+  const [branchInfo, setBranchInfo] = useState<GitBranchInfoResponse | null>(null);
 
-  const { projects, addProject, setCwd } = useWorkspaceStore();
+  const { cwd, projects, addProject, setCwd } = useWorkspaceStore();
+
+  useEffect(() => {
+    if (!cwd) { setBranchInfo(null); return; }
+    gitBranchInfo(cwd).then(setBranchInfo).catch(() => setBranchInfo(null));
+  }, [cwd]);
+
+  function refreshBranchInfo() {
+    if (!cwd) return;
+    gitBranchInfo(cwd).then(setBranchInfo).catch(() => setBranchInfo(null));
+  }
 
   useEffect(() => {
     if (!branchOpen) return;
@@ -36,7 +41,7 @@ export function WorkspaceSwitcher({ cwd, branchInfo, onBranchChanged }: Props) {
     try {
       await gitCheckoutBranch(cwd, branch);
       setBranchOpen(false);
-      onBranchChanged();
+      refreshBranchInfo();
     } catch {
       // error is shown via toast from postNoContent/invokeTauri
     } finally {
@@ -67,7 +72,7 @@ export function WorkspaceSwitcher({ cwd, branchInfo, onBranchChanged }: Props) {
     : (cwd.split('/').filter(Boolean).pop() ?? cwd);
 
   return (
-    <div className="flex items-center gap-1 font-mono">
+    <div className="flex items-center gap-1 font-mono py-2">
       {/* Left: Project selector */}
       <Popover open={projectOpen} onOpenChange={setProjectOpen}>
         <PopoverTrigger asChild>

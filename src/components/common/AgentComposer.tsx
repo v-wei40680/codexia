@@ -1,20 +1,14 @@
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { AgentIcon } from './AgentIcon';
 import { CCInput } from '@/components/cc/composer/CCInput';
 import { WorkspaceSwitcher } from '@/components/cc/WorkspaceSwitcher';
-import { gitBranchInfo, type GitBranchInfoResponse } from '@/services/tauri/git';
-import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
+import { useWorkspaceStore, AgentType } from '@/stores/useWorkspaceStore';
 import { useAgentCenterStore } from '@/stores';
 import { useCCStore } from '@/stores/cc';
 import { Composer } from '@/components/codex/Composer';
 
-type Agent = 'codex' | 'cc';
-
 export function AgentComposer() {
-  const { cwd, selectedAgent, setSelectedAgent } = useWorkspaceStore();
-  const activeAgent = selectedAgent;
-  const setActiveAgent = setSelectedAgent;
-  const [branchInfo, setBranchInfo] = useState<GitBranchInfoResponse | null>(null);
+  const { selectedAgent, setSelectedAgent } = useWorkspaceStore();
   const { currentAgentCardId, cards } = useAgentCenterStore();
   const { switchToSession } = useCCStore();
 
@@ -23,31 +17,21 @@ export function AgentComposer() {
     if (!currentAgentCardId) return;
     const card = cards.find((c) => c.id === currentAgentCardId);
     if (!card) return;
-    setActiveAgent(card.kind);
+    setSelectedAgent(card.kind);
     if (card.kind === 'cc') {
       switchToSession(card.id);
     }
   }, [currentAgentCardId]);
 
-  useEffect(() => {
-    if (!cwd) { setBranchInfo(null); return; }
-    gitBranchInfo(cwd).then(setBranchInfo).catch(() => setBranchInfo(null));
-  }, [cwd]);
-
-  function refreshBranchInfo() {
-    if (!cwd) return;
-    gitBranchInfo(cwd).then(setBranchInfo).catch(() => setBranchInfo(null));
-  }
-
   return (
     <div className="flex flex-col">
       {/* Agent tabs */}
       <div className="flex items-center">
-        {(['cc', 'codex'] as Agent[]).map((agent) => (
+        {(['cc', 'codex'] as AgentType[]).map((agent) => (
           <button
             key={agent}
-            onClick={() => setActiveAgent(agent)}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${activeAgent === agent
+            onClick={() => setSelectedAgent(agent)}
+            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${selectedAgent === agent
               ? 'bg-muted text-foreground'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
               }`}
@@ -59,14 +43,10 @@ export function AgentComposer() {
       </div>
 
       {/* Composer area */}
-      {activeAgent === 'cc' ? (
+      {selectedAgent === 'cc' ? (
         <>
           <CCInput />
-          {cwd && (
-            <div className="px-4 pb-2">
-              <WorkspaceSwitcher cwd={cwd} branchInfo={branchInfo} onBranchChanged={refreshBranchInfo} />
-            </div>
-          )}
+          <WorkspaceSwitcher />
         </>
       ) : (
         <Composer />
