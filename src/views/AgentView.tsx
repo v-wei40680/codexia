@@ -108,7 +108,10 @@ function GridCard({ card, onExpand, onRemove, isSelected }: GridCardProps) {
     <CardHeader
       card={card}
       onClose={onRemove}
-      onSelect={() => setCurrentAgentCardId(card.id)}
+      onSelect={() => {
+        setCurrentAgentCardId(card.id);
+        if (card.kind === 'codex') void codexService.setCurrentThread(card.id);
+      }}
       status={status}
     />
   );
