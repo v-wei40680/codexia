@@ -189,7 +189,7 @@ export function ModelReasonSelector() {
 
   return (
     <div className="flex items-center">
-      <div className="inline-flex items-center gap-2 rounded-md border border-transparent px-2 transition-all hover:border-input hover:bg-accent/50">
+      <div className="inline-flex items-center rounded-md border border-transparent transition-all hover:border-input hover:bg-accent/50">
         <Popover open={open} onOpenChange={setOpen}>
           <PopoverTrigger asChild>
             <Button variant="ghost" size="sm" className="h-8 gap-2 px-2">
@@ -239,24 +239,24 @@ export function ModelReasonSelector() {
           onValueChange={onSelectEffort}
           disabled={!canSelectModel || !canSelectReasoning}
         >
-          <SelectTrigger className="h-8 w-[100px]">
-            <SelectValue placeholder="Default">{reasoningEffort}</SelectValue>
+          <SelectTrigger className="h-8 w-fit">
+            <SelectValue placeholder="Default">{reasoningEffort.charAt(0)}</SelectValue>
           </SelectTrigger>
           <SelectContent>
             {modelProvider === 'openai'
               ? openAiReasoningOptions.map((option) => (
-                  <SelectItem key={option.reasoningEffort} value={option.reasoningEffort}>
-                    <div className="flex flex-col gap-0.5">
-                      <span>{option.reasoningEffort}</span>
-                      <span className="text-[10px] text-muted-foreground">{option.description}</span>
-                    </div>
-                  </SelectItem>
-                ))
+                <SelectItem key={option.reasoningEffort} value={option.reasoningEffort}>
+                  <div className="flex flex-col gap-0.5">
+                    <span>{option.reasoningEffort}</span>
+                    <span className="text-[10px] text-muted-foreground">{option.description}</span>
+                  </div>
+                </SelectItem>
+              ))
               : OLLAMA_REASONING_OPTIONS.map((option) => (
-                  <SelectItem key={option} value={option}>
-                    {option}
-                  </SelectItem>
-                ))}
+                <SelectItem key={option} value={option}>
+                  {option}
+                </SelectItem>
+              ))}
           </SelectContent>
         </Select>
       </div>
