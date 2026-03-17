@@ -6,6 +6,7 @@ import { CCMessage } from '@/components/cc/messages';
 import { Button } from '@/components/ui/button';
 import { Square, RotateCcw } from 'lucide-react';
 import type { AgentCenterCard } from '@/stores/useAgentCenterStore';
+import { useAgentCenterStore } from '@/stores/useAgentCenterStore';
 import type { CCMessage as CCMessageType } from '@/components/cc/types/messages';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 
@@ -58,6 +59,7 @@ interface CCGridCardProps {
 export function CCGridCard({ card, onExpand, onRemove: _onRemove, header, isSelected }: CCGridCardProps) {
   const { sessionMessagesMap, sessionLoadingMap, activeSessionIds, addActiveSessionId, setSessionLoading, options } = useCCStore();
   const { cwd } = useWorkspaceStore();
+  const { setCurrentAgentCardId } = useAgentCenterStore();
   const scrollRef = useRef<HTMLDivElement>(null);
   // Tracks the full resume phase: API call + history replay
   const [isResumingSession, setIsResumingSession] = useState(false);
@@ -130,6 +132,7 @@ export function CCGridCard({ card, onExpand, onRemove: _onRemove, header, isSele
         ...(options.model ? { model: options.model } : {}),
       });
       addActiveSessionId(card.id);
+      setCurrentAgentCardId(card.id);
       // History replay is synchronous in the backend and all cc-message events are
       // emitted before the command returns. Reset loading state so an interrupted
       // session (no result message) doesn't leave the card stuck in "processing".

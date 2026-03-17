@@ -6,6 +6,7 @@ import { renderEvent } from '@/components/codex/items';
 import { Button } from '@/components/ui/button';
 import { Square, RotateCcw } from 'lucide-react';
 import type { AgentCenterCard } from '@/stores/useAgentCenterStore';
+import { useAgentCenterStore } from '@/stores/useAgentCenterStore';
 import type { ServerNotification } from '@/bindings';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -85,6 +86,7 @@ export function CodexGridCard({ card, onExpand, onRemove: _onRemove, header, isS
   const { events, threadStatusMap, activeThreadIds } = useCodexStore();
   const { pendingApprovals } = useApprovalStore();
   const { pendingRequests } = useRequestUserInputStore();
+  const { setCurrentAgentCardId } = useAgentCenterStore();
   const scrollRef = useRef<HTMLDivElement>(null);
   const [resuming, setResuming] = useState(false);
 
@@ -131,6 +133,7 @@ export function CodexGridCard({ card, onExpand, onRemove: _onRemove, header, isS
     setResuming(true);
     try {
       await codexService.threadResume(card.id);
+      setCurrentAgentCardId(card.id);
     } finally {
       setResuming(false);
     }
