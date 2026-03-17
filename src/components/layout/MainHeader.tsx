@@ -81,8 +81,8 @@ export function MainHeader({ isTerminalOpen, onToggleTerminal }: MainHeaderProps
   useGitWatch(cwd || null, refreshGitStats, Boolean(cwd));
 
   const handleNewThread = async () => {
+    setCurrentAgentCardId(null);
     if (selectedAgent === 'cc') {
-      setCurrentAgentCardId(null);
       setView('agent');
       await handleNewSession();
       requestFocusCCInput();
