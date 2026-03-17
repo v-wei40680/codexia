@@ -182,6 +182,7 @@ export const renderEvent = (event: ServerNotification, context?: RenderEventCont
         </div>
       );
     case 'thread/tokenUsage/updated':
+    case 'thread/status/changed':
     case 'item/reasoning/summaryPartAdded':
     case 'item/reasoning/summaryTextDelta':
     case 'turn/diff/updated':
