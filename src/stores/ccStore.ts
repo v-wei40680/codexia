@@ -149,11 +149,15 @@ export const useCCStore = create<CCStoreState>()(
           ...(state.activeSessionId === sessionId ? { isLoading: loading } : {}),
         })),
       updateMessage: (index, message) =>
-        set((state) => ({
-          messages: state.messages.map((m, i) =>
+        set((state) => {
+          const updatedMessages = state.messages.map((m, i) =>
             i === index ? { ...m, ...message } as CCMessage : m
-          ),
-        })),
+          );
+          const updatedMap = state.activeSessionId
+            ? { ...state.sessionMessagesMap, [state.activeSessionId]: updatedMessages }
+            : state.sessionMessagesMap;
+          return { messages: updatedMessages, sessionMessagesMap: updatedMap };
+        }),
       setMessages: (messages) => set({ messages }),
       updateOptions: (newOptions) =>
         set((state) => ({
