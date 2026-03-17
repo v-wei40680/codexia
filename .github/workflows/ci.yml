@@ -3,36 +3,21 @@ name: CI
 on:
   push:
     branches:
-      - main
       - master
+      - pro
     paths:
       - ".github/workflows/ci.yml"
       - "src/**"
-      - "src-tauri/src/**"
-      - "src-tauri/capabilities/**"
-      - "src-tauri/icons/**"
-      - "src-tauri/Cargo.toml"
-      - "src-tauri/Cargo.lock"
-      - "src-tauri/tauri.conf.json"
-      - "src-tauri/build.rs"
-      - "codex-client/**"
-      - "codex-bindings/**"
+      - "src-tauri/**"
       - "Cargo.toml"
       - "package.json"
   pull_request:
     branches:
-      - main
+      - master
+      - pro
     paths:
       - "src/**"
-      - "src-tauri/src/**"
-      - "src-tauri/capabilities/**"
-      - "src-tauri/icons/**"
-      - "src-tauri/Cargo.toml"
-      - "src-tauri/Cargo.lock"
-      - "src-tauri/tauri.conf.json"
-      - "src-tauri/build.rs"
-      - "codex-client/**"
-      - "codex-bindings/**"
+      - "src-tauri/**"
       - "Cargo.toml"
       - "package.json"
 
