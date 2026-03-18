@@ -42,7 +42,7 @@ const navBtnInactive = 'border-transparent hover:border-border/60';
 const navBtnCls = (active: boolean) => `${navBtnBase} ${active ? navBtnActive : navBtnInactive}`;
 
 export function SideBar() {
-  const { cwd, setCwd, setSelectedAgent } = useWorkspaceStore();
+  const { cwd, setCwd, setSelectedAgent, selectedAgent } = useWorkspaceStore();
   const { isSidebarOpen, setSidebarOpen, setView, view, activeSidebarTab, setActiveSidebarTab } =
     useLayoutStore();
   const { searchTerm, setSearchTerm, sortKey, setSortKey, handleNewThread } = useThreadList({
@@ -154,7 +154,7 @@ export function SideBar() {
                 key={agent}
                 variant="ghost"
                 size="icon"
-                className={`h-8 w-8 ${activeSidebarTab === agent ? 'bg-accent' : ''}`}
+                className={`h-8 w-8 ${selectedAgent === agent ? 'bg-accent' : ''}`}
                 onClick={() => {
                   setSelectedAgent(agent);
                   setActiveSidebarTab(agent);
