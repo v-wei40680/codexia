@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { AgentType } from '../useWorkspaceStore';
+import { posthog } from '@/lib/posthog';
 
 export type viewType =
   | 'automations'
@@ -48,7 +49,10 @@ export const useLayoutStore = create<LayoutStore>()(
       rightPanelSize: 45,
       setRightPanelSize: (size) => set({ rightPanelSize: size }),
       view: 'agent',
-      setView: (view) => set({ view: view }),
+      setView: (view) => {
+        set({ view });
+        posthog.capture('view_type', { view });
+      },
       isAgentExpanded: false,
       setIsAgentExpanded: (expanded) => set({ isAgentExpanded: expanded }),
       activeSidebarTab: 'codex',
