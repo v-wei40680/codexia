@@ -1,11 +1,14 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Switch } from '@/components/ui/switch';
 import { Sun, Moon, Monitor, Github, Twitter } from 'lucide-react';
 import { useThemeStore, type Theme, type Accent } from '@/stores/settings';
+import { useSettingsStore } from '@/stores/settings';
 import { LanguageSelector } from './LanguageSelector';
 import { cn } from '@/lib/utils';
 import { useTranslation } from 'react-i18next';
+import { initPosthog, posthog } from '@/lib/posthog';
 
 const ACCENT_OPTIONS: Array<{ value: Accent; label: string; colorClass: string }> = [
   { value: 'black', label: 'Noir', colorClass: 'bg-slate-800' },
@@ -20,9 +23,40 @@ export function GeneralSettings() {
   const { theme, setTheme, accent, setAccent } = useThemeStore();
   const handleThemeChange = (value: string) => setTheme(value as Theme);
   const { t } = useTranslation();
+  const { analyticsEnabled, setAnalyticsEnabled } = useSettingsStore();
+
+  function handleAnalyticsChange(enabled: boolean) {
+    setAnalyticsEnabled(enabled);
+    if (import.meta.env.DEV) return;
+    if (enabled) {
+      initPosthog();
+      posthog.opt_in_capturing();
+    } else {
+      posthog.opt_out_capturing();
+    }
+  }
 
   return (
     <div className="space-y-6">
+      <section className="space-y-3">
+        <h3 className="text-sm font-medium px-1">Analytics</h3>
+        <Card>
+          <CardContent className="px-4">
+            <div className="flex items-center justify-between">
+              <div className="space-y-0.5">
+                <div className="text-sm font-medium">Usage Analytics</div>
+                <div className="text-xs text-muted-foreground">
+                  Help improve Codexia by sending anonymous usage data.
+                </div>
+              </div>
+              <Switch
+                checked={analyticsEnabled}
+                onCheckedChange={handleAnalyticsChange}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </section>
       <section className="space-y-3">
         <h3 className="text-sm font-medium px-1">Appearance</h3>
         <Card>

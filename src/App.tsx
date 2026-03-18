@@ -6,6 +6,7 @@ import { useDeepLink } from '@/hooks/useDeepLink';
 import { AppLayout } from '@/components/layout';
 import { isTauri } from '@/hooks/runtime';
 import { HistoryProjectsDialog } from '@/components/project-selector';
+import { AnalyticsConsentDialog } from '@/components/settings/AnalyticsConsentDialog';
 import { initializeCodexAsync } from '@/services/tauri';
 import type { InitializeResponse } from './bindings';
 
@@ -36,6 +37,7 @@ function AppShell() {
     <>
       <AppLayout />
       <HistoryProjectsDialog />
+      <AnalyticsConsentDialog />
     </>
   );
 }

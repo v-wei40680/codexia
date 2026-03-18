@@ -40,6 +40,10 @@ export interface SettingState {
   setShowQuotes: (show: boolean) => void;
   showTips: boolean;
   setShowTips: (show: boolean) => void;
+  analyticsEnabled: boolean;
+  setAnalyticsEnabled: (enabled: boolean) => void;
+  analyticsConsentShown: boolean;
+  setAnalyticsConsentShown: (shown: boolean) => void;
 }
 
 type LegacySettingState = {
@@ -110,6 +114,10 @@ export const useSettingsStore = create<SettingState>()(
       setShowQuotes: (show: boolean) => set({ showQuotes: show }),
       showTips: false,
       setShowTips: (show: boolean) => set({ showTips: show }),
+      analyticsEnabled: false,
+      setAnalyticsEnabled: (enabled: boolean) => set({ analyticsEnabled: enabled }),
+      analyticsConsentShown: false,
+      setAnalyticsConsentShown: (shown: boolean) => set({ analyticsConsentShown: shown }),
     }),
     {
       name: 'settings-storage',
