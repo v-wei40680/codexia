@@ -29,6 +29,10 @@ export function parseSessionJsonl(lines: string[], sessionId: string): CCMessage
       const msg = val.message as Record<string, unknown> | undefined;
       const content = msg?.content;
       if (typeof content === 'string') {
+        const slashCommands = ['/ide', '/model', '/status', '<local-command-caveat>', '<command-name>'];
+        if (slashCommands.some((cmd) => content.trim().startsWith(cmd))) {
+          continue;
+        }
         val.text = content;
         delete val.message;
       } else if (Array.isArray(content)) {
