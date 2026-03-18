@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
+import { AgentType } from '../useWorkspaceStore';
 
 export type viewType =
   | 'codex'
@@ -27,8 +28,8 @@ interface LayoutStore {
   setView: (view: viewType) => void;
   currentCard: { kind: 'codex'; id: string } | { kind: 'cc'; id: string } | null;
   setCurrentAgentCard: (card: { kind: 'codex'; id: string } | { kind: 'cc'; id: string } | null) => void;
-  activeSidebarTab: 'codex' | 'cc';
-  setActiveSidebarTab: (tab: 'codex' | 'cc') => void;
+  activeSidebarTab: AgentType;
+  setActiveSidebarTab: (tab: AgentType) => void;
   activeRightPanelTab: 'diff' | 'note' | 'files' | 'webpreview';
   setActiveRightPanelTab: (tab: 'diff' | 'note' | 'files' | 'webpreview') => void;
   selectedAutomationTaskId: string | null;

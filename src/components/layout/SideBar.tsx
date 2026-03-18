@@ -1,6 +1,6 @@
-import { BotMessageSquare, ListFilter, Package, PanelLeft, SquarePen, Timer } from 'lucide-react';
-import { useCallback, useEffect } from 'react';
-import { useAgentCenterStore, useLayoutStore } from '@/stores';
+import { BotMessageSquare, ListFilter, Package, PanelLeft, Timer } from 'lucide-react';
+import { useCallback } from 'react';
+import { useLayoutStore } from '@/stores';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { UserInfo } from './UserInfo';
 import { useThreadList } from '@/hooks/codex';
-import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
+import { AgentType, useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useSettingsStore } from '@/stores/settings';
 import { useCCSessionManager } from '@/hooks/useCCSessionManager';
 import { useUpdater } from '@/hooks/useUpdater';
@@ -22,8 +22,8 @@ import { isTauri } from '@/hooks/runtime';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { SideBarCodexTab } from './SideBarCodexTab';
 import { SideBarClaudeTab } from './SideBarClaudeTab';
+import { AgentIcon } from '@/components/common/AgentIcon';
 
-// Stable reference — no need to recreate on every render
 const focusCCInput = () => window.dispatchEvent(new Event('cc-input-focus-request'));
 
 // Shared class for the scroll area's deeply nested overrides
@@ -41,15 +41,8 @@ const navBtnActive = 'border-border bg-accent/70 text-foreground';
 const navBtnInactive = 'border-transparent hover:border-border/60';
 const navBtnCls = (active: boolean) => `${navBtnBase} ${active ? navBtnActive : navBtnInactive}`;
 
-// Tab definitions for Codex / Claude switcher
-const SIDEBAR_TABS = [
-  { key: 'codex', label: 'Codex', agent: 'codex' },
-  { key: 'cc', label: 'Claude', agent: 'cc' },
-] as const;
-
 export function SideBar() {
-  const { cwd, setCwd, selectedAgent, setSelectedAgent } = useWorkspaceStore();
-  const { setCurrentAgentCardId } = useAgentCenterStore();
+  const { cwd, setCwd, setSelectedAgent } = useWorkspaceStore();
   const { isSidebarOpen, setSidebarOpen, setView, view, activeSidebarTab, setActiveSidebarTab } =
     useLayoutStore();
   const { searchTerm, setSearchTerm, sortKey, setSortKey, handleNewThread } = useThreadList({
@@ -64,28 +57,14 @@ export function SideBar() {
 
   // ── Handlers ──────────────────────────────────────────────────────────────
 
-  const handleCreateNew = useCallback(
-    async (project?: string) => {
-      if (project && project !== cwd) setCwd(project);
-
-      if (selectedAgent === 'cc') {
-        setActiveSidebarTab('cc');
-        setCurrentAgentCardId(null);
-        setView('agent');
-        await handleNewSession();
-        focusCCInput();
-        return;
-      }
-      await handleNewThread();
-    },
-    [cwd, handleNewSession, handleNewThread, selectedAgent, setActiveSidebarTab, setCwd, setView],
-  );
-
   // Only the async side-effect coordinator stays here — expanded state & agent
   // instructions handler have been moved into each Tab component.
   const handleCreateNewThreadForProject = useCallback(
-    (project: string) => void handleCreateNew(project),
-    [handleCreateNew],
+    (project: string) => {
+      if (project !== cwd) setCwd(project);
+      void handleNewThread();
+    },
+    [cwd, handleNewThread, setCwd],
   );
 
   const handleStartNewCcSessionForProject = useCallback(
@@ -99,35 +78,6 @@ export function SideBar() {
     },
     [handleNewSession, setActiveSidebarTab, setCwd, setSelectedAgent, setView],
   );
-
-  // ── Keyboard shortcut: Cmd/Ctrl+N → new thread / session ─────────────────
-
-  useEffect(() => {
-    const isEditableTarget = (target: EventTarget | null): boolean => {
-      if (!(target instanceof HTMLElement)) return false;
-      if (target.isContentEditable) return true;
-      const tag = target.tagName;
-      return (
-        tag === 'INPUT' ||
-        tag === 'TEXTAREA' ||
-        tag === 'SELECT' ||
-        Boolean(target.closest('[contenteditable="true"]'))
-      );
-    };
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const isNew = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'n';
-      if (!isNew || e.shiftKey || e.altKey || e.repeat) return;
-      if (view !== 'codex' && view !== 'cc') return;
-      if (isEditableTarget(e.target)) return;
-      e.preventDefault();
-      e.stopPropagation();
-      void handleCreateNew();
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleCreateNew, view]);
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -166,16 +116,6 @@ export function SideBar() {
           <Button
             variant="ghost"
             size="sm"
-            className="h-8 justify-start gap-1.5 pl-0 pr-2 has-[>svg]:pl-0"
-            onClick={() => void handleCreateNew()}
-          >
-            <SquarePen className="h-4 w-4" />
-            {selectedAgent === 'cc' ? 'New Session' : 'New Thread'}
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="sm"
             className={navBtnCls(view === 'agent')}
             onClick={() => setView('agent')}
           >
@@ -209,18 +149,18 @@ export function SideBar() {
         {/* Tab switcher row */}
         <span className="flex justify-between">
           <span className="flex">
-            {SIDEBAR_TABS.map(({ key, label, agent }) => (
+            {(['cc', 'codex'] as AgentType[]).map((agent) => (
               <Button
-                key={key}
+                key={agent}
                 variant="ghost"
-                size="sm"
-                className={`h-8 px-2 ${activeSidebarTab === key ? 'bg-accent' : ''}`}
+                size="icon"
+                className={`h-8 w-8 ${activeSidebarTab === agent ? 'bg-accent' : ''}`}
                 onClick={() => {
                   setSelectedAgent(agent);
-                  setActiveSidebarTab(key);
+                  setActiveSidebarTab(agent);
                 }}
               >
-                {label}
+                <AgentIcon agent={agent} />
               </Button>
             ))}
           </span>
