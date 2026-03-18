@@ -24,15 +24,14 @@ export function parseSessionJsonl(lines: string[], sessionId: string): CCMessage
     const msgType = typeof val.type === 'string' ? val.type : '';
     if (!['user', 'assistant', 'system', 'result'].includes(msgType)) continue;
 
-    // Normalize user messages: {message:{role:"user",content:"..."}} → top-level text/content
+    // Only keep real user messages (those with permissionMode set by the CLI).
+    // System-injected entries (slash commands, meta messages) never have permissionMode.
     if (msgType === 'user') {
+      if (val.permissionMode === undefined || val.permissionMode === null) continue;
+
       const msg = val.message as Record<string, unknown> | undefined;
       const content = msg?.content;
       if (typeof content === 'string') {
-        const slashCommands = ['/ide', '/model', '/status', '<local-command-caveat>', '<command-name>'];
-        if (slashCommands.some((cmd) => content.trim().startsWith(cmd))) {
-          continue;
-        }
         val.text = content;
         delete val.message;
       } else if (Array.isArray(content)) {
