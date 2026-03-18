@@ -4,7 +4,9 @@ use crate::features::sleep::SleepState;
 use crate::state::WatchState;
 use std::sync::Arc;
 use std::time::Instant;
-use tauri::Manager;
+use tauri::{Emitter, Manager};
+#[cfg(target_os = "macos")]
+use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -17,6 +19,56 @@ pub fn run() {
     let builder = builder.plugin(tauri_plugin_single_instance::init(|app, argv, _cwd| {
         crate::window::show_window(app, argv);
     }));
+
+    // On macOS, override the app menu so Cmd+Q emits quit-requested instead of exiting directly
+    #[cfg(target_os = "macos")]
+    let builder = builder
+        .menu(|app| {
+            let about = MenuItem::with_id(app, "app-about", "About Codexia", true, None::<&str>)?;
+            let separator = PredefinedMenuItem::separator(app)?;
+            let quit = MenuItem::with_id(app, "app-quit", "Quit Codexia", true, Some("CmdOrControl+Q"))?;
+            let app_submenu = Submenu::with_items(app, "Codexia", true, &[&about, &separator, &quit])?;
+
+            let show = MenuItem::with_id(app, "app-show", "Show Main Window", true, None::<&str>)?;
+            let window_submenu = Submenu::with_items(app, "Window", true, &[&show])?;
+
+            Menu::with_items(app, &[&app_submenu, &window_submenu])
+        })
+        .on_menu_event(|app, event| match event.id().as_ref() {
+            "app-quit" => {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
+                let _ = app.emit("quit-requested", ());
+            }
+            "app-show" => {
+                if let Some(window) = app.get_webview_window("main") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                }
+            }
+            "app-about" => {
+                if let Some(window) = app.get_webview_window("about") {
+                    let _ = window.show();
+                    let _ = window.set_focus();
+                } else if let Err(e) = tauri::WebviewWindowBuilder::new(
+                    app,
+                    "about",
+                    tauri::WebviewUrl::App("/about".into()),
+                )
+                .title("About Codexia")
+                .inner_size(360.0, 320.0)
+                .resizable(false)
+                .decorations(true)
+                .focused(true)
+                .build()
+                {
+                    eprintln!("Failed to open about window: {e}");
+                }
+            }
+            _ => {}
+        });
 
     builder
         .plugin(tauri_plugin_deep_link::init())
@@ -121,6 +173,8 @@ pub fn run() {
             crate::commands::automation::set_automation_paused,
             crate::commands::automation::delete_automation,
             crate::commands::automation::run_automation_now,
+            crate::tray::resize_tray_window,
+            crate::tray::show_main_window,
             crate::commands::git::git_branch_info,
             crate::commands::git::git_list_branches,
             crate::commands::git::git_checkout_branch,
@@ -146,6 +200,7 @@ pub fn run() {
             crate::commands::dxt::save_dxt_setting,
             crate::commands::dxt::download_and_extract_manifests,
             crate::commands::dxt::check_manifests_exist,
+            quit_app,
         ])
         .setup(|app| {
             let app_handle = app.handle().clone();
@@ -190,6 +245,21 @@ pub fn run() {
             crate::codex::scan::start_history_scanner(event_sink.clone());
             crate::cc::scan::start_session_scanner(event_sink);
 
+            crate::tray::create_tray(app.handle())?;
+
+            // On close, hide the main window instead of quitting so the tray stays alive
+            if let Some(main_window) = app.get_webview_window("main") {
+                let app_handle = app.handle().clone();
+                main_window.on_window_event(move |event| {
+                    if let tauri::WindowEvent::CloseRequested { api, .. } = event {
+                        api.prevent_close();
+                        if let Some(w) = app_handle.get_webview_window("main") {
+                            let _ = w.hide();
+                        }
+                    }
+                });
+            }
+
             #[cfg(any(windows, target_os = "linux"))]
             {
                 use tauri_plugin_deep_link::DeepLinkExt;
@@ -200,4 +270,9 @@ pub fn run() {
         })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
+}
+
+#[tauri::command]
+fn quit_app(app: tauri::AppHandle) {
+    app.exit(0);
 }

@@ -22,14 +22,60 @@ import { toast } from '@/components/ui/use-toast';
 import { getErrorMessage } from '@/utils/errorUtils';
 import { WorkspaceSwitcher } from '../cc/WorkspaceSwitcher';
 
-export function Composer() {
+/** Full Codex bottom bar: workspace switcher + access mode + cwd mode selector. */
+export function ComposerControls() {
+  const { threadCwdMode, setThreadCwdMode } = useConfigStore();
+  return (
+    <div className="flex justify-between items-center gap-2">
+      <span className="flex">
+        <WorkspaceSwitcher />
+        <AccessModePopover />
+      </span>
+      <Select
+        value={threadCwdMode}
+        onValueChange={(value) => setThreadCwdMode(value as ThreadCwdMode)}
+      >
+        <SelectTrigger className="w-fit">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="local">
+            <span className="inline-flex items-center gap-2">
+              <Monitor className="size-4" />
+              <span>Local</span>
+            </span>
+          </SelectItem>
+          <SelectItem value="worktree">
+            <span className="inline-flex items-center gap-2">
+              <Split className="size-4" />
+              <span>Worktree</span>
+            </span>
+          </SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+interface ComposerProps {
+  /** When false, omits the bottom controls bar. Use when the parent pins its own bottom bar. */
+  showControls?: boolean;
+  /** When provided, overrides the normal send — called instead of creating a thread. */
+  overrideSend?: (text: string) => void;
+  onAfterSend?: (threadId: string, text: string) => void;
+}
+
+export function Composer({ showControls = true, overrideSend, onAfterSend }: ComposerProps) {
   const [images, setImages] = useState<string[]>([]);
   const { appendFileLinks } = useInputStore();
-  const { threadCwdMode, setThreadCwdMode } = useConfigStore();
   const { currentThreadId, currentTurnId } = useCodexStore();
   const { addAgentCard, setCurrentAgentCardId } = useAgentCenterStore();
 
   const handleSend = async (message: string) => {
+    if (overrideSend) {
+      overrideSend(message);
+      return;
+    }
     let targetThreadId = currentThreadId;
     if (!targetThreadId) {
       try {
@@ -45,6 +91,7 @@ export function Composer() {
     }
     addAgentCard({ kind: 'codex', id: targetThreadId, preview: message });
     setCurrentAgentCardId(targetThreadId);
+    onAfterSend?.(targetThreadId, message);
     try {
       await codexService.turnStart(targetThreadId, message, images);
       setImages([]);
@@ -76,34 +123,7 @@ export function Composer() {
         <ModelReasonSelector />
       </InputArea>
 
-      <div className={`flex justify-between items-center gap-2`}>
-        <span className='flex'>
-          <WorkspaceSwitcher />
-          <AccessModePopover />
-        </span>
-        <Select
-          value={threadCwdMode}
-          onValueChange={(value) => setThreadCwdMode(value as ThreadCwdMode)}
-        >
-          <SelectTrigger className='w-fit'>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="local">
-              <span className="inline-flex items-center gap-2">
-                <Monitor className="size-4" />
-                <span>Local</span>
-              </span>
-            </SelectItem>
-            <SelectItem value="worktree">
-              <span className="inline-flex items-center gap-2">
-                <Split className="size-4" />
-                <span>Worktree</span>
-              </span>
-            </SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+      {showControls && <ComposerControls />}
     </div>
   );
 }

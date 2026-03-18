@@ -14,7 +14,13 @@ import { ccInterrupt, ccSendMessage } from '@/services';
 
 const CC_INPUT_FOCUS_EVENT = 'cc-input-focus-request';
 
-export function CCInput() {
+interface CCInputProps {
+  /** When provided, overrides the normal send — called instead of creating a session. */
+  overrideSend?: (text: string) => void;
+  onAfterSend?: (sessionId: string, text: string) => void;
+}
+
+export function CCInput({ overrideSend, onAfterSend }: CCInputProps = {}) {
   const {
     activeSessionId,
     isConnected,
@@ -40,6 +46,14 @@ export function CCInput() {
     return () => window.removeEventListener(CC_INPUT_FOCUS_EVENT, handleFocusRequest);
   }, []);
 
+  // Auto-resize textarea height to match content
+  useEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [input]);
+
   // Capture the span element after mount so popovers can use it for positioning
   useEffect(() => {
     setTriggerEl(hiddenTriggerRef.current);
@@ -49,16 +63,25 @@ export function CCInput() {
     const text = (messageText ?? input).trim();
     if (!text || isLoading) return;
 
+    if (overrideSend) {
+      setInput('');
+      overrideSend(text);
+      return;
+    }
+
     setInput('');
 
     if (!activeSessionId) {
       await handleNewSession(text);
+      const newSessionId = useCCStore.getState().activeSessionId;
+      if (newSessionId) onAfterSend?.(newSessionId, text);
       return;
     }
 
     setCurrentAgentCardId(activeSessionId);
     addMessage({ type: 'user', text });
     setLoading(true);
+    onAfterSend?.(activeSessionId, text);
 
     try {
       await ccSendMessage(activeSessionId, text);
@@ -107,7 +130,7 @@ export function CCInput() {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleTextareaKeyDown}
             placeholder="Ask Claude to do anything..."
-            className="min-h-16 w-full pb-11 pr-2 resize-none"
+            className="min-h-16 w-full pb-11 pr-2 resize-none overflow-hidden"
           />
 
           {/* Hidden anchor for popover positioning */}

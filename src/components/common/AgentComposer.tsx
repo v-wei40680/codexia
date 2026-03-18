@@ -1,4 +1,6 @@
 import { useCallback, useEffect } from 'react';
+import { emitTo } from '@tauri-apps/api/event';
+import { showMainWindow } from '@/services/tauri/tray';
 import { SquarePen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AgentIcon } from './AgentIcon';
@@ -7,13 +9,18 @@ import { WorkspaceSwitcher } from '@/components/cc/WorkspaceSwitcher';
 import { useWorkspaceStore, AgentType } from '@/stores/useWorkspaceStore';
 import { useAgentCenterStore, useLayoutStore } from '@/stores';
 import { useCCStore } from '@/stores/cc';
-import { Composer } from '@/components/codex/Composer';
+import { Composer, ComposerControls } from '@/components/codex/Composer';
 import { useCCSessionManager } from '@/hooks/useCCSessionManager';
 import { useThreadList } from '@/hooks/codex';
 
 const focusCCInput = () => window.dispatchEvent(new Event('cc-input-focus-request'));
 
-export function AgentComposer() {
+interface AgentComposerProps {
+  /** When true, layout is content-driven (no fixed height) so the parent can observe and resize. */
+  trayMode?: boolean;
+}
+
+export function AgentComposer({ trayMode = false }: AgentComposerProps) {
   const { selectedAgent, setSelectedAgent, cwd, setCwd } = useWorkspaceStore();
   const { currentAgentCardId, cards, setCurrentAgentCardId } = useAgentCenterStore();
   const { view, setView, setActiveSidebarTab } = useLayoutStore();
@@ -31,6 +38,13 @@ export function AgentComposer() {
       switchToSession(card.id);
     }
   }, [currentAgentCardId]);
+
+  const handleTrayOverrideSend = useCallback((text: string) => {
+    setActiveSidebarTab(selectedAgent);
+    setView('agent');
+    emitTo('main', 'tray:pending-send', { kind: selectedAgent, text }).catch(() => {});
+    showMainWindow().catch(() => {});
+  }, [setView, selectedAgent, setActiveSidebarTab]);
 
   const handleCreateNew = useCallback(
     async (project?: string) => {
@@ -78,9 +92,9 @@ export function AgentComposer() {
   }, [handleCreateNew, view]);
 
   return (
-    <div className="flex flex-col">
+    <div className={trayMode ? 'flex flex-col' : 'flex flex-col h-full'}>
       {/* Agent tabs */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between shrink-0">
         <div className="flex items-center">
           {(['cc', 'codex'] as AgentType[]).map((agent) => (
             <button
@@ -107,15 +121,23 @@ export function AgentComposer() {
         </Button>
       </div>
 
-      {/* Composer area */}
-      {selectedAgent === 'cc' ? (
-        <>
-          <CCInput />
+      {/* Input area */}
+      <div className={trayMode ? 'shrink-0' : 'flex-1 min-h-0 overflow-hidden'}>
+        {selectedAgent === 'cc' ? (
+          <CCInput overrideSend={trayMode ? handleTrayOverrideSend : undefined} />
+        ) : (
+          <Composer showControls={false} overrideSend={trayMode ? handleTrayOverrideSend : undefined} />
+        )}
+      </div>
+
+      {/* Bottom bar */}
+      <div className="shrink-0">
+        {selectedAgent === 'cc' ? (
           <WorkspaceSwitcher />
-        </>
-      ) : (
-        <Composer />
-      )}
+        ) : (
+          <ComposerControls />
+        )}
+      </div>
     </div>
   );
 }

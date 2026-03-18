@@ -8,6 +8,8 @@ mod state;
 #[cfg(feature = "tauri")]
 mod commands;
 #[cfg(feature = "tauri")]
+mod tray;
+#[cfg(feature = "tauri")]
 pub mod gui;
 
 #[cfg(feature = "web")]
