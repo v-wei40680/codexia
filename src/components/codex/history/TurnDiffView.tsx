@@ -64,6 +64,7 @@ function extractChangedLines(diffContent: string) {
 export function TurnDiffView({ content }: TurnDiffViewProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [copied, setCopied] = useState(false);
+  if (!content) return null;
   const cleanedContent = cleanDiffContent(content);
   const filename = getDiffName(content) ? getDiffName(content) : getPathName(content);
   const { added, removed } = parseDiffStats(content);
