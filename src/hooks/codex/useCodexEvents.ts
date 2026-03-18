@@ -48,7 +48,7 @@ export function useCodexEvents(enabled = true) {
   const { addRequest } = useRequestUserInputStore();
   const { preventSleepDuringTasks, showReasoning } = useSettingsStore();
   const taskCompleteBeepMode = useSettingsStore((state) => state.enableTaskCompleteBeep);
-  const isChatInterfaceActive = useLayoutStore((state) => state.view === 'codex');
+  const isChatInterfaceActive = useLayoutStore((state) => state.view === 'agent');
 
   useEffect(() => {
     if (!enabled) {

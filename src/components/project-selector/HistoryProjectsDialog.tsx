@@ -85,7 +85,7 @@ export function HistoryProjectsDialog() {
       setCwd(selectedProjects[0]);
       setSelectedAgent(continueAgent);
       setActiveSidebarTab(continueAgent);
-      setView(continueAgent);
+      setView('agent');
       if (continueAgent === 'codex') {
         await codexService.setCurrentThread(null);
       }

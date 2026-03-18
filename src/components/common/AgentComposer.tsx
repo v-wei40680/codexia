@@ -66,7 +66,7 @@ export function AgentComposer() {
     const handleKeyDown = (e: KeyboardEvent) => {
       const isNew = (e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'n';
       if (!isNew || e.shiftKey || e.altKey || e.repeat) return;
-      if (view !== 'codex' && view !== 'cc') return;
+      if (view !== 'agent') return;
       if (isEditableTarget(e.target)) return;
       e.preventDefault();
       e.stopPropagation();

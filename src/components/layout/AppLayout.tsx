@@ -4,7 +4,6 @@ import { useLayoutStore } from '@/stores';
 import { SideBar } from '@/components/layout/SideBar';
 import { RightPanel } from '@/components/layout/RightPanel';
 import { AgentHeader } from '@/components/layout';
-import { ChatInterface } from '@/components/codex/ChatInterface';
 import { History } from '@/components/codex/history';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { Button } from '@/components/ui/button';
@@ -16,7 +15,6 @@ const SettingsView = lazy(() =>
   import('@/components/settings').then((module) => ({ default: module.SettingsView })),
 );
 const UsageView = lazy(() => import('@/views/UsageView'));
-const CCView = lazy(() => import('@/components/cc/CCView'));
 const MarketplaceView = lazy(() =>
   import('@/views/MarketplaceView').then((module) => ({ default: module.MarketplaceView })),
 );
@@ -119,12 +117,10 @@ export function AppLayout() {
       {view === 'agents' && <AgentsView />}
       {view === 'agent' && <AgentView />}
       {view === 'automations' && <AutoMationsView />}
-      {view === 'codex' && <ChatInterface />}
       {view === 'history' && <History />}
       {view === 'login' && <LoginView />}
       {view === 'marketplace' && <MarketplaceView />}
       {view === 'usage' && <UsageView />}
-      {view === 'cc' && <CCView />}
     </Suspense>
   );
 

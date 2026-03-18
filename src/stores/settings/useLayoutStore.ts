@@ -3,8 +3,6 @@ import { persist } from 'zustand/middleware';
 import { AgentType } from '../useWorkspaceStore';
 
 export type viewType =
-  | 'codex'
-  | 'cc'
   | 'automations'
   | 'agents'
   | 'agent'

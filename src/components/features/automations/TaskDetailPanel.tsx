@@ -264,7 +264,7 @@ export function TaskDetailPanel({ task, now, runs, togglingPauseTaskId }: TaskDe
       console.info('[TaskDetailPanel] Open codex run', { threadId: run.threadId, taskId: task.id });
       setSelectedAgent('codex');
       setActiveSidebarTab('codex');
-      setView('codex');
+      setView('agent');
       await codexService.setCurrentThread(run.threadId);
       return;
     }
@@ -272,7 +272,7 @@ export function TaskDetailPanel({ task, now, runs, togglingPauseTaskId }: TaskDe
     console.info('[TaskDetailPanel] Open cc run', { sessionId: run.threadId, taskId: task.id });
     setSelectedAgent('cc');
     setActiveSidebarTab('cc');
-    setView('cc');
+    setView('agent');
     const isActiveSession = activeCcSessionIds.includes(run.threadId);
     try {
       const sessions = await getSessions();
