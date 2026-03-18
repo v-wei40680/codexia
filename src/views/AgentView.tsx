@@ -3,6 +3,7 @@ import { useAgentCenterStore } from '@/stores';
 import { useLayoutStore } from '@/stores';
 import { useCodexStore, useApprovalStore, useRequestUserInputStore } from '@/stores/codex';
 import { useCCStore } from '@/stores/cc';
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 
 import { codexService } from '@/services/codexService';
 import { ArrowLeft, X } from 'lucide-react';
@@ -17,7 +18,7 @@ const ChatInterface = lazy(() =>
 );
 const CCView = lazy(() => import('@/components/cc/CCView'));
 
-// ─── CardHeader ──────────────────────────────────────────────────────────────
+// CardHeader
 
 type CardStatus = 'running' | 'pending' | 'idle';
 
@@ -70,8 +71,6 @@ export function CardHeader({ card, onClose, onBack, onSelect, status = 'idle' }:
     </div>
   );
 }
-
-// ─── GridCard ─────────────────────────────────────────────────────────────────
 
 interface GridCardProps {
   card: AgentCenterCard;
@@ -138,15 +137,35 @@ function GridCard({ card, onExpand, onRemove, isSelected }: GridCardProps) {
   );
 }
 
-// ─── AgentView ────────────────────────────────────────────────────────────────
+function AgentFullscreen() {
+  const { cards, currentAgentCardId } = useAgentCenterStore();
+  const { setIsAgentExpanded } = useLayoutStore();
+  const { selectedAgent } = useWorkspaceStore();
+
+  const card = cards.find((c) => c.id === currentAgentCardId);
+  // Fallback for new thread/session (no card yet): show blank header with correct agent kind
+  const headerCard: AgentCenterCard = card ?? { kind: selectedAgent, id: '' };
+
+  return (
+    <div className="flex flex-col h-full min-h-0">
+      <CardHeader card={headerCard} onBack={() => setIsAgentExpanded(false)} />
+      <div className="flex flex-col flex-1 min-h-0 h-full overflow-hidden">
+        <Suspense fallback={null}>
+          {selectedAgent === 'codex' ? <ChatInterface /> : <CCView />}
+        </Suspense>
+      </div>
+    </div>
+  );
+}
 
 type TabFilter = 'all' | 'idle' | 'running';
 
-export default function AgentView() {
+function AgentGrid() {
   const { cards, removeCard, setCurrentAgentCardId, currentAgentCardId } = useAgentCenterStore();
-  const { currentCard, setCurrentAgentCard } = useLayoutStore();
+  const { setIsAgentExpanded } = useLayoutStore();
   const { switchToSession, sessionLoadingMap } = useCCStore();
   const { threadStatusMap } = useCodexStore();
+  const { setSelectedAgent } = useWorkspaceStore();
   const [tab, setTab] = useState<TabFilter>('all');
 
   const isRunning = (card: AgentCenterCard) =>
@@ -166,8 +185,9 @@ export default function AgentView() {
   const visible = tab === 'all' ? cards : cards.filter((c) => (tab === 'running') === isRunning(c));
 
   const expand = async (card: AgentCenterCard) => {
-    setCurrentAgentCard({ kind: card.kind, id: card.id });
     setCurrentAgentCardId(card.id);
+    setSelectedAgent(card.kind);
+    setIsAgentExpanded(true);
     if (card.kind === 'codex') {
       await codexService.setCurrentThread(card.id);
     } else {
@@ -175,22 +195,6 @@ export default function AgentView() {
     }
   };
 
-  // Full-screen mode
-  if (currentCard) {
-    const card = cards.find((c) => c.kind === currentCard.kind && c.id === currentCard.id);
-    return (
-      <div className="flex flex-col h-full min-h-0">
-        <CardHeader card={card ?? currentCard} onBack={() => setCurrentAgentCard(null)} />
-        <div className="flex flex-col flex-1 min-h-0 h-full overflow-hidden">
-          <Suspense fallback={null}>
-            {currentCard.kind === 'codex' ? <ChatInterface /> : <CCView />}
-          </Suspense>
-        </div>
-      </div>
-    );
-  }
-
-  // Grid mode
   const TABS: { key: TabFilter; label: string }[] = [
     { key: 'all', label: 'All' },
     { key: 'idle', label: 'Idle' },
@@ -250,4 +254,9 @@ export default function AgentView() {
       </div>
     </div>
   );
+}
+
+export default function AgentView() {
+  const { isAgentExpanded } = useLayoutStore();
+  return isAgentExpanded ? <AgentFullscreen /> : <AgentGrid />;
 }

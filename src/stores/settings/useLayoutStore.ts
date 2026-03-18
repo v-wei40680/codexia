@@ -24,8 +24,8 @@ interface LayoutStore {
   setRightPanelSize: (size: number) => void;
   view: viewType;
   setView: (view: viewType) => void;
-  currentCard: { kind: 'codex'; id: string } | { kind: 'cc'; id: string } | null;
-  setCurrentAgentCard: (card: { kind: 'codex'; id: string } | { kind: 'cc'; id: string } | null) => void;
+  isAgentExpanded: boolean;
+  setIsAgentExpanded: (expanded: boolean) => void;
   activeSidebarTab: AgentType;
   setActiveSidebarTab: (tab: AgentType) => void;
   activeRightPanelTab: 'diff' | 'note' | 'files' | 'webpreview';
@@ -49,8 +49,8 @@ export const useLayoutStore = create<LayoutStore>()(
       setRightPanelSize: (size) => set({ rightPanelSize: size }),
       view: 'agent',
       setView: (view) => set({ view: view }),
-      currentCard: null,
-      setCurrentAgentCard: (card) => set({ currentCard: card }),
+      isAgentExpanded: false,
+      setIsAgentExpanded: (expanded) => set({ isAgentExpanded: expanded }),
       activeSidebarTab: 'codex',
       setActiveSidebarTab: (tab) => set({ activeSidebarTab: tab }),
       activeRightPanelTab: 'note',
@@ -62,7 +62,7 @@ export const useLayoutStore = create<LayoutStore>()(
     }),
     {
       name: 'layout-storage',
-      version: 2,
+      version: 3,
     }
   )
 );
