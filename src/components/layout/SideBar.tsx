@@ -18,8 +18,7 @@ import { useSettingsStore } from '@/stores/settings';
 import { useCCSessionManager } from '@/hooks/useCCSessionManager';
 import { useUpdater } from '@/hooks/useUpdater';
 import { UpdateButton } from '../features/UpdateButton';
-import { isTauri } from '@/hooks/runtime';
-import { useIsMobile } from '@/hooks/use-mobile';
+import { useTrafficLightConfig } from '@/hooks';
 import { SideBarCodexTab } from './SideBarCodexTab';
 import { SideBarClaudeTab } from './SideBarClaudeTab';
 import { AgentIcon } from '@/components/common/AgentIcon';
@@ -45,13 +44,13 @@ export function SideBar() {
   const { cwd, setCwd, setSelectedAgent, selectedAgent } = useWorkspaceStore();
   const { isSidebarOpen, setSidebarOpen, setView, view, activeSidebarTab, setActiveSidebarTab } =
     useLayoutStore();
+  const { isMacos } = useTrafficLightConfig(isSidebarOpen);
   const { searchTerm, setSearchTerm, sortKey, setSortKey, handleNewThread } = useThreadList({
     enabled: activeSidebarTab === 'codex',
   });
   const { handleNewSession } = useCCSessionManager();
   const { showSidebarMarketplace } = useSettingsStore();
   const { hasUpdate, startUpdate } = useUpdater({ enabled: true });
-  const isMobile = useIsMobile();
 
   const currentThreadSortLabel = sortKey === 'created_at' ? 'Created' : 'Updated';
 
@@ -89,7 +88,7 @@ export function SideBar() {
 
         {/* Header row: toggle + update */}
         <div
-          className={`flex items-center gap-2 ${isTauri() && !isMobile ? 'pl-20' : 'pl-2'}`}
+          className={`flex items-center gap-2 ${isMacos ? 'pl-20' : 'pl-2'}`}
           data-tauri-drag-region
         >
           <Button

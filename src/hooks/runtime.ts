@@ -38,3 +38,5 @@ export const buildWsUrl = (path: string) => `${resolveWsBase()}${path}`;
 
 export const isTauri = () =>
   typeof window !== 'undefined' && ('__TAURI__' in window || '__TAURI_INTERNALS__' in window);
+
+export const isMacos = isTauri() && /Macintosh|MacIntel|MacPPC|Mac68K/.test(window.navigator.userAgent);

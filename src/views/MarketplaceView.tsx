@@ -1,25 +1,31 @@
-import { ShoppingBag, Bot, Globe, CheckCircle } from 'lucide-react';
+import { ShoppingBag, Globe, CheckCircle } from 'lucide-react';
 import { SkillsView } from '@/components/features/skills';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { CodexMcpView } from '@/components/features/mcp/CodexMcpView';
 import CCMcpView from '@/components/cc/mcp/CCMcpView';
 import DxtView from '@/components/features/dxt/DxtView';
-import { NoteView } from '@/components/features/notes';
-import { useWorkspaceStore } from '@/stores';
-import { cn } from '@/lib/utils';
+import { AgentType, useWorkspaceStore } from '@/stores';
+import { useLayoutStore } from '@/stores';
+import { AgentIcon } from '@/components/common/AgentIcon';
+import { useTrafficLightConfig } from '@/hooks';
 
 export function MarketplaceView() {
   const { selectedAgent, setSelectedAgent } = useWorkspaceStore();
+  const { isSidebarOpen } = useLayoutStore();
+  const { needsTrafficLightOffset } = useTrafficLightConfig(isSidebarOpen);
 
   return (
-    <Tabs defaultValue="skills" className="flex h-full min-h-0 flex-col gap-4 text-foreground">
-      <div className="flex items-center justify-between border-b">
-        <div className="flex items-center gap-2">
-          <div className="rounded-lg bg-primary/10 p-2 text-primary">
-            <ShoppingBag className="h-5 w-5" />
-          </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">Marketplace</h1>
+    <div className="flex flex-col h-full">
+      <div
+        className={`flex items-center gap-2 h-11 py-2 ${needsTrafficLightOffset ? 'pl-32' : 'pl-4'}`}
+        data-tauri-drag-region
+      >
+        <ShoppingBag className="shrink-0" />
+        <span className="font-semibold">Marketplace</span>
+      </div>
+      <Tabs defaultValue="skills" className="flex flex-col h-full">
+        <div className="flex items-center gap-2 justify-between">
           <TabsList className="bg-muted/50">
             <TabsTrigger value="skills">
               Skills
@@ -27,45 +33,24 @@ export function MarketplaceView() {
             <TabsTrigger value="mcp">
               MCP
             </TabsTrigger>
-            <TabsTrigger value="prompt">
-              Prompts
-            </TabsTrigger>
           </TabsList>
-        </div>
 
-        <div className="flex items-center gap-2 rounded-lg bg-muted/50 p-1">
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(
-              'h-8 gap-2 px-3 transition-all',
-              selectedAgent === 'codex'
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:bg-background/50'
-            )}
-            onClick={() => setSelectedAgent('codex')}
-          >
-            <Bot className="h-4 w-4" />
-            <span className="font-medium uppercase tracking-wider text-[10px]">Codex</span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            className={cn(
-              'h-8 gap-2 px-3 transition-all',
-              selectedAgent === 'cc'
-                ? 'bg-background text-foreground shadow-sm'
-                : 'text-muted-foreground hover:bg-background/50'
-            )}
-            onClick={() => setSelectedAgent('cc')}
-          >
-            <Bot className="h-4 w-4 opacity-70" />
-            <span className="font-medium uppercase tracking-wider text-[10px]">Claude</span>
-          </Button>
+          <span>
+            {(['cc', 'codex'] as AgentType[]).map((agent) => (
+              <Button
+                key={agent}
+                variant="ghost"
+                size="icon"
+                className={`h-8 w-8 ${selectedAgent === agent ? 'bg-accent' : ''}`}
+                onClick={() => {
+                  setSelectedAgent(agent);
+                }}
+              >
+                <AgentIcon agent={agent} />
+              </Button>
+            ))}
+          </span>
         </div>
-      </div>
-
-      <div className="flex-1 min-h-0">
 
         <TabsContent value="skills" className="h-[calc(100%-3rem)] min-h-0 overflow-hidden">
           <SkillsView />
@@ -96,10 +81,7 @@ export function MarketplaceView() {
             </div>
           </Tabs>
         </TabsContent>
-        <TabsContent value="prompt" className="h-[calc(100%-3rem)] min-h-0 overflow-hidden">
-          <NoteView />
-        </TabsContent>
-      </div>
-    </Tabs>
+      </Tabs>
+    </div>
   );
 }
