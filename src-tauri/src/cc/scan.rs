@@ -183,8 +183,6 @@ pub fn get_sessions() -> Result<Vec<SessionData>, String> {
         return Ok(vec![]);
     }
 
-    let slash_commands: Vec<&str> = vec!["/ide", "/model", "/status", "<local-command-caveat>", "<command-name>"];
-
     for entry in fs::read_dir(&projects_dir)
         .map_err(|e| format!("Failed to read projects dir: {}", e))?
     {
@@ -223,9 +221,8 @@ pub fn get_sessions() -> Result<Vec<SessionData>, String> {
                 let mut session_id = String::new();
                 let mut cwd = String::new();
                 let mut timestamp: i64 = 0;
-                let mut display = String::from("Untitled");
+                let mut display = String::new();
                 let mut found_user_message = false;
-                let mut found_display_name = false;
 
                 for line in reader.lines().filter_map(|l| l.ok()) {
                     let sanitized = line.replace('\u{0000}', "").trim().to_string();
@@ -245,7 +242,9 @@ pub fn get_sessions() -> Result<Vec<SessionData>, String> {
                             }
                         }
 
-                        if data.get("type").and_then(|t| t.as_str()) == Some("user") {
+                        if data.get("type").and_then(|t| t.as_str()) == Some("user")
+                            && data.get("permissionMode").is_some()
+                        {
                             found_user_message = true;
                             if timestamp == 0 {
                                 timestamp = data
@@ -256,22 +255,18 @@ pub fn get_sessions() -> Result<Vec<SessionData>, String> {
                                     .unwrap_or(0);
                             }
 
-                            if !found_display_name {
-                                if let Some(msg_display) = data
+                            if display.is_empty() {
+                                if let Some(content) = data
                                     .get("message")
                                     .and_then(|m| m.get("content"))
                                     .and_then(|c| c.as_str())
                                 {
-                                    let trimmed = msg_display.trim();
-                                    if slash_commands.iter().any(|cmd| trimmed.starts_with(cmd)) {
-                                        continue;
-                                    }
-                                    display = msg_display
+                                    display = content
                                         .lines()
                                         .next()
-                                        .unwrap_or("Untitled")
+                                        .unwrap_or("")
+                                        .trim()
                                         .to_string();
-                                    found_display_name = true;
                                 }
                             }
                         }
