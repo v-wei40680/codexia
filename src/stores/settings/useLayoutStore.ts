@@ -33,6 +33,8 @@ interface LayoutStore {
   setActiveRightPanelTab: (tab: 'diff' | 'note' | 'files' | 'webpreview') => void;
   selectedAutomationTaskId: string | null;
   setSelectedAutomationTaskId: (taskId: string | null) => void;
+  isTerminalOpen: boolean;
+  setIsTerminalOpen: (open: boolean) => void;
 }
 
 export const useLayoutStore = create<LayoutStore>()(
@@ -56,6 +58,8 @@ export const useLayoutStore = create<LayoutStore>()(
       setActiveRightPanelTab: (tab) => set({ activeRightPanelTab: tab }),
       selectedAutomationTaskId: null,
       setSelectedAutomationTaskId: (taskId) => set({ selectedAutomationTaskId: taskId }),
+      isTerminalOpen: false,
+      setIsTerminalOpen: (open) => set({ isTerminalOpen: open }),
     }),
     {
       name: 'layout-storage',

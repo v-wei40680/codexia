@@ -22,7 +22,6 @@ import { isTauri } from '@/hooks/runtime';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { SideBarCodexTab } from './SideBarCodexTab';
 import { SideBarClaudeTab } from './SideBarClaudeTab';
-import { SideBarAddProjectButton } from './SideBarAddProjectButton';
 
 // Stable reference — no need to recreate on every render
 const focusCCInput = () => window.dispatchEvent(new Event('cc-input-focus-request'));
@@ -227,8 +226,6 @@ export function SideBar() {
           </span>
 
           <span className="flex">
-            <SideBarAddProjectButton />
-
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button

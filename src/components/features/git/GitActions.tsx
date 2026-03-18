@@ -14,9 +14,11 @@ import { useToast } from '@/components/ui/use-toast';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useGitStatsStore } from '@/stores/useGitStatsStore';
 import { gitCommit, gitPush } from '@/services/tauri/git';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export function GitActions() {
   const { cwd } = useWorkspaceStore();
+  const isMobile = useIsMobile();
   const { refreshStats } = useGitStatsStore();
   const { toast } = useToast();
 
@@ -82,7 +84,7 @@ export function GitActions() {
           ) : (
             <CloudUpload className="size-4 text-primary" />
           )}
-          <span className="text-xs font-semibold capitalize tracking-tight">{activeAction}</span>
+          {!isMobile && <span className="text-xs font-semibold capitalize tracking-tight">{activeAction}</span>}
         </Button>
         <Popover open={isPopoverOpen} onOpenChange={setIsPopoverOpen}>
           <PopoverTrigger asChild>

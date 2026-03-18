@@ -1,16 +1,16 @@
-import { Suspense, lazy, useEffect, useRef, useState } from 'react';
+import { Suspense, lazy, useEffect, useRef } from 'react';
 import type { ImperativePanelHandle } from 'react-resizable-panels';
 import { useLayoutStore } from '@/stores';
 import { SideBar } from '@/components/layout/SideBar';
 import { RightPanel } from '@/components/layout/RightPanel';
-import { MainHeader } from '@/components/layout/MainHeader';
+import { AgentHeader } from '@/components/layout';
 import { ChatInterface } from '@/components/codex/ChatInterface';
 import { History } from '@/components/codex/history';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
-import { BottomTerminal } from '@/components/terminal/BottomTerminal';
 import { Button } from '@/components/ui/button';
 import { PanelLeft } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { BottomTerminal } from '../terminal/BottomTerminal';
 
 const SettingsView = lazy(() =>
   import('@/components/settings').then((module) => ({ default: module.SettingsView })),
@@ -45,9 +45,10 @@ export function AppLayout() {
     setRightPanelSize,
     view,
     setView,
+    isTerminalOpen,
+    setIsTerminalOpen,
   } = useLayoutStore();
   const rightPanelRef = useRef<ImperativePanelHandle>(null);
-  const [isTerminalOpen, setIsTerminalOpen] = useState(false);
   const isMobile = useIsMobile();
   const hasInitializedMobileLayoutRef = useRef(false);
 
@@ -63,12 +64,6 @@ export function AppLayout() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [setView]);
-
-  useEffect(() => {
-    if (view !== 'codex' && view !== 'cc') {
-      setIsTerminalOpen(false);
-    }
-  }, [view]);
 
   useEffect(() => {
     if (isMobile) {
@@ -117,8 +112,7 @@ export function AppLayout() {
     }
   };
 
-  const showMainHeader =
-    view === 'codex' || view === 'cc' || view === 'agent' || view === 'history' || view === 'marketplace';
+  const showMainHeader = view === 'agent' || view === 'history'
 
   const activeView = (
     <Suspense fallback={<ViewLoadingFallback />}>
@@ -137,7 +131,7 @@ export function AppLayout() {
   const mainContent = (
     <div className="flex flex-col min-w-0 h-full">
       <div className="min-h-0 flex-1">{activeView}</div>
-      {(view === 'codex' || view === 'cc') && (
+      {(view === 'agent') && (
         <BottomTerminal open={isTerminalOpen} onOpenChange={setIsTerminalOpen} />
       )}
     </div>
@@ -154,10 +148,7 @@ export function AppLayout() {
         <div className="relative h-full w-full bg-background">
           <div className="flex h-full w-full flex-col min-h-0 min-w-0">
             {showMainHeader ? (
-              <MainHeader
-                isTerminalOpen={isTerminalOpen}
-                onToggleTerminal={() => setIsTerminalOpen((prev) => !prev)}
-              />
+              <AgentHeader />
             ) : (
               !isSidebarOpen && (
                 <div className="absolute left-0 top-0 z-20 flex h-11 items-center pl-2">
@@ -210,10 +201,7 @@ export function AppLayout() {
           )}
           <main className="bg-background relative flex flex-1 flex-col min-w-0 h-full">
             {showMainHeader ? (
-              <MainHeader
-                isTerminalOpen={isTerminalOpen}
-                onToggleTerminal={() => setIsTerminalOpen((prev) => !prev)}
-              />
+              <AgentHeader />
             ) : (
               !isSidebarOpen && (
                 <div className="absolute left-0 top-0 z-20 flex h-11 items-center pl-20">
