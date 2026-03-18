@@ -9,6 +9,7 @@ import { AgentType, useWorkspaceStore } from '@/stores';
 import { useLayoutStore } from '@/stores';
 import { AgentIcon } from '@/components/common/AgentIcon';
 import { useTrafficLightConfig } from '@/hooks';
+import { ProjectSelector } from '@/components/project-selector';
 
 export function MarketplaceView() {
   const { selectedAgent, setSelectedAgent } = useWorkspaceStore();
@@ -23,6 +24,7 @@ export function MarketplaceView() {
       >
         <ShoppingBag className="shrink-0" />
         <span className="font-semibold">Marketplace</span>
+        <ProjectSelector />
       </div>
       <Tabs defaultValue="skills" className="flex flex-col h-full">
         <div className="flex items-center gap-2 justify-between">

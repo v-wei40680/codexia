@@ -14,6 +14,8 @@ import {
 } from '@/services/tauri';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { getFilename } from '@/utils/getFilename';
+import { open as openDialog } from '@tauri-apps/plugin-dialog';
+import { isTauri } from '@/hooks/runtime';
 
 type SelectorMode = 'workspace' | 'browse';
 type TriggerMode = 'label' | 'project-name';
@@ -153,6 +155,17 @@ export function ProjectSelector({
     }
   }
 
+  async function handleAddProject() {
+    if (isTauri()) {
+      const selected = await openDialog({ directory: true, multiple: false });
+      if (typeof selected === 'string') {
+        await selectProject(selected);
+      }
+    } else {
+      setInternalMode('browse');
+    }
+  }
+
   return (
     <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
       <PopoverTrigger asChild>
@@ -190,7 +203,7 @@ export function ProjectSelector({
                   Workspace
                 </Button>
               ) : (
-                <Button variant="ghost" size="sm" onClick={() => setInternalMode('browse')}>
+                <Button variant="ghost" size="sm" onClick={() => void handleAddProject()}>
                   <FolderPlus className="h-4 w-4" />
                   Add New Project
                 </Button>
