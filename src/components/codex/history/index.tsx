@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { Dot, Funnel } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { TurnDiffView } from '@/components/codex/history/TurnDiffView';
 import { AccordionMsg } from '@/components/codex/history/AccordionMsg';
 import HistoryExecCommandItem from './HistoryExecCommandItem';
@@ -18,7 +19,7 @@ export function History() {
   const currentThread = useCurrentThread();
   const currentPath = useMemo(() => currentThread?.path ?? '', [currentThread]);
   const [msgs, setMsgs] = useState<RawMessage[]>([]);
-  const [showFilter, setShowFilter] = useState(true);
+  const [showFilter, setShowFilter] = useState(false);
   const [expandedExecCommands, setExpandedExecCommands] = useState<Record<string, boolean>>({});
   const [messageTypes, setMessageTypes] = useState(createInitialFilterState);
 
@@ -134,26 +135,20 @@ export function History() {
   }
 
   return (
-    <div className="flex flex-col p-4 gap-2 overflow-auto h-full">
-      {showFilter && (
-        <div className="fixed bottom-6 right-0 p-4 z-10">
-          <HistoryFilters
-            className="mt-2 p-4 bg-background border rounded-md shadow-lg"
-            messageTypes={messageTypes}
-            onFilterChange={handleFilterChange}
-          />
-        </div>
-      )}
-      <Button
-        size="icon"
-        onClick={() => {
-          const newValue = !showFilter;
-          setShowFilter(newValue);
-        }}
-        className="fixed bottom-0 right-4 z-20"
-      >
-        <Funnel className="h-4 w-4" />
-      </Button>
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex justify-end px-2 py-1 shrink-0">
+        <Popover open={showFilter} onOpenChange={setShowFilter}>
+          <PopoverTrigger asChild>
+            <Button size="icon" variant="ghost">
+              <Funnel className="h-4 w-4" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent align="end" className="w-56 p-4">
+            <HistoryFilters messageTypes={messageTypes} onFilterChange={handleFilterChange} />
+          </PopoverContent>
+        </Popover>
+      </div>
+      <div className="flex flex-col p-4 gap-2 overflow-auto flex-1">
       {filteredMessages.map((msg, index) => {
         switch (msg.type) {
           case 'agent_message':
@@ -247,11 +242,14 @@ export function History() {
               </div>
             );
           case 'ghost_snapshot':
+          case 'task_started':
+          case 'task_complete':
             return null;
           default:
             return <code key={index}>{JSON.stringify(msg)}</code>;
         }
       })}
+      </div>
     </div>
   );
 }
