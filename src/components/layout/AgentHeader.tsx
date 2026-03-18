@@ -10,9 +10,9 @@ import { useLayoutStore } from '@/stores';
 import { useCodexStore, useCurrentThread } from '@/stores/codex';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { RightPanelHeader } from './RightPanelHeader';
-import { useIsMobile } from '@/hooks/use-mobile';
 import { useCCStore } from '@/stores/cc';
 import { isTauri } from '@/hooks/runtime';
+import { useTrafficLightConfig } from '@/hooks';
 
 export function AgentHeader() {
   const {
@@ -22,10 +22,10 @@ export function AgentHeader() {
     view,
   } = useLayoutStore();
   const { setHistoryMode, selectedAgent } = useWorkspaceStore();
+  const { needsTrafficLightOffset } = useTrafficLightConfig(isSidebarOpen);
 
   const { isConnected } = useCCStore();
   const { currentThreadId, activeThreadIds } = useCodexStore();
-  const isMobile = useIsMobile();
   const currentThread = useCurrentThread();
   const isHistoryView = view === 'history';
 
@@ -49,7 +49,7 @@ export function AgentHeader() {
     >
       <div className="flex min-w-0 items-center gap-2">
         {!isSidebarOpen && (
-          <div className={`flex items-center ${!isMobile ? 'pl-20' : 'pl-2'}`}>
+          <div className={`flex items-center ${needsTrafficLightOffset ? 'pl-20' : 'pl-2'}`}>
             <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
               <PanelLeft />
             </Button>
