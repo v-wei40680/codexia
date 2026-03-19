@@ -4,12 +4,11 @@ import { useLayoutStore } from '@/stores';
 import { useCodexStore, useApprovalStore, useRequestUserInputStore } from '@/stores/codex';
 import { useCCStore } from '@/stores/cc';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
-
 import { codexService } from '@/services/codexService';
 import { ArrowLeft, X, Maximize2 } from 'lucide-react';
 import type { AgentCenterCard } from '@/stores/useAgentCenterStore';
 import { AgentIcon } from '@/components/common/AgentIcon';
-import { AgentComposer } from '@/components/common';
+import { AgentComposer, GetProButton } from '@/components/common';
 import { CodexGridCard } from './CodexGridCard';
 import { CCGridCard } from './CCGridCard';
 
@@ -249,6 +248,9 @@ function AgentGrid() {
             </span>
           </button>
         ))}
+        <div className="ml-auto">
+          <GetProButton />
+        </div>
       </div>
 
       {/* Grid */}

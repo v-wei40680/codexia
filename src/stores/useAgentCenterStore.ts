@@ -7,26 +7,43 @@ export type AgentCenterCard =
 
 interface AgentCenterState {
   cards: AgentCenterCard[];
-  addAgentCard: (card: AgentCenterCard) => void;
+  addAgentCard: (card: AgentCenterCard) => boolean;
   removeCard: (card: AgentCenterCard) => void;
   currentAgentCardId: string | null;
   setCurrentAgentCardId: (id: string | null) => void;
+  // Runtime limit (not persisted) — set by auth/subscription context
+  maxCards: number;
+  setMaxCards: (max: number) => void;
 }
 
 export const useAgentCenterStore = create<AgentCenterState>()(
   persist(
     (set) => ({
       cards: [],
+      maxCards: Infinity,
 
-      addAgentCard: (card) =>
+      // Returns true if the card was added/updated, false if the limit was reached.
+      addAgentCard: (card) => {
+        let added = false;
         set((state) => {
           const idx = state.cards.findIndex((c) => c.kind === card.kind && c.id === card.id);
-          if (idx === -1) return { cards: [card, ...state.cards] };
-          if (!card.preview) return {};
-          const next = [...state.cards];
-          next[idx] = { ...next[idx], preview: card.preview } as AgentCenterCard;
-          return { cards: next };
-        }),
+          // Update preview for an existing card — never counts toward the limit.
+          if (idx !== -1) {
+            if (!card.preview) return {};
+            const next = [...state.cards];
+            next[idx] = { ...next[idx], preview: card.preview } as AgentCenterCard;
+            added = true;
+            return { cards: next };
+          }
+          // New card: check limit.
+          if (state.cards.length >= state.maxCards) {
+            return {};
+          }
+          added = true;
+          return { cards: [card, ...state.cards] };
+        });
+        return added;
+      },
 
       removeCard: (card) =>
         set((state) => ({
@@ -35,10 +52,17 @@ export const useAgentCenterStore = create<AgentCenterState>()(
 
       currentAgentCardId: null,
       setCurrentAgentCardId: (id) => set({ currentAgentCardId: id }),
+
+      setMaxCards: (max) => set({ maxCards: max }),
     }),
     {
       name: 'agent-center-store',
       version: 1,
+      // maxCards is runtime-only — derive it fresh from auth each session
+      partialize: (state) => ({
+        cards: state.cards,
+        currentAgentCardId: state.currentAgentCardId,
+      }),
     }
   )
 );

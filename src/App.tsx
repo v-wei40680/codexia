@@ -16,6 +16,7 @@ import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useTrayPendingStore } from '@/stores/useTrayPendingStore';
 import { useCCSessionManager } from '@/hooks/useCCSessionManager';
 import { codexService } from '@/services/codexService';
+import { useAgentLimit } from '@/hooks/useAgentLimit';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,7 +32,13 @@ function AppShell() {
   const [quitDialogOpen, setQuitDialogOpen] = useState(false);
   const { pending, clearPending } = useTrayPendingStore();
   const { handleNewSession } = useCCSessionManager();
-  const { addAgentCard, setCurrentAgentCardId } = useAgentCenterStore();
+  const { addAgentCard, setCurrentAgentCardId, setMaxCards } = useAgentCenterStore();
+  const { maxCards } = useAgentLimit();
+
+  // Sync the subscription-derived limit into the store so all addAgentCard callers respect it.
+  useEffect(() => {
+    setMaxCards(maxCards);
+  }, [maxCards, setMaxCards]);
 
   const processTrayPending = useCallback(async (text: string, kind: 'cc' | 'codex') => {
     clearPending();
