@@ -24,7 +24,7 @@ export function GitActions() {
 
   const [isCommitDialogOpen, setIsCommitDialogOpen] = useState(false);
   const [isPopoverOpen, setIsPopoverOpen] = useState(false);
-  const [commitMessage, setCommitMessage] = useState('Update');
+  const [commitMessage, setCommitMessage] = useState('');
   const [activeAction, setActiveAction] = useState<'commit' | 'push'>('commit');
 
   const refreshGitStats = useCallback(() => {
