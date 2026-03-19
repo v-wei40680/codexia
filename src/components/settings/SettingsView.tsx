@@ -22,6 +22,7 @@ import { GeneralSettings } from './GeneralSettings';
 import { ExplorerSettings } from './ExplorerSettings';
 import { useLayoutStore } from '@/stores/settings';
 import { ConfigSettings, ArchivedThreadSettings, PersonalizationSettings } from './codex';
+import { ClaudeSettings } from './ClaudeSettings';
 import { CodexAuth } from '../codex/CodexAuth';
 import { QuoteSettings } from './QuoteSettings';
 import { ProjectsSettings } from './ProjectsSettings';
@@ -40,10 +41,11 @@ type SettingsSection =
   | 'explorer'
   | 'quote'
   | 'task'
-  | 'ui';
+  | 'ui'
+  | 'claude';
 
 const codexSections = ['codexauth', 'task', 'config', 'personalization', 'archived'] as const;
-const topLevelSections = ['general', 'projects', 'explorer', 'quote', 'ui'] as const;
+const topLevelSections = ['general', 'projects', 'claude', 'explorer', 'quote', 'ui'] as const;
 
 const sectionLabel: Record<SettingsSection, string> = {
   general: 'General',
@@ -56,6 +58,7 @@ const sectionLabel: Record<SettingsSection, string> = {
   quote: 'Quote',
   task: 'Task',
   ui: 'UI',
+  claude: 'Claude',
 };
 
 export function SettingsView() {
@@ -76,6 +79,7 @@ export function SettingsView() {
       {activeSection === 'quote' && <QuoteSettings />}
       {activeSection === 'task' && <TaskSettings />}
       {activeSection === 'ui' && <UISettings />}
+      {activeSection === 'claude' && <ClaudeSettings />}
     </>
   );
 

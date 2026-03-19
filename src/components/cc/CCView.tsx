@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { listen } from '@tauri-apps/api/event';
 import { useCCSessionListener, useCCPermissionListener } from './hooks';
 
 import { useCCStore } from '@/stores/cc';
@@ -9,11 +8,14 @@ import { readTextFileLines } from '@/services/tauri/filesystem';
 import { parseSessionJsonl } from './utils/parseSessionJsonl';
 
 import { CCMessage } from '@/components/cc/messages';
+import { PermissionRequestCard } from '@/components/cc/messages/PermissionRequestCard';
 import { Composer } from '@/components/cc/composer';
 import { CCScrollControls } from '@/components/cc/CCScrollControls';
 import { buildMessageGroups, CCExploredMessageGroup } from './messages/group';
 import { buildInlineErrorsMap } from './messages/inlineErrors';
-import type { CCMessage as CCMessageType } from './types/messages';
+import type { PermissionRequestMessage } from './types/messages';
+import type { PermissionDecision } from './types/permission';
+
 
 interface CCViewProps {
   /** When provided, renders in embedded (grid-card) mode for this specific session. */
@@ -35,6 +37,8 @@ export default function CCView({ sessionId }: CCViewProps = {}) {
     setConnected,
     clearMessages,
     options,
+    updateMessage,
+    updateSessionMessage,
     addMessageToSession,
     setSessionLoading,
   } = useCCStore();
@@ -82,42 +86,6 @@ export default function CCView({ sessionId }: CCViewProps = {}) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSessionId, isEmbedded]);
 
-  // Per-session message listener for embedded mode — replaces useCCCardListener.
-  useEffect(() => {
-    if (!isEmbedded || !sessionId) return;
-    const unlistenPromise = listen<CCMessageType>('cc-message', (event) => {
-      const message = event.payload;
-      const msgSessionId = (message as CCMessageType & { session_id?: string }).session_id;
-      if (!msgSessionId || msgSessionId !== sessionId) return;
-      addMessageToSession(sessionId, message);
-    });
-    return () => { void unlistenPromise.then((fn) => fn()); };
-  }, [sessionId, isEmbedded, addMessageToSession]);
-
-  // Per-session permission-request listener for embedded mode.
-  useEffect(() => {
-    if (!isEmbedded || !sessionId) return;
-    const unlistenPromise = listen<{
-      requestId: string;
-      sessionId: string;
-      toolName: string;
-      toolInput: Record<string, unknown>;
-      alwaysAllowTarget?: 'project' | 'session';
-    }>('cc-permission-request', (event) => {
-      const { requestId, sessionId: evtSessionId, toolName, toolInput, alwaysAllowTarget } = event.payload;
-      if (evtSessionId !== sessionId) return;
-      addMessageToSession(sessionId, {
-        type: 'permission_request',
-        requestId,
-        sessionId: evtSessionId,
-        toolName,
-        alwaysAllowTarget,
-        toolInput,
-      } as CCMessageType);
-    });
-    return () => { void unlistenPromise.then((fn) => fn()); };
-  }, [sessionId, isEmbedded, addMessageToSession]);
-
   // Track user scroll intent.
   useEffect(() => {
     const el = scrollContainerRef.current;
@@ -156,14 +124,30 @@ export default function CCView({ sessionId }: CCViewProps = {}) {
     [messages],
   );
 
-  const hasPendingPermission = useMemo(
-    () => messages.some((m) => m.type === 'permission_request' && !m.resolved),
-    [messages],
-  );
+  const pendingPermissionIdx = useMemo(() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i];
+      if (m.type === 'permission_request' && !m.resolved) return i;
+    }
+    return -1;
+  }, [messages]);
 
-  // Global active-session listeners (disabled in embedded mode to avoid double-listening).
-  useCCSessionListener(isEmbedded);
-  useCCPermissionListener(isEmbedded);
+  const handleResolvePermission = async (requestId: string, decision: PermissionDecision) => {
+    const { ccResolvePermission } = await import('@/services');
+    try {
+      await ccResolvePermission(requestId, decision);
+      if (isEmbedded && sessionId) {
+        updateSessionMessage(sessionId, pendingPermissionIdx, { resolved: decision } as any);
+      } else {
+        updateMessage(pendingPermissionIdx, { resolved: decision } as any);
+      }
+    } catch (err) {
+      console.error('Failed to resolve permission:', err);
+    }
+  };
+
+  useCCSessionListener({ sessionId });
+  useCCPermissionListener({ sessionId });
 
   return (
     <div className="flex flex-col h-full min-h-0 w-full max-w-4xl mx-auto">
@@ -206,7 +190,13 @@ export default function CCView({ sessionId }: CCViewProps = {}) {
         )}
       </div>
 
-      {!isEmbedded && !hasPendingPermission && <Composer />}
+      {pendingPermissionIdx !== -1 && (
+        <PermissionRequestCard
+          msg={messages[pendingPermissionIdx] as PermissionRequestMessage}
+          onResolve={handleResolvePermission}
+        />
+      )}
+      {!isEmbedded && pendingPermissionIdx === -1 && <Composer />}
     </div>
   );
 }

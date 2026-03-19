@@ -1,14 +1,15 @@
-import { useCCStore } from '@/stores/cc';
 import type { CCMessage as CCMessageType, ToolResultBlock } from '../types/messages';
 import { isToolResultBlock } from '../types/messages';
-import { CCMessageContent } from './CCMessageContent';
+import { useCCSettingsStore } from '@/stores/settings/useCCSettingsStore';
 import { PermissionRequestCard } from './PermissionRequestCard';
+import { useCCStore } from '@/stores/cc';
+import type { PermissionDecision } from '../types/permission';
+import { CCMessageContent } from './CCMessageContent';
 import { SystemInitCard } from './SystemInitCard';
 import { ResultCard } from './ResultCard';
 import { RateLimitCard } from './RateLimitCard';
 import { safeStringify } from './utils';
 import { Card } from '@/components/ui/card';
-import type { PermissionDecision } from '../types/permission';
 import { CopyButton, AddToNote } from '@/components/common';
 import { UserMessage } from './UserMessage';
 
@@ -22,6 +23,7 @@ const isToolBlock = (b: { type: string }) =>
   b.type === 'tool_use' || b.type === 'tool_result';
 
 export function CCMessage({ message: msg, index: idx, inlineErrors }: CCMessageProps) {
+  const { showPermissionCards } = useCCSettingsStore();
   const { updateMessage } = useCCStore();
 
   const handleResolvePermission = async (requestId: string, decision: PermissionDecision) => {
@@ -71,12 +73,8 @@ export function CCMessage({ message: msg, index: idx, inlineErrors }: CCMessageP
     }
 
     case 'permission_request':
-      return (
-        <PermissionRequestCard
-          msg={msg}
-          onResolve={handleResolvePermission}
-        />
-      );
+      if (!showPermissionCards) return null;
+      return <PermissionRequestCard msg={msg} onResolve={handleResolvePermission} />;
 
     case 'system':
       return msg.subtype === 'init' ? (

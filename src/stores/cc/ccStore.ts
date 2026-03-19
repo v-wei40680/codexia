@@ -52,6 +52,7 @@ interface CCStoreState {
   addMessageToSession: (sessionId: string, message: CCMessage) => void;
   setSessionLoading: (sessionId: string, loading: boolean) => void;
   updateMessage: (index: number, message: Partial<CCMessage>) => void;
+  updateSessionMessage: (sessionId: string, index: number, message: Partial<CCMessage>) => void;
   setMessages: (messages: CCMessage[]) => void;
   updateOptions: (options: Partial<CCOptions>) => void;
   setConnected: (connected: boolean) => void;
@@ -185,6 +186,17 @@ export const useCCStore = create<CCStoreState>()(
             ? { ...state.sessionMessagesMap, [state.activeSessionId]: updatedMessages }
             : state.sessionMessagesMap;
           return { messages: updatedMessages, sessionMessagesMap: updatedMap };
+        }),
+      updateSessionMessage: (sessionId, index, message) =>
+        set((state) => {
+          const sessionMsgs = state.sessionMessagesMap[sessionId] ?? [];
+          const updated = sessionMsgs.map((m, i) =>
+            i === index ? { ...m, ...message } as CCMessage : m
+          );
+          const updatedMap = { ...state.sessionMessagesMap, [sessionId]: updated };
+          // Also sync global messages if this session is active.
+          const isActive = state.activeSessionId === sessionId;
+          return { sessionMessagesMap: updatedMap, ...(isActive ? { messages: updated } : {}) };
         }),
       setMessages: (messages) => set({ messages }),
       updateOptions: (newOptions) =>
