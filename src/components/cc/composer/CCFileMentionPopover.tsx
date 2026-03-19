@@ -88,6 +88,7 @@ export function CCFileMentionPopover({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const contentRef = useRef<HTMLDivElement | null>(null);
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const triggerSpanRef = useRef<HTMLSpanElement | null>(null);
 
   // Detect `@query` pattern based on cursor position
   useEffect(() => {
@@ -156,6 +157,19 @@ export function CCFileMentionPopover({
   })();
 
   useEffect(() => { setSelectedIndex(0); }, [query, open]);
+
+  // Keep trigger span pinned to triggerElement's position (triggerElement may arrive after mount)
+  useEffect(() => {
+    const el = triggerSpanRef.current;
+    if (!el || !triggerElement) return;
+    const rect = triggerElement.getBoundingClientRect();
+    el.style.position = 'fixed';
+    el.style.left = `${rect.left}px`;
+    el.style.top = `${rect.top}px`;
+    el.style.width = '0';
+    el.style.height = '0';
+    el.style.pointerEvents = 'none';
+  }, [triggerElement]);
 
   const handleSelect = useCallback(
     (filePath: string, fileName: string) => {
@@ -236,17 +250,7 @@ export function CCFileMentionPopover({
     <Popover open={open} onOpenChange={setOpen} modal={false}>
       <PopoverTrigger asChild>
         <span
-          ref={(el) => {
-            if (el && triggerElement) {
-              const rect = triggerElement.getBoundingClientRect();
-              el.style.position = 'fixed';
-              el.style.left = `${rect.left}px`;
-              el.style.top = `${rect.top}px`;
-              el.style.width = '0';
-              el.style.height = '0';
-              el.style.pointerEvents = 'none';
-            }
-          }}
+          ref={triggerSpanRef}
           aria-hidden="true"
         />
       </PopoverTrigger>

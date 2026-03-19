@@ -137,7 +137,7 @@ export function Composer({ overrideSend, onAfterSend }: ComposerProps = {}) {
           {/* Hidden anchor for popover positioning */}
           <span
             ref={hiddenTriggerRef}
-            className="absolute bottom-11 left-2 pointer-events-none opacity-0"
+            className="absolute top-0 left-2 pointer-events-none opacity-0"
             aria-hidden="true"
           />
 
