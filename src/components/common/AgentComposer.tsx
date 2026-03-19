@@ -5,7 +5,6 @@ import { SquarePen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AgentIcon } from './AgentIcon';
 import { Composer as CCComposer } from '@/components/cc/composer';
-import { WorkspaceSwitcher } from '@/components/common';
 import { useWorkspaceStore, AgentType } from '@/stores/useWorkspaceStore';
 import { useAgentCenterStore, useLayoutStore } from '@/stores';
 import { useCCStore } from '@/stores/cc';
@@ -132,11 +131,7 @@ export function AgentComposer({ trayMode = false }: AgentComposerProps) {
 
       {/* Bottom bar */}
       <div className="shrink-0">
-        {selectedAgent === 'cc' ? (
-          <WorkspaceSwitcher />
-        ) : (
-          <ComposerControls />
-        )}
+        {selectedAgent === 'codex' && <ComposerControls />}
       </div>
     </div>
   );
