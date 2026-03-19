@@ -14,13 +14,13 @@ import { ccInterrupt, ccSendMessage } from '@/services';
 
 const CC_INPUT_FOCUS_EVENT = 'cc-input-focus-request';
 
-interface CCInputProps {
+interface ComposerProps {
   /** When provided, overrides the normal send — called instead of creating a session. */
   overrideSend?: (text: string) => void;
   onAfterSend?: (sessionId: string, text: string) => void;
 }
 
-export function CCInput({ overrideSend, onAfterSend }: CCInputProps = {}) {
+export function Composer({ overrideSend, onAfterSend }: ComposerProps = {}) {
   const {
     activeSessionId,
     isConnected,

@@ -4,12 +4,12 @@ import { showMainWindow } from '@/services/tauri/tray';
 import { SquarePen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AgentIcon } from './AgentIcon';
-import { CCInput } from '@/components/cc/composer/CCInput';
+import { Composer as CCComposer } from '@/components/cc/composer';
 import { WorkspaceSwitcher } from '@/components/cc/WorkspaceSwitcher';
 import { useWorkspaceStore, AgentType } from '@/stores/useWorkspaceStore';
 import { useAgentCenterStore, useLayoutStore } from '@/stores';
 import { useCCStore } from '@/stores/cc';
-import { Composer, ComposerControls } from '@/components/codex/Composer';
+import { Composer as CodexComposer, ComposerControls } from '@/components/codex/Composer';
 import { useCCSessionManager } from '@/hooks/useCCSessionManager';
 import { useThreadList } from '@/hooks/codex';
 
@@ -42,8 +42,8 @@ export function AgentComposer({ trayMode = false }: AgentComposerProps) {
   const handleTrayOverrideSend = useCallback((text: string) => {
     setActiveSidebarTab(selectedAgent);
     setView('agent');
-    emitTo('main', 'tray:pending-send', { kind: selectedAgent, text }).catch(() => {});
-    showMainWindow().catch(() => {});
+    emitTo('main', 'tray:pending-send', { kind: selectedAgent, text }).catch(() => { });
+    showMainWindow().catch(() => { });
   }, [setView, selectedAgent, setActiveSidebarTab]);
 
   const handleCreateNew = useCallback(
@@ -124,9 +124,9 @@ export function AgentComposer({ trayMode = false }: AgentComposerProps) {
       {/* Input area */}
       <div className={trayMode ? 'shrink-0' : 'flex-1 min-h-0 overflow-hidden'}>
         {selectedAgent === 'cc' ? (
-          <CCInput overrideSend={trayMode ? handleTrayOverrideSend : undefined} />
+          <CCComposer overrideSend={trayMode ? handleTrayOverrideSend : undefined} />
         ) : (
-          <Composer showControls={false} overrideSend={trayMode ? handleTrayOverrideSend : undefined} />
+          <CodexComposer showControls={false} overrideSend={trayMode ? handleTrayOverrideSend : undefined} />
         )}
       </div>
 

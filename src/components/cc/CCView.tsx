@@ -9,7 +9,7 @@ import { readTextFileLines } from '@/services/tauri/filesystem';
 import { parseSessionJsonl } from './utils/parseSessionJsonl';
 
 import { CCMessage } from '@/components/cc/messages';
-import { CCInput } from '@/components/cc/composer';
+import { Composer } from '@/components/cc/composer';
 import { CCScrollControls } from '@/components/cc/CCScrollControls';
 import { buildMessageGroups, CCExploredMessageGroup } from './messages/group';
 import { buildInlineErrorsMap } from './messages/inlineErrors';
@@ -79,7 +79,7 @@ export default function CCView({ sessionId }: CCViewProps = {}) {
       });
       addActiveSessionId(sid);
     })();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSessionId, isEmbedded]);
 
   // Per-session message listener for embedded mode — replaces useCCCardListener.
@@ -182,7 +182,7 @@ export default function CCView({ sessionId }: CCViewProps = {}) {
         )}
       </div>
 
-      {!isEmbedded && !hasPendingPermission && <CCInput />}
+      {!isEmbedded && !hasPendingPermission && <Composer />}
     </div>
   );
 }
