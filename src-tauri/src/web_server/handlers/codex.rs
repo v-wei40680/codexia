@@ -6,7 +6,7 @@ use super::types::{
 };
 use axum::{Json, extract::State as AxumState, http::StatusCode};
 use codex_app_server_protocol::{
-    FuzzyFileSearchParams, GetAccountParams, LoginAccountParams, ModelListParams,
+    GetAccountParams, LoginAccountParams, ModelListParams,
     ReviewStartParams, SkillsConfigWriteParams, SkillsListParams, ThreadArchiveParams,
     ThreadForkParams, ThreadListParams, ThreadResumeParams, ThreadRollbackParams,
     ThreadStartParams, TurnInterruptParams, TurnStartParams,
@@ -284,20 +284,6 @@ pub(crate) async fn api_respond_user_input(
         .map_err(to_error_response)?;
 
     Ok(StatusCode::OK)
-}
-
-pub(crate) async fn api_fuzzy_file_search(
-    AxumState(state): AxumState<WebServerState>,
-    Json(params): Json<FuzzyFileSearchParams>,
-) -> Result<Json<Value>, ErrorResponse> {
-    let params_value = serde_json::to_value(params).map_err(to_error_response)?;
-    let result = state
-        .codex_state
-        .codex
-        .send_request("fuzzyFileSearch", params_value)
-        .await
-        .map_err(to_error_response)?;
-    Ok(Json(result))
 }
 
 pub(crate) async fn api_start_review(

@@ -94,6 +94,30 @@ export default function CCView({ sessionId }: CCViewProps = {}) {
     return () => { void unlistenPromise.then((fn) => fn()); };
   }, [sessionId, isEmbedded, addMessageToSession]);
 
+  // Per-session permission-request listener for embedded mode.
+  useEffect(() => {
+    if (!isEmbedded || !sessionId) return;
+    const unlistenPromise = listen<{
+      requestId: string;
+      sessionId: string;
+      toolName: string;
+      toolInput: Record<string, unknown>;
+      alwaysAllowTarget?: 'project' | 'session';
+    }>('cc-permission-request', (event) => {
+      const { requestId, sessionId: evtSessionId, toolName, toolInput, alwaysAllowTarget } = event.payload;
+      if (evtSessionId !== sessionId) return;
+      addMessageToSession(sessionId, {
+        type: 'permission_request',
+        requestId,
+        sessionId: evtSessionId,
+        toolName,
+        alwaysAllowTarget,
+        toolInput,
+      } as CCMessageType);
+    });
+    return () => { void unlistenPromise.then((fn) => fn()); };
+  }, [sessionId, isEmbedded, addMessageToSession]);
+
   // Track user scroll intent.
   useEffect(() => {
     const el = scrollContainerRef.current;

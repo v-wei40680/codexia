@@ -110,7 +110,6 @@ pub fn run() {
             crate::codex::login_account,
             crate::codex::skills_list,
             crate::codex::skills_config_write,
-            crate::codex::fuzzy_file_search,
             crate::codex::start_review,
             crate::codex::respond_to_command_execution_approval,
             crate::codex::respond_to_file_change_approval,
