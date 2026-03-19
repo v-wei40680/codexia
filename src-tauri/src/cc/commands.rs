@@ -105,6 +105,17 @@ pub fn cc_get_sessions() -> Result<Vec<SessionData>, String> {
 }
 
 #[tauri::command]
+pub fn cc_delete_session(session_id: String) -> Result<(), String> {
+    use crate::cc::db::SessionDB;
+    let db = SessionDB::new().map_err(|e| e.to_string())?;
+    let file_path = db.delete_session(&session_id).map_err(|e| e.to_string())?;
+    if let Some(path) = file_path {
+        let _ = std::fs::remove_file(&path);
+    }
+    Ok(())
+}
+
+#[tauri::command]
 pub fn cc_get_session_file_path(session_id: String) -> Result<Option<String>, String> {
     use crate::cc::db::SessionDB;
     let db = SessionDB::new().map_err(|e| e.to_string())?;

@@ -138,6 +138,14 @@ export async function ccMcpDisable(name: string, workingDir: string) {
   await postJson('/api/cc/mcp/disable', { name, working_dir: workingDir });
 }
 
+export async function ccDeleteSession(sessionId: string): Promise<void> {
+  if (isTauri()) {
+    await invokeTauri('cc_delete_session', { sessionId });
+    return;
+  }
+  await postNoContent('/api/cc/delete-session', { session_id: sessionId });
+}
+
 export async function ccGetSessionFilePath(sessionId: string): Promise<string | null> {
   if (isTauri()) {
     return await invokeTauri<string | null>('cc_get_session_file_path', { sessionId });

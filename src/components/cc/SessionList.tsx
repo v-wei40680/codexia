@@ -2,16 +2,26 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { useCCStore } from '@/stores/cc';
 import { getSessions, SessionData } from '@/lib/sessions';
-import { ccGetSessionFilePath } from '@/services/tauri/cc';
+import { ccGetSessionFilePath, ccDeleteSession } from '@/services/tauri/cc';
 import { readTextFileLines } from '@/services/tauri/filesystem';
 import { parseSessionJsonl } from '@/components/cc/utils/parseSessionJsonl';
-import { MoreVertical, Copy, Loader2 } from 'lucide-react';
+import { MoreVertical, Copy, Loader2, Trash2 } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { useLayoutStore, useAgentCenterStore } from '@/stores';
@@ -36,6 +46,8 @@ export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Pr
   const { activeSessionIds, activeSessionId, isLoading, addMessageToSession, setSessionLoading, sessionMessagesMap } = useCCStore();
   const { toast } = useToast();
   const isMobile = useIsMobile();
+
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const loadSessions = useCallback(async () => {
     setError(null);
@@ -146,6 +158,15 @@ export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Pr
     }
   };
 
+  const doDeleteSession = async (sessionId: string) => {
+    try {
+      await ccDeleteSession(sessionId);
+      setLoadedSessions((prev) => prev.filter((s) => s.sessionId !== sessionId));
+    } catch {
+      toast({ description: 'Failed to delete session', variant: 'destructive' });
+    }
+  };
+
   const copySessionId = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     navigator.clipboard.writeText(id);
@@ -209,6 +230,16 @@ export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Pr
                       <Copy className="h-3 w-3" />
                       <span>Copy Session ID</span>
                     </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPendingDeleteId(session.sessionId);
+                      }}
+                      className="text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      <span>Delete</span>
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
@@ -224,6 +255,31 @@ export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Pr
           {expanded ? `Show less` : `Show ${filteredSessions.length - DEFAULT_VISIBLE} more`}
         </button>
       )}
+
+      <AlertDialog open={!!pendingDeleteId} onOpenChange={(open) => !open && setPendingDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete session?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. The session and its history will be permanently deleted.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (pendingDeleteId) {
+                  void doDeleteSession(pendingDeleteId);
+                  setPendingDeleteId(null);
+                }
+              }}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

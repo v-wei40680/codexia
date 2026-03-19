@@ -279,6 +279,7 @@ pub fn get_sessions() -> Result<Vec<SessionData>, String> {
                         project: cwd,
                         display,
                         timestamp,
+                        file_path: file_path_str.to_string(),
                     };
                     let _ = db.insert_session(&session, file_path_str);
                 }

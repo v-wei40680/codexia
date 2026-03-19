@@ -5,6 +5,7 @@ export interface SessionData {
   display: string;
   timestamp: number;
   sessionId: string;
+  filePath: string;
 }
 
 type SessionDataRaw = SessionData & { session_id?: string };
@@ -15,6 +16,7 @@ function normalizeSession(data: SessionDataRaw): SessionData {
     display: data.display,
     timestamp: data.timestamp,
     sessionId: data.sessionId ?? data.session_id ?? '',
+    filePath: data.filePath ?? '',
   };
 }
 

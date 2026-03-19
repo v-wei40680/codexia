@@ -1,5 +1,5 @@
-import { BotMessageSquare, ListFilter, Package, PanelLeft, Timer } from 'lucide-react';
-import { useCallback } from 'react';
+import { BotMessageSquare, ListFilter, Package, PanelLeft, Timer, Trash2 } from 'lucide-react';
+import { useCallback, useState } from 'react';
 import { useLayoutStore } from '@/stores';
 import { Button } from '@/components/ui/button';
 import {
@@ -22,6 +22,7 @@ import { useTrafficLightConfig } from '@/hooks';
 import { SideBarCodexTab } from './SideBarCodexTab';
 import { SideBarClaudeTab } from './SideBarClaudeTab';
 import { AgentIcon } from '@/components/common/AgentIcon';
+import { SessionManagerDialog } from './SessionManagerDialog';
 
 const focusCCInput = () => window.dispatchEvent(new Event('cc-input-focus-request'));
 
@@ -51,6 +52,7 @@ export function SideBar() {
   const { handleNewSession } = useCCSessionManager();
   const { showSidebarMarketplace } = useSettingsStore();
   const { hasUpdate, startUpdate } = useUpdater({ enabled: true });
+  const [sessionManagerOpen, setSessionManagerOpen] = useState(false);
 
   const currentThreadSortLabel = sortKey === 'created_at' ? 'Created' : 'Updated';
 
@@ -164,7 +166,16 @@ export function SideBar() {
             ))}
           </span>
 
-          <span className="flex">
+          <span className="flex items-center">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              title="Manage sessions & threads"
+              onClick={() => setSessionManagerOpen(true)}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -206,6 +217,12 @@ export function SideBar() {
       <div className="flex items-center justify-between gap-2 min-h-0 min-w-0 max-w-full overflow-x-hidden">
         <UserInfo />
       </div>
+
+      <SessionManagerDialog
+        open={sessionManagerOpen}
+        onOpenChange={setSessionManagerOpen}
+        defaultTab={activeSidebarTab === 'cc' ? 'cc' : 'codex'}
+      />
     </div>
   );
 }

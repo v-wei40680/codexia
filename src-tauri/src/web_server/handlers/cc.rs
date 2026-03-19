@@ -142,6 +142,18 @@ pub(crate) async fn api_cc_get_sessions() -> Result<Json<Vec<SessionData>>, Erro
     Ok(Json(sessions))
 }
 
+pub(crate) async fn api_cc_delete_session(
+    Json(params): Json<CcSessionIdParams>,
+) -> Result<StatusCode, ErrorResponse> {
+    use crate::cc::db::SessionDB;
+    let db = SessionDB::new().map_err(to_error_response)?;
+    let file_path = db.delete_session(&params.session_id).map_err(to_error_response)?;
+    if let Some(path) = file_path {
+        let _ = std::fs::remove_file(&path);
+    }
+    Ok(StatusCode::OK)
+}
+
 pub(crate) async fn api_cc_get_session_file_path(
     Json(params): Json<CcSessionIdParams>,
 ) -> Result<Json<Option<String>>, ErrorResponse> {

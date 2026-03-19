@@ -8,6 +8,7 @@ pub struct SessionData {
     pub display: String,
     pub timestamp: i64,
     pub session_id: String,
+    pub file_path: String,
 }
 
 pub struct SessionDB {
@@ -70,9 +71,18 @@ impl SessionDB {
         Ok(rows.next()?.map(|row| row.get(0)).transpose()?)
     }
 
+    pub fn delete_session(&self, session_id: &str) -> Result<Option<String>> {
+        let file_path = self.get_file_path(session_id)?;
+        self.conn.execute(
+            "DELETE FROM sessions WHERE session_id = ?1",
+            [session_id],
+        )?;
+        Ok(file_path)
+    }
+
     pub fn get_all_sessions(&self) -> Result<Vec<SessionData>> {
         let mut stmt = self.conn.prepare(
-            "SELECT session_id, project, display, timestamp FROM sessions ORDER BY timestamp DESC",
+            "SELECT session_id, project, display, timestamp, file_path FROM sessions ORDER BY timestamp DESC",
         )?;
 
         let sessions = stmt.query_map([], |row| {
@@ -81,6 +91,7 @@ impl SessionDB {
                 project: row.get(1)?,
                 display: row.get(2)?,
                 timestamp: row.get(3)?,
+                file_path: row.get(4)?,
             })
         })?;
 
