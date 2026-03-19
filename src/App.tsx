@@ -11,6 +11,7 @@ import { AnalyticsConsentDialog } from '@/components/settings/AnalyticsConsentDi
 import { initializeCodexAsync } from '@/services/tauri';
 import type { InitializeResponse } from './bindings';
 import { useAgentCenterStore, useLayoutStore } from '@/stores';
+import { StoreErrorBoundary } from '@/components/StoreErrorBoundary';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useTrayPendingStore } from '@/stores/useTrayPendingStore';
 import { useCCSessionManager } from '@/hooks/useCCSessionManager';
@@ -119,5 +120,9 @@ export default function App() {
     useDeepLink();
   }
 
-  return <AppShell />;
+  return (
+    <StoreErrorBoundary>
+      <AppShell />
+    </StoreErrorBoundary>
+  );
 }
