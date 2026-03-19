@@ -1,26 +1,34 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { ccGetInstalledSkills } from '@/services';
+import type { MDXEditorMethods } from '@mdxeditor/editor';
+import {
+  useComposerPopover,
+  detectWordBoundaryTrigger,
+  replaceAtTrigger,
+  applyEditorReplacement,
+} from '@/components/common/useComposerPopover';
 
 interface CCSkillsPopoverProps {
   input: string;
   setInput: (v: string) => void;
-  textareaRef: React.RefObject<HTMLTextAreaElement | null>;
+  editorRef: React.RefObject<MDXEditorMethods | null>;
   triggerElement: HTMLElement | null;
 }
+
+const detectDollar = detectWordBoundaryTrigger('$');
+const filterSkill = (skill: string, query: string) =>
+  !query || skill.toLowerCase().includes(query.toLowerCase());
 
 export function CCSkillsPopover({
   input,
   setInput,
-  textareaRef,
+  editorRef,
   triggerElement,
 }: CCSkillsPopoverProps) {
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const [selectedIndex, setSelectedIndex] = useState(0);
   const [installedSkills, setInstalledSkills] = useState<string[]>([]);
-  const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const triggerRef = useRef<HTMLSpanElement | null>(null);
 
   useEffect(() => {
     ccGetInstalledSkills()
@@ -28,117 +36,31 @@ export function CCSkillsPopover({
       .catch((err) => console.error('Failed to load skills:', err));
   }, []);
 
-  // Detect `$query` pattern based on cursor position
-  useEffect(() => {
-    const textarea = textareaRef.current;
-    if (!textarea) return;
-
-    const cursorPos = textarea.selectionStart;
-    const textBeforeCursor = input.slice(0, cursorPos);
-    const lastDollarPos = textBeforeCursor.lastIndexOf('$');
-
-    if (lastDollarPos === -1) {
-      setOpen(false);
-      setQuery('');
-      return;
-    }
-
-    // `$` must be at start or preceded by whitespace/newline
-    const charBefore = lastDollarPos > 0 ? textBeforeCursor[lastDollarPos - 1] : '';
-    if (charBefore && charBefore !== ' ' && charBefore !== '\n') {
-      setOpen(false);
-      setQuery('');
-      return;
-    }
-
-    const textAfterDollar = textBeforeCursor.slice(lastDollarPos + 1);
-
-    // No spaces or newlines after `$` — still typing the skill name
-    if (textAfterDollar.includes(' ') || textAfterDollar.includes('\n')) {
-      setOpen(false);
-      setQuery('');
-      return;
-    }
-
-    setOpen(true);
-    setQuery(textAfterDollar);
-  }, [input, textareaRef]);
-
-  const filteredSkills = installedSkills.filter(
-    (s) => !query || s.toLowerCase().includes(query.toLowerCase())
-  );
-
-  useEffect(() => {
-    setSelectedIndex(0);
-  }, [query, open]);
-
-  useEffect(() => {
-    itemRefs.current[selectedIndex]?.scrollIntoView({ block: 'nearest' });
-  }, [selectedIndex]);
-
   const handleSelect = useCallback(
-    (skillName: string) => {
-      const textarea = textareaRef.current;
-      if (!textarea) return;
-
-      const cursorPos = textarea.selectionStart;
-      const textBeforeCursor = input.slice(0, cursorPos);
-      const lastDollarPos = textBeforeCursor.lastIndexOf('$');
-
-      if (lastDollarPos !== -1) {
-        const before = input.slice(0, lastDollarPos);
-        const after = input.slice(cursorPos);
-        // Skills are invoked with `/skillname` by Claude Code CLI
-        setInput(`${before}/${skillName} ${after}`);
-
-        requestAnimationFrame(() => {
-          const newPos = lastDollarPos + skillName.length + 2; // `/` + name + space
-          textarea.selectionStart = newPos;
-          textarea.selectionEnd = newPos;
-          textarea.focus();
-        });
-      }
-
-      setOpen(false);
-      setQuery('');
+    (skill: string) => {
+      // Skills are invoked with `/skillname` by Claude Code CLI
+      const newValue = replaceAtTrigger(input, '$', `/${skill}`);
+      if (newValue !== null) applyEditorReplacement(newValue, setInput, editorRef);
+      else editorRef.current?.focus();
     },
-    [input, setInput, textareaRef]
+    [input, setInput, editorRef],
   );
 
-  // Keyboard navigation
-  useEffect(() => {
-    if (!open) return;
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (filteredSkills.length === 0) return;
-      if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        e.stopPropagation();
-        setSelectedIndex((p) => (p + 1) % filteredSkills.length);
-      } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        e.stopPropagation();
-        setSelectedIndex((p) => (p - 1 + filteredSkills.length) % filteredSkills.length);
-      } else if (e.key === 'Enter' || e.key === 'Tab') {
-        e.preventDefault();
-        e.stopPropagation();
-        const skill = filteredSkills[selectedIndex];
-        if (skill) handleSelect(skill);
-      } else if (e.key === 'Escape') {
-        e.preventDefault();
-        e.stopPropagation();
-        setOpen(false);
-      }
-    };
-    document.addEventListener('keydown', handleKeyDown, true);
-    return () => document.removeEventListener('keydown', handleKeyDown, true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, selectedIndex, filteredSkills, handleSelect]);
+  const { open, setOpen, filteredItems, selectedIndex, setSelectedIndex, itemRefs } =
+    useComposerPopover({
+      input,
+      items: installedSkills,
+      filter: filterSkill,
+      detect: detectDollar,
+      onKeySelect: handleSelect,
+    });
 
   return (
     <Popover open={open} onOpenChange={setOpen} modal={false}>
       <PopoverTrigger asChild>
         <span
           ref={(el) => {
+            triggerRef.current = el;
             if (el && triggerElement) {
               const rect = triggerElement.getBoundingClientRect();
               el.style.position = 'fixed';
@@ -162,12 +84,12 @@ export function CCSkillsPopover({
         onKeyDown={(e) => e.stopPropagation()}
       >
         <div className="overflow-y-auto flex-1 py-1">
-          {filteredSkills.length === 0 ? (
+          {filteredItems.length === 0 ? (
             <div className="text-xs text-muted-foreground text-center py-2">
               {installedSkills.length === 0 ? 'No skills installed' : 'No matches'}
             </div>
           ) : (
-            filteredSkills.map((skill, index) => (
+            filteredItems.map((skill, index) => (
               <Button
                 key={skill}
                 ref={(el) => { itemRefs.current[index] = el; }}

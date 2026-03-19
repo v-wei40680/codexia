@@ -1,17 +1,29 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { CircleStop, Send } from 'lucide-react';
 import { useCCStore } from '@/stores/cc';
 import { useCCInputStore, useAgentCenterStore } from '@/stores';
-import { CCPermissionModeSelect, CCFileMentionPopover } from '@/components/cc/composer';
+import { CCPermissionModeSelect } from '@/components/cc/composer';
 import { ModelSelector } from './ModelSelector';
 import { CCAttachmentButton } from './CCAttachmentButton';
 import { CCSlashCommandPopover } from './CCSlashCommandPopover';
 import { CCSkillsPopover } from './CCSkillsPopover';
 import { useCCSessionManager } from '@/hooks/useCCSessionManager';
 import { ccInterrupt, ccSendMessage } from '@/services';
-import { WorkspaceSwitcher } from '@/components/common';
+import { WorkspaceSwitcher, FileMentionPopover } from '@/components/common';
+
+import {
+  MDXEditor,
+  headingsPlugin,
+  listsPlugin,
+  quotePlugin,
+  thematicBreakPlugin,
+  markdownShortcutPlugin,
+  linkPlugin,
+  type MDXEditorMethods,
+} from '@mdxeditor/editor';
+import '@mdxeditor/editor/style.css';
+import '@/mdx-input.css';
 
 const CC_INPUT_FOCUS_EVENT = 'cc-input-focus-request';
 
@@ -33,44 +45,60 @@ export function Composer({ overrideSend, onAfterSend }: ComposerProps = {}) {
   const { inputValue: input, setInputValue: setInput } = useCCInputStore();
   const { setCurrentAgentCardId } = useAgentCenterStore();
   const { handleNewSession } = useCCSessionManager();
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const hiddenTriggerRef = useRef<HTMLSpanElement>(null);
+
+  const editorRef = useRef<MDXEditorMethods | null>(null);
+  const editorWrapperRef = useRef<HTMLDivElement | null>(null);
+  const isComposing = useRef(false);
   const [triggerEl, setTriggerEl] = useState<HTMLElement | null>(null);
+
+  // Capture wrapper element after mount for popover positioning
+  useEffect(() => {
+    setTriggerEl(editorWrapperRef.current);
+  }, []);
 
   useEffect(() => {
     const handleFocusRequest = () => {
       requestAnimationFrame(() => {
-        textareaRef.current?.focus();
+        editorRef.current?.focus();
       });
     };
     window.addEventListener(CC_INPUT_FOCUS_EVENT, handleFocusRequest);
     return () => window.removeEventListener(CC_INPUT_FOCUS_EVENT, handleFocusRequest);
   }, []);
 
-  // Auto-resize textarea height to match content
+  // Attach IME composition listeners to the underlying contenteditable
   useEffect(() => {
-    const el = textareaRef.current;
-    if (!el) return;
-    el.style.height = 'auto';
-    el.style.height = `${el.scrollHeight}px`;
-  }, [input]);
+    const wrapper = editorWrapperRef.current;
+    if (!wrapper) return;
+    const editable = wrapper.querySelector('[contenteditable="true"]') as HTMLElement | null;
+    if (!editable) return;
 
-  // Capture the span element after mount so popovers can use it for positioning
-  useEffect(() => {
-    setTriggerEl(hiddenTriggerRef.current);
+    const onCompositionStart = () => { isComposing.current = true; };
+    const onCompositionEnd = () => {
+      setTimeout(() => { isComposing.current = false; }, 50);
+    };
+
+    editable.addEventListener('compositionstart', onCompositionStart);
+    editable.addEventListener('compositionend', onCompositionEnd);
+    return () => {
+      editable.removeEventListener('compositionstart', onCompositionStart);
+      editable.removeEventListener('compositionend', onCompositionEnd);
+    };
   }, []);
 
   const handleSendMessage = useCallback(async (messageText?: string) => {
-    const text = (messageText ?? input).trim();
+    const text = (messageText ?? input).trim().replace(/\u00A0/g, ' ');
     if (!text || isLoading) return;
 
     if (overrideSend) {
       setInput('');
+      editorRef.current?.setMarkdown('');
       overrideSend(text);
       return;
     }
 
     setInput('');
+    editorRef.current?.setMarkdown('');
 
     if (!activeSessionId) {
       await handleNewSession(text);
@@ -114,32 +142,52 @@ export function Composer({ overrideSend, onAfterSend }: ComposerProps = {}) {
     }
   }, [isLoading, input, handleSendMessage]);
 
-  const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
-    }
-  };
+  const handleWrapperKeyDown = useCallback(
+    (e: React.KeyboardEvent<HTMLDivElement>) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        if (isComposing.current || (e.nativeEvent as KeyboardEvent & { isComposing?: boolean }).isComposing) {
+          return;
+        }
+        e.preventDefault();
+        handleSend();
+      }
+    },
+    [handleSend]
+  );
+
+  const handleEditorChange = useCallback(
+    (markdown: string) => {
+      setInput(markdown);
+    },
+    [setInput]
+  );
 
   return (
     <>
       <div className="shrink-0">
         <div className="relative group">
-          <Textarea
-            ref={textareaRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleTextareaKeyDown}
-            placeholder="Ask Claude to do anything..."
-            className="min-h-16 w-full pb-11 pr-2 resize-none overflow-hidden"
-          />
-
-          {/* Hidden anchor for popover positioning */}
-          <span
-            ref={hiddenTriggerRef}
-            className="absolute top-0 left-2 pointer-events-none opacity-0"
-            aria-hidden="true"
-          />
+          {/* MDXEditor wrapper */}
+          <div
+            ref={editorWrapperRef}
+            onKeyDown={handleWrapperKeyDown}
+            className="mdx-input-wrapper min-h-16 max-h-48 overflow-y-auto border border-input rounded-md px-2 pt-2 pb-11 bg-transparent focus-within:ring-[3px] focus-within:ring-ring/50 focus-within:border-ring transition-[color,box-shadow]"
+          >
+            <MDXEditor
+              ref={editorRef}
+              markdown={input}
+              onChange={handleEditorChange}
+              placeholder="Ask Claude to do anything..."
+              plugins={[
+                headingsPlugin(),
+                listsPlugin(),
+                quotePlugin(),
+                thematicBreakPlugin(),
+                linkPlugin(),
+                markdownShortcutPlugin(),
+              ]}
+              contentEditableClassName="mdx-input-editable"
+            />
+          </div>
 
           <div className="absolute left-1 bottom-1 flex items-center gap-0.5">
             <CCAttachmentButton />
@@ -169,21 +217,21 @@ export function Composer({ overrideSend, onAfterSend }: ComposerProps = {}) {
       <CCSlashCommandPopover
         input={input}
         setInput={setInput}
-        textareaRef={textareaRef}
+        editorRef={editorRef}
         triggerElement={triggerEl}
       />
 
       <CCSkillsPopover
         input={input}
         setInput={setInput}
-        textareaRef={textareaRef}
+        editorRef={editorRef}
         triggerElement={triggerEl}
       />
 
-      <CCFileMentionPopover
+      <FileMentionPopover
         input={input}
         setInput={setInput}
-        textareaRef={textareaRef}
+        editorRef={editorRef}
         triggerElement={triggerEl}
       />
     </>
