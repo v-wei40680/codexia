@@ -172,8 +172,8 @@ type TabFilter = 'all' | 'idle' | 'running';
 function AgentGrid() {
   const { cards, removeCard, setCurrentAgentCardId, currentAgentCardId } = useAgentCenterStore();
   const { setIsAgentExpanded } = useLayoutStore();
-  const { switchToSession, sessionLoadingMap } = useCCStore();
-  const { threadStatusMap } = useCodexStore();
+  const { switchToSession, sessionLoadingMap, activeSessionId, setActiveSessionId } = useCCStore();
+  const { threadStatusMap, currentThreadId } = useCodexStore();
   const { setSelectedAgent } = useWorkspaceStore();
   const [tab, setTab] = useState<TabFilter>('all');
 
@@ -192,6 +192,22 @@ function AgentGrid() {
   );
 
   const visible = tab === 'all' ? cards : cards.filter((c) => (tab === 'running') === isRunning(c));
+
+  const handleRemove = (card: AgentCenterCard) => {
+    removeCard(card);
+    if (card.id === currentAgentCardId) {
+      setCurrentAgentCardId(null);
+    }
+    if (card.kind === 'codex') {
+      if (card.id === currentThreadId) {
+        void codexService.setCurrentThread(null);
+      }
+    } else {
+      if (card.id === activeSessionId) {
+        setActiveSessionId(null);
+      }
+    }
+  };
 
   const expand = async (card: AgentCenterCard) => {
     setCurrentAgentCardId(card.id);
@@ -251,7 +267,7 @@ function AgentGrid() {
                 key={card.id}
                 card={card}
                 onExpand={() => void expand(card)}
-                onRemove={() => removeCard(card)}
+                onRemove={() => handleRemove(card)}
                 isSelected={card.id === currentAgentCardId}
               />
             ))}
