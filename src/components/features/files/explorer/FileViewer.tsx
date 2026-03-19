@@ -2,7 +2,7 @@ import { type ReactNode, useState, useEffect, useRef } from 'react';
 import type { UnlistenFn } from '@tauri-apps/api/event';
 import { listen } from '@tauri-apps/api/event';
 import { Button } from '@/components/ui/button';
-import { Copy, Check, Send, FileText, Loader2 } from 'lucide-react';
+import { Copy, Check, Send, FileText, Loader2, X } from 'lucide-react';
 import { CodeEditor } from '../editor/CodeEditor';
 import { useThemeContext } from '@/contexts/ThemeContext';
 import { useInputStore } from '@/stores';
@@ -24,9 +24,11 @@ interface FileViewerProps {
   addToNotepad?: (text: string, source?: string) => void;
   /** Optional element rendered at the far-left of the viewer header (e.g. a panel-expand button). */
   headerLeadingAction?: ReactNode;
+  /** Called when the user clicks the close button; if omitted the button is not shown. */
+  onClose?: () => void;
 }
 
-export function FileViewer({ filePath, addToNotepad, headerLeadingAction }: FileViewerProps) {
+export function FileViewer({ filePath, addToNotepad, headerLeadingAction, onClose }: FileViewerProps) {
   const isTauriRuntime = isTauri();
   const [content, setContent] = useState<string>('');
   const [filename, setFilename] = useState<string>('');
@@ -230,23 +232,30 @@ export function FileViewer({ filePath, addToNotepad, headerLeadingAction }: File
   }, [filePath, canonicalFile, content, currentContent, isTauriRuntime]);
 
   return (
-    <div
-      className={`flex flex-col h-full border-l min-w-0 ${resolvedTheme === 'dark' ? 'border-border' : 'border-gray-200'}`}
-    >
-      <div
-        className={`flex items-center justify-between p-2 border-b ${resolvedTheme === 'dark' ? 'border-border bg-card' : 'border-gray-200 bg-gray-50'}`}
-      >
-        <div className="flex items-center gap-1 min-w-0">
-          {/* Slot for a leading control injected by the parent (e.g. expand-tree button) */}
+    <div className="flex flex-col h-full min-w-0">
+      {/* Tab-style header — Zed-inspired: tight, no heavy background */}
+      <div className="flex h-9 shrink-0 items-center justify-between border-b border-border/60 px-2">
+        <div className="flex min-w-0 items-center gap-1">
           {headerLeadingAction}
-          <span className="text-sm font-medium truncate" title={filePath}>
+          <span className="truncate text-sm text-foreground/90" title={filePath}>
             {filename}
           </span>
+          {onClose && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="ml-0.5 shrink-0 rounded p-0.5 text-muted-foreground/50 transition-colors hover:bg-accent hover:text-foreground"
+              title="Close file"
+              aria-label="Close file"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          )}
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-0.5">
           {selectedText && (
-            <span className={`text-xs mr-2 ${resolvedTheme === 'dark' ? 'text-primary' : 'text-blue-600'}`}>
-              {selectedText.length} chars selected
+            <span className="mr-1 text-xs text-muted-foreground">
+              {selectedText.length} chars
             </span>
           )}
           {isLargeFile && (
@@ -254,7 +263,7 @@ export function FileViewer({ filePath, addToNotepad, headerLeadingAction }: File
               variant="ghost"
               size="sm"
               onClick={handleToggleContent}
-              className="p-1 h-auto text-xs"
+              className="h-6 px-1.5 text-xs text-muted-foreground hover:text-foreground"
               title={`${showFullContent ? 'Show first 500 lines' : 'Show all lines'} (${content.split('\n').length} total)`}
             >
               {showFullContent ? '500' : 'All'}
@@ -262,35 +271,35 @@ export function FileViewer({ filePath, addToNotepad, headerLeadingAction }: File
           )}
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={handleSendToAI}
             disabled={!content || loading}
-            className="p-1 h-auto"
+            className="h-6 w-6 text-muted-foreground hover:text-foreground"
             title={selectedText ? 'Send selected text to AI' : 'Send file content to AI'}
           >
-            <Send className="w-4 h-4" />
+            <Send className="h-3.5 w-3.5" />
           </Button>
           {addToNotepad && (
             <Button
               variant="ghost"
-              size="sm"
+              size="icon"
               onClick={handleAddToNote}
               disabled={!content || loading}
-              className="p-1 h-auto"
+              className="h-6 w-6 text-muted-foreground hover:text-foreground"
               title={selectedText ? 'Add selected text to note' : 'Add file content to note'}
             >
-              <FileText className="w-4 h-4" />
+              <FileText className="h-3.5 w-3.5" />
             </Button>
           )}
           <Button
             variant="ghost"
-            size="sm"
+            size="icon"
             onClick={handleCopy}
             disabled={!content || loading}
-            className="p-1 h-auto"
+            className="h-6 w-6 text-muted-foreground hover:text-foreground"
             title={selectedText ? 'Copy selected text' : 'Copy file content'}
           >
-            {copied ? <Check className="w-4 h-4 text-green-600" /> : <Copy className="w-4 h-4" />}
+            {copied ? <Check className="h-3.5 w-3.5 text-green-500" /> : <Copy className="h-3.5 w-3.5" />}
           </Button>
         </div>
       </div>

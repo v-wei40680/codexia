@@ -13,7 +13,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 
 export function RightPanel() {
   const { activeRightPanelTab, setRightPanelOpen } = useLayoutStore();
-  const { selectedFilePath, cwd } = useWorkspaceStore();
+  const { selectedFilePath, setSelectedFilePath, cwd } = useWorkspaceStore();
   const isMobile = useIsMobile();
   const [webPreviewUrl, setWebPreviewUrl] = useState('');
   const [isFileTreeVisible, setIsFileTreeVisible] = useState(true);
@@ -61,9 +61,13 @@ export function RightPanel() {
 
           {activeRightPanelTab === 'files' && (
             <div className="relative flex h-full min-h-0 overflow-hidden">
-              {/* File tree sidebar — slides out without leaving a gap */}
+              {/* File tree sidebar — expands to full width when no file is open */}
               {isFileTreeVisible && !isMobile && (
-                <div className="h-full w-64 min-w-64 shrink-0 border-r border-border bg-sidebar/20 overflow-hidden pl-2 pt-2">
+                <div
+                  className={`h-full shrink-0 border-r border-border bg-sidebar/20 overflow-hidden ${
+                    selectedFilePath ? 'w-64 min-w-64' : 'flex-1'
+                  }`}
+                >
                   <FileTree
                     folder={cwd}
                     isTreeVisible={isFileTreeVisible}
@@ -80,7 +84,7 @@ export function RightPanel() {
                     aria-label="Hide file tree"
                     onClick={() => setIsFileTreeVisible(false)}
                   />
-                  <div className="absolute inset-y-0 left-0 z-20 w-[min(78vw,280px)] border-r border-border bg-sidebar/90 overflow-hidden pl-2 pt-2 backdrop-blur">
+                  <div className="absolute inset-y-0 left-0 z-20 w-[min(78vw,280px)] border-r border-border bg-sidebar/90 overflow-hidden backdrop-blur">
                     <FileTree
                       folder={cwd}
                       isTreeVisible={isFileTreeVisible}
@@ -90,12 +94,15 @@ export function RightPanel() {
                 </>
               )}
 
-              {/* File viewer — fills all remaining space */}
-              <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
-                {selectedFilePath ? (
+              {/* File viewer — only rendered when a file is selected */}
+              {selectedFilePath ? (
+                <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
                   <FileViewer
                     filePath={selectedFilePath}
-                    // When the tree is hidden, render the expand button inside the viewer header
+                    onClose={() => {
+                      setSelectedFilePath(null);
+                      if (!isFileTreeVisible) setIsFileTreeVisible(true);
+                    }}
                     headerLeadingAction={
                       !isFileTreeVisible ? (
                         <Button
@@ -111,29 +118,27 @@ export function RightPanel() {
                       ) : undefined
                     }
                   />
-                ) : (
-                  /* No file selected: still expose the expand button when tree is hidden */
-                  <div className="flex h-full flex-col">
-                    {!isFileTreeVisible && (
-                      <div className="flex items-center border-b border-border px-2 py-1.5">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6"
-                          onClick={() => setIsFileTreeVisible(true)}
-                          title="Show file tree"
-                          aria-label="Show file tree"
-                        >
-                          <PanelLeftOpen className="h-3.5 w-3.5" />
-                        </Button>
-                      </div>
-                    )}
-                    <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
-                      Select a file to view
-                    </div>
+                </div>
+              ) : !isFileTreeVisible ? (
+                /* Tree hidden and no file open — show expand button */
+                <div className="flex h-full flex-1 flex-col">
+                  <div className="flex items-center border-b border-border px-2 py-1.5">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={() => setIsFileTreeVisible(true)}
+                      title="Show file tree"
+                      aria-label="Show file tree"
+                    >
+                      <PanelLeftOpen className="h-3.5 w-3.5" />
+                    </Button>
                   </div>
-                )}
-              </div>
+                  <div className="flex flex-1 items-center justify-center text-sm text-muted-foreground">
+                    Select a file to view
+                  </div>
+                </div>
+              ) : null}
             </div>
           )}
 

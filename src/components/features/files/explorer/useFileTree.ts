@@ -1,0 +1,302 @@
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useSettingsStore } from '@/stores/settings';
+import { useWorkspaceStore } from '@/stores';
+import {
+  canonicalizePath,
+  readDirectory,
+  searchFilesByName,
+  type TauriFileEntry,
+} from '@/services/tauri';
+import { getFilename } from '@/utils/getFilename';
+import { sortNodes, normalizeName, shouldSkipEntry, buildSearchTree } from './utils';
+import type { FileNode } from './types';
+
+export type UseFileTreeReturn = {
+  treeContainerRef: React.RefObject<HTMLDivElement | null>;
+  root: FileNode | null;
+  displayRoot: FileNode | null;
+  activeExpanded: Set<string>;
+  loadingNodes: Set<string>;
+  loading: boolean;
+  error: string | null;
+  filterText: string;
+  setFilterText: (text: string) => void;
+  refreshKey: number;
+  setRefreshKey: React.Dispatch<React.SetStateAction<number>>;
+  searching: boolean;
+  searchError: string | null;
+  isSearching: boolean;
+  hasSearchResults: boolean;
+  toggle: (path: string) => void;
+  loadChildren: (node: FileNode) => Promise<void>;
+  selectedFilePath: string | null;
+};
+
+export function useFileTree(folder: string): UseFileTreeReturn {
+  const treeContainerRef = useRef<HTMLDivElement | null>(null);
+  const [root, setRoot] = useState<FileNode | null>(null);
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [searchExpanded, setSearchExpanded] = useState<Set<string>>(new Set());
+  const [loading, setLoading] = useState(false);
+  const [loadingNodes, setLoadingNodes] = useState<Set<string>>(new Set());
+  const [error, setError] = useState<string | null>(null);
+  const [filterText, setFilterText] = useState('');
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [searchMatches, setSearchMatches] = useState<TauriFileEntry[]>([]);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const { hiddenNames } = useSettingsStore();
+  const { selectedFilePath } = useWorkspaceStore();
+
+  const autoExpandedTargetRef = useRef<string | null>(null);
+
+  const hiddenSet = useMemo(
+    () => new Set(hiddenNames.map(normalizeName)),
+    [hiddenNames],
+  );
+
+  const listDir = useCallback(
+    async (dir: string): Promise<FileNode[]> => {
+      const resolvedDir = await canonicalizePath(dir);
+      const entries = await readDirectory(resolvedDir);
+      return sortNodes(
+        entries
+          .filter((e) => !shouldSkipEntry(e.name, hiddenSet))
+          .map((e) => ({
+            name: e.name,
+            path: e.path,
+            kind: e.is_directory ? ('dir' as const) : ('file' as const),
+          })),
+      );
+    },
+    [hiddenSet],
+  );
+
+  // Load root directory
+  useEffect(() => {
+    let isActive = true;
+    const load = async () => {
+      if (!folder) {
+        if (isActive) { setRoot(null); setExpanded(new Set()); }
+        return;
+      }
+      setLoading(true);
+      setError(null);
+      try {
+        const resolved = await canonicalizePath(folder);
+        const label = getFilename(resolved);
+        const children = await listDir(resolved);
+        if (isActive) {
+          setRoot({ name: label || folder, path: resolved, kind: 'dir', children });
+          setExpanded(new Set([resolved]));
+        }
+      } catch (err) {
+        if (isActive) {
+          setError(err instanceof Error ? err.message : String(err) || 'Failed to read folder.');
+          setRoot(null);
+        }
+      } finally {
+        if (isActive) setLoading(false);
+      }
+    };
+    void load();
+    return () => { isActive = false; };
+  }, [folder, listDir, refreshKey]);
+
+  // Reset search state on folder change
+  useEffect(() => {
+    setSearchError(null);
+    setSearchMatches([]);
+    autoExpandedTargetRef.current = null;
+  }, [folder]);
+
+  const normalizedFilterText = filterText.trim();
+  const isSearching = normalizedFilterText.length > 0;
+
+  // Search
+  useEffect(() => {
+    let isActive = true;
+    if (!isSearching || !folder) {
+      setSearching(false);
+      setSearchError(null);
+      setSearchMatches([]);
+      return () => { isActive = false; };
+    }
+    const timer = setTimeout(async () => {
+      setSearching(true);
+      setSearchError(null);
+      try {
+        const searchRoot = root?.path ?? (await canonicalizePath(folder));
+        const matches = await searchFilesByName({
+          root: searchRoot,
+          query: normalizedFilterText,
+          excludeFolders: hiddenNames,
+          maxResults: 2000,
+        });
+        if (isActive) setSearchMatches(matches);
+      } catch (err) {
+        if (isActive) {
+          setSearchError(err instanceof Error ? err.message : String(err) || 'Search failed.');
+          setSearchMatches([]);
+        }
+      } finally {
+        if (isActive) setSearching(false);
+      }
+    }, 200);
+    return () => { isActive = false; clearTimeout(timer); };
+  }, [folder, hiddenNames, isSearching, normalizedFilterText, root?.path]);
+
+  const displayRoot = useMemo(() => {
+    if (!root) return null;
+    if (!isSearching) return root;
+    return buildSearchTree(root, searchMatches);
+  }, [isSearching, root, searchMatches]);
+
+  const collectDirPaths = useCallback((node: FileNode): string[] => {
+    if (node.kind !== 'dir') return [];
+    return [node.path, ...(node.children?.flatMap(collectDirPaths) ?? [])];
+  }, []);
+
+  // Auto-expand search results
+  useEffect(() => {
+    if (!isSearching || !displayRoot) {
+      setSearchExpanded(new Set());
+      return;
+    }
+    const dirs = new Set<string>();
+    for (const child of displayRoot.children ?? []) {
+      for (const p of collectDirPaths(child)) dirs.add(p);
+    }
+    setSearchExpanded(dirs);
+  }, [collectDirPaths, displayRoot, isSearching, normalizedFilterText]);
+
+  const toggle = (path: string) => {
+    const setter = isSearching ? setSearchExpanded : setExpanded;
+    setter((prev) => {
+      const next = new Set(prev);
+      if (next.has(path)) next.delete(path);
+      else next.add(path);
+      return next;
+    });
+  };
+
+  const updateChildren = (node: FileNode, targetPath: string, children: FileNode[]): FileNode => {
+    if (node.path === targetPath) return { ...node, children };
+    if (!node.children) return node;
+    return { ...node, children: node.children.map((c) => updateChildren(c, targetPath, children)) };
+  };
+
+  const findNodeByPath = (node: FileNode, targetPath: string): FileNode | null => {
+    if (node.path === targetPath) return node;
+    if (!node.children) return null;
+    for (const child of node.children) {
+      const match = findNodeByPath(child, targetPath);
+      if (match) return match;
+    }
+    return null;
+  };
+
+  const loadChildren = async (node: FileNode) => {
+    if (node.kind !== 'dir' || node.children) return;
+    setLoadingNodes((prev) => new Set(prev).add(node.path));
+    try {
+      const children = await listDir(node.path);
+      setRoot((prev) => (prev ? updateChildren(prev, node.path, children) : prev));
+    } catch (err) {
+      console.warn('Failed to read subdirectory', node.path, err);
+    } finally {
+      setLoadingNodes((prev) => {
+        const next = new Set(prev);
+        next.delete(node.path);
+        return next;
+      });
+    }
+  };
+
+  // Auto-expand tree to reveal selected file
+  useEffect(() => {
+    if (!root || !selectedFilePath) return;
+    let cancelled = false;
+    const run = async () => {
+      let canonicalSelected = selectedFilePath;
+      try { canonicalSelected = await canonicalizePath(selectedFilePath); }
+      catch { canonicalSelected = selectedFilePath; }
+      if (cancelled) return;
+
+      const toPosix = (v: string) => v.replace(/\\/g, '/');
+      const rootPosix = toPosix(root.path).replace(/\/+$/, '');
+      const selectedPosix = toPosix(canonicalSelected);
+      if (selectedPosix === rootPosix || !selectedPosix.startsWith(`${rootPosix}/`)) return;
+
+      const targetKey = `${root.path}::${selectedPosix}`;
+      if (autoExpandedTargetRef.current === targetKey) return;
+      autoExpandedTargetRef.current = targetKey;
+
+      const parts = selectedPosix.slice(rootPosix.length + 1).split('/').filter(Boolean);
+      if (parts.length <= 1) return;
+
+      const sep = root.path.includes('\\') ? '\\' : '/';
+      const ancestorDirs: string[] = [root.path];
+      let cur = root.path;
+      for (let i = 0; i < parts.length - 1; i += 1) {
+        cur = `${cur}${cur.endsWith(sep) ? '' : sep}${parts[i]}`;
+        ancestorDirs.push(cur);
+      }
+
+      setExpanded((prev) => {
+        const next = new Set(prev);
+        for (const d of ancestorDirs) next.add(d);
+        return next.size === prev.size ? prev : next;
+      });
+
+      let snapshot = root;
+      for (const dirPath of ancestorDirs) {
+        if (cancelled) return;
+        if (findNodeByPath(snapshot, dirPath)?.children) continue;
+        try {
+          const children = await listDir(dirPath);
+          if (cancelled) return;
+          snapshot = updateChildren(snapshot, dirPath, children);
+          setRoot(snapshot);
+        } catch { return; }
+      }
+    };
+    void run();
+    return () => { cancelled = true; };
+  }, [root, selectedFilePath, listDir]);
+
+  // Scroll selected file into view
+  useEffect(() => {
+    if (!selectedFilePath || !treeContainerRef.current) return;
+    const row = treeContainerRef.current.querySelector<HTMLElement>(
+      `[data-file-path="${CSS.escape(selectedFilePath)}"]`,
+    );
+    row?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [selectedFilePath]);
+
+  const activeExpanded = isSearching ? searchExpanded : expanded;
+  const visibleNodes = displayRoot?.children ?? [];
+  const hasSearchResults = visibleNodes.length > 0;
+
+  return {
+    treeContainerRef,
+    root,
+    displayRoot,
+    activeExpanded,
+    loadingNodes,
+    loading,
+    error,
+    filterText,
+    setFilterText,
+    refreshKey,
+    setRefreshKey,
+    searching,
+    searchError,
+    isSearching,
+    hasSearchResults,
+    toggle,
+    loadChildren,
+    selectedFilePath,
+  };
+}
