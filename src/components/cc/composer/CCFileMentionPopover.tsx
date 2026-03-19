@@ -3,10 +3,9 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Button } from '@/components/ui/button';
 import { FileIcon, defaultStyles } from 'react-file-icon';
 import { FileText } from 'lucide-react';
-import { readDirectory, canonicalizePath } from '@/services/tauri/filesystem';
+import { searchFiles } from '@/services/tauri/filesystem';
 import { useWorkspaceStore } from '@/stores';
 import { isTauri } from '@/hooks/runtime';
-import type { TauriFileEntry } from '@/services/tauri/shared';
 
 interface FileItem {
   name: string;
@@ -27,53 +26,6 @@ const getExtension = (name: string) => {
   return name.slice(idx + 1).toLowerCase();
 };
 
-const SKIP_DIRS = new Set([
-  '.git', 'node_modules', 'target', 'dist', 'build', '.next', '.nuxt',
-  '__pycache__', '.venv', 'venv',
-]);
-
-async function collectFiles(
-  dirPath: string,
-  rootPath: string,
-  depth: number,
-  maxDepth: number,
-  result: FileItem[]
-): Promise<void> {
-  if (depth > maxDepth) return;
-  let entries: TauriFileEntry[];
-  try {
-    entries = await readDirectory(dirPath);
-  } catch {
-    return;
-  }
-  for (const entry of entries) {
-    if (SKIP_DIRS.has(entry.name)) continue;
-    if (entry.is_directory) {
-      await collectFiles(entry.path, rootPath, depth + 1, maxDepth, result);
-    } else {
-      const toPosix = (v: string) => v.replace(/\\/g, '/');
-      const normalizedRoot = toPosix(rootPath).replace(/\/+$/, '');
-      const normalizedPath = toPosix(entry.path);
-      const relativePath = normalizedPath.startsWith(`${normalizedRoot}/`)
-        ? normalizedPath.slice(normalizedRoot.length + 1)
-        : normalizedPath;
-      result.push({ name: entry.name, path: entry.path, relativePath });
-    }
-  }
-}
-
-function scoreFile(file: FileItem, query: string): number {
-  if (!query) return 0;
-  const q = query.toLowerCase();
-  const name = file.name.toLowerCase();
-  const rel = file.relativePath.toLowerCase();
-  if (name === q) return 100;
-  if (name.startsWith(q)) return 80;
-  if (name.includes(q)) return 60;
-  if (rel.includes(q)) return 40;
-  return -1;
-}
-
 export function CCFileMentionPopover({
   input,
   setInput,
@@ -83,7 +35,7 @@ export function CCFileMentionPopover({
   const { cwd } = useWorkspaceStore();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
-  const [allFiles, setAllFiles] = useState<FileItem[]>([]);
+  const [visibleFiles, setVisibleFiles] = useState<FileItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const contentRef = useRef<HTMLDivElement | null>(null);
@@ -107,13 +59,7 @@ export function CCFileMentionPopover({
 
     const textAfterAt = textBeforeCursor.slice(lastAtPos + 1);
 
-    if (textAfterAt.includes('\n')) {
-      setOpen(false);
-      setQuery('');
-      return;
-    }
-
-    if (textAfterAt.includes(' ')) {
+    if (textAfterAt.includes('\n') || textAfterAt.includes(' ')) {
       setOpen(false);
       setQuery('');
       return;
@@ -123,42 +69,53 @@ export function CCFileMentionPopover({
     setQuery(textAfterAt);
   }, [input, textareaRef]);
 
-  // Load all files when popover opens
+  // Search files via backend whenever open or query changes
   useEffect(() => {
     if (!open || !cwd) return;
     let isActive = true;
-    const load = async () => {
+
+    const doSearch = async () => {
       setLoading(true);
       try {
-        const resolvedPath = await canonicalizePath(cwd);
-        const result: FileItem[] = [];
-        await collectFiles(resolvedPath, resolvedPath, 0, 8, result);
-        if (isActive) setAllFiles(result);
+        const toPosix = (v: string) => v.replace(/\\/g, '/');
+        const normalizedCwd = toPosix(cwd).replace(/\/+$/, '');
+
+        const entries = await searchFiles({
+          root: cwd,
+          query,
+          excludeFolders: [],
+          maxResults: 50,
+        });
+
+        if (!isActive) return;
+
+        setVisibleFiles(
+          entries.map((e) => {
+            const normalizedPath = toPosix(e.path);
+            const relativePath = normalizedPath.startsWith(`${normalizedCwd}/`)
+              ? normalizedPath.slice(normalizedCwd.length + 1)
+              : normalizedPath;
+            return { name: e.name, path: e.path, relativePath };
+          })
+        );
       } catch (error) {
-        console.error('Failed to load files:', error);
+        console.error('Failed to search files:', error);
       } finally {
         if (isActive) setLoading(false);
       }
     };
-    void load();
-    return () => { isActive = false; };
-  }, [open, cwd]);
 
-  const visibleFiles = (() => {
-    if (!query.trim()) {
-      return [...allFiles].sort((a, b) => a.name.localeCompare(b.name)).slice(0, 50);
-    }
-    return allFiles
-      .map((f) => ({ file: f, score: scoreFile(f, query) }))
-      .filter(({ score }) => score >= 0)
-      .sort((a, b) => b.score - a.score || a.file.name.localeCompare(b.file.name))
-      .map(({ file }) => file)
-      .slice(0, 50);
-  })();
+    const delay = query ? 150 : 0;
+    const timer = setTimeout(() => { void doSearch(); }, delay);
+    return () => {
+      isActive = false;
+      clearTimeout(timer);
+    };
+  }, [open, cwd, query]);
 
   useEffect(() => { setSelectedIndex(0); }, [query, open]);
 
-  // Keep trigger span pinned to triggerElement's position (triggerElement may arrive after mount)
+  // Keep trigger span pinned to triggerElement's position
   useEffect(() => {
     const el = triggerSpanRef.current;
     if (!el || !triggerElement) return;

@@ -1,5 +1,7 @@
 use super::file_types::FileEntry;
 use ignore::WalkBuilder;
+use nucleo::pattern::{AtomKind, CaseMatching, Normalization, Pattern};
+use nucleo::{Config, Matcher, Utf32String};
 use std::fs;
 use std::path::{Path, PathBuf};
 
@@ -100,17 +102,13 @@ pub async fn search_files(
         return Err("Directory does not exist".to_string());
     }
 
-    let lc_query = query.to_lowercase();
-    // Reasonable default limit
     let limit = max_results.unwrap_or(2000);
     let excluded_names = exclude_folders
         .into_iter()
         .map(|name| name.to_lowercase())
         .collect::<std::collections::HashSet<_>>();
 
-    let mut results: Vec<FileEntry> = Vec::new();
     let excluded_names_for_walk = excluded_names.clone();
-
     let walker = WalkBuilder::new(&expanded_root)
         .follow_links(false)
         .hidden(false)
@@ -132,62 +130,82 @@ pub async fn search_files(
         })
         .build();
 
+    let root_str = expanded_root.to_string_lossy();
+    let root_prefix = format!("{}/", root_str);
+
+    let mut all_entries: Vec<FileEntry> = Vec::new();
     for entry in walker {
         let entry = match entry {
             Ok(e) => e,
-            Err(_e) => continue,
+            Err(_) => continue,
         };
-
         let path = entry.path();
+        if path == expanded_root {
+            continue;
+        }
         let file_name = match path.file_name().and_then(|n| n.to_str()) {
             Some(n) => n,
             None => continue,
         };
-
-        if excluded_names.contains(&normalize_name(file_name)) {
+        if excluded_names.contains(&normalize_name(file_name)) || is_dot_git(file_name) {
             continue;
         }
-        if is_dot_git(file_name) {
-            continue;
-        }
-
-        // Match folders and files by name (case-insensitive)
-        if file_name.to_lowercase().contains(&lc_query) {
-            let is_directory = entry.file_type().is_some_and(|file_type| file_type.is_dir());
-            let size = if is_directory {
-                None
-            } else {
-                fs::metadata(path).ok().map(|m| m.len())
-            };
-            let extension = if is_directory {
-                None
-            } else {
-                path.extension()
-                    .and_then(|ext| ext.to_str())
-                    .map(|s| s.to_string())
-            };
-
-            results.push(FileEntry {
-                name: file_name.to_string(),
-                path: path.to_string_lossy().to_string(),
-                is_directory,
-                size,
-                extension,
-            });
-
-            if results.len() >= limit {
-                break;
-            }
-        }
+        let is_directory = entry.file_type().is_some_and(|ft| ft.is_dir());
+        let path_str = path.to_string_lossy().to_string();
+        let size = if is_directory {
+            None
+        } else {
+            fs::metadata(path).ok().map(|m| m.len())
+        };
+        let extension = if is_directory {
+            None
+        } else {
+            path.extension()
+                .and_then(|ext| ext.to_str())
+                .map(|s| s.to_string())
+        };
+        all_entries.push(FileEntry {
+            name: file_name.to_string(),
+            path: path_str,
+            is_directory,
+            size,
+            extension,
+        });
     }
 
-    results.sort_by(|a, b| match (a.is_directory, b.is_directory) {
-        (true, false) => std::cmp::Ordering::Less,
-        (false, true) => std::cmp::Ordering::Greater,
-        _ => a.path.to_lowercase().cmp(&b.path.to_lowercase()),
-    });
+    if query.is_empty() {
+        all_entries.sort_by(|a, b| a.path.to_lowercase().cmp(&b.path.to_lowercase()));
+        all_entries.truncate(limit);
+        return Ok(all_entries);
+    }
 
-    Ok(results)
+    let pattern = Pattern::new(
+        &query,
+        CaseMatching::Smart,
+        Normalization::Smart,
+        AtomKind::Fuzzy,
+    );
+    let mut matcher = Matcher::new(Config::DEFAULT.match_paths());
+
+    let mut scored: Vec<(u32, FileEntry)> = all_entries
+        .into_iter()
+        .filter_map(|entry| {
+            let haystack = if entry.path.starts_with(root_prefix.as_str()) {
+                &entry.path[root_prefix.len()..]
+            } else {
+                &entry.path
+            };
+            let utf32 = Utf32String::from(haystack);
+            pattern
+                .score(utf32.slice(..), &mut matcher)
+                .map(|score| (score, entry))
+        })
+        .collect();
+
+    scored.sort_by(|a, b| b.0.cmp(&a.0).then(a.1.path.cmp(&b.1.path)));
+    scored.truncate(limit);
+
+    Ok(scored.into_iter().map(|(_, e)| e).collect())
 }
 
 pub async fn canonicalize_path(path: String) -> Result<String, String> {
