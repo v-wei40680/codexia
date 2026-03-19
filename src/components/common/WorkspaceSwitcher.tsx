@@ -5,6 +5,7 @@ import { gitListBranches, gitCheckoutBranch, gitBranchInfo, type GitBranchInfoRe
 import { cn } from '@/lib/utils';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { open } from '@tauri-apps/plugin-dialog';
+import { Button } from '@/components/ui/button';
 
 export function WorkspaceSwitcher() {
   const [projectOpen, setProjectOpen] = useState(false);
@@ -76,25 +77,26 @@ export function WorkspaceSwitcher() {
       {/* Left: Project selector */}
       <Popover open={projectOpen} onOpenChange={setProjectOpen}>
         <PopoverTrigger asChild>
-          <button className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
+          <Button variant="ghost" size="sm" className="h-auto gap-1 px-1.5 py-0.5 text-xs text-muted-foreground">
             <FolderOpen className="h-3 w-3 shrink-0" />
             <span>{repoLabel}</span>
             <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
-          </button>
+          </Button>
         </PopoverTrigger>
-        <PopoverContent side="top" align="start" className="w-64 p-1">
+        <PopoverContent side="top" align="start" className="w-96 max-w-[calc(100vw-2rem)] p-1">
           <div className="max-h-60 overflow-y-auto">
             {projects.map((project) => {
               const isCurrent = project === cwd;
+              const folderName = project.split('/').filter(Boolean).pop() ?? project;
               return (
-                <button
+                <Button
                   key={project}
+                  variant="ghost"
+                  size="sm"
                   onClick={() => handleSelectProject(project)}
                   className={cn(
-                    'flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs font-mono transition-colors',
-                    isCurrent
-                      ? 'text-foreground'
-                      : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground'
+                    'h-auto w-full justify-start gap-2 px-2 py-1.5 text-xs font-mono',
+                    isCurrent ? 'text-foreground' : 'text-muted-foreground'
                   )}
                 >
                   {isCurrent ? (
@@ -102,19 +104,24 @@ export function WorkspaceSwitcher() {
                   ) : (
                     <span className="h-3 w-3 shrink-0" />
                   )}
-                  <span className="truncate">{project}</span>
-                </button>
+                  <div className="flex min-w-0 flex-col items-start">
+                    <span className="font-medium">{folderName}</span>
+                    <span className="truncate w-full text-[10px] opacity-50">{project}</span>
+                  </div>
+                </Button>
               );
             })}
           </div>
           <div className="border-t mt-1 pt-1">
-            <button
+            <Button
+              variant="ghost"
+              size="sm"
               onClick={handleChooseFolder}
-              className="flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors"
+              className="h-auto w-full justify-start gap-2 px-2 py-1.5 text-xs text-muted-foreground"
             >
               <FolderPlus className="h-3 w-3 shrink-0" />
               <span>Choose a different folder</span>
-            </button>
+            </Button>
           </div>
         </PopoverContent>
       </Popover>
@@ -122,11 +129,11 @@ export function WorkspaceSwitcher() {
       {/* Right: Branch switcher (only when in a git repo) */}
       {branchInfo && <Popover open={branchOpen} onOpenChange={setBranchOpen}>
         <PopoverTrigger asChild>
-          <button className="flex items-center gap-1 rounded px-1.5 py-0.5 text-xs text-muted-foreground hover:bg-accent hover:text-accent-foreground transition-colors">
+          <Button variant="ghost" size="sm" className="h-auto gap-1 px-1.5 py-0.5 text-xs text-muted-foreground">
             <GitBranch className="h-3 w-3 shrink-0" />
             <span>{branchInfo.branch}</span>
             <ChevronDown className="h-3 w-3 shrink-0 opacity-50" />
-          </button>
+          </Button>
         </PopoverTrigger>
         <PopoverContent side="top" align="start" className="w-56 p-1">
           {loading ? (
@@ -139,15 +146,15 @@ export function WorkspaceSwitcher() {
                 const isCurrent = branch === branchInfo.branch;
                 const isSwitching = switching === branch;
                 return (
-                  <button
+                  <Button
                     key={branch}
+                    variant="ghost"
+                    size="sm"
                     onClick={() => handleSelectBranch(branch)}
                     disabled={!!switching}
                     className={cn(
-                      'flex w-full items-center gap-2 rounded px-2 py-1.5 text-left text-xs font-mono transition-colors',
-                      isCurrent
-                        ? 'text-foreground'
-                        : 'text-muted-foreground hover:bg-accent hover:text-accent-foreground',
+                      'h-auto w-full justify-start gap-2 px-2 py-1.5 text-xs font-mono',
+                      isCurrent ? 'text-foreground' : 'text-muted-foreground',
                       switching && !isSwitching && 'opacity-50'
                     )}
                   >
@@ -159,7 +166,7 @@ export function WorkspaceSwitcher() {
                       <span className="h-3 w-3 shrink-0" />
                     )}
                     <span className="truncate">{branch}</span>
-                  </button>
+                  </Button>
                 );
               })}
             </div>
