@@ -223,6 +223,10 @@ function AgentGrid() {
               : 'text-muted-foreground hover:text-foreground hover:bg-accent'
               }`}
           >
+            {key !== 'all' && (
+              <span className={`h-1.5 w-1.5 rounded-full ${key === 'running' ? 'bg-green-500' : 'bg-muted-foreground/40'
+                }`} />
+            )}
             {label}
             <span className={`text-[10px] ${tab === key ? 'opacity-80' : 'opacity-50'}`}>
               {counts[key]}
