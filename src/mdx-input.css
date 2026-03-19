@@ -36,11 +36,10 @@
   margin: 0 0 0.25rem 0;
 }
 
-/* Placeholder text */
-.mdx-input-editable:empty::before {
-  content: attr(data-placeholder);
-  color: var(--muted-foreground);
-  pointer-events: none;
+/* Placeholder text — override MDXEditor's internal placeholder element */
+.mdx-input-wrapper [class*="_placeholder"] {
+  color: var(--muted-foreground) !important;
+  opacity: 0.4 !important;
 }
 
 /* Inline code in input */
