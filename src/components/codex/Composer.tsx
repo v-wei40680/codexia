@@ -1,9 +1,9 @@
 import { useState } from 'react';
 import { InputArea } from './InputArea';
 import {
-  AccessModePopover,
   ModelReasonSelector,
   AttachmentSelector,
+  AccessModePopover,
 } from './selector';
 import {
   Select,
@@ -29,7 +29,6 @@ export function ComposerControls() {
     <div className="flex justify-between items-center gap-2">
       <span className="flex">
         <WorkspaceSwitcher />
-        <AccessModePopover />
       </span>
       <Select
         value={threadCwdMode}
@@ -120,6 +119,7 @@ export function Composer({ showControls = true, overrideSend, onAfterSend }: Com
           onImagesSelected={(paths) => setImages((prev) => [...prev, ...paths])}
           onFilesSelected={(paths) => appendFileLinks(paths)}
         />
+        <AccessModePopover />
         <ModelReasonSelector />
       </InputArea>
 
