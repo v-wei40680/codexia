@@ -38,6 +38,13 @@ export function AgentComposer({ trayMode = false }: AgentComposerProps) {
     }
   }, [currentAgentCardId]);
 
+  // Auto-focus the CC composer input when switching to the cc agent
+  useEffect(() => {
+    if (selectedAgent === 'cc') {
+      focusCCInput();
+    }
+  }, [selectedAgent]);
+
   const handleTrayOverrideSend = useCallback((text: string) => {
     setActiveSidebarTab(selectedAgent);
     setView('agent');
