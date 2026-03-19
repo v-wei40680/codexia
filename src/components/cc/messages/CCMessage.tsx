@@ -5,6 +5,7 @@ import { CCMessageContent } from './CCMessageContent';
 import { PermissionRequestCard } from './PermissionRequestCard';
 import { SystemInitCard } from './SystemInitCard';
 import { ResultCard } from './ResultCard';
+import { RateLimitCard } from './RateLimitCard';
 import { safeStringify } from './utils';
 import { Card } from '@/components/ui/card';
 import type { PermissionDecision } from '../types/permission';
@@ -84,6 +85,9 @@ export function CCMessage({ message: msg, index: idx, inlineErrors }: CCMessageP
 
     case 'result':
       return <ResultCard msg={msg} />;
+
+    case 'rate_limit_event':
+      return <RateLimitCard msg={msg} />;
 
     case 'stream_event':
       return null;

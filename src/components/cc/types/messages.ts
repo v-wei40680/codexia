@@ -119,6 +119,23 @@ export interface ControlCancelRequest {
   [key: string]: any;
 }
 
+/** Rate limit event */
+export interface RateLimitInfo {
+  isUsingOverage: boolean;
+  overageDisabledReason?: string;
+  overageStatus?: string;
+  rateLimitType?: string;
+  resetsAt?: number;
+  status?: string;
+}
+
+export interface RateLimitEvent {
+  type: 'rate_limit_event';
+  uuid: string;
+  session_id: string;
+  rate_limit_info: RateLimitInfo;
+}
+
 /** Main message union type */
 export type CCMessage =
   | AssistantMessage
@@ -127,7 +144,8 @@ export type CCMessage =
   | StreamEvent
   | UserMessage
   | PermissionRequestMessage
-  | ControlCancelRequest;
+  | ControlCancelRequest
+  | RateLimitEvent;
 
 export function isToolResultBlock(block: ContentBlock): block is ToolResultBlock {
   return block.type === 'tool_result';
