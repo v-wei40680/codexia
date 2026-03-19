@@ -5,7 +5,7 @@ import { SquarePen } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AgentIcon } from './AgentIcon';
 import { Composer as CCComposer } from '@/components/cc/composer';
-import { WorkspaceSwitcher } from '@/components/cc/WorkspaceSwitcher';
+import { WorkspaceSwitcher } from '@/components/common';
 import { useWorkspaceStore, AgentType } from '@/stores/useWorkspaceStore';
 import { useAgentCenterStore, useLayoutStore } from '@/stores';
 import { useCCStore } from '@/stores/cc';

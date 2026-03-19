@@ -11,6 +11,7 @@ import { CCSlashCommandPopover } from './CCSlashCommandPopover';
 import { CCSkillsPopover } from './CCSkillsPopover';
 import { useCCSessionManager } from '@/hooks/useCCSessionManager';
 import { ccInterrupt, ccSendMessage } from '@/services';
+import { WorkspaceSwitcher } from '@/components/common';
 
 const CC_INPUT_FOCUS_EVENT = 'cc-input-focus-request';
 
@@ -162,6 +163,7 @@ export function Composer({ overrideSend, onAfterSend }: ComposerProps = {}) {
             </Button>
           </div>
         </div>
+        <WorkspaceSwitcher />
       </div>
 
       <CCSlashCommandPopover

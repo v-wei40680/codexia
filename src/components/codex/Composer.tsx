@@ -20,7 +20,7 @@ import { useAgentCenterStore } from '@/stores';
 import { codexService } from '@/services/codexService';
 import { toast } from '@/components/ui/use-toast';
 import { getErrorMessage } from '@/utils/errorUtils';
-import { WorkspaceSwitcher } from '../cc/WorkspaceSwitcher';
+import { WorkspaceSwitcher } from '@/components/common';
 
 /** Full Codex bottom bar: workspace switcher + access mode + cwd mode selector. */
 export function ComposerControls() {
