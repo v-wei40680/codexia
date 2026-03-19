@@ -29,7 +29,7 @@ fn resolve_skills_install_root(
                 .map(str::trim)
                 .filter(|value| !value.is_empty())
                 .ok_or_else(|| "cwd is required when scope is project".to_string())?;
-            Ok(PathBuf::from(working_dir).join(".agents").join("skills"))
+            Ok(PathBuf::from(working_dir).join(".codex").join("skills"))
         }
         ("cc", "user") => {
             let home =
