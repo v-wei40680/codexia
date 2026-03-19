@@ -13,6 +13,7 @@ import { RightPanelHeader } from './RightPanelHeader';
 import { useCCStore } from '@/stores/cc';
 import { isTauri } from '@/hooks/runtime';
 import { useTrafficLightConfig } from '@/hooks';
+import { NewAgentButton } from '@/components/common/NewAgentButton';
 
 export function AgentHeader() {
   const {
@@ -53,6 +54,7 @@ export function AgentHeader() {
             <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
               <PanelLeft />
             </Button>
+            <NewAgentButton />
           </div>
         )}
         {view === 'agent' && selectedAgent === 'cc' && (
