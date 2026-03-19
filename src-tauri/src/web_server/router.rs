@@ -20,7 +20,7 @@ use super::{
         api_create_automation, api_delete_automation, api_list_automation_runs, api_list_automations, api_run_automation_now, api_set_automation_paused,
         api_update_automation,
         api_check_manifests_exist, api_codex_home, api_create_note, api_delete_file,
-        api_delete_note, api_download_and_extract_manifests, api_fuzzy_file_search,
+        api_delete_note, api_download_and_extract_manifests,
         api_get_account, api_get_home_directory, api_get_note_by_id, api_get_notes,
         api_get_unsynced_notes,
         api_git_branch_info, api_git_checkout_branch, api_git_diff_stats, api_git_file_diff,
@@ -36,7 +36,7 @@ use super::{
         api_respond_file_change_approval, api_respond_user_input, api_resume_thread,
         api_rollback_thread, api_fork_thread,
         api_save_dxt_setting,
-        api_search_files, api_skills_config_write, api_skills_list, api_start_review,
+        api_search_files, api_search_files_by_name, api_skills_config_write, api_skills_list, api_start_review,
         api_start_thread, api_start_watch_file, api_start_watch_path, api_stop_watch_file,
         api_skills_clone_repo, api_skills_install_marketplace, api_skills_list_installed,
         api_skills_list_marketplace, api_skills_uninstall_installed,
@@ -145,12 +145,12 @@ pub(crate) fn create_router(state: WebServerState) -> Router {
             "/api/codex/approval/user-input",
             post(api_respond_user_input),
         )
-        .route("/api/codex/search/fuzzy-file", post(api_fuzzy_file_search))
         .route("/api/codex/review/start", post(api_start_review))
         .route("/api/filesystem/read-directory", post(api_read_directory))
         .route("/api/filesystem/home-directory", get(api_get_home_directory))
         .route("/api/filesystem/canonicalize-path", post(api_canonicalize_path))
         .route("/api/filesystem/search-files", post(api_search_files))
+        .route("/api/filesystem/search-files-by-name", post(api_search_files_by_name))
         .route("/api/filesystem/codex-home", get(api_codex_home))
         .route("/api/filesystem/read-file", post(api_read_file))
         .route("/api/filesystem/read-text-file-lines", post(api_read_text_file_lines))

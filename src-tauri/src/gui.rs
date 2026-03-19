@@ -109,6 +109,7 @@ pub fn run() {
             crate::commands::filesystem::read_directory,
             crate::commands::filesystem::get_home_directory,
             crate::commands::filesystem::search_files,
+            crate::commands::filesystem::search_files_by_name,
             crate::commands::filesystem::canonicalize_path,
             crate::commands::filesystem::read_file,
             crate::commands::filesystem::read_text_file_lines,

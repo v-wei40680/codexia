@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import {
   canonicalizePath,
   readDirectory,
-  searchFiles,
+  searchFilesByName,
   type TauriFileEntry,
 } from '@/services/tauri';
 import { getFilename } from '@/utils/getFilename';
@@ -206,7 +206,7 @@ export function FileTree({ folder, isTreeVisible, onToggleTree, onFileSelect }: 
     autoExpandedTargetRef.current = null;
   }, [folder]);
 
-  const normalizedFilterText = filterText.trim().toLowerCase();
+  const normalizedFilterText = filterText.trim();
   const isSearching = normalizedFilterText.length > 0;
 
   const collectDirPaths = useCallback((node: FileNode): string[] => {
@@ -237,7 +237,7 @@ export function FileTree({ folder, isTreeVisible, onToggleTree, onFileSelect }: 
 
       try {
         const searchRoot = root?.path ?? (await canonicalizePath(folder));
-        const matches = await searchFiles({
+        const matches = await searchFilesByName({
           root: searchRoot,
           query: normalizedFilterText,
           excludeFolders: hiddenNames,
@@ -449,8 +449,8 @@ export function FileTree({ folder, isTreeVisible, onToggleTree, onFileSelect }: 
       return;
     }
 
-    row.scrollIntoView({ block: 'center', behavior: 'smooth' });
-  }, [selectedFilePath, root, expanded, displayRoot]);
+    row.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  }, [selectedFilePath]);
 
   const isLatexFile = (ext: string) => ['tex', 'latex', 'ltx'].includes(ext);
   const isPdfFile = (ext: string) => ext === 'pdf';

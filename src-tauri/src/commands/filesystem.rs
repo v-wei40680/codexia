@@ -29,6 +29,16 @@ pub async fn search_files(
 }
 
 #[tauri::command]
+pub async fn search_files_by_name(
+    root: String,
+    query: String,
+    exclude_folders: Vec<String>,
+    max_results: Option<usize>,
+) -> Result<Vec<FileEntry>, String> {
+    directory_ops::search_files_by_name(root, query, exclude_folders, max_results).await
+}
+
+#[tauri::command]
 pub async fn canonicalize_path(path: String) -> Result<String, String> {
     directory_ops::canonicalize_path(path).await
 }

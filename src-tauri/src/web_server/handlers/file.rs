@@ -4,7 +4,7 @@ use serde::Deserialize;
 
 use crate::codex::utils::codex_home;
 use crate::features::filesystem::{
-    directory_ops::{canonicalize_path, get_home_directory, read_directory, search_files},
+    directory_ops::{canonicalize_path, get_home_directory, read_directory, search_files, search_files_by_name},
     file_io::{delete_file, read_file, read_text_file_lines, write_file},
     file_parsers::{pdf::read_pdf_content, xlsx::read_xlsx_content},
     file_types::FileEntry,
@@ -66,6 +66,20 @@ pub(crate) async fn api_search_files(
     Json(params): Json<FilesystemSearchFilesParams>,
 ) -> Result<Json<Vec<FileEntry>>, ErrorResponse> {
     let entries = search_files(
+        params.root,
+        params.query,
+        params.exclude_folders,
+        params.max_results,
+    )
+    .await
+    .map_err(to_error_response)?;
+    Ok(Json(entries))
+}
+
+pub(crate) async fn api_search_files_by_name(
+    Json(params): Json<FilesystemSearchFilesParams>,
+) -> Result<Json<Vec<FileEntry>>, ErrorResponse> {
+    let entries = search_files_by_name(
         params.root,
         params.query,
         params.exclude_folders,

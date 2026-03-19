@@ -130,8 +130,132 @@ pub async fn search_files(
         })
         .build();
 
+    let mut all_entries: Vec<FileEntry> = Vec::new();
+    for entry in walker {
+        let entry = match entry {
+            Ok(e) => e,
+            Err(_) => continue,
+        };
+        let path = entry.path();
+        if path == expanded_root {
+            continue;
+        }
+        let file_name = match path.file_name().and_then(|n| n.to_str()) {
+            Some(n) => n,
+            None => continue,
+        };
+        if excluded_names.contains(&normalize_name(file_name)) || is_dot_git(file_name) {
+            continue;
+        }
+        let is_directory = entry.file_type().is_some_and(|ft| ft.is_dir());
+        let path_str = path.to_string_lossy().to_string();
+        let size = if is_directory {
+            None
+        } else {
+            fs::metadata(path).ok().map(|m| m.len())
+        };
+        let extension = if is_directory {
+            None
+        } else {
+            path.extension()
+                .and_then(|ext| ext.to_str())
+                .map(|s| s.to_string())
+        };
+        all_entries.push(FileEntry {
+            name: file_name.to_string(),
+            path: path_str,
+            is_directory,
+            size,
+            extension,
+        });
+    }
+
+    if query.is_empty() {
+        all_entries.sort_by(|a, b| a.path.to_lowercase().cmp(&b.path.to_lowercase()));
+        all_entries.truncate(limit);
+        return Ok(all_entries);
+    }
+
     let root_str = expanded_root.to_string_lossy();
     let root_prefix = format!("{}/", root_str);
+
+    let pattern = Pattern::new(
+        &query,
+        CaseMatching::Smart,
+        Normalization::Smart,
+        AtomKind::Fuzzy,
+    );
+    let mut matcher = Matcher::new(Config::DEFAULT.match_paths());
+
+    let mut scored: Vec<(u32, FileEntry)> = all_entries
+        .into_iter()
+        .filter_map(|entry| {
+            let haystack = if entry.path.starts_with(root_prefix.as_str()) {
+                &entry.path[root_prefix.len()..]
+            } else {
+                &entry.path
+            };
+            let utf32 = Utf32String::from(haystack);
+            pattern
+                .score(utf32.slice(..), &mut matcher)
+                .map(|score| (score, entry))
+        })
+        .collect();
+
+    scored.sort_by(|a, b| b.0.cmp(&a.0).then(a.1.path.cmp(&b.1.path)));
+    scored.truncate(limit);
+
+    Ok(scored.into_iter().map(|(_, e)| e).collect())
+}
+
+/// Fuzzy-searches for files and folders whose **name** contains `query` as a
+/// substring (case-insensitive when the query is all-lowercase).  Unlike
+/// `search_files`, this never matches across path-segment boundaries, so
+/// "claude" will not match `CollabResumeEndEvent.ts`.
+pub async fn search_files_by_name(
+    root: String,
+    query: String,
+    exclude_folders: Vec<String>,
+    max_results: Option<usize>,
+) -> Result<Vec<FileEntry>, String> {
+    let expanded_root: PathBuf = if root.starts_with("~/") {
+        let home = dirs::home_dir().ok_or_else(|| "Cannot find home directory".to_string())?;
+        home.join(&root[2..])
+    } else {
+        Path::new(&root).to_path_buf()
+    };
+
+    if !expanded_root.exists() || !expanded_root.is_dir() {
+        return Err("Directory does not exist".to_string());
+    }
+
+    let limit = max_results.unwrap_or(2000);
+    let excluded_names = exclude_folders
+        .into_iter()
+        .map(|name| name.to_lowercase())
+        .collect::<std::collections::HashSet<_>>();
+
+    let excluded_names_for_walk = excluded_names.clone();
+    let walker = WalkBuilder::new(&expanded_root)
+        .follow_links(false)
+        .hidden(false)
+        .git_ignore(true)
+        .git_exclude(true)
+        .git_global(true)
+        .parents(true)
+        .filter_entry(move |entry| {
+            if entry.path_is_symlink() {
+                return false;
+            }
+            if let Some(name) = entry.file_name().to_str() {
+                if is_dot_git(name) {
+                    return false;
+                }
+                return !excluded_names_for_walk.contains(&normalize_name(name));
+            }
+            true
+        })
+        .build();
 
     let mut all_entries: Vec<FileEntry> = Vec::new();
     for entry in walker {
@@ -183,19 +307,14 @@ pub async fn search_files(
         &query,
         CaseMatching::Smart,
         Normalization::Smart,
-        AtomKind::Fuzzy,
+        AtomKind::Substring,
     );
-    let mut matcher = Matcher::new(Config::DEFAULT.match_paths());
+    let mut matcher = Matcher::new(Config::DEFAULT);
 
     let mut scored: Vec<(u32, FileEntry)> = all_entries
         .into_iter()
         .filter_map(|entry| {
-            let haystack = if entry.path.starts_with(root_prefix.as_str()) {
-                &entry.path[root_prefix.len()..]
-            } else {
-                &entry.path
-            };
-            let utf32 = Utf32String::from(haystack);
+            let utf32 = Utf32String::from(entry.name.as_str());
             pattern
                 .score(utf32.slice(..), &mut matcher)
                 .map(|score| (score, entry))
