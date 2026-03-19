@@ -198,11 +198,10 @@ export function ModelReasonSelector() {
             </Button>
           </PopoverTrigger>
 
-          <PopoverContent className="w-80 p-3" align="start">
+          <PopoverContent className="w-80 p-0" align="start">
             <Tabs
               value={modelProvider}
               onValueChange={(v) => onChangeProvider(v as Provider)}
-              className="gap-3"
             >
               <TabsList className="grid w-full grid-cols-2">
                 <TabsTrigger value="openai">openai</TabsTrigger>
