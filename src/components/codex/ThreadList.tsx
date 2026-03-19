@@ -40,7 +40,7 @@ interface ThreadListProps {
 
 export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
   const { cwd, historyMode, setCwd, setHistoryMode } = useWorkspaceStore();
-  const { setView, setIsAgentExpanded } = useLayoutStore();
+  const { setView } = useLayoutStore();
   const { addAgentCard, setCurrentAgentCardId } = useAgentCenterStore();
   const { threads, currentThreadId, threadListNextCursor } = useCodexStore();
   const { searchTerm, sortKey } = useThreadListStore();
@@ -216,11 +216,10 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
       setHistoryMode(false);
       addAgentCard({ kind: 'codex', id: threadId, preview });
       setCurrentAgentCardId(threadId);
-      setIsAgentExpanded(true);
       setView('agent');
       await handleSelectThread(threadId, { resume: true });
     },
-    [handleSelectThread, historyMode, setHistoryMode, setView, setCurrentAgentCardId, setIsAgentExpanded, addAgentCard]
+    [handleSelectThread, historyMode, setHistoryMode, setView, setCurrentAgentCardId, addAgentCard]
   );
 
   const handleTogglePin = useCallback(
@@ -281,7 +280,6 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
       await codexService.threadFork(threadId);
       addAgentCard({ kind: 'codex', id: threadId, preview });
       setCurrentAgentCardId(threadId);
-      setIsAgentExpanded(true);
       setView('agent');
       if (isProjectScoped) {
         await reloadScopedThreadsRef.current?.();

@@ -73,10 +73,9 @@ function AppShell() {
     const unlistenTray = listen<{ kind: 'cc' | 'codex'; text: string }>(
       'tray:pending-send',
       ({ payload }) => {
-        const { setView, setActiveSidebarTab, setIsAgentExpanded } = useLayoutStore.getState();
+        const { setView, setActiveSidebarTab } = useLayoutStore.getState();
         setActiveSidebarTab(payload.kind);
         setView('agent');
-        setIsAgentExpanded(true);
         useWorkspaceStore.getState().setSelectedAgent(payload.kind);
         useTrayPendingStore.getState().setPending({ kind: payload.kind, text: payload.text });
       }
