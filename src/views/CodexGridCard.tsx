@@ -76,13 +76,12 @@ export function ContextWindowBar({ used, window: win }: { used: number; window: 
 
 interface CodexGridCardProps {
   card: AgentCenterCard & { kind: 'codex' };
-  onExpand: () => void;
   onRemove: () => void;
   header: React.ReactNode;
   isSelected?: boolean;
 }
 
-export function CodexGridCard({ card, onExpand, onRemove: _onRemove, header, isSelected }: CodexGridCardProps) {
+export function CodexGridCard({ card, onRemove: _onRemove, header, isSelected }: CodexGridCardProps) {
   const { events, threadStatusMap, activeThreadIds } = useCodexStore();
   const { pendingApprovals } = useApprovalStore();
   const { pendingRequests } = useRequestUserInputStore();
@@ -162,8 +161,7 @@ export function CodexGridCard({ card, onExpand, onRemove: _onRemove, header, isS
 
       <div
         ref={scrollRef}
-        className="flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin] cursor-pointer"
-        onClick={onExpand}
+        className="flex-1 min-h-0 overflow-y-auto [scrollbar-width:thin]"
       >
         {codexItems.length === 0 ? (
           <p className="text-xs text-muted-foreground p-3">No messages yet.</p>

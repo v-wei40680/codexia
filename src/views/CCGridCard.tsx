@@ -4,7 +4,7 @@ import { ccGetSessionFilePath, ccInterrupt, ccResumeSession } from '@/services/t
 import { readTextFileLines } from '@/services/tauri/filesystem';
 import { parseSessionJsonl } from '@/components/cc/utils/parseSessionJsonl';
 import { Button } from '@/components/ui/button';
-import { Square, RotateCcw, Maximize2 } from 'lucide-react';
+import { Square, RotateCcw } from 'lucide-react';
 import type { AgentCenterCard } from '@/stores/useAgentCenterStore';
 import { useAgentCenterStore } from '@/stores/useAgentCenterStore';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
@@ -32,13 +32,12 @@ function fmtElapsed(s: number): string {
 
 interface CCGridCardProps {
   card: AgentCenterCard & { kind: 'cc' };
-  onExpand: () => void;
   onRemove: () => void;
   header: React.ReactNode;
   isSelected?: boolean;
 }
 
-export function CCGridCard({ card, onExpand, onRemove: _onRemove, header, isSelected }: CCGridCardProps) {
+export function CCGridCard({ card, onRemove: _onRemove, header, isSelected }: CCGridCardProps) {
   const {
     sessionMessagesMap,
     sessionLoadingMap,
@@ -172,9 +171,6 @@ export function CCGridCard({ card, onExpand, onRemove: _onRemove, header, isSele
               {isResumingSession ? 'Loading…' : 'Resume'}
             </Button>
           )}
-          <Button size="icon" variant="ghost" className="h-6 w-6 text-muted-foreground" onClick={onExpand}>
-            <Maximize2 className="h-3 w-3" />
-          </Button>
         </div>
       </div>
     </div>

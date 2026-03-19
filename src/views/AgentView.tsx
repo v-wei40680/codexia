@@ -6,7 +6,7 @@ import { useCCStore } from '@/stores/cc';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 
 import { codexService } from '@/services/codexService';
-import { ArrowLeft, X } from 'lucide-react';
+import { ArrowLeft, X, Maximize2 } from 'lucide-react';
 import type { AgentCenterCard } from '@/stores/useAgentCenterStore';
 import { AgentIcon } from '@/components/common/AgentIcon';
 import { AgentComposer } from '@/components/common';
@@ -27,10 +27,11 @@ interface CardHeaderProps {
   onClose?: () => void;
   onBack?: () => void;
   onSelect?: () => void;
+  onExpand?: () => void;
   status?: CardStatus;
 }
 
-export function CardHeader({ card, onClose, onBack, onSelect, status = 'idle' }: CardHeaderProps) {
+export function CardHeader({ card, onClose, onBack, onSelect, onExpand, status = 'idle' }: CardHeaderProps) {
   const title = card.preview?.slice(0, 60) || card.id.slice(0, 12);
 
   const dotColor =
@@ -68,6 +69,15 @@ export function CardHeader({ card, onClose, onBack, onSelect, status = 'idle' }:
       )}
       <AgentIcon agent={card.kind} />
       <span className="text-xs text-muted-foreground truncate flex-1 min-w-0">{title}</span>
+      {onExpand && (
+        <button
+          onClick={(e) => { e.stopPropagation(); onExpand(); }}
+          className="text-muted-foreground hover:text-foreground transition-colors shrink-0"
+          aria-label="Expand"
+        >
+          <Maximize2 className="h-3.5 w-3.5" />
+        </button>
+      )}
     </div>
   );
 }
@@ -110,6 +120,7 @@ function GridCard({ card, onExpand, onRemove, isSelected }: GridCardProps) {
         setCurrentAgentCardId(card.id);
         if (card.kind === 'codex') void codexService.setCurrentThread(card.id);
       }}
+      onExpand={onExpand}
       status={status}
     />
   );
@@ -118,7 +129,6 @@ function GridCard({ card, onExpand, onRemove, isSelected }: GridCardProps) {
     return (
       <CodexGridCard
         card={card as AgentCenterCard & { kind: 'codex' }}
-        onExpand={onExpand}
         onRemove={onRemove}
         header={header}
         isSelected={isSelected}
@@ -129,7 +139,6 @@ function GridCard({ card, onExpand, onRemove, isSelected }: GridCardProps) {
   return (
     <CCGridCard
       card={card as AgentCenterCard & { kind: 'cc' }}
-      onExpand={onExpand}
       onRemove={onRemove}
       header={header}
       isSelected={isSelected}
