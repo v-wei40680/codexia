@@ -29,10 +29,20 @@ pub fn run() {
             let quit = MenuItem::with_id(app, "app-quit", "Quit Codexia", true, Some("CmdOrControl+Q"))?;
             let app_submenu = Submenu::with_items(app, "Codexia", true, &[&about, &separator, &quit])?;
 
+            let edit_submenu = Submenu::with_items(app, "Edit", true, &[
+                &PredefinedMenuItem::undo(app, None)?,
+                &PredefinedMenuItem::redo(app, None)?,
+                &PredefinedMenuItem::separator(app)?,
+                &PredefinedMenuItem::cut(app, None)?,
+                &PredefinedMenuItem::copy(app, None)?,
+                &PredefinedMenuItem::paste(app, None)?,
+                &PredefinedMenuItem::select_all(app, None)?,
+            ])?;
+
             let show = MenuItem::with_id(app, "app-show", "Show Main Window", true, None::<&str>)?;
             let window_submenu = Submenu::with_items(app, "Window", true, &[&show])?;
 
-            Menu::with_items(app, &[&app_submenu, &window_submenu])
+            Menu::with_items(app, &[&app_submenu, &edit_submenu, &window_submenu])
         })
         .on_menu_event(|app, event| match event.id().as_ref() {
             "app-quit" => {
