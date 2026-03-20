@@ -56,7 +56,6 @@
 		461941C4F52D51228863BDA1 /* staging.rs */ = {isa = PBXFileReference; path = staging.rs; sourceTree = "<group>"; };
 		46C3ED10906A3D2F644D587E /* tests.rs */ = {isa = PBXFileReference; path = tests.rs; sourceTree = "<group>"; };
 		4E24A86B9A4053FEDBE7864F /* codexia_iOS.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = codexia_iOS.entitlements; sourceTree = "<group>"; };
-		4EA131C5C051D2DE4E431503 /* app.rs */ = {isa = PBXFileReference; path = app.rs; sourceTree = "<group>"; };
 		50CDE75C0CD488005F7F4A0D /* tunnel.rs */ = {isa = PBXFileReference; path = tunnel.rs; sourceTree = "<group>"; };
 		530BEB636CE93EB11F706BEF /* mod.rs */ = {isa = PBXFileReference; path = mod.rs; sourceTree = "<group>"; };
 		550EA0834817249B290B7035 /* notes.rs */ = {isa = PBXFileReference; path = notes.rs; sourceTree = "<group>"; };
@@ -97,7 +96,6 @@
 		A5D1DB8943F563C70C26BEFC /* commands.rs */ = {isa = PBXFileReference; path = commands.rs; sourceTree = "<group>"; };
 		A7183D8F3FBEBC532608DA54 /* mod.rs */ = {isa = PBXFileReference; path = mod.rs; sourceTree = "<group>"; };
 		A9D3D286FEE7915D84BA3B29 /* mod.rs */ = {isa = PBXFileReference; path = mod.rs; sourceTree = "<group>"; };
-		AA358ABD9381B93B5ED5F1E8 /* gui.rs */ = {isa = PBXFileReference; path = gui.rs; sourceTree = "<group>"; };
 		AC41A674C05F9B0A5BE5A6EC /* utils.rs */ = {isa = PBXFileReference; path = utils.rs; sourceTree = "<group>"; };
 		AF8F9C8E41B2A2E2665581C4 /* mcp.rs */ = {isa = PBXFileReference; path = mcp.rs; sourceTree = "<group>"; };
 		B3FEFAD3E2A3EF2C6D97200C /* runtime.rs */ = {isa = PBXFileReference; path = runtime.rs; sourceTree = "<group>"; };
@@ -379,8 +377,6 @@
 		D708257A9935FEA859225570 /* src */ = {
 			isa = PBXGroup;
 			children = (
-				4EA131C5C051D2DE4E431503 /* app.rs */,
-				AA358ABD9381B93B5ED5F1E8 /* gui.rs */,
 				41926316900E7F19FA49EE57 /* lib.rs */,
 				57DC2E33CEBDD6A35542DC20 /* main.rs */,
 				133BF4777B5B2261106B4477 /* state.rs */,
@@ -463,7 +459,7 @@
 			path = Sources;
 			sourceTree = "<group>";
 		};
-		"TEMP_2BF3253E-408D-4E7F-A332-359950B53AE6" /* x86_64 */ = {
+		"TEMP_2424AB0E-D7A2-486F-A217-5AB9FB8BAD06" /* x86_64 */ = {
 			isa = PBXGroup;
 			children = (
 			);
@@ -502,6 +498,9 @@
 				BuildIndependentTargetsInParallel = YES;
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					13AD0C05EB4A23402C64ADC8 = {
+						DevelopmentTeam = 3T2S87TGQ7;
+					};
 				};
 			};
 			buildConfigurationList = BE2B52D7A98619BDAC823937 /* Build configuration list for PBXProject "codexia" */;
@@ -581,8 +580,10 @@
 					arm64,
 				);
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
 				CODE_SIGN_ENTITLEMENTS = codexia_iOS/codexia_iOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = "3T2S87TGQ7";
 				ENABLE_BITCODE = NO;
 				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -597,7 +598,7 @@
 				"LIBRARY_SEARCH_PATHS[arch=arm64]" = "$(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)";
 				"LIBRARY_SEARCH_PATHS[arch=x86_64]" = "$(inherited) $(PROJECT_DIR)/Externals/x86_64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)";
 				PRODUCT_BUNDLE_IDENTIFIER = dev.milisp.codexia;
-				PRODUCT_NAME = codexia;
+				PRODUCT_NAME = "codexia";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALID_ARCHS = arm64;
@@ -675,8 +676,10 @@
 					arm64,
 				);
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
 				CODE_SIGN_ENTITLEMENTS = codexia_iOS/codexia_iOS.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
+				DEVELOPMENT_TEAM = "3T2S87TGQ7";
 				ENABLE_BITCODE = NO;
 				"EXCLUDED_ARCHS[sdk=iphoneos*]" = x86_64;
 				FRAMEWORK_SEARCH_PATHS = (
@@ -691,7 +694,7 @@
 				"LIBRARY_SEARCH_PATHS[arch=arm64]" = "$(inherited) $(PROJECT_DIR)/Externals/arm64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)";
 				"LIBRARY_SEARCH_PATHS[arch=x86_64]" = "$(inherited) $(PROJECT_DIR)/Externals/x86_64/$(CONFIGURATION) $(SDKROOT)/usr/lib/swift $(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME) $(TOOLCHAIN_DIR)/usr/lib/swift-5.0/$(PLATFORM_NAME)";
 				PRODUCT_BUNDLE_IDENTIFIER = dev.milisp.codexia;
-				PRODUCT_NAME = codexia;
+				PRODUCT_NAME = "codexia";
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
 				VALID_ARCHS = arm64;

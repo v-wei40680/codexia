@@ -7,11 +7,11 @@
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
-	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	<string>dev.milisp.codexia</string>
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>$(PRODUCT_NAME)</string>
+	<string>Codexia</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -40,5 +40,19 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+	<key>NSRequiresAquaSystemAppearance</key>
+	<false/>
+	<key>LSMinimumSystemVersion</key>
+	<string>10.15</string>
+	<key>CFBundleDisplayName</key>
+	<string>Codexia</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Codexia needs to send Apple Events to other applications.</string>
+	<key>NSAppleScriptEnabled</key>
+	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Codexia needs camera access for capturing images for AI processing.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Codexia needs microphone access for voice input features.</string>
 </dict>
 </plist>

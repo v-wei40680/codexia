@@ -52,14 +52,14 @@ fn main() {
             codexia_lib::web::start_server(&host, port.unwrap_or(DEFAULT_WEB_PORT));
             return;
         }
-        codexia_lib::gui::run();
+        codexia_lib::run();
         return;
     }
 
     #[cfg(all(feature = "tauri", not(feature = "web")))]
     {
         init_tauri_env();
-        codexia_lib::gui::run();
+        codexia_lib::run();
         return;
     }
 

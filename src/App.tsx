@@ -5,7 +5,7 @@ import './App.css';
 import { useCodexEvents } from '@/hooks/codex';
 import { useDeepLink } from '@/hooks/useDeepLink';
 import { AppLayout } from '@/components/layout';
-import { isTauri } from '@/hooks/runtime';
+import { isTauri, isPhone } from '@/hooks/runtime';
 import { HistoryProjectsDialog } from '@/components/project-selector';
 import { AnalyticsConsentDialog } from '@/components/settings/AnalyticsConsentDialog';
 import { initializeCodexAsync } from '@/services/tauri';
@@ -58,7 +58,7 @@ function AppShell() {
   }, [pending, processTrayPending]);
 
   useEffect(() => {
-    if (!isTauri()) {
+    if (!isTauri() || isPhone) {
       return;
     }
 
@@ -122,9 +122,7 @@ function AppShell() {
 }
 
 export default function App() {
-  if (isTauri()) {
-    useDeepLink();
-  }
+  useDeepLink(isTauri() && !isPhone);
 
   return (
     <StoreErrorBoundary>
