@@ -222,6 +222,7 @@ pub async fn disconnect(session_id: &str, state: &CCState) -> Result<(), String>
     state.remove_client(session_id).await
 }
 
+#[cfg(feature = "web")]
 pub async fn new_session(
     options: AgentOptions,
     state: &CCState,

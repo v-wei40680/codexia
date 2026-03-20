@@ -1,6 +1,6 @@
 [package]
 name = "codexia"
-version = "0.26.0"
+version = "0.27.0"
 description = "A powerful IDE/GUI and Toolkit for Codex CLI + Claude code"
 authors = ["milisp"]
 license = "AGPL-3.0"
@@ -16,7 +16,7 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 
 [features]
 default = ["gui"]
-gui = ["tauri", "web"]
+gui = ["tauri"]
 tauri = [
   "dep:fix-path-env",
   "dep:tauri",
@@ -42,7 +42,6 @@ tauri-plugin-opener = { version = "2", optional = true }
 tauri-plugin-shell = { version = "2", optional = true }
 tauri-plugin-dialog = { version = "2", optional = true }
 tauri-plugin-log = { version = "2", optional = true }
-tauri-plugin-screenshots = { version = "2.2.0", optional = true }
 tauri-plugin-deep-link = { version = "2", optional = true }
 tauri-plugin-process = { version = "2", optional = true }
 tauri-plugin-fs = { version = "2", optional = true }
@@ -77,8 +76,6 @@ toml_edit = "0.20"
 base64 = "0.22.1"
 regex = "1.12.2"
 chrono = { version = "0.4", features = ["serde"] }
-walkdir = "2.3"
-gix = { version = "0.80.0", features = ["blocking-network-client", "blocking-http-transport-curl"] }
 tokio-cron-scheduler = "0.13"
 
 # Async
@@ -87,19 +84,24 @@ async-trait = "0.1"
 # Other
 uuid = { version = "1.0", features = ["v4"] }
 which = "6.0"
-pdf-extract = "0.7.12"
-calamine = "0.25"
-notify = "6"
-nosleep = "0.2.1"
 axum = { version = "0.8", features = ["ws", "json"], optional = true }
 tower-http = { version = "0.5", features = ["cors", "fs"], optional = true }
-portable-pty = "0.9"
-ignore = "0.4.25"
 dashmap = "6.1.0"
-nucleo = "0.5.0"
 
 [target.'cfg(any(target_os = "linux", target_os = "windows"))'.dependencies]
 tauri-plugin-single-instance = { version = "2", features = ["deep-link"], optional = true }
+
+[target.'cfg(not(any(target_os = "ios", target_os = "android")))'.dependencies]
+tauri-plugin-screenshots = { version = "2.2.0", optional = true }
+nosleep = "0.2.1"
+gix = { version = "0.80.0", features = ["blocking-network-client", "blocking-http-transport-curl"] }
+walkdir = "2.3"
+pdf-extract = "0.7.12"
+calamine = "0.25"
+notify = "6"
+portable-pty = "0.9"
+ignore = "0.4.25"
+nucleo = "0.5.0"
 
 # Platform-specific dependencies
 [target.'cfg(windows)'.dependencies]

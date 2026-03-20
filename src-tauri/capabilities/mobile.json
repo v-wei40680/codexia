@@ -1,0 +1,17 @@
+{
+  "$schema": "../gen/schemas/mobile-schema.json",
+  "identifier": "mobile",
+  "description": "Capability for mobile (iOS/Android)",
+  "platforms": ["iOS", "android"],
+  "windows": ["main", "main-*"],
+  "permissions": [
+    "core:default",
+    "core:event:default",
+    "core:event:allow-listen",
+    "core:event:allow-emit",
+    "core:event:allow-emit-to",
+    "core:webview:default",
+    "log:default",
+    "deep-link:default"
+  ]
+}
