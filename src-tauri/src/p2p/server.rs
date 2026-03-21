@@ -48,9 +48,10 @@ pub async fn start(
     register_endpoint(&host_jwt, &supabase_url, &anon_key, &owner_user_id, public_endpoint).await?;
     log::info!("[p2p-server] endpoint registered in Supabase");
 
-    // 5. Accept-loop in background
+    // 5. Accept-loop + punch-loop in background
     let ep = endpoint.clone();
-    let task = tokio::spawn(accept_loop(ep, owner_user_id, supabase_url, anon_key));
+    let task = tokio::spawn(accept_loop(ep.clone(), owner_user_id.clone(), supabase_url.clone(), anon_key.clone()));
+    tokio::spawn(punch_loop(ep, host_jwt, supabase_url, anon_key, owner_user_id));
 
     Ok(P2PServer { endpoint, public_endpoint, _task: task })
 }
@@ -289,6 +290,75 @@ fn find_body_start(data: &[u8]) -> Option<usize> {
     data.windows(4).position(|w| w == b"\r\n\r\n").map(|p| p + 4)
 }
 
+// ── NAT hole-punching ────────────────────────────────────────────────────────
+
+/// Poll Supabase every second for a phone endpoint registered against this user.
+/// When found, send UDP packets from our Quinn socket to the phone's public addr,
+/// opening the home-router's NAT so the phone's QUIC Initial packets get through.
+async fn punch_loop(
+    endpoint: quinn::Endpoint,
+    jwt: String,
+    supabase_url: String,
+    anon_key: String,
+    user_id: String,
+) {
+    use std::net::SocketAddr;
+    use std::time::Duration;
+
+    let client = reqwest::Client::new();
+    let mut last_punched: Option<SocketAddr> = None;
+
+    loop {
+        tokio::time::sleep(Duration::from_secs(1)).await;
+
+        // Query peer_endpoints for a phone endpoint (set by mobile before connecting)
+        let url = format!(
+            "{}/rest/v1/peer_endpoints?user_id=eq.{}&select=phone_ip,phone_port&phone_ip=not.is.null",
+            supabase_url, user_id
+        );
+        let Ok(res) = client
+            .get(&url)
+            .header("apikey", &anon_key)
+            .bearer_auth(&jwt)
+            .send()
+            .await
+        else {
+            continue;
+        };
+        let Ok(rows) = res.json::<Vec<serde_json::Value>>().await else { continue };
+        let Some(row) = rows.first() else { continue };
+
+        let phone_ip = row.get("phone_ip").and_then(|v| v.as_str()).unwrap_or("");
+        let phone_port = row.get("phone_port").and_then(|v| v.as_u64()).unwrap_or(0) as u16;
+        if phone_ip.is_empty() || phone_port == 0 {
+            continue;
+        }
+
+        let Ok(phone_addr) = format!("{phone_ip}:{phone_port}").parse::<SocketAddr>() else {
+            continue;
+        };
+        if Some(phone_addr) == last_punched {
+            continue; // already punched this session
+        }
+
+        log::info!("[p2p-server] punching NAT toward phone: {phone_addr}");
+        last_punched = Some(phone_addr);
+
+        // Fire a few outgoing QUIC packets to open the home router's NAT.
+        // We don't await or care about the result — just need UDP out on port 7422.
+        let ep = endpoint.clone();
+        tokio::spawn(async move {
+            for _ in 0..5u8 {
+                if let Ok(connecting) = ep.connect(phone_addr, "codexia-p2p") {
+                    // Drop immediately — we only care about the outgoing UDP packets
+                    tokio::spawn(async move { drop(connecting.await) });
+                }
+                tokio::time::sleep(Duration::from_millis(150)).await;
+            }
+        });
+    }
+}
+
 // ── TLS + Supabase ───────────────────────────────────────────────────────────
 
 fn make_server_config() -> Result<quinn::ServerConfig, String> {
@@ -323,8 +393,24 @@ pub async fn verify_jwt(jwt: &str, supabase_url: &str, anon_key: &str) -> Result
         .ok_or_else(|| "no id in Supabase user response".into())
 }
 
-/// Upsert the desktop's public endpoint into `peer_endpoints` table.
-/// Row key = `user_id` from JWT (via RLS, Supabase will fill it in).
+/// Detect the desktop's LAN IP. Uses `local-ip-address` which enumerates
+/// real network interfaces, avoiding macOS virtual/VPN interfaces (e.g. utun/198.18.x.x).
+fn local_ip() -> Option<std::net::IpAddr> {
+    let ip = local_ip_address::local_ip().ok()?;
+    if is_private_ip(ip) { Some(ip) } else { None }
+}
+
+fn is_private_ip(ip: std::net::IpAddr) -> bool {
+    match ip {
+        std::net::IpAddr::V4(v4) => {
+            let o = v4.octets();
+            matches!(o, [10, ..] | [172, 16..=31, ..] | [192, 168, ..])
+        }
+        std::net::IpAddr::V6(_) => false,
+    }
+}
+
+/// Upsert the desktop's public + local endpoint into `peer_endpoints`.
 async fn register_endpoint(
     jwt: &str,
     supabase_url: &str,
@@ -332,6 +418,9 @@ async fn register_endpoint(
     user_id: &str,
     endpoint: SocketAddr,
 ) -> Result<(), String> {
+    let lan_ip = local_ip().map(|ip| ip.to_string());
+    log::info!("[p2p-server] local IP: {:?}", lan_ip);
+
     let client = reqwest::Client::new();
     let res = client
         .post(format!("{supabase_url}/rest/v1/peer_endpoints"))
@@ -342,6 +431,8 @@ async fn register_endpoint(
             "user_id":     user_id,
             "public_ip":   endpoint.ip().to_string(),
             "public_port": endpoint.port(),
+            "local_ip":    lan_ip,
+            "local_port":  P2P_UDP_PORT,
         }))
         .send()
         .await

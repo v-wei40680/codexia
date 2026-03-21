@@ -5,23 +5,33 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import supabase, { isSupabaseConfigured } from '@/lib/supabase';
 import { Badge, Github } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { open } from '@tauri-apps/plugin-shell';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { getIsPhone } from '@/hooks/runtime';
+import { useLayoutStore } from '@/stores';
 
 export default function AuthPage() {
   const { user } = useAuth();
   const { lastOAuthProvider, setLastOAuthProvider } = useAuthStore();
+  const { setView } = useLayoutStore();
   const [email, setEmail] = useState(() => localStorage.getItem('email') || '');
   const [password, setPassword] = useState('');
   const [loadingForm, setLoadingForm] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
 
-  // If user is logged in, layout will handle displaying the main app
-  if (user) {
-    return null;
-  }
+  useEffect(() => {
+    getIsPhone().then(setIsMobile);
+  }, []);
+
+  // If user is logged in but view is stuck on login, redirect to agents
+  useEffect(() => {
+    if (user) setView('agent');
+  }, [user, setView]);
+
+  if (user) return null;
 
   const handleOAuthLogin = async (provider: 'github' | 'google') => {
     if (!isSupabaseConfigured || !supabase) return;
@@ -82,7 +92,7 @@ export default function AuthPage() {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
       toast.success('Signed in');
-      // Redirect is handled by the effect that checks profile completeness.
+      setView('agents');
     } catch (err: any) {
       setFormError(err?.message || 'Sign in failed');
     } finally {
@@ -176,45 +186,49 @@ export default function AuthPage() {
           </TabsContent>
         </Tabs>
 
-        <div className="relative my-4">
-          <div className="absolute inset-0 flex items-center">
-            <span className="w-full border-t" />
-          </div>
-          <div className="relative flex justify-center text-xs uppercase">
-            <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
-          </div>
-        </div>
+        {!isMobile && (
+          <>
+            <div className="relative my-4">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">Or continue with</span>
+              </div>
+            </div>
 
-        <div className="relative mb-4">
-          <Button
-            onClick={() => handleOAuthLogin('github')}
-            className="w-full flex items-center justify-center gap-2"
-          >
-            <Github />
-            Continue with GitHub
-          </Button>
-          {lastOAuthProvider === 'github' && (
-            <Badge className="absolute -top-2 -right-2 text-xs bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-300">
-              Last used
-            </Badge>
-          )}
-        </div>
+            <div className="relative mb-4">
+              <Button
+                onClick={() => handleOAuthLogin('github')}
+                className="w-full flex items-center justify-center gap-2"
+              >
+                <Github />
+                Continue with GitHub
+              </Button>
+              {lastOAuthProvider === 'github' && (
+                <Badge className="absolute -top-2 -right-2 text-xs bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-300">
+                  Last used
+                </Badge>
+              )}
+            </div>
 
-        <div className="relative">
-          <Button
-            onClick={() => handleOAuthLogin('google')}
-            className="w-full flex items-center justify-center gap-2"
-            variant="outline"
-          >
-            <span className="text-sm">🔍</span>
-            Continue with Google
-          </Button>
-          {lastOAuthProvider === 'google' && (
-            <Badge className="absolute -top-2 -right-2 text-xs bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-300">
-              Last used
-            </Badge>
-          )}
-        </div>
+            <div className="relative">
+              <Button
+                onClick={() => handleOAuthLogin('google')}
+                className="w-full flex items-center justify-center gap-2"
+                variant="outline"
+              >
+                <span className="text-sm">🔍</span>
+                Continue with Google
+              </Button>
+              {lastOAuthProvider === 'google' && (
+                <Badge className="absolute -top-2 -right-2 text-xs bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-300">
+                  Last used
+                </Badge>
+              )}
+            </div>
+          </>
+        )}
       </div>
     </div>
   );

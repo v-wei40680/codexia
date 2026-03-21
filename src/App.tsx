@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/core';
 import './App.css';
@@ -19,6 +19,7 @@ import { codexService } from '@/services/codexService';
 import { useAgentLimit } from '@/hooks/useAgentLimit';
 import { useP2PConnection } from '@/hooks/useP2PConnection';
 import { DesktopOfflineScreen } from '@/components/features/DesktopOfflineScreen';
+import { toast } from 'sonner';
 import { useTunnel } from '@/hooks/useTunnel';
 import {
   AlertDialog,
@@ -41,7 +42,30 @@ function AppShell() {
   const { maxCards } = useAgentLimit();
 
   // Mobile: auto-connect to desktop via Quinn P2P
-  const { state: p2pState, error: p2pError, retry: p2pRetry } = useP2PConnection();
+  const { state: p2pState, error: p2pError, logs: p2pLogs, retry: p2pRetry } = useP2PConnection();
+
+  // Toast on P2P state changes so the user always sees what's happening
+  const prevP2PState = useRef(p2pState);
+  useEffect(() => {
+    if (!isPhone || prevP2PState.current === p2pState) return;
+    prevP2PState.current = p2pState;
+
+    if (p2pState === 'connected') {
+      toast.success('Connected to desktop');
+    } else if (p2pState === 'offline') {
+      toast.error('Desktop offline', {
+        description: p2pError ?? 'Open Codexia on your Mac and enable P2P',
+        action: { label: 'Retry', onClick: p2pRetry },
+        duration: Infinity,
+      });
+    } else if (p2pState === 'error') {
+      toast.error('P2P connection failed', {
+        description: p2pError ?? 'Unknown error',
+        action: { label: 'Retry', onClick: p2pRetry },
+        duration: Infinity,
+      });
+    }
+  }, [p2pState, p2pError, p2pRetry, isPhone]);
 
   // Desktop: auto-start P2P server on login so mobile can connect
   const { start: p2pStart, status: p2pStatus } = useTunnel();
@@ -118,10 +142,10 @@ function AppShell() {
   // Wait for platform detection before rendering anything
   if (isPhone === null) return null;
 
-  // Mobile: show connection screen when P2P is in progress or failed (not idle = not logged in yet)
-  if (isPhone === true && (p2pState === 'connecting' || p2pState === 'offline' || p2pState === 'error')) {
+  // Mobile: show connection screen until P2P is established
+  if (isPhone === true && p2pState !== 'connected') {
     return (
-      <DesktopOfflineScreen state={p2pState} error={p2pError} retry={p2pRetry} />
+      <DesktopOfflineScreen state={p2pState} error={p2pError} logs={p2pLogs} retry={p2pRetry} />
     );
   }
 

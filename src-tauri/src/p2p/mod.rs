@@ -1,15 +1,15 @@
 pub mod commands;
 
-/// STUN discovery — desktop only
-#[cfg(feature = "desktop")]
-mod stun;
+/// STUN discovery — desktop + mobile
+#[cfg(feature = "tauri")]
+pub(crate) mod stun;
 
 /// Quinn QUIC server + HTTP proxy → :7420 — desktop only
 #[cfg(feature = "desktop")]
 pub mod server;
 
-/// Quinn QUIC client + local HTTP proxy — desktop feature required (quinn dep)
-#[cfg(feature = "desktop")]
+/// Quinn QUIC client + local HTTP proxy — available on iOS (tauri) and desktop
+#[cfg(all(feature = "tauri", not(feature = "desktop")))]
 pub mod client;
 
 pub use commands::*;

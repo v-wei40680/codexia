@@ -42,6 +42,7 @@ pub fn run() {
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_os::init())
         .invoke_handler(tauri::generate_handler![
+            crate::p2p::p2p_stun,
             crate::p2p::p2p_connect,
             crate::p2p::p2p_disconnect,
         ]);
@@ -259,6 +260,9 @@ pub fn run() {
                 crate::p2p::p2p_start,
                 crate::p2p::p2p_stop,
                 crate::p2p::p2p_status_cmd,
+                crate::p2p::p2p_stun,
+                crate::p2p::p2p_connect,
+                crate::p2p::p2p_disconnect,
                 quit_app,
             ])
             .setup(|app| {

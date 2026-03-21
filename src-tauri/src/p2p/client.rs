@@ -2,6 +2,7 @@
 /// then start a local HTTP proxy on :7420 so the React frontend works unchanged.
 use std::net::SocketAddr;
 use std::sync::Arc;
+use std::time::Duration;
 
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::{TcpListener, TcpStream};
@@ -12,6 +13,9 @@ const LOCAL_PROXY_PORT: u16 = 7420;
 
 pub struct P2PClient {
     pub connection: quinn::Connection,
+    /// Phone's STUN-discovered public endpoint — JS registers this in Supabase
+    /// so the desktop knows where to send UDP punch packets.
+    pub public_endpoint: SocketAddr,
     /// Abort the local proxy when dropped
     _proxy_task: tokio::task::JoinHandle<()>,
     /// Keep the Quinn endpoint alive
@@ -20,23 +24,61 @@ pub struct P2PClient {
 
 // ── Entry point ──────────────────────────────────────────────────────────────
 
+/// Connect to the desktop QUIC server with NAT hole-punching support.
+///
+/// `stun_socket`: pre-bound socket returned by `p2p_stun` (or `None` to do STUN inline).
+/// Using the same socket for STUN and Quinn guarantees the NAT mapping matches the
+/// endpoint registered in Supabase — critical for hole punching.
+///
 /// `desktop_endpoint` = "1.2.3.4:7422" — fetched from Supabase on the JS side.
-pub async fn connect(jwt: String, desktop_endpoint: String) -> Result<P2PClient, String> {
+pub async fn connect(
+    jwt: String,
+    desktop_endpoint: String,
+    stun_socket: Option<std::net::UdpSocket>,
+) -> Result<P2PClient, String> {
     let _ = rustls::crypto::ring::default_provider().install_default();
 
     let server_addr: SocketAddr = desktop_endpoint
         .parse()
         .map_err(|e: std::net::AddrParseError| e.to_string())?;
 
-    // Bind to any local UDP port
-    let mut endpoint =
-        quinn::Endpoint::client("0.0.0.0:0".parse().unwrap()).map_err(|e| e.to_string())?;
+    // Use the pre-bound STUN socket if provided, otherwise do STUN inline.
+    let (phone_public_addr, udp_sock) = match stun_socket {
+        Some(sock) => {
+            // Re-discover public addr for logging; socket is already ready for Quinn
+            let local = sock.local_addr().map_err(|e| e.to_string())?;
+            log::info!("[p2p-client] reusing STUN socket on local port {}", local.port());
+            // We already know the public addr from p2p_stun; reconstruct it via STUN on same sock
+            // (the socket is still alive, NAT mapping is still valid)
+            match super::stun::discover_on_socket(&sock) {
+                Ok(addr) => (addr, sock),
+                Err(_) => super::stun::discover_new_socket()?,
+            }
+        }
+        None => super::stun::discover_new_socket()?,
+    };
+    log::info!("[p2p-client] phone public endpoint: {phone_public_addr}");
+
+    let mut endpoint = quinn::Endpoint::new(
+        quinn::EndpointConfig::default(),
+        None,
+        udp_sock,
+        Arc::new(quinn::TokioRuntime),
+    )
+    .map_err(|e| e.to_string())?;
     endpoint.set_default_client_config(make_client_config());
 
-    let conn = endpoint
+    // 30-second window: desktop will see our endpoint in Supabase and punch back;
+    // Quinn keeps retransmitting QUIC Initial packets every ~333 ms, so once the
+    // desktop's punch opens the home-router NAT the next retry gets through.
+    let connecting = endpoint
         .connect(server_addr, "codexia-p2p")
-        .map_err(|e| e.to_string())?
+        .map_err(|e| e.to_string())?;
+    let conn = tokio::time::timeout(Duration::from_secs(30), connecting)
         .await
+        .map_err(|_| {
+            "P2P timed out after 30 s — desktop may be behind symmetric NAT".to_string()
+        })?
         .map_err(|e| e.to_string())?;
     log::info!("[p2p-client] connected to {server_addr}");
 
@@ -62,7 +104,12 @@ pub async fn connect(jwt: String, desktop_endpoint: String) -> Result<P2PClient,
         }
     });
 
-    Ok(P2PClient { connection: conn, _proxy_task: proxy_task, _endpoint: endpoint })
+    Ok(P2PClient {
+        connection: conn,
+        public_endpoint: phone_public_addr,
+        _proxy_task: proxy_task,
+        _endpoint: endpoint,
+    })
 }
 
 // ── Local HTTP proxy ─────────────────────────────────────────────────────────

@@ -7,6 +7,7 @@ import { useWorkspaceStore, AgentType } from '@/stores/useWorkspaceStore';
 import { useAgentCenterStore, useLayoutStore } from '@/stores';
 import { useCCStore } from '@/stores/cc';
 import { Composer as CodexComposer, ComposerControls } from '@/components/codex/Composer';
+import { TunnelIndicator } from '@/components/features/TunnelIndicator';
 
 const focusCCInput = () => window.dispatchEvent(new Event('cc-input-focus-request'));
 
@@ -63,6 +64,7 @@ export function AgentComposer({ trayMode = false }: AgentComposerProps) {
             <span>{agent === 'cc' ? 'Claude Code' : 'Codex'}</span>
           </button>
         ))}
+        <TunnelIndicator />
       </div>
 
       {/* Input area */}

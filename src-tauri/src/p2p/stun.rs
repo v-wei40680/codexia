@@ -1,9 +1,20 @@
+// Each function is only called from one feature combination (desktop/mobile), so suppress
+// dead_code warnings that appear when compiling the other configuration.
+#![allow(dead_code)]
 /// Minimal STUN client (RFC 5389) — discover the public UDP endpoint for a given local port.
 use std::net::{SocketAddr, ToSocketAddrs, UdpSocket};
 use std::time::Duration;
 
 const MAGIC_COOKIE: u32 = 0x2112_A442;
-const STUN_SERVERS: &[&str] = &["stun.cloudflare.com:3478", "stun.l.google.com:19302"];
+// const STUN_SERVERS: &[&str] = &["stun.cloudflare.com:3478", "stun.l.google.com:19302"];
+const STUN_SERVERS: &[&str] = &[
+    "stun.qq.com:3478",
+    "stun.syncthing.net:3478",
+    "stun.miwifi.com:3478",
+    "stun.chat.bilibili.com:3478",
+    "stun.cloudflare.com:3478",
+    "stun.l.google.com:19302",
+];
 
 /// Bind a temporary UDP socket to `0.0.0.0:<local_port>`, query a STUN server, return the
 /// public (IP, port) that the NAT assigned.  The socket is dropped when this returns.
@@ -23,6 +34,52 @@ pub fn discover(local_port: u16) -> Result<SocketAddr, String> {
         }
     }
     Err("STUN discovery failed on all servers".into())
+}
+
+/// Run STUN on an **existing** socket and return the public endpoint.
+/// Use this when you need to re-check the public address of a socket you already hold.
+pub fn discover_on_socket(socket: &UdpSocket) -> Result<SocketAddr, String> {
+    let prev_timeout = socket.read_timeout().ok().flatten();
+    let _ = socket.set_read_timeout(Some(Duration::from_secs(5)));
+
+    let result = (|| {
+        for srv in STUN_SERVERS {
+            let Ok(mut addrs) = srv.to_socket_addrs() else { continue };
+            let Some(addr) = addrs.next() else { continue };
+            match binding_request(socket, addr) {
+                Ok(public) => return Ok(public),
+                Err(e) => log::warn!("[stun] {srv}: {e}"),
+            }
+        }
+        Err("STUN discovery socket failed on all servers".into())
+    })();
+
+    let _ = socket.set_read_timeout(prev_timeout);
+    result
+}
+
+/// Bind a new UDP socket on a random port, STUN-discover its public endpoint, and return
+/// **both** the public address **and the socket** so the caller can hand it to Quinn.
+/// This ensures Quinn and STUN share the exact same NAT mapping — required for hole punching.
+pub fn discover_new_socket() -> Result<(SocketAddr, UdpSocket), String> {
+    let socket = UdpSocket::bind("0.0.0.0:0").map_err(|e| format!("STUN bind: {e}"))?;
+    socket
+        .set_read_timeout(Some(Duration::from_secs(5)))
+        .map_err(|e| e.to_string())?;
+
+    for srv in STUN_SERVERS {
+        let Ok(mut addrs) = srv.to_socket_addrs() else { continue };
+        let Some(addr) = addrs.next() else { continue };
+        match binding_request(&socket, addr) {
+            Ok(public) => {
+                // Remove read timeout so Quinn can use the socket in non-blocking mode
+                let _ = socket.set_read_timeout(None);
+                return Ok((public, socket));
+            }
+            Err(e) => log::warn!("[stun] {srv}: {e}"),
+        }
+    }
+    Err("STUN discovery new socket failed on all servers".into())
 }
 
 fn binding_request(socket: &UdpSocket, server: SocketAddr) -> Result<SocketAddr, String> {

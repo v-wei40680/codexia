@@ -49,6 +49,7 @@ desktop = [
   "dep:quinn",
   "dep:rcgen",
   "dep:rustls",
+  "dep:local-ip-address",
   # storage / files
   "dep:rusqlite",
   "dep:zip",
@@ -64,6 +65,9 @@ desktop = [
 tauri = [
   "dep:tokio",
   "dep:log",
+  # p2p client (mobile) — quinn QUIC is used on both desktop and iOS
+  "dep:quinn",
+  "dep:rustls",
   "dep:fix-path-env",
   "dep:tauri",
   "dep:serde",        # needed by tauri macros
@@ -134,6 +138,7 @@ codex-finder = { git = "https://github.com/milisp/codex-finder.git", optional = 
 quinn = { version = "0.11", optional = true }
 rcgen = { version = "0.13", optional = true }
 rustls = { version = "0.23", features = ["ring"], default-features = false, optional = true }
+local-ip-address = { version = "0.6", optional = true }
 
 # --- web feature ---
 axum = { version = "0.8", features = ["ws", "json"], optional = true }

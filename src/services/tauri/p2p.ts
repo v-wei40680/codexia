@@ -33,11 +33,20 @@ export async function p2pStatus(): Promise<P2PStatus> {
 // ── Mobile: client commands ───────────────────────────────────────────────────
 
 /**
- * Connect to the desktop Quinn server.
- * `desktopEndpoint` = "ip:port" — fetch this from Supabase before calling.
+ * Step 1 — STUN: bind a UDP socket, discover phone's public endpoint, store socket.
+ * Returns "ip:port". Register this in Supabase BEFORE calling p2pConnect so the
+ * desktop can punch back while Quinn retries.
+ */
+export async function p2pStun(): Promise<string> {
+  if (!isTauri()) throw new Error('p2p only available in Tauri app')
+  return invokeTauri<string>('p2p_stun')
+}
+
+/**
+ * Step 2 — Connect: reuses the socket from p2pStun, connects to desktop with 30s timeout.
+ * Desktop punches back during this window → Quinn retry succeeds.
  *
- * After this returns, all fetch() calls to http://localhost:7420 will be
- * transparently tunnelled to the desktop over QUIC.
+ * After this returns, all fetch() calls to http://localhost:7420 tunnel to the desktop.
  */
 export async function p2pConnect(
   jwt: string,

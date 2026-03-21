@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/contexts/ThemeContext';
 import { I18nextProvider } from 'react-i18next';
 import { i18n } from '@/lib/i18n';
 import { Toaster } from '@/components/ui/toaster';
+import { Toaster as Sonner } from 'sonner';
 import { TooltipProvider } from '@/components/ui/tooltip';
 
 const TrayView = lazy(() => import('@/views/TrayView'));
@@ -31,6 +32,7 @@ ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(
             <>
               <App />
               <Toaster />
+              <Sonner position="top-center" richColors />
             </>
           )}
         </TooltipProvider>
