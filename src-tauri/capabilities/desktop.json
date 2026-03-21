@@ -2,7 +2,11 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "desktop",
   "description": "Capability for the main window",
-  "platforms": ["macOS", "windows", "linux"],
+  "platforms": [
+    "macOS",
+    "windows",
+    "linux"
+  ],
   "windows": [
     "main",
     "main-*",
@@ -60,6 +64,7 @@
     "screenshots:default",
     "log:default",
     "deep-link:default",
-    "updater:default"
+    "updater:default",
+    "os:default"
   ]
 }

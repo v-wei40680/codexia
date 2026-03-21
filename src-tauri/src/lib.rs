@@ -13,8 +13,8 @@ mod state;
 mod commands;
 #[cfg(all(feature = "desktop", feature = "tauri"))]
 mod tray;
-#[cfg(all(feature = "desktop", feature = "tauri"))]
-pub mod tunnel;
+#[cfg(feature = "tauri")]
+pub mod p2p;
 #[cfg(all(feature = "desktop", feature = "web"))]
 mod web_server;
 #[cfg(all(feature = "desktop", feature = "web"))]
@@ -25,7 +25,7 @@ mod window;
 #[cfg(feature = "tauri")]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // Mobile: thin WebView client that connects to the desktop via a Cloudflare tunnel.
+    // Mobile: thin WebView client that connects to the desktop via Quinn P2P tunnel.
     #[cfg(not(desktop))]
     {
         // rustls 0.23+ has no built-in default crypto provider; install ring explicitly.
@@ -39,7 +39,12 @@ pub fn run() {
     }
 
     #[cfg(not(feature = "desktop"))]
-    let builder = tauri::Builder::default();
+    let builder = tauri::Builder::default()
+        .plugin(tauri_plugin_os::init())
+        .invoke_handler(tauri::generate_handler![
+            crate::p2p::p2p_connect,
+            crate::p2p::p2p_disconnect,
+        ]);
 
     // Desktop: full app with all plugins, commands, and setup.
     #[cfg(feature = "desktop")]
@@ -54,6 +59,7 @@ pub fn run() {
         use tauri::{Emitter, Manager};
 
         let builder = tauri::Builder::default()
+            .plugin(tauri_plugin_os::init())
             .plugin(tauri_plugin_deep_link::init())
             .plugin(
                 tauri_plugin_log::Builder::new()
@@ -250,9 +256,9 @@ pub fn run() {
                 crate::commands::dxt::save_dxt_setting,
                 crate::commands::dxt::download_and_extract_manifests,
                 crate::commands::dxt::check_manifests_exist,
-                crate::tunnel::tunnel_start,
-                crate::tunnel::tunnel_stop,
-                crate::tunnel::tunnel_status_cmd,
+                crate::p2p::p2p_start,
+                crate::p2p::p2p_stop,
+                crate::p2p::p2p_status_cmd,
                 quit_app,
             ])
             .setup(|app| {

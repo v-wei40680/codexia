@@ -6,12 +6,13 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip'
 import { useTunnel } from '@/hooks/useTunnel'
-import { isTauri } from '@/services/tauri/shared'
+import { isTauri, isPhone } from '@/hooks/runtime'
 
 export function TunnelIndicator() {
   const { status, loading, error, start, stop } = useTunnel()
 
-  if (!isTauri()) return null
+  // Desktop only — mobile connects via useP2PConnection in App.tsx
+  if (!isTauri() || isPhone) return null
 
   return (
     <Tooltip>
@@ -42,13 +43,13 @@ export function TunnelIndicator() {
         ) : status.connected ? (
           <div className="space-y-1">
             <p className="font-medium text-xs">Tunnel active</p>
-            <p className="text-muted-foreground font-mono text-xs break-all">{status.url}</p>
+            <p className="text-muted-foreground font-mono text-xs break-all">{status.public_endpoint}</p>
             <p className="text-muted-foreground text-xs">Click to stop</p>
           </div>
         ) : (
           <div className="space-y-1">
-            <p className="font-medium text-xs">Remote access off</p>
-            <p className="text-muted-foreground text-xs">Click to start tunnel (iOS / bots)</p>
+            <p className="font-medium text-xs">P2P off</p>
+            <p className="text-muted-foreground text-xs">Click to start (iOS / bots direct connect)</p>
           </div>
         )}
       </TooltipContent>

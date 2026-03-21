@@ -5,7 +5,7 @@ import './App.css';
 import { useCodexEvents } from '@/hooks/codex';
 import { useDeepLink } from '@/hooks/useDeepLink';
 import { AppLayout } from '@/components/layout';
-import { isTauri, isPhone } from '@/hooks/runtime';
+import { isTauri, getIsPhone } from '@/hooks/runtime';
 import { HistoryProjectsDialog } from '@/components/project-selector';
 import { AnalyticsConsentDialog } from '@/components/settings/AnalyticsConsentDialog';
 import { initializeCodexAsync } from '@/services/tauri';
@@ -17,6 +17,9 @@ import { useTrayPendingStore } from '@/stores/useTrayPendingStore';
 import { useCCSessionManager } from '@/hooks/useCCSessionManager';
 import { codexService } from '@/services/codexService';
 import { useAgentLimit } from '@/hooks/useAgentLimit';
+import { useP2PConnection } from '@/hooks/useP2PConnection';
+import { DesktopOfflineScreen } from '@/components/features/DesktopOfflineScreen';
+import { useTunnel } from '@/hooks/useTunnel';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,10 +33,23 @@ import {
 
 function AppShell() {
   const [quitDialogOpen, setQuitDialogOpen] = useState(false);
+  const [isPhone, setIsPhone] = useState<boolean | null>(null);
+  useEffect(() => { void getIsPhone().then(setIsPhone); }, []);
   const { pending, clearPending } = useTrayPendingStore();
   const { handleNewSession } = useCCSessionManager();
   const { addAgentCard, setCurrentAgentCardId, setMaxCards } = useAgentCenterStore();
   const { maxCards } = useAgentLimit();
+
+  // Mobile: auto-connect to desktop via Quinn P2P
+  const { state: p2pState, error: p2pError, retry: p2pRetry } = useP2PConnection();
+
+  // Desktop: auto-start P2P server on login so mobile can connect
+  const { start: p2pStart, status: p2pStatus } = useTunnel();
+  useEffect(() => {
+    if (!isTauri() || isPhone !== false || p2pStatus.connected) return;
+    void p2pStart();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPhone]);
 
   // Sync the subscription-derived limit into the store so all addAgentCard callers respect it.
   useEffect(() => {
@@ -58,7 +74,7 @@ function AppShell() {
   }, [pending, processTrayPending]);
 
   useEffect(() => {
-    if (!isTauri() || isPhone) {
+    if (!isTauri() || isPhone !== false) {
       return;
     }
 
@@ -93,10 +109,21 @@ function AppShell() {
       unlistenQuit.then((fn) => fn());
       unlistenTray.then((fn) => fn());
     };
-  }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPhone]);
 
   // Listen to codex events
   useCodexEvents();
+
+  // Wait for platform detection before rendering anything
+  if (isPhone === null) return null;
+
+  // Mobile: show connection screen when P2P is in progress or failed (not idle = not logged in yet)
+  if (isPhone === true && (p2pState === 'connecting' || p2pState === 'offline' || p2pState === 'error')) {
+    return (
+      <DesktopOfflineScreen state={p2pState} error={p2pError} retry={p2pRetry} />
+    );
+  }
 
   return (
     <>
@@ -122,7 +149,7 @@ function AppShell() {
 }
 
 export default function App() {
-  useDeepLink(isTauri() && !isPhone);
+  useDeepLink(isTauri());
 
   return (
     <StoreErrorBoundary>

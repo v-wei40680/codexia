@@ -43,9 +43,9 @@ export default function AuthPage() {
 
       if (!data?.url) throw new Error('No auth URL returned');
       open(data.url);
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Error signing in with ${provider}:`, error);
-      throw error;
+      toast.error(error?.message || `Failed to sign in with ${provider}`);
     }
   };
 
