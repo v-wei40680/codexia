@@ -1,14 +1,14 @@
 import {
   getJson,
   invokeTauri,
-  isTauri,
+  isDesktopTauri,
   postJson,
   postJsonWithOptions,
   postNoContent,
 } from './shared';
 
 export async function readFile(filePath: string, options?: { suppressToast?: boolean }) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<string>('read_file', { filePath });
   }
   return await postJsonWithOptions<string>(
@@ -19,21 +19,21 @@ export async function readFile(filePath: string, options?: { suppressToast?: boo
 }
 
 export async function readTextFileLines(filePath: string) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<string[]>('read_text_file_lines', { filePath });
   }
   return await postJson<string[]>('/api/filesystem/read-text-file-lines', { filePath });
 }
 
 export async function getCodexHome() {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<string>('codex_home');
   }
   return await getJson<string>('/api/filesystem/codex-home');
 }
 
 export async function writeFile(filePath: string, content: string) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     await invokeTauri('write_file', { filePath, content });
     return;
   }
@@ -41,21 +41,21 @@ export async function writeFile(filePath: string, content: string) {
 }
 
 export async function readPdfContent(filePath: string) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<string>('read_pdf_content', { filePath });
   }
   return await postJson<string>('/api/filesystem/read-pdf', { filePath });
 }
 
 export async function readXlsxContent(filePath: string) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<string>('read_xlsx_content', { filePath });
   }
   return await postJson<string>('/api/filesystem/read-xlsx', { filePath });
 }
 
 export async function readDirectory(path: string, options?: { suppressToast?: boolean }) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<Array<import('./shared').TauriFileEntry>>('read_directory', { path });
   }
   return await postJsonWithOptions<Array<import('./shared').TauriFileEntry>>(
@@ -66,7 +66,7 @@ export async function readDirectory(path: string, options?: { suppressToast?: bo
 }
 
 export async function getHomeDirectory() {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<string>('get_home_directory');
   }
   return await getJson<string>('/api/filesystem/home-directory');
@@ -78,7 +78,7 @@ export async function searchFiles(params: {
   excludeFolders: string[];
   maxResults?: number;
 }) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<Array<import('./shared').TauriFileEntry>>('search_files', params);
   }
   return await postJson<Array<import('./shared').TauriFileEntry>>('/api/filesystem/search-files', {
@@ -95,7 +95,7 @@ export async function searchFilesByName(params: {
   excludeFolders: string[];
   maxResults?: number;
 }) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<Array<import('./shared').TauriFileEntry>>('search_files_by_name', params);
   }
   return await postJson<Array<import('./shared').TauriFileEntry>>('/api/filesystem/search-files-by-name', {
@@ -107,14 +107,14 @@ export async function searchFilesByName(params: {
 }
 
 export async function canonicalizePath(path: string) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<string>('canonicalize_path', { path });
   }
   return await postJson<string>('/api/filesystem/canonicalize-path', { path });
 }
 
 export async function deleteFile(filePath: string) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     await invokeTauri('delete_file', { filePath });
     return;
   }
@@ -122,7 +122,7 @@ export async function deleteFile(filePath: string) {
 }
 
 export async function startWatchDirectory(folderPath: string) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     await invokeTauri('start_watch_directory', { folderPath });
     return;
   }
@@ -130,7 +130,7 @@ export async function startWatchDirectory(folderPath: string) {
 }
 
 export async function stopWatchDirectory(folderPath: string) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     await invokeTauri('stop_watch_directory', { folderPath });
     return;
   }
@@ -138,7 +138,7 @@ export async function stopWatchDirectory(folderPath: string) {
 }
 
 export async function startWatchFile(filePath: string) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     await invokeTauri('start_watch_file', { filePath });
     return;
   }
@@ -146,7 +146,7 @@ export async function startWatchFile(filePath: string) {
 }
 
 export async function stopWatchFile(filePath: string) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     await invokeTauri('stop_watch_file', { filePath });
     return;
   }

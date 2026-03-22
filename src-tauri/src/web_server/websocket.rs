@@ -3,10 +3,14 @@ use axum::{
         State as AxumState,
         ws::{Message, WebSocket, WebSocketUpgrade},
     },
-    response::IntoResponse,
+    response::{
+        sse::{Event, KeepAlive, Sse},
+        IntoResponse,
+    },
 };
 use futures::{sink::SinkExt, stream::StreamExt};
 use serde_json::json;
+use std::convert::Infallible;
 use tokio::sync::broadcast;
 
 pub(super) async fn ws_handler(
@@ -52,6 +56,28 @@ async fn handle_socket(
         _ = &mut send_task => recv_task.abort(),
         _ = &mut recv_task => send_task.abort(),
     }
+}
+
+/// SSE endpoint — mobile frontend subscribes here instead of `/ws`.
+/// All desktop events are forwarded as `data: {"event":…,"payload":…}\n\n`.
+pub(super) async fn sse_handler(
+    AxumState(event_tx): AxumState<broadcast::Sender<(String, serde_json::Value)>>,
+) -> Sse<impl futures::Stream<Item = Result<Event, Infallible>>> {
+    let rx = event_tx.subscribe();
+    let stream = futures::stream::unfold(rx, |mut rx| async move {
+        match rx.recv().await {
+            Ok((event, payload)) => {
+                let data = json!({ "event": event, "payload": payload });
+                Some((Ok(Event::default().data(data.to_string())), rx))
+            }
+            Err(broadcast::error::RecvError::Closed) => None,
+            Err(broadcast::error::RecvError::Lagged(_)) => {
+                // Send a no-op comment so the stream stays alive; client ignores it.
+                Some((Ok(Event::default().comment("")), rx))
+            }
+        }
+    });
+    Sse::new(stream).keep_alive(KeepAlive::default())
 }
 
 #[cfg(test)]

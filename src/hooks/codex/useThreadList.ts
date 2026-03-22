@@ -3,7 +3,7 @@ import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { codexService } from '@/services/codexService';
 import { useCodexStore, useThreadListStore } from '@/stores/codex';
 import { useAgentCenterStore, useLayoutStore, useNoteStore, useWorkspaceStore } from '@/stores';
-import { isTauri } from '@/hooks/runtime';
+import { isDesktopTauri } from '@/hooks/runtime';
 
 interface UseThreadListOptions {
   enabled?: boolean;
@@ -40,7 +40,7 @@ export function useThreadList({ enabled = true }: UseThreadListOptions = {}) {
 
     let unlisten: UnlistenFn | null = null;
 
-    if (isTauri()) {
+    if (isDesktopTauri()) {
       void listen('thread/list-updated', () => {
         scheduleRefresh();
       }).then((dispose) => {

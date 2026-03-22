@@ -1,7 +1,7 @@
-import { invokeTauri, isTauri, postJson, postNoContent } from './shared';
+import { invokeTauri, isDesktopTauri, postJson, postNoContent } from './shared';
 
 export async function terminalStart(cwd?: string | null, cols?: number, rows?: number) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<import('./shared').TerminalStartResponse>('terminal_start', {
       cwd,
       cols,
@@ -16,7 +16,7 @@ export async function terminalStart(cwd?: string | null, cols?: number, rows?: n
 }
 
 export async function terminalWrite(sessionId: string, data: string) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     await invokeTauri<void>('terminal_write', { params: { session_id: sessionId, data } });
     return;
   }
@@ -24,7 +24,7 @@ export async function terminalWrite(sessionId: string, data: string) {
 }
 
 export async function terminalResize(sessionId: string, cols: number, rows: number) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     await invokeTauri<void>('terminal_resize', {
       params: { session_id: sessionId, cols, rows },
     });
@@ -34,7 +34,7 @@ export async function terminalResize(sessionId: string, cols: number, rows: numb
 }
 
 export async function terminalStop(sessionId: string) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     await invokeTauri<void>('terminal_stop', { params: { session_id: sessionId } });
     return;
   }

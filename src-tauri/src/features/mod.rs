@@ -1,4 +1,6 @@
 pub(crate) mod automation;
+#[cfg(feature = "desktop")]
+pub(crate) mod p2p_bridge;
 pub(crate) mod dxt;
 pub(crate) mod event_sink;
 pub(crate) mod filesystem;

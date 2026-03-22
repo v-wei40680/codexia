@@ -1,4 +1,4 @@
-import { type DbNote, invokeTauri, isTauri, postJson, postNoContent } from './shared';
+import { type DbNote, invokeTauri, isDesktopTauri, postJson, postNoContent } from './shared';
 
 export async function createNote(
   id: string,
@@ -7,7 +7,7 @@ export async function createNote(
   tags?: string[],
   userId?: string | null
 ) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<DbNote>('create_note', { id, userId, title, content, tags });
   }
   return await postJson<DbNote>('/api/notes/create', {
@@ -20,14 +20,14 @@ export async function createNote(
 }
 
 export async function getNotes(userId?: string | null) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<DbNote[]>('get_notes', { userId });
   }
   return await postJson<DbNote[]>('/api/notes/list', { user_id: userId ?? null });
 }
 
 export async function getNoteById(id: string) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<DbNote | null>('get_note_by_id', { id });
   }
   return await postJson<DbNote | null>('/api/notes/get', { id });
@@ -37,7 +37,7 @@ export async function updateNote(
   id: string,
   payload: { title?: string; content?: string; tags?: string[] }
 ) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     await invokeTauri('update_note', { id, ...payload });
     return;
   }
@@ -45,7 +45,7 @@ export async function updateNote(
 }
 
 export async function deleteNote(id: string) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     await invokeTauri('delete_note', { id });
     return;
   }
@@ -53,7 +53,7 @@ export async function deleteNote(id: string) {
 }
 
 export async function toggleFavorite(id: string) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     await invokeTauri('toggle_favorite', { id });
     return;
   }
@@ -61,7 +61,7 @@ export async function toggleFavorite(id: string) {
 }
 
 export async function markNotesSynced(ids: string[]) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     await invokeTauri('mark_notes_synced', { ids });
     return;
   }
@@ -69,7 +69,7 @@ export async function markNotesSynced(ids: string[]) {
 }
 
 export async function getUnsyncedNotes(userId?: string | null) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<DbNote[]>('get_unsynced_notes', { userId });
   }
   return await postJson<DbNote[]>('/api/notes/unsynced', { user_id: userId ?? null });

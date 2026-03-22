@@ -70,6 +70,7 @@ impl CodexAppServer {
     }
 }
 
+#[derive(Clone)]
 pub struct AppState {
     pub codex: Arc<CodexAppServer>,
 }

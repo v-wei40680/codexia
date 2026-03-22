@@ -82,8 +82,14 @@ tauri = [
   "dep:tauri-plugin-shell",
   "dep:tauri-plugin-single-instance",  # gated to linux/windows via target cfg below
   "dep:tauri-plugin-updater",  # compiled in always; only used on desktop (App Store blocks self-update)
+  # in-process axum router for P2P backend (no port opened, no web feature needed)
+  "dep:axum",
+  "dep:tower",
+  "dep:tower-http",
+  "dep:http-body-util",
+  "dep:httparse",
 ]
-web = ["desktop", "dep:axum", "dep:tower-http"]
+web = ["desktop"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
@@ -142,7 +148,10 @@ local-ip-address = { version = "0.6", optional = true }
 
 # --- web feature ---
 axum = { version = "0.8", features = ["ws", "json"], optional = true }
+tower = { version = "0.5", features = ["util"], optional = true }
 tower-http = { version = "0.5", features = ["cors", "fs"], optional = true }
+http-body-util = { version = "0.1", optional = true }
+httparse = { version = "1", optional = true }
 
 [target.'cfg(any(target_os = "linux", target_os = "windows"))'.dependencies]
 tauri-plugin-single-instance = { version = "2", features = ["deep-link"], optional = true }

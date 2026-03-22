@@ -10,6 +10,7 @@ export function useP2PConnection() {
   const [error, setError] = useState<string | null>(null)
   const [logs, setLogs] = useState<string[]>([])
   const connecting = useRef(false)
+  const stateRef = useRef<P2PConnState>('idle')
 
   const log = (msg: string) => {
     console.log('[p2p]', msg)
@@ -27,6 +28,7 @@ export function useP2PConnection() {
     } = await supabase.auth.getSession()
     if (!session) { log('no session'); connecting.current = false; return }
 
+    stateRef.current = 'connecting'
     setState('connecting')
     setError(null)
     if (import.meta.env.DEV) setLogs([])
@@ -41,6 +43,7 @@ export function useP2PConnection() {
 
       if (dbErr || !data) {
         log(`DB error: ${dbErr?.message ?? 'no row'}`)
+        stateRef.current = 'offline'
         setState('offline')
         setError('Desktop is offline — open Codexia on your desktop and enable P2P')
         return
@@ -77,10 +80,12 @@ export function useP2PConnection() {
       log('calling p2pConnect…')
       await p2pConnect(session.access_token, desktopEndpoint)
       log('connected!')
+      stateRef.current = 'connected'
       setState('connected')
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e)
       log(`error: ${msg}`)
+      stateRef.current = 'error'
       setState('error')
       setError(msg)
     } finally {
@@ -98,10 +103,20 @@ export function useP2PConnection() {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event) => {
       if (event === 'SIGNED_IN') void connect()
-      if (event === 'SIGNED_OUT') { setState('idle'); setError(null) }
+      if (event === 'SIGNED_OUT') { stateRef.current = 'idle'; setState('idle'); setError(null) }
     })
 
-    return () => subscription.unsubscribe()
+    // Poll every 5 s while idle (no session yet) so we pick up a session
+    // that appears without firing SIGNED_IN (e.g. token refresh, deep-link callback).
+    const pollInterval = setInterval(() => {
+      if (stateRef.current === 'idle') void connect()
+    }, 5000)
+
+    return () => {
+      subscription.unsubscribe()
+      clearInterval(pollInterval)
+      connecting.current = false
+    }
   }, [connect])
 
   return { state, error, logs, retry: connect }

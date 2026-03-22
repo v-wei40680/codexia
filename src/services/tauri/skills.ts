@@ -6,19 +6,19 @@ import {
   type SkillAgent,
   type SkillScope,
   invokeTauri,
-  isTauri,
+  isDesktopTauri,
   postJson,
 } from './shared';
 
 export async function skillList(cwd: string) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<SkillsListResponse>('skills_list', { cwd });
   }
   return await postJson<SkillsListResponse>('/api/codex/skills/list', { cwds: [cwd] });
 }
 
 export async function cloneSkillsRepo(url: string) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<string>('clone_skills_repo', { url });
   }
   return await postJson<string>('/api/skills/clone-repo', { url });
@@ -29,7 +29,7 @@ export async function listMarketplaceSkills(
   scope: SkillScope,
   cwd?: string
 ) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<Array<MarketplaceSkillItem>>('list_marketplace_skills', {
       selectedAgent,
       scope,
@@ -48,7 +48,7 @@ export async function listInstalledSkills(
   scope: SkillScope,
   cwd?: string
 ) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<Array<InstalledSkillItem>>('list_installed_skills', {
       selectedAgent,
       scope,
@@ -69,7 +69,7 @@ export async function installMarketplaceSkill(
   scope: SkillScope,
   cwd?: string
 ) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<string>('install_marketplace_skill', {
       skillMdPath,
       skillName,
@@ -93,7 +93,7 @@ export async function uninstallInstalledSkill(
   scope: SkillScope,
   cwd?: string
 ) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<string>('uninstall_installed_skill', {
       skillName,
       selectedAgent,
@@ -110,7 +110,7 @@ export async function uninstallInstalledSkill(
 }
 
 export async function skillsConfigWrite(path: string, enabled: boolean) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri('skills_config_write', { path, enabled });
   }
   return await postJson('/api/codex/skills/config/write', { path, enabled });

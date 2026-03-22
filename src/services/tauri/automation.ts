@@ -1,4 +1,4 @@
-import { invokeTauri, isTauri, postJson, postNoContent } from './shared';
+import { invokeTauri, isDesktopTauri, postJson, postNoContent } from './shared';
 
 export type AutomationScheduleMode = 'daily' | 'interval';
 export type AutomationWeekday = 'sun' | 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat';
@@ -36,7 +36,7 @@ export type AutomationRun = {
 };
 
 export async function listAutomations() {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<AutomationTask[]>('list_automations');
   }
   return await postJson<AutomationTask[]>('/api/automation/list', {});
@@ -44,7 +44,7 @@ export async function listAutomations() {
 
 export async function listAutomationRuns(payload?: { task_id?: string; limit?: number }) {
   const params = { task_id: payload?.task_id ?? null, limit: payload?.limit ?? 100 };
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<AutomationRun[]>('list_automation_runs', params);
   }
   return await postJson<AutomationRun[]>('/api/automation/runs/list', params);
@@ -59,7 +59,7 @@ export async function createAutomation(payload: {
   model_provider?: 'openai' | 'ollama';
   model?: string;
 }) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<AutomationTask>('create_automation', {
       ...payload,
       modelProvider: payload.model_provider,
@@ -78,7 +78,7 @@ export async function updateAutomation(payload: {
   model_provider?: 'openai' | 'ollama';
   model?: string;
 }) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<AutomationTask>('update_automation', {
       ...payload,
       modelProvider: payload.model_provider,
@@ -88,14 +88,14 @@ export async function updateAutomation(payload: {
 }
 
 export async function setAutomationPaused(id: string, paused: boolean) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<AutomationTask>('set_automation_paused', { id, paused });
   }
   return await postJson<AutomationTask>('/api/automation/set-paused', { id, paused });
 }
 
 export async function deleteAutomation(id: string) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     await invokeTauri<void>('delete_automation', { id });
     return;
   }
@@ -103,7 +103,7 @@ export async function deleteAutomation(id: string) {
 }
 
 export async function runAutomationNow(id: string) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     await invokeTauri<void>('run_automation_now', { id });
     return;
   }

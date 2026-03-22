@@ -3,7 +3,7 @@ import { listen } from '@tauri-apps/api/event';
 import { useCodexStore } from '@/stores/codex';
 import { listAutomationRuns } from '@/services/tauri';
 import type { ServerNotification } from '@/bindings';
-import { buildWsUrl, isTauri } from '@/hooks/runtime';
+import { buildWsUrl, isDesktopTauri } from '@/hooks/runtime';
 
 type RunMeta = {
   threadId: string;
@@ -104,7 +104,7 @@ export function useAutomationRuns() {
   }, []);
 
   useEffect(() => {
-    if (isTauri()) {
+    if (isDesktopTauri()) {
       const unlistenPromise = listen<AutomationRunStartedPayload>(
         'automation:run/started',
         (event) => handleRunStarted(event.payload)

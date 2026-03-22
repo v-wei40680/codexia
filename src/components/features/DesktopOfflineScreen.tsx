@@ -1,5 +1,6 @@
 import { Loader2, MonitorOff, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { isTauri, isDesktopTauri, isPhone } from '@/hooks/runtime'
 import type { P2PConnState } from '@/hooks/useP2PConnection'
 
 interface Props {
@@ -45,6 +46,15 @@ export function DesktopOfflineScreen({ state, error, logs, retry }: Props) {
           Open Codexia on your Mac and click the{' '}
           <span className="font-mono">P2P</span> button in the sidebar to go online.
         </p>
+      )}
+
+      {import.meta.env.DEV && (
+        <div className="w-full max-w-sm rounded border border-border bg-muted/50 p-2 text-left font-mono text-[10px] text-muted-foreground space-y-0.5">
+          <p>isTauri: {String(isTauri())}</p>
+          <p>isDesktopTauri: {String(isDesktopTauri())}</p>
+          <p>isPhone: {String(isPhone)}</p>
+          <p>invoke or api: {isDesktopTauri() ? 'invokeTauri' : 'HTTP API :7420'}</p>
+        </div>
       )}
 
       {import.meta.env.DEV && logs && logs.length > 0 && (

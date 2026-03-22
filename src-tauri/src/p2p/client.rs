@@ -211,19 +211,19 @@ async fn handle_tcp(mut tcp: TcpStream, conn: quinn::Connection) {
         });
         tokio::select! { _ = t1 => {}, _ = t2 => {} }
     } else {
-        // Regular HTTP: send request, receive response
+        // Regular HTTP (including SSE): send request, stream response to TCP incrementally.
+        // Do NOT buffer the full response — SSE is an infinite stream and write_all would
+        // never be reached if we accumulated first.
         if qs.write_all(&req).await.is_err() { return; }
         let _ = qs.finish();
 
-        let mut resp = Vec::new();
         loop {
             match qr.read(&mut tmp).await {
-                Ok(Some(n)) => resp.extend_from_slice(&tmp[..n]),
+                Ok(Some(n)) => { if tcp.write_all(&tmp[..n]).await.is_err() { break; } }
                 Ok(None) => break,
                 Err(e) => { log::warn!("[p2p-client] QUIC recv: {e}"); return; }
             }
         }
-        let _ = tcp.write_all(&resp).await;
     }
 }
 

@@ -1,13 +1,16 @@
-/// Desktop P2P server: Quinn QUIC server that proxies HTTP and WebSocket to the local
-/// web server (port 7420).  Only same-Supabase-account clients are allowed.
+/// Desktop P2P server: Quinn QUIC server that dispatches HTTP requests in-process
+/// via the axum Router stored in `router_handle`, and proxies WebSocket to a
+/// loopback-only TCP listener.  Only same-Supabase-account clients are allowed.
 use std::net::SocketAddr;
 
+use axum::http;
+use serde_json::json;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpStream;
+use tokio::sync::broadcast;
 
 /// UDP port the Quinn endpoint listens on.  Must match STUN discovery port.
 pub const P2P_UDP_PORT: u16 = 7422;
-const LOCAL_HTTP_PORT: u16 = 7420;
 
 // ── Public handle ────────────────────────────────────────────────────────────
 
@@ -139,12 +142,15 @@ async fn proxy_stream(send: quinn::SendStream, mut recv: quinn::RecvStream) {
 
     if is_websocket_upgrade(&headers) {
         proxy_websocket(send, recv, headers).await;
+    } else if is_sse_request(&headers) {
+        proxy_sse(send).await;
     } else {
         proxy_http(send, recv, headers).await;
     }
 }
 
-/// Regular HTTP: buffer full request, forward to localhost:7420, write response.
+/// Regular HTTP: buffer full request, dispatch in-process via the axum Router.
+/// No TCP port is opened — the router is called directly as a Tower service.
 async fn proxy_http(
     mut send: quinn::SendStream,
     mut recv: quinn::RecvStream,
@@ -161,7 +167,7 @@ async fn proxy_http(
         }
     }
 
-    let response = match forward_http(&buf).await {
+    let response = match dispatch_in_process(&buf).await {
         Ok(r) => r,
         Err(e) => {
             let msg = format!("HTTP/1.1 502 Bad Gateway\r\nContent-Length: {}\r\n\r\n{}", e.len(), e);
@@ -172,13 +178,99 @@ async fn proxy_http(
     let _ = send.finish();
 }
 
-/// WebSocket upgrade: bidirectional pipe between QUIC stream and local TCP.
+/// Dispatch a raw HTTP/1.1 request directly through the in-process axum Router.
+async fn dispatch_in_process(raw: &[u8]) -> Result<Vec<u8>, String> {
+    use tower::Service;
+
+    // Parse request line + headers
+    let mut header_buf = [httparse::EMPTY_HEADER; 64];
+    let mut parsed = httparse::Request::new(&mut header_buf);
+    let body_offset = match parsed.parse(raw) {
+        Ok(httparse::Status::Complete(n)) => n,
+        _ => return Err("failed to parse HTTP request".into()),
+    };
+
+    let method = http::Method::from_bytes(parsed.method.unwrap_or("GET").as_bytes())
+        .map_err(|e| e.to_string())?;
+    let uri: http::Uri = parsed.path.unwrap_or("/").parse().map_err(|e: http::uri::InvalidUri| e.to_string())?;
+
+    let mut builder = http::Request::builder().method(method).uri(uri);
+    for h in parsed.headers.iter() {
+        builder = builder.header(h.name, h.value);
+    }
+    let body = axum::body::Body::from(raw[body_offset..].to_vec());
+    let request = builder.body(body).map_err(|e| e.to_string())?;
+
+    // Call the router in-process
+    let mut router = super::router_handle::get()
+        .ok_or_else(|| "P2P router not initialized".to_string())?;
+    let response = router.call(request).await.map_err(|e| e.to_string())?;
+
+    // Serialize response to HTTP/1.1 wire format
+    let status = response.status();
+    let headers = response.headers().clone();
+    let mut out = format!(
+        "HTTP/1.1 {} {}\r\n",
+        status.as_u16(),
+        status.canonical_reason().unwrap_or("")
+    )
+    .into_bytes();
+    for (name, value) in &headers {
+        out.extend_from_slice(name.as_str().as_bytes());
+        out.extend_from_slice(b": ");
+        out.extend_from_slice(value.as_bytes());
+        out.extend_from_slice(b"\r\n");
+    }
+    out.extend_from_slice(b"\r\n");
+    let body_bytes = axum::body::to_bytes(response.into_body(), 64 * 1024 * 1024)
+        .await
+        .map_err(|e| e.to_string())?;
+    out.extend_from_slice(&body_bytes);
+    Ok(out)
+}
+
+/// SSE (Server-Sent Events): subscribe to the p2p_bridge broadcast channel and stream
+/// JSON events directly over the QUIC stream — no TCP hop to a web server needed.
+async fn proxy_sse(mut send: quinn::SendStream) {
+    let Some(tx) = crate::features::p2p_bridge::get_sender() else {
+        log::warn!("[p2p-server] SSE: event bridge not ready");
+        let _ = send.write_all(b"HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\n\r\n").await;
+        return;
+    };
+    let mut rx = tx.subscribe();
+
+    let headers = b"HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-cache\r\nAccess-Control-Allow-Origin: *\r\n\r\n";
+    if send.write_all(headers).await.is_err() {
+        return;
+    }
+
+    loop {
+        match rx.recv().await {
+            Ok((event, payload)) => {
+                let line = format!("data: {}\n\n", json!({"event": event, "payload": payload}));
+                if send.write_all(line.as_bytes()).await.is_err() {
+                    break;
+                }
+            }
+            Err(broadcast::error::RecvError::Closed) => break,
+            Err(broadcast::error::RecvError::Lagged(_)) => continue,
+        }
+    }
+}
+
+/// WebSocket upgrade: bidirectional pipe between QUIC stream and the loopback WS listener.
+/// WebSocket upgrades require a real TCP connection (hyper limitation), so a dedicated
+/// loopback listener is started on an OS-assigned port during `p2p_start`.
 async fn proxy_websocket(
     mut send: quinn::SendStream,
     mut recv: quinn::RecvStream,
     upgrade_req: Vec<u8>,
 ) {
-    let mut local = match TcpStream::connect(format!("127.0.0.1:{LOCAL_HTTP_PORT}")).await {
+    let ws_port = match super::router_handle::ws_port() {
+        Some(p) => p,
+        None => { log::warn!("[p2p-server] WS port not initialized"); return; }
+    };
+    let mut local = match TcpStream::connect(format!("127.0.0.1:{ws_port}")).await {
         Ok(s) => s,
         Err(e) => {
             log::warn!("[p2p-server] WS connect local: {e}");
@@ -225,16 +317,6 @@ async fn proxy_websocket(
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
-async fn forward_http(request: &[u8]) -> Result<Vec<u8>, String> {
-    let mut stream = TcpStream::connect(format!("127.0.0.1:{LOCAL_HTTP_PORT}"))
-        .await
-        .map_err(|e| format!("connect local: {e}"))?;
-    stream.write_all(request).await.map_err(|e| e.to_string())?;
-    stream.shutdown().await.map_err(|e| e.to_string())?;
-    let mut resp = Vec::new();
-    stream.read_to_end(&mut resp).await.map_err(|e| e.to_string())?;
-    Ok(resp)
-}
 
 /// Read until `\r\n\r\n` (HTTP header block).
 async fn read_http_head(recv: &mut quinn::RecvStream) -> Result<Vec<u8>, String> {
@@ -274,6 +356,11 @@ async fn read_line(recv: &mut quinn::RecvStream, limit: usize) -> Result<String,
 fn is_websocket_upgrade(headers: &[u8]) -> bool {
     let s = String::from_utf8_lossy(headers).to_lowercase();
     s.contains("upgrade: websocket")
+}
+
+fn is_sse_request(headers: &[u8]) -> bool {
+    let s = String::from_utf8_lossy(headers).to_lowercase();
+    s.contains("text/event-stream")
 }
 
 fn content_length(headers: &[u8]) -> Option<usize> {

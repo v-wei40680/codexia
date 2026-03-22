@@ -6,7 +6,7 @@ import { useThreadFilter } from '@/hooks/codex/useThreadFilter';
 import { codexService } from '@/services/codexService';
 import { useCodexStore, useThreadListStore } from '@/stores/codex';
 import { deleteFile, readSessionMetaFile, threadList, writeSessionMetaFile } from '@/services/tauri';
-import { isTauri } from '@/hooks/runtime';
+import { isDesktopTauri } from '@/hooks/runtime';
 import {
   Dialog,
   DialogContent,
@@ -172,7 +172,7 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
       }, debounceMs);
     };
 
-    if (isTauri()) {
+    if (isDesktopTauri()) {
       let unlisten: (() => void) | null = null;
       void listen('thread/list-updated', scheduleReload).then((dispose) => {
         unlisten = dispose;

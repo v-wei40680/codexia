@@ -4,9 +4,13 @@ pub mod commands;
 #[cfg(feature = "tauri")]
 pub(crate) mod stun;
 
-/// Quinn QUIC server + HTTP proxy → :7420 — desktop only
+/// Quinn QUIC server + in-process axum router — desktop only
 #[cfg(feature = "desktop")]
 pub mod server;
+
+/// In-process axum Router handle for P2P HTTP dispatch (desktop Tauri only)
+#[cfg(all(feature = "desktop", feature = "tauri"))]
+pub(crate) mod router_handle;
 
 /// Quinn QUIC client + local HTTP proxy — available on iOS (tauri) and desktop
 #[cfg(all(feature = "tauri", not(feature = "desktop")))]

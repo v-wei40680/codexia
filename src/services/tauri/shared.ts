@@ -1,4 +1,4 @@
-import { buildUrl, isTauri } from '@/hooks/runtime';
+import { buildUrl, isDesktopTauri, isTauri } from '@/hooks/runtime';
 import { toast } from '@/components/ui/use-toast';
 import { invoke } from '@tauri-apps/api/core';
 
@@ -193,4 +193,4 @@ export async function postNoContentWithOptions(
   }
 }
 
-export { isTauri, toast };
+export { isDesktopTauri, isTauri, toast };

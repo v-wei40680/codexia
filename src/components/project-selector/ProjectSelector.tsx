@@ -15,7 +15,7 @@ import {
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { getFilename } from '@/utils/getFilename';
 import { open as openDialog } from '@tauri-apps/plugin-dialog';
-import { isTauri } from '@/hooks/runtime';
+import { isDesktopTauri } from '@/hooks/runtime';
 
 type SelectorMode = 'workspace' | 'browse';
 type TriggerMode = 'label' | 'project-name';
@@ -156,7 +156,7 @@ export function ProjectSelector({
   }
 
   async function handleAddProject() {
-    if (isTauri()) {
+    if (isDesktopTauri()) {
       const selected = await openDialog({ directory: true, multiple: false });
       if (typeof selected === 'string') {
         await selectProject(selected);

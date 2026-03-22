@@ -17,13 +17,13 @@ use crate::web_server::filesystem_watch::WebWatchState;
 use crate::web_server::terminal::WebTerminalState;
 
 #[derive(Clone)]
-pub(crate) struct WebServerState {
-    pub(crate) codex_state: Arc<AppState>,
-    pub(crate) cc_state: Arc<CCState>,
+pub struct WebServerState {
+    pub codex_state: Arc<AppState>,
+    pub cc_state: Arc<CCState>,
     pub(crate) sleep_state: Arc<SleepState>,
     pub(crate) terminal_state: Arc<WebTerminalState>,
     pub(crate) fs_watch_state: Arc<WebWatchState>,
-    pub(crate) event_tx: broadcast::Sender<(String, Value)>,
+    pub event_tx: broadcast::Sender<(String, Value)>,
 }
 
 impl FromRef<WebServerState> for broadcast::Sender<(String, Value)> {

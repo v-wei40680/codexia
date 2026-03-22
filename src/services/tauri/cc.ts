@@ -1,14 +1,14 @@
-import { invokeTauri, isTauri, postNoContent, postJson, getJson } from './shared';
+import { invokeTauri, isDesktopTauri, postNoContent, postJson, getJson } from './shared';
 
 export async function ccNewSession(options: Record<string, unknown>, initialMessage: string) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<string>('cc_new_session', { options, initialMessage });
   }
   return await postJson<string>('/api/cc/new-session', { options });
 }
 
 export async function ccSendMessage(sessionId: string, message: string) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     await invokeTauri('cc_send_message', { sessionId, message });
     return;
   }
@@ -19,7 +19,7 @@ export async function ccSendMessage(sessionId: string, message: string) {
 }
 
 export async function ccInterrupt(sessionId: string) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     await invokeTauri('cc_interrupt', { sessionId });
     return;
   }
@@ -27,14 +27,14 @@ export async function ccInterrupt(sessionId: string) {
 }
 
 export async function ccListSessions() {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<string[]>('cc_list_sessions');
   }
   return await getJson<string[]>('/api/cc/list-sessions');
 }
 
 export async function ccResumeSession(sessionId: string, options: Record<string, unknown>) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     await invokeTauri('cc_resume_session', { sessionId, options });
     return;
   }
@@ -42,14 +42,14 @@ export async function ccResumeSession(sessionId: string, options: Record<string,
 }
 
 export async function ccGetInstalledSkills() {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<string[]>('cc_get_installed_skills');
   }
   return await getJson<string[]>('/api/cc/installed-skills');
 }
 
 export async function ccGetSlashCommands(cwd?: string) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<string[]>('cc_get_slash_commands', { cwd: cwd ?? null });
   }
   const qs = cwd ? `?cwd=${encodeURIComponent(cwd)}` : '';
@@ -57,28 +57,28 @@ export async function ccGetSlashCommands(cwd?: string) {
 }
 
 export async function ccGetProjects() {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<string[]>('cc_get_projects');
   }
   return await getJson<string[]>('/api/cc/projects');
 }
 
 export async function ccGetSessions<T = unknown>() {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<T>('cc_get_sessions');
   }
   return await getJson<T>('/api/cc/sessions');
 }
 
 export async function ccGetSettings<T = unknown>() {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<T>('cc_get_settings');
   }
   return await getJson<T>('/api/cc/settings');
 }
 
 export async function ccUpdateSettings(settings: unknown) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     await invokeTauri('cc_update_settings', { settings });
     return;
   }
@@ -86,7 +86,7 @@ export async function ccUpdateSettings(settings: unknown) {
 }
 
 export async function ccMcpAdd(request: unknown, workingDir: string) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     await invokeTauri('cc_mcp_add', { request, workingDir });
     return;
   }
@@ -94,28 +94,28 @@ export async function ccMcpAdd(request: unknown, workingDir: string) {
 }
 
 export async function ccMcpList<T = unknown>(workingDir: string) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<T>('cc_mcp_list', { workingDir });
   }
   return await postJson<T>('/api/cc/mcp/list', { working_dir: workingDir });
 }
 
 export async function ccMcpGet<T = unknown>(name: string, workingDir: string) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<T>('cc_mcp_get', { name, workingDir });
   }
   return await postJson<T>('/api/cc/mcp/get', { name, working_dir: workingDir });
 }
 
 export async function ccListProjects() {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<string[]>('cc_list_projects');
   }
   return await getJson<string[]>('/api/cc/mcp/projects');
 }
 
 export async function ccMcpRemove(name: string, workingDir: string, scope = 'local') {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     await invokeTauri('cc_mcp_remove', { name, workingDir, scope });
     return;
   }
@@ -123,7 +123,7 @@ export async function ccMcpRemove(name: string, workingDir: string, scope = 'loc
 }
 
 export async function ccMcpEnable(name: string, workingDir: string) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     await invokeTauri('cc_mcp_enable', { name, workingDir });
     return;
   }
@@ -131,7 +131,7 @@ export async function ccMcpEnable(name: string, workingDir: string) {
 }
 
 export async function ccMcpDisable(name: string, workingDir: string) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     await invokeTauri('cc_mcp_disable', { name, workingDir });
     return;
   }
@@ -139,7 +139,7 @@ export async function ccMcpDisable(name: string, workingDir: string) {
 }
 
 export async function ccDeleteSession(sessionId: string): Promise<void> {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     await invokeTauri('cc_delete_session', { sessionId });
     return;
   }
@@ -147,14 +147,14 @@ export async function ccDeleteSession(sessionId: string): Promise<void> {
 }
 
 export async function ccGetSessionFilePath(sessionId: string): Promise<string | null> {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<string | null>('cc_get_session_file_path', { sessionId });
   }
   return await postJson<string | null>('/api/cc/session-file-path', { session_id: sessionId });
 }
 
 export async function ccResolvePermission(requestId: string, decision: string): Promise<void> {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return invokeTauri('cc_resolve_permission', { requestId, decision });
   } else {
     const port = import.meta.env.VITE_WEB_PORT || 8094;
@@ -171,7 +171,7 @@ export async function ccResolvePermission(requestId: string, decision: string): 
 }
 
 export async function ccSetPermissionMode(sessionId: string, mode: string) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     await invokeTauri('cc_set_permission_mode', { sessionId, mode });
     return;
   }

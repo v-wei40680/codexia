@@ -1,9 +1,10 @@
 use serde_json::Value;
-#[cfg(feature = "web")]
-use tokio::sync::broadcast;
 
 #[cfg(feature = "tauri")]
 use tauri::Emitter;
+
+#[cfg(feature = "web")]
+use tokio::sync::broadcast;
 
 pub trait EventSink: Send + Sync {
     fn emit(&self, event: &str, payload: Value);
@@ -24,10 +25,14 @@ impl TauriEventSink {
 #[cfg(feature = "tauri")]
 impl EventSink for TauriEventSink {
     fn emit(&self, event: &str, payload: Value) {
+        // Forward to P2P WebSocket clients before moving payload into Tauri emit.
+        #[cfg(feature = "desktop")]
+        crate::features::p2p_bridge::forward(event, &payload);
         let _ = self.app_handle.emit(event, payload);
     }
 }
 
+// Only needed by the standalone web server (server_web.rs).
 #[cfg(feature = "web")]
 pub struct WebSocketEventSink {
     tx: broadcast::Sender<(String, Value)>,

@@ -2,7 +2,7 @@ import {
   type UnifiedMcpClientName,
   type UnifiedMcpConfig,
   invokeTauri,
-  isTauri,
+  isDesktopTauri,
   postJson,
   postNoContent,
 } from './shared';
@@ -11,7 +11,7 @@ export async function unifiedReadMcpConfig(
   clientName: UnifiedMcpClientName,
   path?: string
 ): Promise<UnifiedMcpConfig> {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     return await invokeTauri<UnifiedMcpConfig>('unified_read_mcp_config', { clientName, path });
   }
   return await postJson<UnifiedMcpConfig>('/api/codex/mcp/read', { client_name: clientName, path });
@@ -24,7 +24,7 @@ export async function unifiedAddMcpServer(params: {
   serverConfig: unknown;
   scope?: string;
 }) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     await invokeTauri('unified_add_mcp_server', params);
     return;
   }
@@ -43,7 +43,7 @@ export async function unifiedRemoveMcpServer(params: {
   serverName: string;
   scope?: string;
 }) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     await invokeTauri('unified_remove_mcp_server', params);
     return;
   }
@@ -60,7 +60,7 @@ export async function unifiedEnableMcpServer(params: {
   path?: string;
   serverName: string;
 }) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     await invokeTauri('unified_enable_mcp_server', params);
     return;
   }
@@ -76,7 +76,7 @@ export async function unifiedDisableMcpServer(params: {
   path?: string;
   serverName: string;
 }) {
-  if (isTauri()) {
+  if (isDesktopTauri()) {
     await invokeTauri('unified_disable_mcp_server', params);
     return;
   }

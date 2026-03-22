@@ -6,6 +6,7 @@ import { useCodexEvents } from '@/hooks/codex';
 import { useDeepLink } from '@/hooks/useDeepLink';
 import { AppLayout } from '@/components/layout';
 import { isTauri, getIsPhone } from '@/hooks/runtime';
+import LoginView from '@/views/LoginView';
 import { HistoryProjectsDialog } from '@/components/project-selector';
 import { AnalyticsConsentDialog } from '@/components/settings/AnalyticsConsentDialog';
 import { initializeCodexAsync } from '@/services/tauri';
@@ -141,6 +142,11 @@ function AppShell() {
 
   // Wait for platform detection before rendering anything
   if (isPhone === null) return null;
+
+  // Mobile: no session → show login so the user can authenticate first
+  if (isPhone === true && p2pState === 'idle') {
+    return <LoginView />;
+  }
 
   // Mobile: show connection screen until P2P is established
   if (isPhone === true && p2pState !== 'connected') {

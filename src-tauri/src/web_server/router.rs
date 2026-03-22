@@ -47,7 +47,7 @@ use super::{
         api_unified_remove_mcp_server, api_update_note, api_write_file, health_check,
     },
     types::WebServerState,
-    websocket::ws_handler,
+    websocket::{sse_handler, ws_handler},
 };
 
 fn resolve_dist_dir() -> PathBuf {
@@ -97,7 +97,7 @@ fn resolve_dist_dir() -> PathBuf {
     selected
 }
 
-pub(crate) fn create_router(state: WebServerState) -> Router {
+pub fn create_router(state: WebServerState) -> Router {
     let dist_dir = resolve_dist_dir();
     let static_site = ServeDir::new(dist_dir.clone())
         .not_found_service(ServeFile::new(dist_dir.join("index.html")));
@@ -105,6 +105,7 @@ pub(crate) fn create_router(state: WebServerState) -> Router {
     Router::new()
         .route("/health", get(health_check))
         .route("/ws", get(ws_handler))
+        .route("/api/events", get(sse_handler))
         .route("/api/codex/thread/start", post(api_start_thread))
         .route("/api/codex/start-thread", post(api_start_thread))
         .route("/api/codex/thread/resume", post(api_resume_thread))

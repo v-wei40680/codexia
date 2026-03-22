@@ -26,7 +26,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/components/ui/use-toast';
 import { useLayoutStore, useAgentCenterStore } from '@/stores';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
-import { isTauri } from '@/hooks/runtime';
+import { isDesktopTauri } from '@/hooks/runtime';
 import { formatThreadAge } from '@/utils/formatThreadAge';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -88,7 +88,7 @@ export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Pr
       }, debounceMs);
     };
 
-    if (isTauri()) {
+    if (isDesktopTauri()) {
       let unlisten: (() => void) | null = null;
       void listen('session/list-updated', scheduleReload).then((dispose) => {
         unlisten = dispose;

@@ -7,6 +7,7 @@ use tokio::sync::Mutex;
 #[cfg(feature = "desktop")]
 static P2P_SERVER: OnceLock<Mutex<Option<super::server::P2PServer>>> = OnceLock::new();
 
+
 #[cfg(feature = "desktop")]
 fn server_state() -> &'static Mutex<Option<super::server::P2PServer>> {
     P2P_SERVER.get_or_init(|| Mutex::new(None))
@@ -34,6 +35,7 @@ fn stun_sock_state() -> &'static Mutex<Option<std::net::UdpSocket>> {
 
 #[tauri::command]
 pub async fn p2p_start(
+    app: tauri::AppHandle,
     jwt: String,
     supabase_url: String,
     anon_key: String,
@@ -47,14 +49,55 @@ pub async fn p2p_start(
                 public_endpoint: Some(s.public_endpoint.to_string()),
             });
         }
+
+        // Build and store the in-process axum router before starting the QUIC server.
+        // The router dispatches mobile HTTP requests without opening any TCP port.
+        #[cfg(feature = "tauri")]
+        if super::router_handle::get().is_none() {
+            use std::sync::Arc;
+            use tauri::Manager;
+            use tokio::sync::broadcast;
+            use crate::web_server::{WebServerState, create_router};
+            use crate::features::sleep::SleepState;
+            use crate::web_server::terminal::WebTerminalState;
+            use crate::web_server::filesystem_watch::WebWatchState;
+
+            let codex_state = Arc::new(
+                app.try_state::<crate::codex::AppState>()
+                    .ok_or("codex not initialized")?
+                    .inner()
+                    .clone(),
+            );
+            let cc_state = Arc::new(app.state::<crate::cc::CCState>().inner().clone());
+            let (event_tx, _) = broadcast::channel::<(String, serde_json::Value)>(256);
+            // Register the event bridge so TauriEventSink forwards desktop events to mobile.
+            crate::features::p2p_bridge::register(event_tx.clone());
+
+            let state = WebServerState {
+                codex_state,
+                cc_state,
+                sleep_state: Arc::new(SleepState::default()),
+                terminal_state: Arc::new(WebTerminalState::default()),
+                fs_watch_state: Arc::new(WebWatchState::default()),
+                event_tx,
+            };
+            let router = create_router(state);
+            super::router_handle::init(router.clone());
+            // WebSocket upgrades require a real TCP connection; start a loopback-only
+            // listener on an OS-assigned port exclusively for WS traffic.
+            super::router_handle::start_ws_listener(router).await;
+        }
+
         let server = super::server::start(jwt, supabase_url, anon_key).await?;
         let ep = server.public_endpoint.to_string();
         *guard = Some(server);
         return Ok(P2PStatus { connected: true, public_endpoint: Some(ep) });
     }
+    #[cfg(not(feature = "tauri"))]
+    let _ = app;
     #[cfg(not(feature = "desktop"))]
     {
-        let _ = (jwt, supabase_url, anon_key);
+        let _ = (app, jwt, supabase_url, anon_key);
         Err("p2p server not available on mobile".into())
     }
 }

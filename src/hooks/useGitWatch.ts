@@ -1,7 +1,7 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
 import { startWatchFile, stopWatchFile } from '@/services/tauri/filesystem';
-import { isTauri } from '@/hooks/runtime';
+import { isDesktopTauri } from '@/hooks/runtime';
 
 /**
  * Hook to watch .git/index file changes and trigger Git status refresh
@@ -39,7 +39,7 @@ export function useGitWatch(cwd: string | null, onRefresh: () => void, enabled =
       try {
         await startWatchFile(gitIndexPath);
 
-        if (isTauri()) {
+        if (isDesktopTauri()) {
           const unlisten = await listen<{ path: string; kind: string }>('fs_change', (event) => {
             if (isGitIndexChange(event.payload.path)) {
               debouncedRefresh();

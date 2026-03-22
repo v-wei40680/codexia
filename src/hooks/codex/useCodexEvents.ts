@@ -13,7 +13,7 @@ import type { AccountLoginCompletedNotification } from '@/bindings/v2';
 import { playBeep } from '@/utils/beep';
 import { allowSleep, preventSleep } from '@/services/tauri';
 import { getAccountWithParams } from '@/services';
-import { buildWsUrl, isTauri } from '@/hooks/runtime';
+import { buildUrl, isDesktopTauri } from '@/hooks/runtime';
 import { CodexParseErrorEvent, CodexStderrEvent } from '@/components/codex/CodexInternalEvent';
 
 function shouldPlayCompletionBeep(
@@ -161,7 +161,7 @@ export function useCodexEvents(enabled = true) {
       }
     };
 
-    if (isTauri()) {
+    if (isDesktopTauri()) {
       const unlistenPromises: Promise<() => void>[] = [];
       console.log('[useCodexEvents] Setting up Tauri event listeners...');
 
@@ -202,88 +202,48 @@ export function useCodexEvents(enabled = true) {
       };
     }
 
-    console.log('[useCodexEvents] Setting up WebSocket event bridge...');
-    let ws: WebSocket | null = null;
-    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
-    let closedByCleanup = false;
+    console.log('[useCodexEvents] Setting up SSE event bridge...');
 
-    const connectWebSocket = () => {
-      ws = new WebSocket(buildWsUrl('/ws'));
+    const handleEnvelope = (data: string) => {
+      try {
+        const envelope = JSON.parse(data) as { event?: string; payload?: unknown };
+        if (!envelope.event) return;
 
-      ws.onmessage = (messageEvent) => {
-        try {
-          const envelope = JSON.parse(messageEvent.data as string) as {
-            event?: string;
-            payload?: unknown;
-          };
-
-          if (!envelope.event) {
-            return;
-          }
-
-          if (envelope.event === 'fs_change') {
-            window.dispatchEvent(
-              new CustomEvent('fs_change', {
-                detail: envelope.payload,
-              })
-            );
-            return;
-          }
-          if (envelope.event === 'thread/list-updated') {
-            window.dispatchEvent(
-              new CustomEvent('thread/list-updated', {
-                detail: envelope.payload,
-              })
-            );
-            return;
-          }
-          if (envelope.event === 'session/list-updated') {
-            window.dispatchEvent(
-              new CustomEvent('session/list-updated', {
-                detail: envelope.payload,
-              })
-            );
-            return;
-          }
-
-          if (envelope.event === 'codex/approval-request') {
-            addApproval(envelope.payload as ApprovalRequest);
-            return;
-          }
-
-          if (envelope.event === 'codex/request-user-input') {
-            addRequest(envelope.payload as RequestUserInputRequest);
-            return;
-          }
-
-          if (envelope.event === 'codex:notification') {
-            handleServerNotification(envelope.payload as ServerNotification);
-          }
-        } catch (error) {
-          console.warn('[useCodexEvents] Failed to parse websocket message:', error);
-        }
-      };
-
-      ws.onclose = () => {
-        if (closedByCleanup) {
+        if (envelope.event === 'fs_change') {
+          window.dispatchEvent(new CustomEvent('fs_change', { detail: envelope.payload }));
           return;
         }
-        reconnectTimer = setTimeout(connectWebSocket, 1000);
-      };
-
-      ws.onerror = () => {
-        ws?.close();
-      };
+        if (envelope.event === 'thread/list-updated') {
+          window.dispatchEvent(new CustomEvent('thread/list-updated', { detail: envelope.payload }));
+          return;
+        }
+        if (envelope.event === 'session/list-updated') {
+          window.dispatchEvent(new CustomEvent('session/list-updated', { detail: envelope.payload }));
+          return;
+        }
+        if (envelope.event === 'codex/approval-request') {
+          addApproval(envelope.payload as ApprovalRequest);
+          return;
+        }
+        if (envelope.event === 'codex/request-user-input') {
+          addRequest(envelope.payload as RequestUserInputRequest);
+          return;
+        }
+        if (envelope.event === 'codex:notification') {
+          handleServerNotification(envelope.payload as ServerNotification);
+        }
+      } catch (error) {
+        console.warn('[useCodexEvents] Failed to parse SSE message:', error);
+      }
     };
 
-    connectWebSocket();
+    // EventSource auto-reconnects on error/close — no manual retry needed.
+    const es = new EventSource(buildUrl('/api/events'));
+    es.onmessage = (e) => handleEnvelope(e.data as string);
+    es.onerror = () => console.warn('[useCodexEvents] SSE error — will auto-reconnect');
 
     return () => {
-      closedByCleanup = true;
-      if (reconnectTimer) {
-        clearTimeout(reconnectTimer);
-      }
-      ws?.close();
+      es.close();
     };
   }, [
     addEvent,
