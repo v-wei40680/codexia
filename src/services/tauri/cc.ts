@@ -4,7 +4,7 @@ export async function ccNewSession(options: Record<string, unknown>, initialMess
   if (isDesktopTauri()) {
     return await invokeTauri<string>('cc_new_session', { options, initialMessage });
   }
-  return await postJson<string>('/api/cc/new-session', { options });
+  return await postJson<string>('/api/cc/new-session', { options, initial_message: initialMessage });
 }
 
 export async function ccSendMessage(sessionId: string, message: string) {

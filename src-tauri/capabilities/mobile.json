@@ -11,6 +11,10 @@
   ],
   "permissions": [
     "core:default",
-    "os:default"
+    "core:event:default",
+    "core:event:allow-listen",
+    "core:event:allow-emit",
+    "os:default",
+    "log:default"
   ]
 }

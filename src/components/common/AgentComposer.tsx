@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { emitTo } from '@tauri-apps/api/event';
 import { showMainWindow } from '@/services/tauri/tray';
 import { AgentIcon } from './AgentIcon';
@@ -8,6 +8,56 @@ import { useAgentCenterStore, useLayoutStore } from '@/stores';
 import { useCCStore } from '@/stores/cc';
 import { Composer as CodexComposer, ComposerControls } from '@/components/codex/Composer';
 import { TunnelIndicator } from '@/components/features/TunnelIndicator';
+import { buildUrl, isDesktopTauri } from '@/hooks/runtime';
+
+function CCDebugBadge() {
+  const [msgCount, setMsgCount] = useState(0);
+  const [lastEvent, setLastEvent] = useState<string | null>(null);
+  const [sseStatus, setSseStatus] = useState<'connecting' | 'open' | 'error'>('connecting');
+
+  useEffect(() => {
+    if (isDesktopTauri()) {
+      // Tauri path: count via listen()
+      import('@tauri-apps/api/event').then(({ listen }) => {
+        const p1 = listen<unknown>('cc-message', () => {
+          setMsgCount((n) => n + 1);
+          setLastEvent('cc-message');
+        });
+        const p2 = listen<unknown>('cc-permission-request', () => {
+          setMsgCount((n) => n + 1);
+          setLastEvent('cc-perm');
+        });
+        return () => {
+          void p1.then((fn) => fn());
+          void p2.then((fn) => fn());
+        };
+      });
+      return;
+    }
+    // SSE path
+    const es = new EventSource(buildUrl('/api/events'));
+    es.onopen = () => setSseStatus('open');
+    es.onerror = () => setSseStatus('error');
+    es.onmessage = (e) => {
+      try {
+        const env = JSON.parse(e.data as string) as { event?: string };
+        if (env.event === 'cc-message' || env.event === 'cc-permission-request') {
+          setMsgCount((n) => n + 1);
+          setLastEvent(env.event ?? null);
+        }
+      } catch {}
+    };
+    return () => es.close();
+  }, []);
+
+  const mode = isDesktopTauri() ? 'tauri' : `sse:${sseStatus}`;
+  const color = !isDesktopTauri() && sseStatus === 'error' ? 'text-red-500' : msgCount > 0 ? 'text-green-500' : 'text-muted-foreground';
+  return (
+    <span className={`text-[10px] font-mono ml-1 ${color}`}>
+      {mode} cc:{msgCount}{lastEvent ? `(${lastEvent})` : ''}
+    </span>
+  );
+}
 
 const focusCCInput = () => window.dispatchEvent(new Event('cc-input-focus-request'));
 
@@ -65,6 +115,7 @@ export function AgentComposer({ trayMode = false }: AgentComposerProps) {
           </button>
         ))}
         <TunnelIndicator />
+        {import.meta.env.DEV && <CCDebugBadge />}
       </div>
 
       {/* Input area */}
