@@ -108,7 +108,13 @@ pub async fn p2p_stop() -> Result<(), String> {
     {
         let mut guard = server_state().lock().await;
         if let Some(s) = guard.take() {
+            // Close the QUIC endpoint so existing connections get a close frame,
+            // then drop the server (P2PServer::drop aborts accept_task + punch_task).
+            // Aborting the tasks drops their Endpoint clones; only after all clones
+            // are gone does Quinn release the UDP socket on port 7422, making a
+            // subsequent p2p_start able to bind the port again.
             s.endpoint.close(0u32.into(), b"stopped");
+            drop(s);
         }
     }
     Ok(())

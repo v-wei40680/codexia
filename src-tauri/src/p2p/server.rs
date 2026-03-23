@@ -17,7 +17,15 @@ pub const P2P_UDP_PORT: u16 = 7422;
 pub struct P2PServer {
     pub endpoint: quinn::Endpoint,
     pub public_endpoint: SocketAddr,
-    _task: tokio::task::JoinHandle<()>,
+    accept_task: tokio::task::JoinHandle<()>,
+    punch_task: tokio::task::JoinHandle<()>,
+}
+
+impl Drop for P2PServer {
+    fn drop(&mut self) {
+        self.accept_task.abort();
+        self.punch_task.abort();
+    }
 }
 
 // ── Entry point ──────────────────────────────────────────────────────────────
@@ -53,10 +61,10 @@ pub async fn start(
 
     // 5. Accept-loop + punch-loop in background
     let ep = endpoint.clone();
-    let task = tokio::spawn(accept_loop(ep.clone(), owner_user_id.clone(), supabase_url.clone(), anon_key.clone()));
-    tokio::spawn(punch_loop(ep, host_jwt, supabase_url, anon_key, owner_user_id));
+    let accept_task = tokio::spawn(accept_loop(ep.clone(), owner_user_id.clone(), supabase_url.clone(), anon_key.clone()));
+    let punch_task = tokio::spawn(punch_loop(ep, host_jwt, supabase_url, anon_key, owner_user_id));
 
-    Ok(P2PServer { endpoint, public_endpoint, _task: task })
+    Ok(P2PServer { endpoint, public_endpoint, accept_task, punch_task })
 }
 
 // ── Accept loop ──────────────────────────────────────────────────────────────
