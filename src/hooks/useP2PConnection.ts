@@ -5,6 +5,44 @@ import { getIsPhone } from '@/hooks/runtime'
 
 export type P2PConnState = 'idle' | 'connecting' | 'connected' | 'offline' | 'error'
 
+// ── Endpoint cache (localStorage) ────────────────────────────────────────────
+
+const CACHE_KEY = 'p2p_desktop_cache'
+
+interface DesktopCache {
+  public_ip: string
+  public_port: number
+  local_ip: string | null
+  local_port: number | null
+}
+
+function loadCache(): DesktopCache | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY)
+    return raw ? (JSON.parse(raw) as DesktopCache) : null
+  } catch { return null }
+}
+
+function saveCache(d: DesktopCache) {
+  try { localStorage.setItem(CACHE_KEY, JSON.stringify(d)) } catch {}
+}
+
+function clearCache() {
+  try { localStorage.removeItem(CACHE_KEY) } catch {}
+}
+
+function resolveEndpoint(
+  data: { public_ip: string; public_port: number; local_ip: string | null; local_port: number | null },
+  phonePublicIp: string,
+): string {
+  const sameLan = !!data.local_ip && !!data.local_port && phonePublicIp === data.public_ip
+  return sameLan
+    ? `${data.local_ip}:${data.local_port}`
+    : `${data.public_ip}:${data.public_port}`
+}
+
+// ── Hook ─────────────────────────────────────────────────────────────────────
+
 export function useP2PConnection() {
   const [state, setState] = useState<P2PConnState>('idle')
   const [error, setError] = useState<string | null>(null)
@@ -19,6 +57,7 @@ export function useP2PConnection() {
 
   const connect = useCallback(async () => {
     if (connecting.current) { log('already connecting, skipping'); return }
+    if (stateRef.current === 'connected') { log('already connected, skipping'); return }
     connecting.current = true
     const isPhone = await getIsPhone()
     if (!isPhone || !supabase) { connecting.current = false; return }
@@ -34,12 +73,45 @@ export function useP2PConnection() {
     if (import.meta.env.DEV) setLogs([])
 
     try {
-      log('fetching desktop endpoint from DB…')
-      const { data, error: dbErr } = await supabase
+      // Kick off DB fetch immediately in the background — it runs in parallel
+      // with the cached fast-path attempt so we waste no time on cache miss.
+      const dbFetch = supabase
         .from('peer_endpoints')
         .select('public_ip, public_port, local_ip, local_port')
         .eq('user_id', session.user.id)
         .single()
+
+      // ── Fast path: try cached endpoint (5 s timeout) ──────────────────
+      const cached = loadCache()
+      if (cached) {
+        log('trying cached desktop endpoint…')
+        try {
+          const phoneEndpoint = await p2pStun()
+          const [phoneIp, phonePortStr] = phoneEndpoint.split(':')
+          const desktopEndpoint = resolveEndpoint(cached, phoneIp)
+          log(`cache: trying ${desktopEndpoint} (5 s)`)
+
+          const { error: updateErr } = await supabase
+            .from('peer_endpoints')
+            .update({ phone_ip: phoneIp, phone_port: parseInt(phonePortStr, 10) })
+            .eq('user_id', session.user.id)
+          if (updateErr) throw new Error(`register phone: ${updateErr.message}`)
+
+          await p2pConnect(session.access_token, desktopEndpoint, 5)
+          log('connected via cache!')
+          stateRef.current = 'connected'
+          setState('connected')
+          return
+        } catch (cacheErr) {
+          log(`cache miss: ${cacheErr instanceof Error ? cacheErr.message : String(cacheErr)}`)
+          clearCache()
+          // Fall through — DB fetch is already in flight
+        }
+      }
+
+      // ── Slow path: use DB result ──────────────────────────────────────
+      log('fetching desktop endpoint from DB…')
+      const { data, error: dbErr } = await dbFetch
 
       if (dbErr || !data) {
         log(`DB error: ${dbErr?.message ?? 'no row'}`)
@@ -50,24 +122,13 @@ export function useP2PConnection() {
       }
       log(`desktop: public=${data.public_ip}:${data.public_port} local=${data.local_ip}:${data.local_port}`)
 
-      // Step 1: STUN — bind socket, get phone's public endpoint immediately.
-      log('running STUN…')
       const phoneEndpoint = await p2pStun()
-      const phonePublicIp = phoneEndpoint.split(':')[0]
+      const [phoneIp, phonePortStr] = phoneEndpoint.split(':')
       log(`phone STUN endpoint: ${phoneEndpoint}`)
 
-      // Same public IP = same LAN (hairpin NAT won't work) → use desktop's LAN IP + local port.
-      // Must use local_port (e.g. 7422), NOT public_port (which is the NAT-mapped external port).
-      const sameLan = data.local_ip && data.local_port && phonePublicIp === data.public_ip
-      const desktopEndpoint = sameLan
-        ? `${data.local_ip}:${data.local_port}`
-        : `${data.public_ip}:${data.public_port}`
-      log(`sameLan=${sameLan} → connecting to ${desktopEndpoint}`)
+      const desktopEndpoint = resolveEndpoint(data, phoneIp)
+      log(`connecting to ${desktopEndpoint}`)
 
-      const [phoneIp, phonePortStr] = phoneEndpoint.split(':')
-
-      // Step 2: Register phone endpoint so desktop's punch_loop sees it.
-      log('registering phone endpoint…')
       const { error: updateErr } = await supabase
         .from('peer_endpoints')
         .update({ phone_ip: phoneIp, phone_port: parseInt(phonePortStr, 10) })
@@ -75,11 +136,17 @@ export function useP2PConnection() {
       if (updateErr) throw new Error(`Failed to register phone endpoint: ${updateErr.message}`)
       log('phone endpoint registered, waiting for punch…')
 
-      // Step 3: Connect (30 s window). Desktop will punch back within ~1-2 s,
-      // opening the home-router NAT so Quinn's retry gets through.
-      log('calling p2pConnect…')
       await p2pConnect(session.access_token, desktopEndpoint)
       log('connected!')
+
+      // Cache for next startup
+      saveCache({
+        public_ip: data.public_ip,
+        public_port: data.public_port,
+        local_ip: data.local_ip,
+        local_port: data.local_port,
+      })
+
       stateRef.current = 'connected'
       setState('connected')
     } catch (e) {
@@ -96,7 +163,6 @@ export function useP2PConnection() {
   useEffect(() => {
     if (!supabase) return
 
-    // Attempt on mount (user may already be logged in)
     void connect()
 
     const {
@@ -106,8 +172,6 @@ export function useP2PConnection() {
       if (event === 'SIGNED_OUT') { stateRef.current = 'idle'; setState('idle'); setError(null) }
     })
 
-    // Poll every 5 s while idle (no session yet) so we pick up a session
-    // that appears without firing SIGNED_IN (e.g. token refresh, deep-link callback).
     const pollInterval = setInterval(() => {
       if (stateRef.current === 'idle') void connect()
     }, 5000)

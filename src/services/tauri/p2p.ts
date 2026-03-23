@@ -51,9 +51,10 @@ export async function p2pStun(): Promise<string> {
 export async function p2pConnect(
   jwt: string,
   desktopEndpoint: string,
+  timeoutSecs?: number,
 ): Promise<P2PStatus> {
   if (!isTauri()) throw new Error('p2p only available in Tauri app')
-  return invokeTauri<P2PStatus>('p2p_connect', { jwt, desktopEndpoint })
+  return invokeTauri<P2PStatus>('p2p_connect', { jwt, desktopEndpoint, timeoutSecs })
 }
 
 export async function p2pDisconnect(): Promise<void> {

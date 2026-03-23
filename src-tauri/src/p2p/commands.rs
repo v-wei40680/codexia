@@ -148,9 +148,15 @@ pub async fn p2p_stun() -> Result<String, String> {
     Err("p2p_stun not used on desktop".into())
 }
 
-/// Step 2 — Connect: reuses the socket from p2p_stun, connects to desktop (30 s timeout).
+/// Step 2 — Connect: reuses the socket from p2p_stun, connects to desktop.
+/// `timeout_secs`: override the default 30 s — pass a small value (e.g. 5) for
+/// the cached fast-path so failures fall back quickly.
 #[tauri::command]
-pub async fn p2p_connect(jwt: String, desktop_endpoint: String) -> Result<P2PStatus, String> {
+pub async fn p2p_connect(
+    jwt: String,
+    desktop_endpoint: String,
+    timeout_secs: Option<u64>,
+) -> Result<P2PStatus, String> {
     #[cfg(not(feature = "desktop"))]
     {
         let mut guard = client_state().lock().await;
@@ -161,14 +167,14 @@ pub async fn p2p_connect(jwt: String, desktop_endpoint: String) -> Result<P2PSta
             });
         }
         let sock = stun_sock_state().lock().await.take();
-        let client = super::client::connect(jwt, desktop_endpoint, sock).await?;
+        let client = super::client::connect(jwt, desktop_endpoint, sock, timeout_secs).await?;
         let phone_public = client.public_endpoint.to_string();
         *guard = Some(client);
         return Ok(P2PStatus { connected: true, public_endpoint: Some(phone_public) });
     }
     #[cfg(feature = "desktop")]
     {
-        let _ = (jwt, desktop_endpoint);
+        let _ = (jwt, desktop_endpoint, timeout_secs);
         Err("p2p_connect not used on desktop".into())
     }
 }

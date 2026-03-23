@@ -35,6 +35,7 @@ pub async fn connect(
     jwt: String,
     desktop_endpoint: String,
     stun_socket: Option<std::net::UdpSocket>,
+    timeout_secs: Option<u64>,
 ) -> Result<P2PClient, String> {
     let _ = rustls::crypto::ring::default_provider().install_default();
 
@@ -74,10 +75,11 @@ pub async fn connect(
     let connecting = endpoint
         .connect(server_addr, "codexia-p2p")
         .map_err(|e| e.to_string())?;
-    let conn = tokio::time::timeout(Duration::from_secs(30), connecting)
+    let secs = timeout_secs.unwrap_or(30);
+    let conn = tokio::time::timeout(Duration::from_secs(secs), connecting)
         .await
         .map_err(|_| {
-            "P2P timed out after 30 s — desktop may be behind symmetric NAT".to_string()
+            format!("P2P timed out after {secs} s — desktop may be behind symmetric NAT")
         })?
         .map_err(|e| e.to_string())?;
     log::info!("[p2p-client] connected to {server_addr}");
