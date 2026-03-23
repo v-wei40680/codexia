@@ -17,7 +17,7 @@ import { toast } from 'sonner';
 import { Label } from '../ui/label';
 import { Input } from '../ui/input';
 
-export function PublishCloudDialog() {
+export function FeedbackDialog() {
   const [isOpen, setIsOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [statusMessage, setStatusMessage] = useState<string | null>(null);
@@ -89,10 +89,10 @@ export function PublishCloudDialog() {
           <DialogHeader>
             <DialogTitle className="flex gap-2">
               <Cloud />
-              <span className="py-1">Share Your Feedback About Cloud Publishing</span>
+              <span className="py-1">Share Your Feedback About Codexia</span>
             </DialogTitle>
             <DialogDescription>
-              Let us know your experience or ideas before we roll out full deployment features.
+              Let us know your experience or ideas.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4">
@@ -101,7 +101,7 @@ export function PublishCloudDialog() {
               <Input type="email" name="email" />
             </div>
             <div className="grid gap-3">
-              <Textarea name="message" placeholder="Tell me what you think" />
+              <Textarea name="message" placeholder="Tell us what you think" />
             </div>
           </div>
           {statusMessage && statusType && (
