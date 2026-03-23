@@ -3,17 +3,36 @@
 #![allow(dead_code)]
 /// Minimal STUN client (RFC 5389) — discover the public UDP endpoint for a given local port.
 use std::net::{SocketAddr, ToSocketAddrs, UdpSocket};
+use std::sync::{OnceLock, RwLock};
 use std::time::Duration;
 
 const MAGIC_COOKIE: u32 = 0x2112_A442;
-// Reliable servers first — each gets STUN_TIMEOUT_SECS before the next is tried.
-// Keeping this list short keeps worst-case STUN time low.
-const STUN_SERVERS: &[&str] = &[
+// Default fallback servers — each gets STUN_TIMEOUT_SECS before the next is tried.
+const DEFAULT_STUN_SERVERS: &[&str] = &[
     "stun.cloudflare.com:3478",
     "stun.l.google.com:19302",
-    "stun.qq.com:3478",
-    "stun.miwifi.com:3478",
 ];
+
+// User-configured custom servers, prepended before the defaults at runtime.
+static CUSTOM_STUN_SERVERS: OnceLock<RwLock<Vec<String>>> = OnceLock::new();
+
+fn custom_servers_lock() -> &'static RwLock<Vec<String>> {
+    CUSTOM_STUN_SERVERS.get_or_init(|| RwLock::new(Vec::new()))
+}
+
+/// Replace the custom STUN server list.  Custom servers are tried first; the
+/// built-in defaults are always tried as fallbacks afterward.
+pub fn set_custom_servers(servers: Vec<String>) {
+    *custom_servers_lock().write().unwrap() = servers;
+}
+
+/// Build the effective server list: custom servers first, then the defaults.
+fn effective_servers() -> Vec<String> {
+    let custom = custom_servers_lock().read().unwrap().clone();
+    let mut list = custom;
+    list.extend(DEFAULT_STUN_SERVERS.iter().map(|s| s.to_string()));
+    list
+}
 /// Per-server read timeout.  2 s is enough for any reachable STUN server;
 /// keeping it short means we fall through to the next server quickly.
 const STUN_TIMEOUT_SECS: u64 = 2;
@@ -27,7 +46,7 @@ pub fn discover(local_port: u16) -> Result<SocketAddr, String> {
         .set_read_timeout(Some(Duration::from_secs(STUN_TIMEOUT_SECS)))
         .map_err(|e| e.to_string())?;
 
-    for srv in STUN_SERVERS {
+    for srv in effective_servers() {
         let Ok(mut addrs) = srv.to_socket_addrs() else { continue };
         let Some(addr) = addrs.next() else { continue };
         match binding_request(&socket, addr) {
@@ -45,7 +64,7 @@ pub fn discover_on_socket(socket: &UdpSocket) -> Result<SocketAddr, String> {
     let _ = socket.set_read_timeout(Some(Duration::from_secs(STUN_TIMEOUT_SECS)));
 
     let result = (|| {
-        for srv in STUN_SERVERS {
+        for srv in effective_servers() {
             let Ok(mut addrs) = srv.to_socket_addrs() else { continue };
             let Some(addr) = addrs.next() else { continue };
             match binding_request(socket, addr) {
@@ -69,7 +88,7 @@ pub fn discover_new_socket() -> Result<(SocketAddr, UdpSocket), String> {
         .set_read_timeout(Some(Duration::from_secs(STUN_TIMEOUT_SECS)))
         .map_err(|e| e.to_string())?;
 
-    for srv in STUN_SERVERS {
+    for srv in effective_servers() {
         let Ok(mut addrs) = srv.to_socket_addrs() else { continue };
         let Some(addr) = addrs.next() else { continue };
         match binding_request(&socket, addr) {

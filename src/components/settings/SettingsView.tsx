@@ -28,6 +28,7 @@ import { QuoteSettings } from './QuoteSettings';
 import { ProjectsSettings } from './ProjectsSettings';
 import { RateLimitSettings, TaskSettings } from './codex';
 import { UISettings } from './UISettings';
+import { RemoteSettings } from './RemoteSettings';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { isTauri } from '@/hooks/runtime';
 
@@ -42,10 +43,11 @@ type SettingsSection =
   | 'quote'
   | 'task'
   | 'ui'
-  | 'claude';
+  | 'claude'
+  | 'remote';
 
 const codexSections = ['codexauth', 'task', 'config', 'personalization', 'archived'] as const;
-const topLevelSections = ['general', 'projects', 'claude', 'explorer', 'quote', 'ui'] as const;
+const topLevelSections = ['general', 'projects', 'claude', 'explorer', 'quote', 'ui', 'remote'] as const;
 
 const sectionLabel: Record<SettingsSection, string> = {
   general: 'General',
@@ -59,6 +61,7 @@ const sectionLabel: Record<SettingsSection, string> = {
   task: 'Task',
   ui: 'UI',
   claude: 'Claude',
+  remote: 'Remote',
 };
 
 export function SettingsView() {
@@ -80,6 +83,7 @@ export function SettingsView() {
       {activeSection === 'task' && <TaskSettings />}
       {activeSection === 'ui' && <UISettings />}
       {activeSection === 'claude' && <ClaudeSettings />}
+      {activeSection === 'remote' && <RemoteSettings />}
     </>
   );
 

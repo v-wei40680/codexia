@@ -179,6 +179,17 @@ pub async fn p2p_connect(
     }
 }
 
+/// Set the custom STUN server list (tried before the built-in defaults).
+/// Pass an empty list to clear custom servers and use the defaults only.
+#[tauri::command]
+pub async fn p2p_set_stun_servers(servers: Vec<String>) -> Result<(), String> {
+    #[cfg(feature = "tauri")]
+    super::stun::set_custom_servers(servers);
+    #[cfg(not(feature = "tauri"))]
+    let _ = servers;
+    Ok(())
+}
+
 #[tauri::command]
 pub async fn p2p_disconnect() -> Result<(), String> {
     #[cfg(not(feature = "desktop"))]

@@ -47,6 +47,7 @@ pub fn run() {
             crate::p2p::p2p_stun,
             crate::p2p::p2p_connect,
             crate::p2p::p2p_disconnect,
+            crate::p2p::p2p_set_stun_servers,
         ]);
 
     // Desktop: full app with all plugins, commands, and setup.
@@ -265,6 +266,7 @@ pub fn run() {
                 crate::p2p::p2p_stun,
                 crate::p2p::p2p_connect,
                 crate::p2p::p2p_disconnect,
+                crate::p2p::p2p_set_stun_servers,
                 quit_app,
             ])
             .setup(|app| {

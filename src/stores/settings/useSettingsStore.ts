@@ -44,6 +44,8 @@ export interface SettingState {
   setAnalyticsEnabled: (enabled: boolean) => void;
   analyticsConsentShown: boolean;
   setAnalyticsConsentShown: (shown: boolean) => void;
+  customStunServers: string[];
+  setCustomStunServers: (servers: string[]) => void;
 }
 
 type LegacySettingState = {
@@ -118,6 +120,8 @@ export const useSettingsStore = create<SettingState>()(
       setAnalyticsEnabled: (enabled: boolean) => set({ analyticsEnabled: enabled }),
       analyticsConsentShown: false,
       setAnalyticsConsentShown: (shown: boolean) => set({ analyticsConsentShown: shown }),
+      customStunServers: [],
+      setCustomStunServers: (servers: string[]) => set({ customStunServers: servers }),
     }),
     {
       name: 'settings-storage',

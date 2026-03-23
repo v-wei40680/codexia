@@ -61,3 +61,9 @@ export async function p2pDisconnect(): Promise<void> {
   if (!isTauri()) return
   return invokeTauri<void>('p2p_disconnect')
 }
+
+/** Set custom STUN servers that are tried before the built-in defaults. */
+export async function p2pSetStunServers(servers: string[]): Promise<void> {
+  if (!isTauri()) return
+  return invokeTauri<void>('p2p_set_stun_servers', { servers })
+}
