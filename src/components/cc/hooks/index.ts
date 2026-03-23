@@ -67,7 +67,11 @@ export function useCCSessionListener({ disabled = false, sessionId }: CCListener
     }
 
     // SSE path for non-Tauri (iOS via P2P).
-    const es = new EventSource(buildUrl('/api/events'));
+    const sseUrl = buildUrl('/api/events');
+    console.info('[CCView] Opening SSE connection', { url: sseUrl, targetSessionId, isTauri: 'isDesktopTauri=' + isDesktopTauri() });
+    const es = new EventSource(sseUrl);
+    es.onopen = () => console.info('[CCView] SSE connected', { url: sseUrl });
+    es.onerror = (err) => console.error('[CCView] SSE error', { url: sseUrl, readyState: es.readyState, err });
     es.onmessage = (e) => {
       try {
         const envelope = JSON.parse(e.data as string) as { event?: string; payload?: unknown };
@@ -155,7 +159,11 @@ export function useCCPermissionListener({ disabled = false, sessionId }: CCListe
     }
 
     // SSE path for non-Tauri (iOS via P2P).
-    const es = new EventSource(buildUrl('/api/events'));
+    const sseUrl = buildUrl('/api/events');
+    console.info('[CCView] Opening permission SSE connection', { url: sseUrl, targetSessionId });
+    const es = new EventSource(sseUrl);
+    es.onopen = () => console.info('[CCView] Permission SSE connected', { url: sseUrl });
+    es.onerror = (err) => console.error('[CCView] Permission SSE error', { url: sseUrl, readyState: es.readyState, err });
     es.onmessage = (e) => {
       try {
         const envelope = JSON.parse(e.data as string) as { event?: string; payload?: unknown };

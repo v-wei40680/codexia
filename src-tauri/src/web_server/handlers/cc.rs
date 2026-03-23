@@ -32,7 +32,7 @@ pub(crate) async fn api_cc_send_message(
     AxumState(state): AxumState<WebServerState>,
     Json(params): Json<CcSendMessageParams>,
 ) -> Result<StatusCode, ErrorResponse> {
-    let event_name = format!("cc-message:{}", params.session_id);
+    let sid = params.session_id.clone();
     let cc_state = Arc::clone(&state.cc_state);
 
     cc_message_service::send_message(
@@ -40,7 +40,15 @@ pub(crate) async fn api_cc_send_message(
         &params.message,
         state.cc_state.as_ref(),
         move |msg| match serde_json::to_value(msg) {
-            Ok(payload) => cc_state.emit(&event_name, payload),
+            Ok(mut payload) => {
+                // Inject session_id into the payload so the frontend filter matches,
+                // and emit under the plain "cc-message" event name (same as the Tauri command).
+                if let Some(obj) = payload.as_object_mut() {
+                    obj.entry("session_id")
+                        .or_insert_with(|| serde_json::Value::String(sid.clone()));
+                }
+                cc_state.emit("cc-message", payload);
+            }
             Err(err) => log::error!("Failed to serialize CC message event: {}", err),
         },
     )

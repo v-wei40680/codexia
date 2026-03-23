@@ -12,16 +12,16 @@ import { buildUrl, isDesktopTauri } from '@/hooks/runtime';
 
 function CCDebugBadge() {
   const [msgCount, setMsgCount] = useState(0);
+  const [rawCount, setRawCount] = useState(0); // any SSE message received
   const [lastEvent, setLastEvent] = useState<string | null>(null);
   const [sseStatus, setSseStatus] = useState<'connecting' | 'open' | 'error'>('connecting');
 
   useEffect(() => {
     if (isDesktopTauri()) {
-      // Tauri path: count via listen()
       import('@tauri-apps/api/event').then(({ listen }) => {
         const p1 = listen<unknown>('cc-message', () => {
           setMsgCount((n) => n + 1);
-          setLastEvent('cc-message');
+          setLastEvent('cc-msg');
         });
         const p2 = listen<unknown>('cc-permission-request', () => {
           setMsgCount((n) => n + 1);
@@ -34,27 +34,29 @@ function CCDebugBadge() {
       });
       return;
     }
-    // SSE path
+    // SSE path — count ALL raw messages to detect if SSE stream is alive
     const es = new EventSource(buildUrl('/api/events'));
     es.onopen = () => setSseStatus('open');
     es.onerror = () => setSseStatus('error');
     es.onmessage = (e) => {
+      setRawCount((n) => n + 1);
       try {
         const env = JSON.parse(e.data as string) as { event?: string };
+        setLastEvent(env.event ?? 'unknown');
         if (env.event === 'cc-message' || env.event === 'cc-permission-request') {
           setMsgCount((n) => n + 1);
-          setLastEvent(env.event ?? null);
         }
       } catch {}
     };
     return () => es.close();
   }, []);
 
-  const mode = isDesktopTauri() ? 'tauri' : `sse:${sseStatus}`;
-  const color = !isDesktopTauri() && sseStatus === 'error' ? 'text-red-500' : msgCount > 0 ? 'text-green-500' : 'text-muted-foreground';
+  const isDesktop = isDesktopTauri();
+  const mode = isDesktop ? 'tauri' : `sse:${sseStatus}`;
+  const color = !isDesktop && sseStatus === 'error' ? 'text-red-500' : msgCount > 0 ? 'text-green-500' : 'text-muted-foreground';
   return (
     <span className={`text-[10px] font-mono ml-1 ${color}`}>
-      {mode} cc:{msgCount}{lastEvent ? `(${lastEvent})` : ''}
+      {mode} raw:{rawCount} cc:{msgCount}{lastEvent ? ` ${lastEvent}` : ''}
     </span>
   );
 }

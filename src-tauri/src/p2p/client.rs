@@ -122,7 +122,8 @@ async fn local_proxy(conn: quinn::Connection) -> Result<(), String> {
 
     loop {
         match listener.accept().await {
-            Ok((tcp, _peer)) => {
+            Ok((tcp, peer)) => {
+                log::info!("[p2p-client] proxy accepted connection from {peer}");
                 let c = conn.clone();
                 tokio::spawn(handle_tcp(tcp, c));
             }
@@ -170,6 +171,11 @@ async fn handle_tcp(mut tcp: TcpStream, conn: quinn::Connection) {
         Ok(s) => s,
         Err(e) => { log::warn!("[p2p-client] open_bi: {e}"); return; }
     };
+
+    // Log the request line for diagnosis (first line of HTTP request)
+    if let Some(first_line) = req.split(|&b| b == b'\n').next() {
+        log::info!("[p2p-client] proxying: {}", String::from_utf8_lossy(first_line).trim());
+    }
 
     if is_websocket_upgrade(&req) {
         // WebSocket: bidirectional pipe over the QUIC stream
