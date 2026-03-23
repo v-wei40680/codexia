@@ -169,7 +169,7 @@ export function ChatInterface() {
       </div>
 
       {/* Input Area */}
-      <div className="absolute bottom-0 left-0 right-0 max-w-3xl mx-auto">
+      <div className="absolute bottom-0 left-0 right-0 px-2 sm:px-0 max-w-3xl mx-auto">
         <Composer />
       </div>
     </div>

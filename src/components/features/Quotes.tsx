@@ -7,7 +7,7 @@ export function Quotes() {
   const quote = useRandomQuote(selectedAgent);
 
   return (
-    <div className="m-auto flex flex-col items-center gap-4 w-full max-w-4xl px-6">
+    <div className="m-auto flex flex-col items-center gap-4 w-full max-w-4xl px-3 sm:px-6">
       {quote && (
         <Card>
           <CardContent>

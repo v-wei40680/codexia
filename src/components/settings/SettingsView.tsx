@@ -205,7 +205,7 @@ export function SettingsView() {
       </Sidebar>
       <SidebarInset className="min-w-0">
         <header className="h-8" data-tauri-drag-region />
-        <div className="h-full min-h-0 w-full bg-background px-6 py-5 overflow-y-auto">
+        <div className="h-full min-h-0 w-full bg-background px-3 sm:px-6 py-5 overflow-y-auto">
           <div className="mx-auto flex w-full max-w-4xl flex-col gap-4">{activeSectionContent}</div>
         </div>
       </SidebarInset>

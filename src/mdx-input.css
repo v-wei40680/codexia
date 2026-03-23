@@ -24,10 +24,13 @@
 .mdx-input-editable {
   font-size: 0.875rem;
   /* text-sm, matching original textarea */
+  /* Prevent iOS from zooming on focus (zoom triggers when font-size < 16px) */
   line-height: 1.5;
   padding: 0.25rem 0.5rem;
   min-height: 32px;
   outline: none;
+  overflow-wrap: break-word;
+  word-break: break-word;
   color: var(--foreground);
   caret-color: var(--foreground);
 }
@@ -87,6 +90,13 @@
   content: '@';
   opacity: 0.7;
   font-size: 0.85em;
+}
+
+/* Prevent iOS Safari auto-zoom on focus (triggered when font-size < 16px) */
+@media (pointer: coarse) {
+  .mdx-input-editable {
+    font-size: 1rem;
+  }
 }
 
 /* Blockquote */

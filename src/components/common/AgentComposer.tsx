@@ -98,7 +98,7 @@ export function AgentComposer({ trayMode = false }: AgentComposerProps) {
   }, [setView, selectedAgent, setActiveSidebarTab]);
 
   return (
-    <div className={trayMode ? 'flex flex-col' : 'flex flex-col h-full'}>
+    <div className="flex flex-col">
       {/* Agent tabs */}
       <div className="flex items-center shrink-0">
         {(['cc', 'codex'] as AgentType[]).map((agent) => (
@@ -119,7 +119,7 @@ export function AgentComposer({ trayMode = false }: AgentComposerProps) {
       </div>
 
       {/* Input area */}
-      <div className={trayMode ? 'shrink-0' : 'flex-1 min-h-0 overflow-hidden'}>
+      <div className="shrink-0">
         {selectedAgent === 'cc' ? (
           <CCComposer overrideSend={trayMode ? handleTrayOverrideSend : undefined} />
         ) : (

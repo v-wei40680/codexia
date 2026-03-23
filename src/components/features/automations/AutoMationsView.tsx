@@ -106,7 +106,7 @@ export function AutoMationsView() {
   }, [hasLoadedTasks, tasks, selectedAutomationTaskId, setSelectedAutomationTaskId]);
 
   return (
-    <div className="h-full overflow-auto p-6">
+    <div className="h-full overflow-auto p-3 sm:p-6">
       <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
         <Tabs defaultValue="mine" className="flex flex-col gap-4">
           <div className="flex items-start justify-between gap-4">
