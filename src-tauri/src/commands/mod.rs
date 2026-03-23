@@ -7,4 +7,5 @@ pub mod notes;
 pub mod skills;
 pub mod sleep;
 pub mod terminal;
+pub mod insights;
 pub mod usage;

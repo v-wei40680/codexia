@@ -1,4 +1,4 @@
-import { ListFilter, Package, PanelLeft, Timer, Trash2 } from 'lucide-react';
+import { BarChart2, ListFilter, Package, PanelLeft, Timer, Trash2 } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useLayoutStore } from '@/stores';
 import { Button } from '@/components/ui/button';
@@ -110,6 +110,16 @@ export function SideBar() {
           >
             <Timer className="h-4 w-4" />
             Automations
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className={navBtnCls(view === 'insights')}
+            onClick={() => setView('insights')}
+          >
+            <BarChart2 className="h-4 w-4" />
+            Insights
           </Button>
 
           {showSidebarMarketplace && (

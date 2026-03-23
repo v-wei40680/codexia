@@ -12,7 +12,8 @@ export type viewType =
   | 'login'
   | 'marketplace'
   | 'settings'
-  | 'usage';
+  | 'usage'
+  | 'insights';
 
 interface LayoutStore {
   isSidebarOpen: boolean;
