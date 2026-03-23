@@ -1,4 +1,3 @@
-import { FuzzyFileSearchParams } from '@/bindings';
 import {
   threadFork,
   threadRollback,
@@ -9,7 +8,6 @@ import {
   threadList,
   threadArchive,
   skillList,
-  fuzzyFileSearch as tauriFuzzyFileSearch,
   skillsConfigWrite as tauriSkillsConfigWrite,
   loginChatGpt as tauriLoginChatGpt,
   getAccount as tauriGetAccount,
@@ -238,9 +236,8 @@ export const codexService = {
   async threadStart() {
     const set = useCodexStore.setState;
     try {
-      const { model, modelProvider, approvalPolicy, sandbox, reasoningEffort } =
+      const { model, modelProvider, approvalPolicy, sandbox, reasoningEffort, webSearchRequest, threadCwdMode } =
         useConfigStore.getState();
-      const { threadCwdMode } = useConfigStore.getState();
       const { cwd } = useWorkspaceStore.getState();
       let threadCwd = cwd;
       if (threadCwdMode === 'worktree' && cwd.trim()) {
@@ -252,18 +249,18 @@ export const codexService = {
         }
       }
       const params: ThreadStartParams = {
-        model: model,
+        model,
         modelProvider,
         cwd: threadCwd,
-        approvalPolicy: approvalPolicy,
-        sandbox: sandbox,
+        approvalPolicy,
+        sandbox,
         baseInstructions: null,
         developerInstructions: null,
         config: {
           model_reasoning_effort: reasoningEffort,
           show_raw_agent_reasoning: true,
           model_reasoning_summary: 'auto',
-          web_search_request: useConfigStore.getState().webSearchRequest,
+          web_search_request: webSearchRequest,
           view_image_tool: true,
           'features.multi_agents': true,
         },
@@ -502,16 +499,6 @@ export const codexService = {
       return response.data;
     } catch (error: unknown) {
       console.error('[CodexService] listSkills error:', error);
-      throw error;
-    }
-  },
-  async fuzzyFileSearch(params: FuzzyFileSearchParams) {
-    try {
-      const response = await tauriFuzzyFileSearch(params);
-      console.log('[CodexService] fuzzyFileSearch response:', response.files);
-      return response.files;
-    } catch (error: unknown) {
-      console.error('[CodexService] fuzzyFileSearch error:', error);
       throw error;
     }
   },

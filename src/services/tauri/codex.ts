@@ -27,8 +27,6 @@ import type {
   FileChangeApprovalDecision,
 } from '@/bindings/v2';
 import type {
-  FuzzyFileSearchParams,
-  FuzzyFileSearchResponse,
   LoginChatGptResponse,
   RequestId,
   ThreadId,
@@ -130,13 +128,6 @@ export async function threadUnarchive(threadId: ThreadId) {
     return await invokeTauri('thread_unarchive', { threadId });
   }
   return await postJson('/api/codex/thread/unarchive', { thread_id: threadId });
-}
-
-export async function fuzzyFileSearch(params: FuzzyFileSearchParams) {
-  if (isDesktopTauri()) {
-    return await invokeTauri<FuzzyFileSearchResponse>('fuzzy_file_search', { params });
-  }
-  return await postJson<FuzzyFileSearchResponse>('/api/codex/search/fuzzy-file', params);
 }
 
 export async function loginChatGpt() {
