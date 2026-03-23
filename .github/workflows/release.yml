@@ -24,17 +24,17 @@ jobs:
       matrix:
         include:
           - platform: "macos-latest"
-            args: ''
+            args: "--features desktop"
           # - platform: "macos-latest"
-          #   args: '--target x86_64-apple-darwin'
+          #   args: '--target x86_64-apple-darwin --features desktop'
           - platform: "ubuntu-24.04"
-            args: ""
+            args: "--features desktop"
           - platform: "ubuntu-22.04-arm"
-            args: "--bundles deb"
+            args: "--bundles deb --features desktop"
           - platform: "windows-latest"
-            args: "--bundles nsis"
+            args: "--features desktop"
           - platform: "windows-latest"
-            args: "--target aarch64-pc-windows-msvc"
+            args: "--target aarch64-pc-windows-msvc --features desktop"
 
     runs-on: ${{ matrix.platform }}
     env:

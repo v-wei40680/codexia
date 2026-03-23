@@ -69,4 +69,4 @@ jobs:
           codex app-server generate-ts -o src/bindings
 
       - name: Build Tauri App
-        run: bun tauri build --bundles deb
+        run: bun tauri build --bundles deb --features desktop
