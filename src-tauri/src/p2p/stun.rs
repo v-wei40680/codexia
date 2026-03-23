@@ -6,15 +6,17 @@ use std::net::{SocketAddr, ToSocketAddrs, UdpSocket};
 use std::time::Duration;
 
 const MAGIC_COOKIE: u32 = 0x2112_A442;
-// const STUN_SERVERS: &[&str] = &["stun.cloudflare.com:3478", "stun.l.google.com:19302"];
+// Reliable servers first — each gets STUN_TIMEOUT_SECS before the next is tried.
+// Keeping this list short keeps worst-case STUN time low.
 const STUN_SERVERS: &[&str] = &[
-    "stun.qq.com:3478",
-    "stun.syncthing.net:3478",
-    "stun.miwifi.com:3478",
-    "stun.chat.bilibili.com:3478",
     "stun.cloudflare.com:3478",
     "stun.l.google.com:19302",
+    "stun.qq.com:3478",
+    "stun.miwifi.com:3478",
 ];
+/// Per-server read timeout.  2 s is enough for any reachable STUN server;
+/// keeping it short means we fall through to the next server quickly.
+const STUN_TIMEOUT_SECS: u64 = 2;
 
 /// Bind a temporary UDP socket to `0.0.0.0:<local_port>`, query a STUN server, return the
 /// public (IP, port) that the NAT assigned.  The socket is dropped when this returns.
@@ -22,7 +24,7 @@ pub fn discover(local_port: u16) -> Result<SocketAddr, String> {
     let socket =
         UdpSocket::bind(format!("0.0.0.0:{local_port}")).map_err(|e| format!("STUN bind: {e}"))?;
     socket
-        .set_read_timeout(Some(Duration::from_secs(5)))
+        .set_read_timeout(Some(Duration::from_secs(STUN_TIMEOUT_SECS)))
         .map_err(|e| e.to_string())?;
 
     for srv in STUN_SERVERS {
@@ -40,7 +42,7 @@ pub fn discover(local_port: u16) -> Result<SocketAddr, String> {
 /// Use this when you need to re-check the public address of a socket you already hold.
 pub fn discover_on_socket(socket: &UdpSocket) -> Result<SocketAddr, String> {
     let prev_timeout = socket.read_timeout().ok().flatten();
-    let _ = socket.set_read_timeout(Some(Duration::from_secs(5)));
+    let _ = socket.set_read_timeout(Some(Duration::from_secs(STUN_TIMEOUT_SECS)));
 
     let result = (|| {
         for srv in STUN_SERVERS {
@@ -64,7 +66,7 @@ pub fn discover_on_socket(socket: &UdpSocket) -> Result<SocketAddr, String> {
 pub fn discover_new_socket() -> Result<(SocketAddr, UdpSocket), String> {
     let socket = UdpSocket::bind("0.0.0.0:0").map_err(|e| format!("STUN bind: {e}"))?;
     socket
-        .set_read_timeout(Some(Duration::from_secs(5)))
+        .set_read_timeout(Some(Duration::from_secs(STUN_TIMEOUT_SECS)))
         .map_err(|e| e.to_string())?;
 
     for srv in STUN_SERVERS {

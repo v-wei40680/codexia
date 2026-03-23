@@ -17,14 +17,31 @@ pub const P2P_UDP_PORT: u16 = 7422;
 pub struct P2PServer {
     pub endpoint: quinn::Endpoint,
     pub public_endpoint: SocketAddr,
-    accept_task: tokio::task::JoinHandle<()>,
-    punch_task: tokio::task::JoinHandle<()>,
+    // Option so p2p_stop can take the handles and await them without hitting the
+    // "cannot move out of a type that implements Drop" restriction.
+    accept_task: Option<tokio::task::JoinHandle<()>>,
+    punch_task: Option<tokio::task::JoinHandle<()>>,
 }
 
 impl Drop for P2PServer {
     fn drop(&mut self) {
-        self.accept_task.abort();
-        self.punch_task.abort();
+        // Safety net for any unexpected drop path — tasks are already taken by
+        // stop(), so these are usually no-ops.
+        if let Some(t) = self.accept_task.take() { t.abort(); }
+        if let Some(t) = self.punch_task.take() { t.abort(); }
+    }
+}
+
+impl P2PServer {
+    /// Close the server and wait until both background tasks have exited so the
+    /// UDP socket on port 7422 is fully released before this returns.
+    pub async fn stop(mut self) {
+        self.endpoint.close(0u32.into(), b"stopped");
+        let at = self.accept_task.take();
+        let pt = self.punch_task.take();
+        drop(self); // drops the P2PServer's own Endpoint clone
+        if let Some(t) = at { t.abort(); let _ = t.await; }
+        if let Some(t) = pt { t.abort(); let _ = t.await; }
     }
 }
 
@@ -64,7 +81,7 @@ pub async fn start(
     let accept_task = tokio::spawn(accept_loop(ep.clone(), owner_user_id.clone(), supabase_url.clone(), anon_key.clone()));
     let punch_task = tokio::spawn(punch_loop(ep, host_jwt, supabase_url, anon_key, owner_user_id));
 
-    Ok(P2PServer { endpoint, public_endpoint, accept_task, punch_task })
+    Ok(P2PServer { endpoint, public_endpoint, accept_task: Some(accept_task), punch_task: Some(punch_task) })
 }
 
 // ── Accept loop ──────────────────────────────────────────────────────────────
@@ -129,6 +146,16 @@ async fn handle_connection(
     log::info!("[p2p-server] auth OK — user {client_uid}");
     if tx.write_all(b"OK\n").await.is_err() { return; }
     drop((tx, rx)); // auth streams done
+
+    // Clear the phone endpoint from Supabase in the background so the punch_loop
+    // stops firing.  Must NOT be awaited here — the phone starts sending requests
+    // immediately after auth and we cannot block the proxy loop.
+    {
+        let (jwt2, url2, key2, uid2) = (jwt.clone(), supabase_url.clone(), anon_key.clone(), client_uid.clone());
+        tokio::spawn(async move {
+            let _ = clear_phone_endpoint(&jwt2, &url2, &key2, &uid2).await;
+        });
+    }
 
     // Proxy subsequent bidi-streams
     loop {
@@ -401,7 +428,11 @@ async fn punch_loop(
     use std::time::Duration;
 
     let client = reqwest::Client::new();
-    let mut last_punched: Option<SocketAddr> = None;
+    // Track the last-punched address with a timestamp. Re-punch the same address after
+    // REPUNCH_SECS so a phone that reconnects with the same NAT mapping is not stuck
+    // waiting 30 s for the QUIC timeout.
+    const REPUNCH_SECS: u64 = 10;
+    let mut last_punched: Option<(SocketAddr, std::time::Instant)> = None;
 
     loop {
         tokio::time::sleep(Duration::from_secs(1)).await;
@@ -432,12 +463,16 @@ async fn punch_loop(
         let Ok(phone_addr) = format!("{phone_ip}:{phone_port}").parse::<SocketAddr>() else {
             continue;
         };
-        if Some(phone_addr) == last_punched {
-            continue; // already punched this session
+        // Skip if we punched the same address recently enough that the NAT mapping
+        // is still open. Re-punch after REPUNCH_SECS to handle reconnections.
+        if let Some((addr, when)) = &last_punched {
+            if *addr == phone_addr && when.elapsed().as_secs() < REPUNCH_SECS {
+                continue;
+            }
         }
 
         log::info!("[p2p-server] punching NAT toward phone: {phone_addr}");
-        last_punched = Some(phone_addr);
+        last_punched = Some((phone_addr, std::time::Instant::now()));
 
         // Fire a few outgoing QUIC packets to open the home router's NAT.
         // We don't await or care about the result — just need UDP out on port 7422.
@@ -522,12 +557,17 @@ async fn register_endpoint(
         .header("apikey", anon_key)
         .header("Prefer", "resolution=merge-duplicates,return=minimal")
         .bearer_auth(jwt)
+        // Also clear any stale phone_ip/phone_port from the previous session so the
+        // punch_loop does not punch a dead address and then skip the mobile's real
+        // endpoint (same NAT mapping) due to the last_punched deduplication check.
         .json(&serde_json::json!({
             "user_id":     user_id,
             "public_ip":   endpoint.ip().to_string(),
             "public_port": endpoint.port(),
             "local_ip":    lan_ip,
             "local_port":  P2P_UDP_PORT,
+            "phone_ip":    serde_json::Value::Null,
+            "phone_port":  serde_json::Value::Null,
         }))
         .send()
         .await
@@ -536,6 +576,33 @@ async fn register_endpoint(
         let status = res.status();
         let body = res.text().await.unwrap_or_default();
         return Err(format!("register failed {status}: {body}"));
+    }
+    Ok(())
+}
+
+/// Null out phone_ip / phone_port in Supabase once a phone has authenticated.
+/// This stops the punch_loop from re-punching an already-connected phone.
+async fn clear_phone_endpoint(
+    jwt: &str,
+    supabase_url: &str,
+    anon_key: &str,
+    user_id: &str,
+) -> Result<(), String> {
+    let client = reqwest::Client::new();
+    let res = client
+        .patch(format!("{supabase_url}/rest/v1/peer_endpoints?user_id=eq.{user_id}"))
+        .header("apikey", anon_key)
+        .header("Prefer", "return=minimal")
+        .bearer_auth(jwt)
+        .json(&serde_json::json!({
+            "phone_ip":   serde_json::Value::Null,
+            "phone_port": serde_json::Value::Null,
+        }))
+        .send()
+        .await
+        .map_err(|e| e.to_string())?;
+    if !res.status().is_success() {
+        return Err(format!("clear phone endpoint: {}", res.status()));
     }
     Ok(())
 }
