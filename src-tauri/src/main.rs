@@ -4,13 +4,15 @@
 #[cfg(feature = "web")]
 const DEFAULT_WEB_PORT: u16 = 7420;
 
-#[cfg(all(feature = "tauri", feature = "web"))]
+/// Returns (web_mode, host, port) parsed from env + CLI args.
+/// `web_mode` is only meaningful when the `tauri` feature is also active.
+#[cfg(feature = "web")]
 fn parse_web_options() -> (bool, String, Option<u16>) {
     let mut web = false;
     let mut host = "127.0.0.1".to_string();
     let mut port: Option<u16> = std::env::var("VITE_WEB_PORT")
         .ok()
-        .and_then(|value| value.parse().ok());
+        .and_then(|v| v.parse().ok());
 
     let mut args = std::env::args().skip(1).peekable();
     while let Some(arg) = args.next() {
@@ -18,16 +20,16 @@ fn parse_web_options() -> (bool, String, Option<u16>) {
             "web" | "--web" => web = true,
             "--host" => host = "0.0.0.0".to_string(),
             "--port" | "--web-port" => {
-                if let Some(value) = args.next() {
-                    if let Ok(parsed) = value.parse::<u16>() {
-                        port = Some(parsed);
+                if let Some(v) = args.next() {
+                    if let Ok(p) = v.parse::<u16>() {
+                        port = Some(p);
                     }
                 }
             }
             _ if arg.starts_with("--web-port=") => {
-                if let Some(value) = arg.split('=').nth(1) {
-                    if let Ok(parsed) = value.parse::<u16>() {
-                        port = Some(parsed);
+                if let Some(v) = arg.split('=').nth(1) {
+                    if let Ok(p) = v.parse::<u16>() {
+                        port = Some(p);
                     }
                 }
             }
@@ -65,13 +67,8 @@ fn main() {
 
     #[cfg(all(feature = "web", not(feature = "tauri")))]
     {
-        codexia_lib::web::start_server(
-            "127.0.0.1",
-            std::env::var("VITE_WEB_PORT")
-                .ok()
-                .and_then(|value| value.parse().ok())
-                .unwrap_or(DEFAULT_WEB_PORT),
-        );
+        let (_web, host, port) = parse_web_options();
+        codexia_lib::web::start_server(&host, port.unwrap_or(DEFAULT_WEB_PORT));
         return;
     }
 

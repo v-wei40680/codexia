@@ -1,27 +1,27 @@
-// Desktop-only modules — requires the "desktop" feature
-#[cfg(feature = "desktop")]
+// Core modules — requires the "core" feature (shared by "desktop" and "web")
+#[cfg(feature = "core")]
 mod cc;
-#[cfg(feature = "desktop")]
+#[cfg(feature = "core")]
 mod codex;
-#[cfg(feature = "desktop")]
+#[cfg(feature = "core")]
 mod db;
-#[cfg(feature = "desktop")]
+#[cfg(feature = "core")]
 mod features;
-#[cfg(all(feature = "desktop", feature = "tauri"))]
+#[cfg(all(feature = "core", feature = "tauri"))]
 mod state;
-#[cfg(all(feature = "desktop", feature = "tauri"))]
+#[cfg(all(feature = "core", feature = "tauri"))]
 mod commands;
-#[cfg(all(feature = "desktop", feature = "tauri"))]
+#[cfg(all(feature = "core", feature = "tauri"))]
 mod tray;
 #[cfg(feature = "tauri")]
 pub mod p2p;
 // web_server compiles for the standalone web binary AND the desktop Tauri app
 // (the latter uses it for in-process P2P routing without opening a port).
-#[cfg(any(feature = "web", all(feature = "desktop", feature = "tauri")))]
+#[cfg(any(feature = "web", all(feature = "core", feature = "tauri")))]
 mod web_server;
 #[cfg(feature = "web")]
 pub mod web;
-#[cfg(all(feature = "desktop", feature = "tauri", any(windows, target_os = "linux")))]
+#[cfg(all(feature = "core", feature = "tauri", any(windows, target_os = "linux")))]
 mod window;
 
 #[cfg(feature = "tauri")]
@@ -337,7 +337,7 @@ pub fn run() {
         .expect("error while running tauri application");
 }
 
-#[cfg(all(feature = "tauri", feature = "desktop"))]
+#[cfg(all(feature = "tauri", feature = "core"))]
 #[tauri::command]
 fn quit_app(app: tauri::AppHandle) {
     app.exit(0);
