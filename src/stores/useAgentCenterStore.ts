@@ -58,10 +58,9 @@ export const useAgentCenterStore = create<AgentCenterState>()(
     {
       name: 'agent-center-store',
       version: 1,
-      // maxCards is runtime-only — derive it fresh from auth each session
+      // maxCards and currentAgentCardId are runtime-only — not persisted
       partialize: (state) => ({
         cards: state.cards,
-        currentAgentCardId: state.currentAgentCardId,
       }),
     }
   )
