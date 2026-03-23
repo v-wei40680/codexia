@@ -35,6 +35,8 @@ interface LayoutStore {
   setSelectedAutomationTaskId: (taskId: string | null) => void;
   isTerminalOpen: boolean;
   setIsTerminalOpen: (open: boolean) => void;
+  diffWordWrap: boolean;
+  setDiffWordWrap: (enabled: boolean) => void;
 }
 
 export const useLayoutStore = create<LayoutStore>()(
@@ -63,6 +65,8 @@ export const useLayoutStore = create<LayoutStore>()(
       setSelectedAutomationTaskId: (taskId) => set({ selectedAutomationTaskId: taskId }),
       isTerminalOpen: false,
       setIsTerminalOpen: (open) => set({ isTerminalOpen: open }),
+      diffWordWrap: false,
+      setDiffWordWrap: (enabled) => set({ diffWordWrap: enabled }),
     }),
     {
       name: 'layout-storage',

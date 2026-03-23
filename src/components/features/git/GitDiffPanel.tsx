@@ -1,54 +1,38 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import '@git-diff-view/react/styles/diff-view-pure.css';
 import {
-  gitFileDiff,
-  gitFileDiffMeta,
-  gitReverseFiles,
   gitStageFiles,
   gitStatus,
   gitUnstageFiles,
-  type GitFileDiffResponse,
-  type GitFileDiffMetaResponse,
   type GitStatusResponse,
 } from '@/services/tauri';
 import { useGitWatch } from '@/hooks/useGitWatch';
 import { useWorkspaceStore } from '@/stores';
+import { useLayoutStore } from '@/stores/settings';
 import { GitDiffDialogs } from './GitDiffDialogs';
+import { GitDiffFileList } from './GitDiffFileList';
 import { GitDiffTopBar } from './GitDiffTopBar';
-import { GitDiffViewer } from './GitDiffViewer';
 import { GitFileTreePanel } from './GitFileTreePanel';
 import type { DiffSection, DiffSource, GitDiffPanelProps } from './types';
-import { LARGE_DIFF_THRESHOLD_BYTES, buildFileTree } from './utils';
+import { buildFileTree } from './utils';
 
 export function GitDiffPanel({ cwd, isActive }: GitDiffPanelProps) {
-  const {
-    selectedFilePath,
-    setSelectedFilePath,
-    hasConfirmedGitRevert,
-    setHasConfirmedGitRevert,
-  } = useWorkspaceStore();
+  const { selectedFilePath, setSelectedFilePath } = useWorkspaceStore();
+  const { diffWordWrap } = useLayoutStore();
   const [gitData, setGitData] = useState<GitStatusResponse | null>(null);
   const [gitLoading, setGitLoading] = useState(false);
   const [gitError, setGitError] = useState<string | null>(null);
   const [selectedDiffPath, setSelectedDiffPath] = useState<string | null>(null);
   const [selectedDiffSection, setSelectedDiffSection] = useState<DiffSection>('unstaged');
-  const [diffData, setDiffData] = useState<GitFileDiffResponse | null>(null);
-  const [diffMeta, setDiffMeta] = useState<GitFileDiffMetaResponse | null>(null);
-  const [diffMetaLoading, setDiffMetaLoading] = useState(false);
-  const [diffLoading, setDiffLoading] = useState(false);
-  const [largeDiffConfirmedKey, setLargeDiffConfirmedKey] = useState<string | null>(null);
   const [showFileTree, setShowFileTree] = useState(true);
-  const [wordWrapEnabled, setWordWrapEnabled] = useState(false);
   const [filterText, setFilterText] = useState('');
   const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
   const [diffSource, setDiffSource] = useState<DiffSource>('uncommitted');
-  const [diffViewCollapsed, setDiffViewCollapsed] = useState(false);
   const [bulkStageDialogOpen, setBulkStageDialogOpen] = useState(false);
   const [bulkStageLoading, setBulkStageLoading] = useState(false);
-  const [revertLoading, setRevertLoading] = useState(false);
-  const [revertConfirmOpen, setRevertConfirmOpen] = useState(false);
   const selectedDiffPathRef = useRef<string | null>(null);
   const selectedDiffSectionRef = useRef<DiffSection>('unstaged');
+
   const toPosix = useCallback((value: string) => value.replace(/\\/g, '/'), []);
   const normalizeRelativePath = useCallback(
     (value: string) => toPosix(value).replace(/^\/+/, ''),
@@ -71,7 +55,6 @@ export function GitDiffPanel({ cwd, isActive }: GitDiffPanelProps) {
     }
   }, [cwd]);
 
-  // Watch .git/index for changes and auto-refresh
   useGitWatch(cwd, refreshGitStatus, isActive);
 
   useEffect(() => {
@@ -80,11 +63,6 @@ export function GitDiffPanel({ cwd, isActive }: GitDiffPanelProps) {
     setGitError(null);
     setGitLoading(false);
     setSelectedDiffPath(null);
-    setDiffData(null);
-    setDiffMeta(null);
-    setDiffMetaLoading(false);
-    setDiffLoading(false);
-    setLargeDiffConfirmedKey(null);
   }, [cwd]);
 
   useEffect(() => {
@@ -120,16 +98,16 @@ export function GitDiffPanel({ cwd, isActive }: GitDiffPanelProps) {
   }, [activeEntries, filterText]);
 
   const fileTree = useMemo(() => buildFileTree(filteredEntries), [filteredEntries]);
+
   const bulkStagePaths = useMemo(() => {
     if (selectedDiffSection !== 'unstaged') return [];
     return [...new Set(filteredEntries.map((entry) => entry.path))];
   }, [filteredEntries, selectedDiffSection]);
 
+  // Keep selectedDiffPath pointing at a valid file
   useEffect(() => {
     if (filteredEntries.length === 0) {
       setSelectedDiffPath(null);
-      setDiffData(null);
-      setDiffMeta(null);
       return;
     }
     const normalizedSelected = selectedDiffPath ? normalizeRelativePath(selectedDiffPath) : null;
@@ -141,174 +119,71 @@ export function GitDiffPanel({ cwd, isActive }: GitDiffPanelProps) {
     }
   }, [filteredEntries, normalizeRelativePath, selectedDiffPath]);
 
-  useEffect(() => {
-    const currentDiffKey = selectedDiffPath ? `${selectedDiffSection}:${selectedDiffPath}` : null;
-    if (!cwd || !selectedDiffPath || !currentDiffKey) {
-      setDiffData(null);
-      setDiffMeta(null);
-      setDiffMetaLoading(false);
-      setDiffLoading(false);
-      return;
-    }
-    let cancelled = false;
-    const loadDiff = async () => {
-      setDiffData(null);
-      setDiffLoading(false);
-      setDiffMetaLoading(true);
-      try {
-        const meta = await gitFileDiffMeta(cwd, selectedDiffPath, selectedDiffSection === 'staged');
-        if (cancelled) return;
-        setDiffMeta(meta);
-        setDiffMetaLoading(false);
-
-        const shouldRequireConfirm =
-          meta.total_bytes > LARGE_DIFF_THRESHOLD_BYTES && largeDiffConfirmedKey !== currentDiffKey;
-        if (shouldRequireConfirm) {
-          return;
-        }
-
-        setDiffLoading(true);
-        const result = await gitFileDiff(cwd, selectedDiffPath, selectedDiffSection === 'staged');
-        if (cancelled) return;
-        setDiffData(result);
-      } catch {
-        if (cancelled) return;
-        setDiffMeta(null);
-        setDiffData(null);
-      } finally {
-        if (cancelled) return;
-        setDiffMetaLoading(false);
-        setDiffLoading(false);
-      }
-    };
-    loadDiff();
-    return () => {
-      cancelled = true;
-    };
-  }, [cwd, selectedDiffPath, selectedDiffSection, largeDiffConfirmedKey]);
-
-  const currentDiffKey = useMemo(
-    () => (selectedDiffPath ? `${selectedDiffSection}:${selectedDiffPath}` : null),
-    [selectedDiffPath, selectedDiffSection]
-  );
-
-  const requiresLargeDiffConfirmation = useMemo(() => {
-    if (!currentDiffKey || !diffMeta) return false;
-    if (largeDiffConfirmedKey === currentDiffKey) return false;
-    return diffMeta.total_bytes > LARGE_DIFF_THRESHOLD_BYTES;
-  }, [currentDiffKey, diffMeta, largeDiffConfirmedKey]);
-
   const resolveDiffPath = useCallback(
     (relativePath: string) => {
-      if (!cwd) {
-        return relativePath;
-      }
-      if (relativePath.startsWith('/') || /^[a-zA-Z]:[\\/]/.test(relativePath)) {
-        return relativePath;
-      }
-      const separator = cwd.includes('\\') ? '\\' : '/';
-      return cwd.endsWith(separator) ? `${cwd}${relativePath}` : `${cwd}${separator}${relativePath}`;
+      if (!cwd) return relativePath;
+      if (relativePath.startsWith('/') || /^[a-zA-Z]:[\\/]/.test(relativePath)) return relativePath;
+      const sep = cwd.includes('\\') ? '\\' : '/';
+      return cwd.endsWith(sep) ? `${cwd}${relativePath}` : `${cwd}${sep}${relativePath}`;
     },
     [cwd]
   );
 
-  const selectPath = (section: DiffSection, path: string) => {
-    setSelectedDiffSection(section);
-    setSelectedDiffPath(path);
-    setSelectedFilePath(resolveDiffPath(path));
-  };
-
+  // Sync selectedDiffPath → selectedFilePath (workspace)
   useEffect(() => {
-    if (!isActive || !selectedDiffPath) {
-      return;
-    }
+    if (!isActive || !selectedDiffPath) return;
     const resolved = resolveDiffPath(selectedDiffPath);
     const sameFile =
       selectedFilePath !== null &&
       normalizeRelativePath(toPosix(selectedFilePath)) === normalizeRelativePath(toPosix(resolved));
-    if (!sameFile) {
-      setSelectedFilePath(resolved);
-    }
-  }, [
-    isActive,
-    normalizeRelativePath,
-    resolveDiffPath,
-    selectedDiffPath,
-    selectedFilePath,
-    setSelectedFilePath,
-    toPosix,
-  ]);
+    if (!sameFile) setSelectedFilePath(resolved);
+  }, [isActive, normalizeRelativePath, resolveDiffPath, selectedDiffPath, selectedFilePath, setSelectedFilePath, toPosix]);
 
+  useEffect(() => { selectedDiffPathRef.current = selectedDiffPath; }, [selectedDiffPath]);
+  useEffect(() => { selectedDiffSectionRef.current = selectedDiffSection; }, [selectedDiffSection]);
+
+  // Sync selectedFilePath (workspace) → selectedDiffPath
   useEffect(() => {
-    selectedDiffPathRef.current = selectedDiffPath;
-  }, [selectedDiffPath]);
+    if (!isActive || !cwd || !selectedFilePath) return;
 
-  useEffect(() => {
-    selectedDiffSectionRef.current = selectedDiffSection;
-  }, [selectedDiffSection]);
-
-  useEffect(() => {
-    if (!isActive || !cwd || !selectedFilePath) {
-      return;
-    }
-
-    const currentSelectedDiffPath = selectedDiffPathRef.current;
-    const currentSelectedDiffSection = selectedDiffSectionRef.current;
-    const resolvedCurrentSelection = currentSelectedDiffPath
-      ? resolveDiffPath(currentSelectedDiffPath)
-      : null;
+    const currentPath = selectedDiffPathRef.current;
+    const currentSection = selectedDiffSectionRef.current;
+    const resolvedCurrent = currentPath ? resolveDiffPath(currentPath) : null;
     if (
-      resolvedCurrentSelection &&
-      normalizeRelativePath(toPosix(selectedFilePath)) ===
-        normalizeRelativePath(toPosix(resolvedCurrentSelection))
-    ) {
-      return;
-    }
+      resolvedCurrent &&
+      normalizeRelativePath(toPosix(selectedFilePath)) === normalizeRelativePath(toPosix(resolvedCurrent))
+    ) return;
 
     const cwdPosix = toPosix(cwd).replace(/\/+$/, '');
     const selectedPosix = toPosix(selectedFilePath);
-    if (!selectedPosix.startsWith(`${cwdPosix}/`)) {
-      return;
-    }
+    if (!selectedPosix.startsWith(`${cwdPosix}/`)) return;
 
     const relativePath = normalizeRelativePath(selectedPosix.slice(cwdPosix.length + 1));
-    const unstagedPathMap = new Map(
-      unstagedEntries.map((entry) => [normalizeRelativePath(entry.path), entry.path] as const)
-    );
-    const stagedPathMap = new Map(
-      stagedEntries.map((entry) => [normalizeRelativePath(entry.path), entry.path] as const)
-    );
+    const unstagedMap = new Map(unstagedEntries.map((e) => [normalizeRelativePath(e.path), e.path] as const));
+    const stagedMap = new Map(stagedEntries.map((e) => [normalizeRelativePath(e.path), e.path] as const));
 
     let targetSection: DiffSection | null = null;
     let targetPath: string | null = null;
-    if (unstagedPathMap.has(relativePath)) {
+    if (unstagedMap.has(relativePath)) {
       targetSection = 'unstaged';
-      targetPath = unstagedPathMap.get(relativePath) ?? null;
-    } else if (stagedPathMap.has(relativePath)) {
+      targetPath = unstagedMap.get(relativePath) ?? null;
+    } else if (stagedMap.has(relativePath)) {
       targetSection = 'staged';
-      targetPath = stagedPathMap.get(relativePath) ?? null;
+      targetPath = stagedMap.get(relativePath) ?? null;
     }
 
-    if (!targetSection || !targetPath) {
-      return;
-    }
+    if (!targetSection || !targetPath) return;
+    if (currentSection !== targetSection) setSelectedDiffSection(targetSection);
+    if (currentPath !== targetPath) setSelectedDiffPath(targetPath);
+  }, [cwd, isActive, normalizeRelativePath, resolveDiffPath, selectedFilePath, stagedEntries, toPosix, unstagedEntries]);
 
-    if (currentSelectedDiffSection !== targetSection) {
-      setSelectedDiffSection(targetSection);
-    }
-    if (currentSelectedDiffPath !== targetPath) {
-      setSelectedDiffPath(targetPath);
-    }
-  }, [
-    cwd,
-    isActive,
-    normalizeRelativePath,
-    resolveDiffPath,
-    selectedFilePath,
-    stagedEntries,
-    toPosix,
-    unstagedEntries,
-  ]);
+  const handleFileSelect = useCallback(
+    (path: string) => {
+      setSelectedDiffPath(path);
+      setSelectedFilePath(resolveDiffPath(path));
+    },
+    [resolveDiffPath, setSelectedFilePath]
+  );
 
   const runStage = async (paths: string[]) => {
     if (!cwd || paths.length === 0) return;
@@ -320,38 +195,6 @@ export function GitDiffPanel({ cwd, isActive }: GitDiffPanelProps) {
     if (!cwd || paths.length === 0) return;
     await gitUnstageFiles(cwd, paths);
     await refreshGitStatus();
-  };
-
-  const runReverse = async () => {
-    if (!cwd || !selectedDiffPath) return;
-    setRevertLoading(true);
-    try {
-      await gitReverseFiles(cwd, [selectedDiffPath], selectedDiffSection === 'staged');
-      await refreshGitStatus();
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      setGitError(message);
-    } finally {
-      setRevertLoading(false);
-    }
-  };
-
-  const handleRevertFile = async () => {
-    if (!cwd || !selectedDiffPath) return;
-    if (!hasConfirmedGitRevert) {
-      setRevertConfirmOpen(true);
-      return;
-    }
-    await runReverse();
-  };
-
-  const handleStageUnstageCurrentFile = async () => {
-    if (!selectedDiffPath) return;
-    if (selectedDiffSection === 'staged') {
-      await runUnstage([selectedDiffPath]);
-    } else {
-      await runStage([selectedDiffPath]);
-    }
   };
 
   const handleBulkStageConfirm = async () => {
@@ -377,6 +220,12 @@ export function GitDiffPanel({ cwd, isActive }: GitDiffPanelProps) {
     });
   };
 
+  const selectPath = (section: DiffSection, path: string) => {
+    setSelectedDiffSection(section);
+    setSelectedDiffPath(path);
+    setSelectedFilePath(resolveDiffPath(path));
+  };
+
   return (
     <div className="h-full min-h-0 flex flex-col overflow-hidden relative">
       <GitDiffTopBar
@@ -389,71 +238,55 @@ export function GitDiffPanel({ cwd, isActive }: GitDiffPanelProps) {
         unstagedCount={unstagedEntries.length}
         stagedCount={stagedEntries.length}
         showFileTree={showFileTree}
-        onToggleFileTree={() => setShowFileTree((value) => !value)}
-        wordWrapEnabled={wordWrapEnabled}
-        onToggleWordWrap={() => setWordWrapEnabled((value) => !value)}
+        onToggleFileTree={() => setShowFileTree((v) => !v)}
         onRefresh={refreshGitStatus}
       />
 
       <div className="flex-1 min-h-0 flex overflow-hidden">
-        <GitDiffViewer
-          selectedDiffPath={selectedDiffPath}
-          selectedDiffSection={selectedDiffSection}
+        <GitDiffFileList
+          cwd={cwd}
+          entries={filteredEntries}
+          section={selectedDiffSection}
           diffSource={diffSource}
-          diffViewCollapsed={diffViewCollapsed}
-          wordWrapEnabled={wordWrapEnabled}
-          diffMetaLoading={diffMetaLoading}
-          diffLoading={diffLoading}
-          requiresLargeDiffConfirmation={requiresLargeDiffConfirmation}
-          diffMeta={diffMeta}
-          diffData={diffData}
-          currentDiffKey={currentDiffKey}
-          onToggleDiffViewCollapsed={() => setDiffViewCollapsed((value) => !value)}
-          onConfirmLargeDiffLoad={setLargeDiffConfirmedKey}
-          onRevertFile={() => {
-            void handleRevertFile();
-          }}
-          onStageUnstageCurrentFile={() => {
-            void handleStageUnstageCurrentFile();
-          }}
-          revertLoading={revertLoading}
+          wordWrapEnabled={diffWordWrap}
+          selectedDiffPath={selectedDiffPath}
+          onSelect={handleFileSelect}
+          onRefreshStatus={refreshGitStatus}
         />
 
         {showFileTree && (
-          <GitFileTreePanel
-            cwd={cwd}
-            selectedDiffSection={selectedDiffSection}
-            bulkStagePaths={bulkStagePaths}
-            bulkStageLoading={bulkStageLoading}
-            filterText={filterText}
-            gitError={gitError}
-            filteredEntriesCount={filteredEntries.length}
-            fileTree={fileTree}
-            selectedDiffPath={selectedDiffPath}
-            collapsedFolders={collapsedFolders}
-            onOpenBulkStageDialog={() => setBulkStageDialogOpen(true)}
-            onFilterTextChange={setFilterText}
-            onToggleFolder={toggleFolder}
-            onSelectPath={selectPath}
-            onStage={runStage}
-            onUnstage={runUnstage}
-          />
+          <div className="hidden md:flex min-h-0">
+            <GitFileTreePanel
+              cwd={cwd}
+              selectedDiffSection={selectedDiffSection}
+              bulkStagePaths={bulkStagePaths}
+              bulkStageLoading={bulkStageLoading}
+              filterText={filterText}
+              gitError={gitError}
+              filteredEntriesCount={filteredEntries.length}
+              fileTree={fileTree}
+              selectedDiffPath={selectedDiffPath}
+              collapsedFolders={collapsedFolders}
+              onOpenBulkStageDialog={() => setBulkStageDialogOpen(true)}
+              onFilterTextChange={setFilterText}
+              onToggleFolder={toggleFolder}
+              onSelectPath={selectPath}
+              onStage={runStage}
+              onUnstage={runUnstage}
+            />
+          </div>
         )}
+
         <GitDiffDialogs
           bulkStageDialogOpen={bulkStageDialogOpen}
           bulkStagePathsCount={bulkStagePaths.length}
           bulkStageLoading={bulkStageLoading}
-          revertConfirmOpen={revertConfirmOpen}
-          revertLoading={revertLoading}
+          revertConfirmOpen={false}
+          revertLoading={false}
           onBulkStageDialogOpenChange={setBulkStageDialogOpen}
-          onRevertConfirmOpenChange={setRevertConfirmOpen}
-          onBulkStageConfirm={() => {
-            void handleBulkStageConfirm();
-          }}
-          onRevertConfirm={() => {
-            setHasConfirmedGitRevert(true);
-            void runReverse();
-          }}
+          onRevertConfirmOpenChange={() => {}}
+          onBulkStageConfirm={() => { void handleBulkStageConfirm(); }}
+          onRevertConfirm={() => {}}
         />
       </div>
     </div>

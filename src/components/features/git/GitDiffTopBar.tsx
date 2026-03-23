@@ -1,4 +1,4 @@
-import { Folder, FolderOpen, Menu, RefreshCw } from 'lucide-react';
+import { Folder, FolderOpen, Menu, RefreshCw, SquareDashedBottom, SquareStack } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { useLayoutStore } from '@/stores/settings';
 import type { DiffSection, DiffSource } from './types';
 
 interface GitDiffTopBarProps {
@@ -26,8 +27,6 @@ interface GitDiffTopBarProps {
   stagedCount: number;
   showFileTree: boolean;
   onToggleFileTree: () => void;
-  wordWrapEnabled: boolean;
-  onToggleWordWrap: () => void;
   onRefresh: () => void;
 }
 
@@ -42,13 +41,13 @@ export function GitDiffTopBar({
   stagedCount,
   showFileTree,
   onToggleFileTree,
-  wordWrapEnabled,
-  onToggleWordWrap,
   onRefresh,
 }: GitDiffTopBarProps) {
+  const { diffWordWrap, setDiffWordWrap } = useLayoutStore();
   return (
     <div className="border-b border-white/10 flex items-center gap-2">
-      <div className="w-48 shrink-0">
+      {/* Source selector — hidden on mobile, shown via dropdown instead */}
+      <div className="hidden md:block w-48 shrink-0">
         <Select value={diffSource} onValueChange={(value) => onDiffSourceChange(value as DiffSource)}>
           <SelectTrigger className="h-8 text-xs">
             <SelectValue />
@@ -100,8 +99,19 @@ export function GitDiffTopBar({
             <DropdownMenuItem onClick={onRefresh} disabled={!cwd || gitLoading}>
               <RefreshCw className="h-4 w-4" /> Refresh
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={onToggleWordWrap}>
-              {wordWrapEnabled ? 'Disable word wrap' : 'Enable word wrap'}
+            <DropdownMenuItem onClick={() => setDiffWordWrap(!diffWordWrap)}>
+              {diffWordWrap ? 'Disable word wrap' : 'Enable word wrap'}
+            </DropdownMenuItem>
+            {/* Source selector — shown here on mobile only */}
+            <DropdownMenuItem
+              className="md:hidden"
+              onClick={() => onDiffSourceChange(diffSource === 'uncommitted' ? 'latest-turn' : 'uncommitted')}
+            >
+              {diffSource === 'uncommitted' ? (
+                <><SquareStack className="h-4 w-4" /> Latest turn changes</>
+              ) : (
+                <><SquareDashedBottom className="h-4 w-4" /> Uncommitted changes</>
+              )}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
