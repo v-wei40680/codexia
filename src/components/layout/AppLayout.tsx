@@ -56,14 +56,19 @@ export function AppLayout() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === ',' && (event.metaKey || event.ctrlKey)) {
-        event.preventDefault();
-        setView('settings');
+      if (event.metaKey || event.ctrlKey) {
+        if (event.key === ',') {
+          event.preventDefault();
+          setView('settings');
+        } else if (event.key === 'b') {
+          event.preventDefault();
+          setSidebarOpen(!isSidebarOpen);
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [setView]);
+  }, [isSidebarOpen, setSidebarOpen, setView]);
 
   useEffect(() => {
     if (isMobile) {
