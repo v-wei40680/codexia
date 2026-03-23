@@ -24,6 +24,7 @@ import { SideBarClaudeTab } from './SideBarClaudeTab';
 import { AgentIcon } from '@/components/common/AgentIcon';
 import { SessionManagerDialog } from './SessionManagerDialog';
 import { TunnelIndicator } from '@/components/features/TunnelIndicator';
+import { FeedbackDialog } from '../dialogs/FeedbackDialog';
 
 const focusCCInput = () => window.dispatchEvent(new Event('cc-input-focus-request'));
 
@@ -215,9 +216,14 @@ export function SideBar() {
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between gap-2 min-h-0 min-w-0 max-w-full overflow-x-hidden">
-        <UserInfo />
-        <TunnelIndicator />
+      <div className="flex items-center min-h-0 min-w-0 max-w-full overflow-x-hidden">
+        <div className="flex-1 min-w-0 overflow-hidden">
+          <UserInfo />
+        </div>
+        <div className="flex-shrink-0 pr-2 flex items-center gap-2">
+          <TunnelIndicator />
+          <FeedbackDialog />
+        </div>
       </div>
 
       <SessionManagerDialog
