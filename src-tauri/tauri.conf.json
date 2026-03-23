@@ -59,9 +59,6 @@
   "bundle": {
     "active": true,
     "targets": "all",
-    "iOS": {
-      "developmentTeam": "268NNH9T4Z"
-    },
     "createUpdaterArtifacts": true,
     "icon": [
       "icons/32x32.png",
@@ -70,12 +67,6 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
-    "resources": [],
-    "externalBin": [],
-    "copyright": "© 2026 Milisp. All rights reserved.",
-    "category": "DeveloperTool",
-    "shortDescription": "Agent OS and Toolkit for Codex CLI + Claude Code",
-    "longDescription": "codexia is a comprehensive GUI application and toolkit for working with Codex CLI, providing an intuitive interface for AI-assisted development.",
     "linux": {
       "appimage": {
         "bundleMediaFramework": true
@@ -88,12 +79,8 @@
       }
     },
     "macOS": {
-      "frameworks": [],
       "minimumSystemVersion": "10.15",
-      "exceptionDomain": "",
-      "signingIdentity": null,
-      "entitlements": "entitlements.plist",
-      "providerShortName": null
+      "entitlements": "entitlements.plist"
     }
   }
 }
