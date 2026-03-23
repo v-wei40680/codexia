@@ -10,6 +10,7 @@ import { PanelLeftOpen } from 'lucide-react';
 import { WebPreview } from '../features/web-preview/WebPreview';
 import { detectWebFramework } from '../features/web-preview/webFrameworkDetection';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { RightPanelHeader } from './RightPanelHeader';
 
 export function RightPanel() {
   const { activeRightPanelTab, setRightPanelOpen } = useLayoutStore();
@@ -46,7 +47,12 @@ export function RightPanel() {
   }, [cwd, isMobile]);
 
   return (
-    <div className="h-full w-full min-h-0 border-l border-white/10 bg-sidebar/30 flex flex-col overflow-hidden">
+    <div className={`h-full w-full min-h-0 border-l border-white/10 flex flex-col overflow-hidden ${isMobile ? 'bg-sidebar' : 'bg-sidebar/30'}`}>
+      {isMobile && (
+        <div className="flex items-center justify-between h-11 border-b border-white/10 px-1 shrink-0">
+          <RightPanelHeader />
+        </div>
+      )}
       <div className="flex-1 min-h-0 flex overflow-hidden">
         <div className="flex-1 min-w-0 min-h-0 overflow-hidden">
           <div className={activeRightPanelTab === 'diff' ? 'h-full min-h-0 overflow-hidden' : 'hidden'}>
