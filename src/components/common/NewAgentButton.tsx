@@ -14,7 +14,7 @@ export function NewAgentButton() {
   const { setCurrentAgentCardId } = useAgentCenterStore();
   const { view, setView, setActiveSidebarTab } = useLayoutStore();
   const { handleNewSession } = useCCSessionManager();
-  const { handleNewThread } = useThreadList({ enabled: true });
+  const { handleNewThread } = useThreadList({ enabled: false });
 
   const handleCreateNew = useCallback(
     async (project?: string) => {

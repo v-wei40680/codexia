@@ -48,7 +48,7 @@ export function SideBar() {
     useLayoutStore();
   const { isMacos } = useTrafficLightConfig(isSidebarOpen);
   const { searchTerm, setSearchTerm, sortKey, setSortKey, handleNewThread } = useThreadList({
-    enabled: activeSidebarTab === 'codex',
+    enabled: isSidebarOpen && activeSidebarTab === 'codex',
   });
   const { handleNewSession } = useCCSessionManager();
   const { showSidebarMarketplace } = useSettingsStore();
