@@ -7,8 +7,6 @@ import { FileMentionPopover } from '@/components/common';
 import { useInputStore } from '@/stores/useInputStore';
 import { useCodexStore } from '@/stores/codex';
 import { useIsProcessing } from '@/hooks/codex';
-import { useIsMobile } from '@/hooks/use-mobile';
-
 // MDXEditor imports
 import {
   MDXEditor,
@@ -39,8 +37,6 @@ export function InputArea({
 }: InputAreaProps & { children?: React.ReactNode }) {
   const { currentThreadId, inputFocusTrigger } = useCodexStore();
   const isProcessing = useIsProcessing();
-  const isMobile = useIsMobile();
-
   const { inputValue, setInputValue } = useInputStore();
 
   const isComposing = useRef(false);
@@ -115,7 +111,7 @@ export function InputArea({
   };
 
   return (
-    <div className={`${isMobile && 'pb-[env(safe-area-inset-bottom)]'} bg-background`}>
+    <div className="pb-[env(safe-area-inset-bottom)] bg-background">
       <FileMentionPopover
         input={inputValue}
         setInput={setInputValue}
@@ -192,7 +188,7 @@ export function InputArea({
                 onClick={handleStop}
                 variant="destructive"
                 size="icon"
-                className={`${isMobile ? 'h-10 w-10' : 'h-8 w-8'} rounded-full`}
+                className="h-10 w-10 md:h-8 md:w-8 rounded-full"
               >
                 <Square className="w-4 h-4" />
               </Button>
@@ -201,7 +197,7 @@ export function InputArea({
                 onClick={handleSend}
                 disabled={!inputValue.trim() && images.length === 0}
                 size="icon"
-                className={`${isMobile ? 'h-10 w-10' : 'h-8 w-8'} rounded-full`}
+                className="h-10 w-10 md:h-8 md:w-8 rounded-full"
               >
                 <ArrowUp className="w-4 h-4" />
               </Button>

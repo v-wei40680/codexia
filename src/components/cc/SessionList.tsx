@@ -28,7 +28,6 @@ import { useLayoutStore, useAgentCenterStore } from '@/stores';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { isDesktopTauri } from '@/hooks/runtime';
 import { formatThreadAge } from '@/utils/formatThreadAge';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 interface Props {
   project?: string;
@@ -45,7 +44,6 @@ export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Pr
   const { addAgentCard, setCurrentAgentCardId } = useAgentCenterStore();
   const { activeSessionIds, activeSessionId, isLoading, addMessageToSession, setSessionLoading, sessionMessagesMap } = useCCStore();
   const { toast } = useToast();
-  const isMobile = useIsMobile();
 
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
@@ -218,8 +216,7 @@ export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Pr
                     <Button
                       variant="ghost"
                       size="icon"
-                      className={`h-6 w-6 rounded hover:bg-accent/50 transition-colors text-muted-foreground ${isMobile ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                        }`}
+                      className="h-6 w-6 rounded hover:bg-accent/50 transition-colors text-muted-foreground opacity-0 group-hover:opacity-100 max-md:opacity-100"
                       onClick={(e) => e.stopPropagation()}
                     >
                       <MoreVertical className="h-3.5 w-3.5" />
