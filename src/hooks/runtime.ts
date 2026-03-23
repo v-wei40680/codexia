@@ -24,7 +24,9 @@ const resolveApiBase = () => {
       return `http://${host}:${configuredPort}`;
     }
     // Prod: P2P proxy listens on device localhost.
-    return `http://127.0.0.1:${configuredPort}`;
+    // Must use 'localhost' hostname, not '127.0.0.1' IP — WebKit exempts localhost
+    // from mixed-content blocking when the page origin is tauri://localhost (secure).
+    return `http://localhost:${configuredPort}`;
   }
 
   if (import.meta.env.PROD) {
@@ -51,7 +53,7 @@ const resolveWsBase = () => {
       return `ws://${host}:${configuredPort}`;
     }
     // Prod: P2P proxy listens on device localhost.
-    return `ws://127.0.0.1:${configuredPort}`;
+    return `ws://localhost:${configuredPort}`;
   }
 
   if (import.meta.env.PROD) {
