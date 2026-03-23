@@ -60,7 +60,7 @@ export function useGitWatch(cwd: string | null, onRefresh: () => void, enabled =
           window.removeEventListener('fs_change', onWsEvent as EventListener);
         };
       } catch (error) {
-        console.error('Failed to watch .git/index:', error);
+        console.warn('Failed to watch .git/index:', error);
       }
     };
 
@@ -76,7 +76,7 @@ export function useGitWatch(cwd: string | null, onRefresh: () => void, enabled =
         unlistenRef.current();
         unlistenRef.current = null;
       }
-      void stopWatchFile(gitIndexPath).catch(() => {});
+      void stopWatchFile(gitIndexPath).catch(() => { });
       if (refreshTimeoutRef.current) {
         clearTimeout(refreshTimeoutRef.current);
       }
