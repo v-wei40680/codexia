@@ -14,7 +14,6 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { CommandList } from '@/components/ui/command';
 import { type TauriFileEntry } from '@/services/tauri';
 
 function getParentPath(path: string): string | null {
@@ -142,7 +141,7 @@ export function BrowserProjects({
           Set
         </Button>
       </div>
-      <CommandList className="max-h-[360px]">
+      <div className="max-h-[360px] overflow-y-auto">
         {isLoading ? (
           <div className="flex items-center gap-2 p-3 text-sm text-muted-foreground">
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -187,7 +186,7 @@ export function BrowserProjects({
             </div>
           </>
         )}
-      </CommandList>
+      </div>
     </>
   );
 }
