@@ -5,6 +5,7 @@ import {
   postJson,
   postJsonWithOptions,
   postNoContent,
+  postNoContentWithOptions,
 } from './shared';
 
 export async function readFile(filePath: string, options?: { suppressToast?: boolean }) {
@@ -142,7 +143,7 @@ export async function startWatchFile(filePath: string) {
     await invokeTauri('start_watch_file', { filePath });
     return;
   }
-  await postNoContent('/api/filesystem/start-watch-file', { filePath });
+  await postNoContentWithOptions('/api/filesystem/start-watch-file', { filePath }, { suppressToast: true });
 }
 
 export async function stopWatchFile(filePath: string) {
@@ -150,5 +151,5 @@ export async function stopWatchFile(filePath: string) {
     await invokeTauri('stop_watch_file', { filePath });
     return;
   }
-  await postNoContent('/api/filesystem/stop-watch-file', { filePath });
+  await postNoContentWithOptions('/api/filesystem/stop-watch-file', { filePath }, { suppressToast: true });
 }
