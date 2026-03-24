@@ -25,7 +25,7 @@ const LoginView = lazy(() => import('@/views/LoginView'));
 const AutoMationsView = lazy(() =>
   import('../features/automations').then((module) => ({ default: module.AutoMationsView })),
 );
-const InsightsView = lazy(() => import('@/views/InsightsView'));
+const InsightsView = lazy(() => import('@/components/features/insight/InsightsView'));
 
 const ViewLoadingFallback = () => (
   <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">
