@@ -26,6 +26,7 @@ import type {
   SandboxPolicy,
   ReadOnlyAccess,
 } from '@/bindings/v2';
+import type { CollaborationMode } from '@/bindings';
 import type { ThreadListItem } from '@/types/codex/ThreadListItem';
 import { useCodexStore, useConfigStore, type ModeKind } from '@/stores/codex';
 import { useWorkspaceStore } from '@/stores';
@@ -457,9 +458,18 @@ export const codexService = {
         userInputs.push({ type: 'text', text: '', text_elements: [] });
       }
 
-      const { model, reasoningEffort, approvalPolicy, sandbox, webSearchRequest } =
+      const { model, reasoningEffort, approvalPolicy, sandbox, webSearchRequest, collaborationMode } =
         useConfigStore.getState();
-      void collaborationModeOverride;
+
+      const effectiveMode = collaborationModeOverride ?? collaborationMode;
+      const collaborationModeParam: CollaborationMode = {
+        mode: effectiveMode,
+        settings: {
+          model: model || '',
+          reasoning_effort: reasoningEffort ?? null,
+          developer_instructions: null,
+        },
+      };
 
       const response = await turnStart({
         threadId,
@@ -471,6 +481,7 @@ export const codexService = {
         effort: reasoningEffort ?? null,
         summary: null,
         outputSchema: null,
+        collaborationMode: collaborationModeParam,
       });
 
       set({ currentTurnId: response.turn.id });
