@@ -10,7 +10,9 @@ mod websocket;
 #[cfg(feature = "web")]
 mod server_web;
 
+#[cfg(feature = "tauri")]
 pub use router::create_router;
+#[cfg(feature = "tauri")]
 pub use types::WebServerState;
 #[cfg(feature = "web")]
 pub use server_web::{start_web_server, start_web_server_with_events};
