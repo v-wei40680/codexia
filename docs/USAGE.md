@@ -1,6 +1,6 @@
 # Using Codexia
 
-[Architecture](./ARCHITECTURE.md)
+[AGENTS.md](./AGENTS.md)
 
 ## Download from github release
 
