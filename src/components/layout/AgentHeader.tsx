@@ -1,7 +1,6 @@
 import {
   Circle,
   History,
-  PanelLeft,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { codexService } from '@/services/codexService';
@@ -14,16 +13,15 @@ import { useCCStore } from '@/stores/cc';
 import { isTauri } from '@/hooks/runtime';
 import { useTrafficLightConfig } from '@/hooks';
 import { NewAgentButton } from '@/components/common/NewAgentButton';
+import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 
 export function AgentHeader() {
-  const {
-    isSidebarOpen,
-    setSidebarOpen,
-    setView,
-    view,
-  } = useLayoutStore();
+  const { setView, view } = useLayoutStore();
+  const { open: isSidebarOpen, openMobile, isMobile } = useSidebar();
   const { setHistoryMode, selectedAgent } = useWorkspaceStore();
   const { needsTrafficLightOffset } = useTrafficLightConfig(isSidebarOpen);
+  // Show trigger when sidebar is closed; on mobile the Sheet is transient so always show
+  const showTrigger = isMobile ? !openMobile : !isSidebarOpen;
 
   const { isConnected } = useCCStore();
   const { currentThreadId, activeThreadIds } = useCodexStore();
@@ -49,11 +47,9 @@ export function AgentHeader() {
       data-tauri-drag-region
     >
       <div className="flex min-w-0 items-center gap-2">
-        {!isSidebarOpen && (
+        {showTrigger && (
           <div className={`flex items-center ${needsTrafficLightOffset ? 'pl-20' : 'pl-2'}`}>
-            <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(true)}>
-              <PanelLeft />
-            </Button>
+            <SidebarTrigger />
             <NewAgentButton />
           </div>
         )}

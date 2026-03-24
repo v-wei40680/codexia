@@ -1,4 +1,4 @@
-import { BarChart2, ListFilter, Package, PanelLeft, Timer, Trash2 } from 'lucide-react';
+import { BarChart2, ListFilter, Package, Timer, Trash2 } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useLayoutStore } from '@/stores';
 import { Button } from '@/components/ui/button';
@@ -10,17 +10,19 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
+  Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
   SidebarInput,
+  SidebarTrigger,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import { UserInfo } from './UserInfo';
 import { useThreadList } from '@/hooks/codex';
 import { AgentType, useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useSettingsStore } from '@/stores/settings';
 import { useCCSessionManager } from '@/hooks/useCCSessionManager';
-import { useUpdater } from '@/hooks/useUpdater';
 import { UpdateButton } from '../features/UpdateButton';
 import { useTrafficLightConfig } from '@/hooks';
 import { SideBarCodexTab } from './SideBarCodexTab';
@@ -40,15 +42,14 @@ const navBtnCls = (active: boolean) => `${navBtnBase} ${active ? navBtnActive : 
 
 export function SideBar() {
   const { cwd, setCwd, setSelectedAgent } = useWorkspaceStore();
-  const { isSidebarOpen, setSidebarOpen, setView, view, activeSidebarTab, setActiveSidebarTab } =
-    useLayoutStore();
+  const { setView, view, activeSidebarTab, setActiveSidebarTab } = useLayoutStore();
+  const { open: isSidebarOpen } = useSidebar();
   const { isMacos } = useTrafficLightConfig(isSidebarOpen);
   const { searchTerm, setSearchTerm, sortKey, setSortKey, handleNewThread } = useThreadList({
     enabled: isSidebarOpen && activeSidebarTab === 'codex',
   });
   const { handleNewSession } = useCCSessionManager();
   const { showSidebarMarketplace } = useSettingsStore();
-  const { hasUpdate, startUpdate } = useUpdater({ enabled: true });
   const [sessionManagerOpen, setSessionManagerOpen] = useState(false);
 
   const currentThreadSortLabel = sortKey === 'created_at' ? 'Created' : 'Updated';
@@ -74,146 +75,141 @@ export function SideBar() {
   );
 
   return (
-    <div className="flex h-full w-full flex-col border-r border-sidebar-border bg-zinc-100/95 dark:bg-zinc-900/95">
-      <SidebarHeader className="gap-1 p-2">
+    <>
+      <Sidebar className="border-r border-sidebar-border bg-zinc-100/95 dark:bg-zinc-900/95">
+        <SidebarHeader className="gap-1 p-2">
 
-        {/* Header row: toggle + update */}
-        <div
-          className={`flex items-center gap-2 ${isMacos ? 'pl-20' : 'pl-2'}`}
-          data-tauri-drag-region
-        >
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-7 w-7"
-            onClick={() => setSidebarOpen(!isSidebarOpen)}
+          {/* Header row: toggle */}
+          <div
+            className={`flex items-center gap-2 ${isMacos ? 'pl-20' : 'pl-2'}`}
+            data-tauri-drag-region
           >
-            <PanelLeft className="h-4 w-4" />
-          </Button>
-          <UpdateButton hasUpdate={hasUpdate} onUpdate={startUpdate} />
-        </div>
+            <SidebarTrigger className="h-7 w-7" />
+          </div>
 
-        {/* Search */}
-        <SidebarInput
-          placeholder="Search threads..."
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+          {/* Search */}
+          <SidebarInput
+            placeholder="Search threads..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
 
-        {/* Nav actions */}
-        <div className="flex flex-col">
-          <Button
-            variant="ghost"
-            size="sm"
-            className={navBtnCls(view === 'automations')}
-            onClick={() => setView('automations')}
-          >
-            <Timer className="h-4 w-4" />
-            Automations
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="sm"
-            className={navBtnCls(view === 'insights')}
-            onClick={() => setView('insights')}
-          >
-            <BarChart2 className="h-4 w-4" />
-            Insights
-          </Button>
-
-          {showSidebarMarketplace && (
+          {/* Nav actions */}
+          <div className="flex flex-col">
             <Button
               variant="ghost"
               size="sm"
-              className={navBtnCls(view === 'marketplace')}
-              onClick={() => setView('marketplace')}
+              className={navBtnCls(view === 'automations')}
+              onClick={() => setView('automations')}
             >
-              <Package className="h-4 w-4" />
-              Skills | MCP
+              <Timer className="h-4 w-4" />
+              Automations
             </Button>
-          )}
-        </div>
 
-        {/* Tab switcher row */}
-        <span className="flex justify-between">
-          <span className="flex gap-2">
-            {(['cc', 'codex'] as AgentType[]).map((agent) => (
-              <Button
-                key={agent}
-                variant="ghost"
-                size="icon"
-                className={`h-8 w-8 ${activeSidebarTab === agent ? 'bg-accent' : ''}`}
-                onClick={() => {
-                  setSelectedAgent(agent);
-                  setActiveSidebarTab(agent);
-                }}
-              >
-                <AgentIcon agent={agent} />
-              </Button>
-            ))}
-          </span>
-
-          <span className="flex gap-2">
             <Button
               variant="ghost"
-              size="icon"
-              className="h-8 w-8"
-              title="Manage sessions & threads"
-              onClick={() => setSessionManagerOpen(true)}
+              size="sm"
+              className={navBtnCls(view === 'insights')}
+              onClick={() => setView('insights')}
             >
-              <Trash2 className="h-4 w-4" />
+              <BarChart2 className="h-4 w-4" />
+              Insights
             </Button>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
+
+            {showSidebarMarketplace && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className={navBtnCls(view === 'marketplace')}
+                onClick={() => setView('marketplace')}
+              >
+                <Package className="h-4 w-4" />
+                Skills | MCP
+              </Button>
+            )}
+          </div>
+
+          {/* Tab switcher row */}
+          <span className="flex justify-between">
+            <span className="flex gap-2">
+              {(['cc', 'codex'] as AgentType[]).map((agent) => (
                 <Button
+                  key={agent}
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8"
-                  title={`Filter threads (current: ${currentThreadSortLabel})`}
+                  className={`h-8 w-8 ${activeSidebarTab === agent ? 'bg-accent' : ''}`}
+                  onClick={() => {
+                    setSelectedAgent(agent);
+                    setActiveSidebarTab(agent);
+                  }}
                 >
-                  <ListFilter className="h-4 w-4" />
+                  <AgentIcon agent={agent} />
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuRadioGroup
-                  value={sortKey}
-                  onValueChange={(v) => setSortKey(v as 'created_at' | 'updated_at')}
-                >
-                  <DropdownMenuRadioItem value="created_at">Sort by Created</DropdownMenuRadioItem>
-                  <DropdownMenuRadioItem value="updated_at">Sort by Updated</DropdownMenuRadioItem>
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
+              ))}
+            </span>
+
+            <span className="flex gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                title="Manage sessions & threads"
+                onClick={() => setSessionManagerOpen(true)}
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    title={`Filter threads (current: ${currentThreadSortLabel})`}
+                  >
+                    <ListFilter className="h-4 w-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuRadioGroup
+                    value={sortKey}
+                    onValueChange={(v) => setSortKey(v as 'created_at' | 'updated_at')}
+                  >
+                    <DropdownMenuRadioItem value="created_at">Sort by Created</DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem value="updated_at">Sort by Updated</DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </span>
           </span>
-        </span>
-      </SidebarHeader>
+        </SidebarHeader>
 
-      {/* Thread list */}
-      <SidebarContent className="min-w-0 max-w-full overflow-x-hidden gap-0 px-0">
-        {activeSidebarTab === 'codex' && (
-          <SideBarCodexTab onCreateNewThread={handleCreateNewThreadForProject} />
-        )}
-        {activeSidebarTab === 'cc' && (
-          <SideBarClaudeTab onStartNewSession={handleStartNewCcSessionForProject} />
-        )}
-      </SidebarContent>
+        {/* Thread list */}
+        <SidebarContent className="min-w-0 max-w-full overflow-x-hidden gap-0 px-0">
+          {activeSidebarTab === 'codex' && (
+            <SideBarCodexTab onCreateNewThread={handleCreateNewThreadForProject} />
+          )}
+          {activeSidebarTab === 'cc' && (
+            <SideBarClaudeTab onStartNewSession={handleStartNewCcSessionForProject} />
+          )}
+        </SidebarContent>
 
-      <SidebarFooter className="flex-row items-center p-0 min-w-0 max-w-full overflow-x-hidden">
-        <div className="flex-1 min-w-0 overflow-hidden">
-          <UserInfo />
-        </div>
-        <div className="flex-shrink-0 pr-2 flex items-center gap-2">
-          <TunnelIndicator />
-          <FeedbackDialog />
-        </div>
-      </SidebarFooter>
+        <SidebarFooter className="flex-row items-center p-0 min-w-0 max-w-full overflow-x-hidden">
+          <div className="flex-1 min-w-0 overflow-hidden">
+            <UserInfo />
+          </div>
+          <div className="flex-shrink-0 pr-2 flex items-center gap-2">
+            <TunnelIndicator />
+            <UpdateButton />
+            <FeedbackDialog />
+          </div>
+        </SidebarFooter>
+      </Sidebar>
 
       <SessionManagerDialog
         open={sessionManagerOpen}
         onOpenChange={setSessionManagerOpen}
         defaultTab={activeSidebarTab === 'cc' ? 'cc' : 'codex'}
       />
-    </div>
+    </>
   );
 }

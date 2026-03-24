@@ -1,19 +1,19 @@
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { isTauri } from "@/hooks/runtime";
+import { CodeXml, Download } from "lucide-react";
+import { useUpdater } from "@/hooks/useUpdater";
 
-type UpdateButtonProps = {
-  hasUpdate: boolean;
-  onUpdate: () => void | Promise<void>;
-};
+export function UpdateButton() {
+  const { hasUpdate, startUpdate } = useUpdater({ enabled: true });
 
-export function UpdateButton({ hasUpdate, onUpdate }: UpdateButtonProps) {
   if (!isTauri()) {
     return null;
   }
 
   if (import.meta.env.DEV) {
-    return <Badge variant="destructive">DEV</Badge>;
+    return <Button size='icon-sm'>
+      <CodeXml className="h-4 w-4" />
+    </Button>;
   }
 
   if (!hasUpdate) {
@@ -22,11 +22,11 @@ export function UpdateButton({ hasUpdate, onUpdate }: UpdateButtonProps) {
 
   return (
     <Button
-      size="sm"
-      onClick={() => void onUpdate()}
-      className="h-6 rounded-md bg-blue-500 px-2 text-xs font-medium text-white hover:bg-blue-600"
+      size="icon-sm"
+      variant="outline"
+      onClick={() => void startUpdate()}
     >
-      Update
+      <Download className="h-4 w-4" />
     </Button>
   );
 }
