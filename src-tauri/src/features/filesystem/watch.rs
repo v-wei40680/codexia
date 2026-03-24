@@ -34,7 +34,7 @@ fn kind_to_string(kind: &EventKind) -> String {
     }
 }
 
-async fn start_watch_path(
+pub async fn start_watch_path(
     state: &WatchState,
     path: String,
     emit: Arc<dyn Fn(FsChangePayload) + Send + Sync>,
@@ -89,7 +89,7 @@ async fn start_watch_path(
     Ok(())
 }
 
-async fn stop_watch_path(state: &WatchState, path: String) -> Result<(), String> {
+pub async fn stop_watch_path(state: &WatchState, path: String) -> Result<(), String> {
     let abs = expand_path(&path)?;
     let key = match std::fs::canonicalize(&abs) {
         Ok(p) => p.to_string_lossy().to_string(),
@@ -109,18 +109,6 @@ async fn stop_watch_path(state: &WatchState, path: String) -> Result<(), String>
     Ok(())
 }
 
-pub async fn start_watch_directory(
-    state: &WatchState,
-    folder_path: String,
-    emit: Arc<dyn Fn(FsChangePayload) + Send + Sync>,
-) -> Result<(), String> {
-    start_watch_path(state, folder_path, emit).await
-}
-
-pub async fn stop_watch_directory(state: &WatchState, folder_path: String) -> Result<(), String> {
-    stop_watch_path(state, folder_path).await
-}
-
 pub async fn start_watch_file(
     state: &WatchState,
     file_path: String,
@@ -133,6 +121,3 @@ pub async fn start_watch_file(
     start_watch_path(state, file_path, emit).await
 }
 
-pub async fn stop_watch_file(state: &WatchState, file_path: String) -> Result<(), String> {
-    stop_watch_path(state, file_path).await
-}

@@ -85,7 +85,7 @@ pub async fn start_watch_directory(
     state: State<'_, WatchState>,
     folder_path: String,
 ) -> Result<(), String> {
-    watch::start_watch_directory(state.inner(), folder_path, tauri_watch_emitter(app)).await
+    watch::start_watch_path(state.inner(), folder_path, tauri_watch_emitter(app)).await
 }
 
 #[tauri::command]
@@ -93,7 +93,7 @@ pub async fn stop_watch_directory(
     state: State<'_, WatchState>,
     folder_path: String,
 ) -> Result<(), String> {
-    watch::stop_watch_directory(state.inner(), folder_path).await
+    watch::stop_watch_path(state.inner(), folder_path).await
 }
 
 #[tauri::command]
@@ -110,5 +110,5 @@ pub async fn stop_watch_file(
     state: State<'_, WatchState>,
     file_path: String,
 ) -> Result<(), String> {
-    watch::stop_watch_file(state.inner(), file_path).await
+    watch::stop_watch_path(state.inner(), file_path).await
 }
