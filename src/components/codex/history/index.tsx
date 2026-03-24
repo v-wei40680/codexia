@@ -3,7 +3,7 @@ import { Dot, Funnel } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { TurnDiffView } from '@/components/codex/history/TurnDiffView';
+import { DiffViewer } from '@/components/features/DiffViewer';
 import { AccordionMsg } from '@/components/codex/history/AccordionMsg';
 import HistoryExecCommandItem from './HistoryExecCommandItem';
 import { HistoryPatchOutputIcon } from './HistoryPatchOutputIcon';
@@ -226,13 +226,13 @@ export function History() {
             let applyPatchArgs = JSON.parse(msg.arguments);
             return (
               <div key={index}>
-                <TurnDiffView content={applyPatchArgs.input} />
+                <DiffViewer unifiedDiff={applyPatchArgs.input} />
               </div>
             );
           case 'custom_tool_call':
             return (
               <div key={index}>
-                <TurnDiffView content={msg.input} />
+                <DiffViewer unifiedDiff={msg.input} />
               </div>
             );
           case 'custom_tool_call_output':

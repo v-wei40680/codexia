@@ -28,7 +28,8 @@ const shouldSkipUnifiedLine = (line: string) =>
   /^\s*mode \d+/i.test(line) ||
   /^\s*(new mode|old mode)\b/i.test(line) ||
   /^\s*similarity index\b/i.test(line) ||
-  /^\s*rename (from|to)\b/i.test(line);
+  /^\s*rename (from|to)\b/i.test(line) ||
+  /^\*\*\* (Begin Patch|End Patch|Update File:)/i.test(line);
 
 const getFilename = (path: string) => {
   const normalized = path.replace(/\\/g, '/');
@@ -99,6 +100,14 @@ export function DiffViewer({
   const unifiedPath = useMemo(() => {
     if (!normalizedUnified) return '';
     const lines = normalizedUnified.split('\n');
+
+    // codex patch format: *** Update File: <path>
+    const updateFileLine = lines.find((line) => /^\*\*\* Update File: /m.test(line));
+    if (updateFileLine) {
+      const match = updateFileLine.match(/^\*\*\* Update File: (.*)$/);
+      if (match) return match[1].trim();
+    }
+
     const diffGit = lines.find((line) => line.startsWith('diff --git '));
     if (diffGit) {
       const match = diffGit.match(/^diff --git a\/(.+?) b\/(.+)$/);
@@ -178,6 +187,8 @@ export function DiffViewer({
 
   const contentToCopy = viewMode === 'old' ? left : viewMode === 'new' ? right : diffText;
 
+  if (addedCount === 0 && removedCount === 0) return null;
+
   const handleCopy = async () => {
     if (!navigator.clipboard) return;
     try {
@@ -199,7 +210,7 @@ export function DiffViewer({
         className
       )}
     >
-      <div className="sticky top-0 z-10 flex w-full items-center justify-between gap-3 border-b border-gray-200/70 bg-gray-50/70 px-3 py-2 dark:border-gray-800/70 dark:bg-gray-900/60">
+      <div className="sticky top-0 z-10 flex w-full items-center justify-between gap-3 border-b border-gray-200/70 bg-gray-50/70 px-3 dark:border-gray-800/70 dark:bg-gray-900/60">
         <div className="flex items-center gap-3 min-w-0">
           {resolvedPath ? (
             <div className="flex items-center gap-2 min-w-0">
@@ -229,11 +240,10 @@ export function DiffViewer({
                 variant="ghost"
                 size="sm"
                 onClick={() => setViewMode(mode)}
-                className={`rounded-none px-3 ${
-                  viewMode === mode
+                className={`rounded-none px-3 ${viewMode === mode
                     ? 'bg-gray-100 text-gray-900 dark:bg-gray-800 dark:text-gray-100'
                     : 'text-gray-500 dark:text-gray-400'
-                }`}
+                  }`}
               >
                 {mode}
               </Button>
@@ -268,36 +278,33 @@ export function DiffViewer({
                 {diffLines.map((line, index) => (
                   <tr
                     key={index}
-                    className={`leading-relaxed hover:bg-gray-50/50 dark:hover:bg-gray-800/50 ${
-                      line.type === 'add'
+                    className={`leading-relaxed hover:bg-gray-50/50 dark:hover:bg-gray-800/50 ${line.type === 'add'
                         ? 'bg-green-50/30 dark:bg-green-900/20'
                         : line.type === 'remove'
                           ? 'bg-red-50/30 dark:bg-red-900/20'
                           : ''
-                    }`}
+                      }`}
                   >
                     {/* Change indicator */}
                     <td
-                      className={`w-6 min-w-6 text-center border-r border-gray-200 dark:border-gray-700 select-none text-sm font-medium py-1 ${
-                        line.type === 'add'
+                      className={`w-6 min-w-6 text-center border-r border-gray-200 dark:border-gray-700 select-none text-sm font-medium py-1 ${line.type === 'add'
                           ? 'bg-green-100 dark:bg-green-800 text-green-700 dark:text-green-300'
                           : line.type === 'remove'
                             ? 'bg-red-100 dark:bg-red-800 text-red-700 dark:text-red-300'
                             : 'bg-gray-50 dark:bg-gray-800 text-gray-400 dark:text-gray-500'
-                      }`}
+                        }`}
                     >
                       {line.type === 'add' ? '+' : line.type === 'remove' ? '−' : ''}
                     </td>
 
                     {/* Content */}
                     <td
-                      className={`whitespace-pre text-sm text-gray-900 dark:text-gray-100 ${
-                        line.type === 'add'
+                      className={`whitespace-pre text-sm text-gray-900 dark:text-gray-100 ${line.type === 'add'
                           ? 'bg-green-50/80 dark:bg-green-900/30'
                           : line.type === 'remove'
                             ? 'bg-red-50/80 dark:bg-red-900/30'
                             : 'bg-white dark:bg-gray-900'
-                      }`}
+                        }`}
                     >
                       {line.content}
                     </td>
