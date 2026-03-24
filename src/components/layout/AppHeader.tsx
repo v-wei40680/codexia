@@ -15,7 +15,7 @@ import { useTrafficLightConfig } from '@/hooks';
 import { NewAgentButton } from '@/components/common/NewAgentButton';
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 
-export function AgentHeader() {
+export function AppHeader() {
   const { setView, view } = useLayoutStore();
   const { open: isSidebarOpen, openMobile, isMobile } = useSidebar();
   const { setHistoryMode, selectedAgent } = useWorkspaceStore();

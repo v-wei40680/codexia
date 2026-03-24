@@ -1,4 +1,4 @@
-export * from './AgentHeader';
+export * from './AppHeader';
 export * from './SideBar';
 export * from './RightPanel';
 export * from './UserInfo';

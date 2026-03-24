@@ -3,7 +3,7 @@ import type { ImperativePanelHandle } from 'react-resizable-panels';
 import { useLayoutStore } from '@/stores';
 import { SideBar } from '@/components/layout/SideBar';
 import { RightPanel } from '@/components/layout/RightPanel';
-import { AgentHeader } from '@/components/layout';
+import { AppHeader } from '@/components/layout';
 import { History } from '@/components/codex/history';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { SidebarInset, SidebarProvider, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
@@ -28,7 +28,7 @@ const AutoMationsView = lazy(() =>
 const InsightsView = lazy(() => import('@/components/features/insight/InsightsView'));
 
 type MobileContentProps = {
-  showAgentHeader: boolean;
+  showAppHeader: boolean;
   triggerButton: React.ReactNode;
   mainContent: React.ReactNode;
   isRightPanelOpen: boolean;
@@ -36,7 +36,7 @@ type MobileContentProps = {
 };
 
 function MobileContent({
-  showAgentHeader,
+  showAppHeader,
   triggerButton,
   mainContent,
   isRightPanelOpen,
@@ -47,7 +47,7 @@ function MobileContent({
 
   return (
     <div className="relative flex flex-1 flex-col h-full w-full min-w-0 bg-background">
-      {showAgentHeader ? <AgentHeader /> : triggerButton}
+      {showAppHeader ? <AppHeader /> : triggerButton}
       <main className="bg-background relative flex min-h-0 min-w-0 flex-1 flex-col">
         {mainContent}
       </main>
@@ -155,7 +155,7 @@ export function AppLayout() {
     }
   };
 
-  const showAgentHeader = view === 'agent' || view === 'history';
+  const showAppHeader = view === 'agent' || view === 'history';
 
   const activeView = (
     <Suspense fallback={<ViewLoadingFallback />}>
@@ -202,7 +202,7 @@ export function AppLayout() {
             // Mobile layout: sidebar renders as Sheet overlay (handled by shadcn Sidebar)
             // Edge swipe to open is handled inside MobileContent via useSidebar context
             <MobileContent
-              showAgentHeader={showAgentHeader}
+              showAppHeader={showAppHeader}
               triggerButton={triggerButton}
               mainContent={mainContent}
               isRightPanelOpen={isRightPanelOpen}
@@ -211,8 +211,8 @@ export function AppLayout() {
           ) : (
             // Desktop layout: sidebar gap handled by shadcn Sidebar component
             <SidebarInset className="min-w-0 overflow-hidden h-full">
-              {showAgentHeader ? (
-                <AgentHeader />
+              {showAppHeader ? (
+                <AppHeader />
               ) : (
                 !isSidebarOpen && triggerButton
               )}
