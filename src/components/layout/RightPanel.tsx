@@ -1,16 +1,25 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { useLayoutStore } from '@/stores/settings';
-import { NoteView } from '@/components/features/notes';
 import { useWorkspaceStore } from '@/stores';
-import { FileViewer } from '@/components/features/files';
-import { GitDiffPanel } from '@/components/features/git';
 import { FileTree } from '@/components/features/files/explorer';
 import { Button } from '@/components/ui/button';
 import { PanelLeftOpen } from 'lucide-react';
-import { WebPreview } from '../features/web-preview/WebPreview';
 import { detectWebFramework } from '../features/web-preview/webFrameworkDetection';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { RightPanelHeader } from './RightPanelHeader';
+
+const NoteView = lazy(() =>
+  import('@/components/features/notes').then((m) => ({ default: m.NoteView })),
+);
+const FileViewer = lazy(() =>
+  import('@/components/features/files').then((m) => ({ default: m.FileViewer })),
+);
+const GitDiffPanel = lazy(() =>
+  import('@/components/features/git').then((m) => ({ default: m.GitDiffPanel })),
+);
+const WebPreview = lazy(() =>
+  import('../features/web-preview/WebPreview').then((m) => ({ default: m.WebPreview })),
+);
 
 export function RightPanel() {
   const { activeRightPanelTab, setRightPanelOpen } = useLayoutStore();
@@ -55,13 +64,17 @@ export function RightPanel() {
       )}
       <div className="flex-1 min-h-0 flex overflow-hidden">
         <div className="flex-1 min-w-0 min-h-0 overflow-hidden">
-          <div className={activeRightPanelTab === 'diff' ? 'h-full min-h-0 overflow-hidden' : 'hidden'}>
-            <GitDiffPanel cwd={cwd} isActive={activeRightPanelTab === 'diff'} />
-          </div>
+          <Suspense fallback={null}>
+            <div className={activeRightPanelTab === 'diff' ? 'h-full min-h-0 overflow-hidden' : 'hidden'}>
+              <GitDiffPanel cwd={cwd} isActive={activeRightPanelTab === 'diff'} />
+            </div>
+          </Suspense>
 
           {activeRightPanelTab === 'note' && (
             <div className="h-full min-h-0 overflow-hidden">
-              <NoteView />
+              <Suspense fallback={null}>
+                <NoteView />
+              </Suspense>
             </div>
           )}
 
@@ -103,27 +116,29 @@ export function RightPanel() {
               {/* File viewer — only rendered when a file is selected */}
               {selectedFilePath ? (
                 <div className="min-h-0 min-w-0 flex-1 overflow-hidden">
-                  <FileViewer
-                    filePath={selectedFilePath}
-                    onClose={() => {
-                      setSelectedFilePath(null);
-                      if (!isFileTreeVisible) setIsFileTreeVisible(true);
-                    }}
-                    headerLeadingAction={
-                      !isFileTreeVisible ? (
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-6 w-6 shrink-0"
-                          onClick={() => setIsFileTreeVisible(true)}
-                          title="Show file tree"
-                          aria-label="Show file tree"
-                        >
-                          <PanelLeftOpen className="h-3.5 w-3.5" />
-                        </Button>
-                      ) : undefined
-                    }
-                  />
+                  <Suspense fallback={null}>
+                    <FileViewer
+                      filePath={selectedFilePath}
+                      onClose={() => {
+                        setSelectedFilePath(null);
+                        if (!isFileTreeVisible) setIsFileTreeVisible(true);
+                      }}
+                      headerLeadingAction={
+                        !isFileTreeVisible ? (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6 shrink-0"
+                            onClick={() => setIsFileTreeVisible(true)}
+                            title="Show file tree"
+                            aria-label="Show file tree"
+                          >
+                            <PanelLeftOpen className="h-3.5 w-3.5" />
+                          </Button>
+                        ) : undefined
+                      }
+                    />
+                  </Suspense>
                 </div>
               ) : !isFileTreeVisible ? (
                 /* Tree hidden and no file open — show expand button */
@@ -150,11 +165,13 @@ export function RightPanel() {
 
           {activeRightPanelTab === 'webpreview' && (
             <div className="h-full min-h-0 overflow-hidden">
-              <WebPreview
-                url={webPreviewUrl}
-                onUrlChange={setWebPreviewUrl}
-                onClose={() => setRightPanelOpen(false)}
-              />
+              <Suspense fallback={null}>
+                <WebPreview
+                  url={webPreviewUrl}
+                  onUrlChange={setWebPreviewUrl}
+                  onClose={() => setRightPanelOpen(false)}
+                />
+              </Suspense>
             </div>
           )}
         </div>

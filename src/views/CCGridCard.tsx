@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, lazy, Suspense } from 'react';
 import { useCCStore } from '@/stores/cc';
 import { ccGetSessionFilePath, ccInterrupt, ccResumeSession } from '@/services/tauri/cc';
 import { readTextFileLines } from '@/services/tauri/filesystem';
@@ -8,7 +8,7 @@ import { Square, RotateCcw } from 'lucide-react';
 import type { AgentCenterCard } from '@/stores/useAgentCenterStore';
 import { useAgentCenterStore } from '@/stores/useAgentCenterStore';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
-import CCView from '@/components/cc/CCView';
+const CCView = lazy(() => import('@/components/cc/CCView'));
 import type { ResultMessage } from '@/components/cc/types/messages';
 
 // ─── helpers ────────────────────────────────────────────────────────────────
@@ -133,7 +133,7 @@ export function CCGridCard({ card, onRemove: _onRemove, header, isSelected }: CC
 
       {/* Message area — CCView owns its own listener and display */}
       <div className="flex-1 min-h-0 overflow-hidden">
-        <CCView sessionId={card.id} />
+        <Suspense fallback={null}><CCView sessionId={card.id} /></Suspense>
       </div>
 
       <div className="flex items-center justify-between px-2 py-1 border-t bg-muted/20 shrink-0">

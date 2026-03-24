@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, lazy, Suspense } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import { invoke } from '@tauri-apps/api/core';
 import './App.css';
@@ -6,7 +6,7 @@ import { useCodexEvents } from '@/hooks/codex';
 import { useDeepLink } from '@/hooks/useDeepLink';
 import { AppLayout } from '@/components/layout';
 import { isTauri, getIsPhone } from '@/hooks/runtime';
-import LoginView from '@/views/LoginView';
+const LoginView = lazy(() => import('@/views/LoginView'));
 import { HistoryProjectsDialog } from '@/components/project-selector';
 import { AnalyticsConsentDialog } from '@/components/settings/AnalyticsConsentDialog';
 import { initializeCodexAsync } from '@/services/tauri';
@@ -145,7 +145,7 @@ function AppShell() {
 
   // Mobile: no session → show login so the user can authenticate first
   if (isPhone === true && p2pState === 'idle') {
-    return <LoginView />;
+    return <Suspense fallback={null}><LoginView /></Suspense>;
   }
 
   // Mobile: show connection screen until P2P is established
