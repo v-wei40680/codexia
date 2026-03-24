@@ -115,11 +115,11 @@ export function SideBar() {
               variant="ghost"
               size="sm"
               className={navBtnCls(view === 'insights')}
-              onClick={() => isPro ? setView('insights') : void openUrl(PRICING_URL)}
+              onClick={() => isPro || import.meta.env.DEV ? setView('insights') : void openUrl(PRICING_URL)}
             >
               <BarChart2 className="h-4 w-4" />
               Insights
-              {!isPro && <Lock className="ml-auto h-3 w-3 text-muted-foreground" />}
+              {!isPro && !import.meta.env.DEV && <Lock className="ml-auto h-3 w-3 text-muted-foreground" />}
             </Button>
 
             {showSidebarMarketplace && (

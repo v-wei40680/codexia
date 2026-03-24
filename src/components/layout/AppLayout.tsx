@@ -174,7 +174,7 @@ export function AppLayout() {
           {view === 'login' && <LoginView />}
           {view === 'marketplace' && <MarketplaceView />}
           {view === 'usage' && <UsageView />}
-          {view === 'insights' && (isPro ? <InsightsView /> : (
+          {view === 'insights' && (isPro || import.meta.env.DEV ? <InsightsView /> : (
             <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-8">
               <div className="text-4xl">📊</div>
               <h2 className="text-lg font-semibold">Insights is a Pro feature</h2>
