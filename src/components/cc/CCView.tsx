@@ -9,7 +9,7 @@ import { parseSessionJsonl } from './utils/parseSessionJsonl';
 
 import { CCMessage } from '@/components/cc/messages';
 import { PermissionRequestCard } from '@/components/cc/messages/PermissionRequestCard';
-import { Composer } from '@/components/cc/composer';
+import { Composer } from '@/components/cc/composer/Composer';
 import { CCScrollControls } from '@/components/cc/CCScrollControls';
 import { buildMessageGroups, CCExploredMessageGroup } from './messages/group';
 import { buildInlineErrorsMap } from './messages/inlineErrors';
