@@ -1,4 +1,6 @@
-import { BarChart2, ListFilter, Package, Timer, Trash2 } from 'lucide-react';
+import { BarChart2, ListFilter, Lock, Package, Timer, Trash2 } from 'lucide-react';
+import { openUrl } from '@tauri-apps/plugin-opener';
+import { useAgentLimit } from '@/hooks/useAgentLimit';
 import { useCallback, useState } from 'react';
 import { useLayoutStore } from '@/stores';
 import { Button } from '@/components/ui/button';
@@ -40,8 +42,11 @@ const navBtnActive = 'border-border bg-accent/70 text-foreground';
 const navBtnInactive = 'border-transparent hover:border-border/60';
 const navBtnCls = (active: boolean) => `${navBtnBase} ${active ? navBtnActive : navBtnInactive}`;
 
+const PRICING_URL = 'https://milisp.dev/pricing';
+
 export function SideBar() {
   const { cwd, setCwd, setSelectedAgent } = useWorkspaceStore();
+  const { isPro } = useAgentLimit();
   const { setView, view, activeSidebarTab, setActiveSidebarTab } = useLayoutStore();
   const { open: isSidebarOpen } = useSidebar();
   const { isMacos } = useTrafficLightConfig(isSidebarOpen);
@@ -110,10 +115,11 @@ export function SideBar() {
               variant="ghost"
               size="sm"
               className={navBtnCls(view === 'insights')}
-              onClick={() => setView('insights')}
+              onClick={() => isPro ? setView('insights') : void openUrl(PRICING_URL)}
             >
               <BarChart2 className="h-4 w-4" />
               Insights
+              {!isPro && <Lock className="ml-auto h-3 w-3 text-muted-foreground" />}
             </Button>
 
             {showSidebarMarketplace && (
