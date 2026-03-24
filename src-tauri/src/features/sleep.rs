@@ -1,5 +1,6 @@
 use std::{collections::HashSet, sync::Arc};
 
+#[cfg(feature = "tauri")]
 use nosleep::{NoSleep, NoSleepType};
 use tokio::sync::Mutex;
 
@@ -32,6 +33,7 @@ impl Default for SleepState {
 }
 
 struct NoSleepController {
+    #[cfg(feature = "tauri")]
     nosleep: Option<NoSleep>,
     active_conversations: HashSet<String>,
 }
@@ -39,6 +41,7 @@ struct NoSleepController {
 impl NoSleepController {
     fn new() -> Self {
         Self {
+            #[cfg(feature = "tauri")]
             nosleep: None,
             active_conversations: HashSet::new(),
         }
@@ -50,19 +53,20 @@ impl NoSleepController {
         if !inserted {
             return Ok(());
         }
-
         if self.active_conversations.len() > 1 {
             return Ok(());
         }
 
-        if self.nosleep.is_none() {
-            self.nosleep = Some(NoSleep::new().map_err(|err| err.to_string())?);
-        }
-
-        if let Some(nosleep) = self.nosleep.as_mut() {
-            nosleep
-                .start(NoSleepType::PreventUserIdleSystemSleep)
-                .map_err(|err| err.to_string())?;
+        #[cfg(feature = "tauri")]
+        {
+            if self.nosleep.is_none() {
+                self.nosleep = Some(NoSleep::new().map_err(|err| err.to_string())?);
+            }
+            if let Some(nosleep) = self.nosleep.as_mut() {
+                nosleep
+                    .start(NoSleepType::PreventUserIdleSystemSleep)
+                    .map_err(|err| err.to_string())?;
+            }
         }
 
         Ok(())
@@ -83,6 +87,7 @@ impl NoSleepController {
             }
         }
 
+        #[cfg(feature = "tauri")]
         if self.active_conversations.is_empty() {
             if let Some(nosleep) = self.nosleep.as_ref() {
                 nosleep.stop().map_err(|err| err.to_string())?;
