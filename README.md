@@ -6,7 +6,7 @@
 
 Codexia is a **Tauri v2 app** for Codex CLI + Claude Code — combining agent workflows, an IDE-like editor, a headless web server, and a prompt notepad in one workspace.
 
-![Codexia Home](docs/images/codexia-home.png)
+![Codexia Home](docs/images/codexia-agent-command-center.png)
 
 ## Features
 
