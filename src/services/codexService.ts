@@ -303,14 +303,15 @@ export const codexService = {
   async threadResume(threadId: string) {
     const set = useCodexStore.setState;
     const { activeThreadIds, events } = useCodexStore.getState();
+    const { model, modelProvider } = useConfigStore.getState();
     try {
       const resumeCwd = resolveThreadCwd(threadId);
       const response = await threadResume({
         threadId,
         history: null,
         path: null,
-        model: null,
-        modelProvider: null,
+        model: model || null,
+        modelProvider: modelProvider || null,
         cwd: resumeCwd,
         approvalPolicy: null,
         sandbox: null,

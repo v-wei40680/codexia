@@ -7,7 +7,8 @@ import { listModels } from '@/services/tauri';
 import type { Model } from '@/bindings/v2';
 import type { ReasoningEffort } from '@/bindings';
 import { useCallback, useEffect, useState } from 'react';
-import { useConfigStore } from '@/stores/codex';
+import { useConfigStore, useCodexStore } from '@/stores/codex';
+import { codexService } from '@/services/codexService';
 import { cn } from '@/lib/utils';
 
 type Provider = 'openai' | 'ollama';
@@ -90,6 +91,8 @@ export function ModelReasonSelector() {
     setReasoningEffort,
   } = useConfigStore();
 
+  const currentThreadId = useCodexStore((s) => s.currentThreadId);
+
   useEffect(() => {
     async function loadOpenAiModels() {
       const response = await listModels();
@@ -166,17 +169,23 @@ export function ModelReasonSelector() {
     if (provider === 'ollama') {
       if (!ollamaModel && ollamaModels.length > 0) setModel(ollamaModels[0].id);
       if (!OLLAMA_REASONING_OPTIONS.includes(reasoningEffort)) setReasoningEffort('medium');
-      return;
+    } else {
+      if (!openaiModel && openAiModels.length > 0) {
+        const fallback = openAiModels.find((m) => m.isDefault) ?? openAiModels[0];
+        setModel(fallback.id);
+        setReasoningEffort(fallback.defaultReasoningEffort);
+      } else {
+        const selected = openAiModels.find((m) => m.id === openaiModel);
+        if (selected) setReasoningEffort(selected.defaultReasoningEffort);
+      }
     }
 
-    if (!openaiModel && openAiModels.length > 0) {
-      const fallback = openAiModels.find((m) => m.isDefault) ?? openAiModels[0];
-      setModel(fallback.id);
-      setReasoningEffort(fallback.defaultReasoningEffort);
-      return;
+    // Re-resume the active thread so the backend picks up the new provider immediately.
+    // TurnStartParams has no modelProvider field, so the only way to update a thread's
+    // provider mid-session is via threadResume (which does support modelProvider).
+    if (currentThreadId) {
+      void codexService.threadResume(currentThreadId);
     }
-    const selected = openAiModels.find((m) => m.id === openaiModel);
-    if (selected) setReasoningEffort(selected.defaultReasoningEffort);
   };
 
   const openAiItems: ModelListItem[] = openAiModels.map((m) => ({
