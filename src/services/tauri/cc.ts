@@ -7,14 +7,15 @@ export async function ccNewSession(options: Record<string, unknown>, initialMess
   return await postJson<string>('/api/cc/new-session', { options, initial_message: initialMessage });
 }
 
-export async function ccSendMessage(sessionId: string, message: string) {
+export async function ccSendMessage(sessionId: string, message: string, imagePaths: string[] = []) {
   if (isDesktopTauri()) {
-    await invokeTauri('cc_send_message', { sessionId, message });
+    await invokeTauri('cc_send_message', { sessionId, message, imagePaths });
     return;
   }
   await postNoContent('/api/cc/send-message', {
     session_id: sessionId,
     message,
+    image_paths: imagePaths,
   });
 }
 

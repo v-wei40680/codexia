@@ -24,11 +24,13 @@ pub async fn cc_connect(
 pub async fn cc_send_message(
     session_id: String,
     message: String,
+    image_paths: Option<Vec<String>>,
     state: State<'_, CCState>,
 ) -> Result<(), String> {
+    let image_paths = image_paths.unwrap_or_default();
     let cc_state = state.inner().clone();
     let sid = session_id.clone();
-    message_service::send_message(&session_id, &message, &state, move |msg| {
+    message_service::send_message(&session_id, &message, &image_paths, &state, move |msg| {
         if let Ok(mut payload) = serde_json::to_value(&msg) {
             if let Some(obj) = payload.as_object_mut() {
                 // Always override session_id with the caller's sid so that resumed sessions

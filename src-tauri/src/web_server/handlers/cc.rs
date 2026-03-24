@@ -38,6 +38,7 @@ pub(crate) async fn api_cc_send_message(
     cc_message_service::send_message(
         &params.session_id,
         &params.message,
+        &params.image_paths,
         state.cc_state.as_ref(),
         move |msg| match serde_json::to_value(msg) {
             Ok(mut payload) => {

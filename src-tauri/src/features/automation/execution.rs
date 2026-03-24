@@ -256,6 +256,7 @@ async fn run_task_with_cc(
         if let Err(err) = message_service::send_message_and_wait(
             session_id.as_str(),
             task.prompt.as_str(),
+            &[],
             &cc_state,
             |message| {
                 if actual_session_id.is_none() {

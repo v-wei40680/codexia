@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { CircleStop, Send } from 'lucide-react';
+import { CircleStop, Send, X } from 'lucide-react';
 import { useCCStore } from '@/stores/cc';
 import { useCCInputStore, useAgentCenterStore } from '@/stores';
 import { CCPermissionModeSelect } from '@/components/cc/composer';
@@ -11,6 +11,7 @@ import { CCSkillsPopover } from './CCSkillsPopover';
 import { useCCSessionManager } from '@/hooks/useCCSessionManager';
 import { ccInterrupt, ccSendMessage } from '@/services';
 import { WorkspaceSwitcher, FileMentionPopover } from '@/components/common';
+import { convertFileSrc } from '@tauri-apps/api/core';
 
 import {
   MDXEditor,
@@ -50,6 +51,7 @@ export function Composer({ overrideSend, onAfterSend }: ComposerProps = {}) {
   const editorWrapperRef = useRef<HTMLDivElement | null>(null);
   const isComposing = useRef(false);
   const [triggerEl, setTriggerEl] = useState<HTMLElement | null>(null);
+  const [images, setImages] = useState<string[]>([]);
 
   // Capture wrapper element after mount for popover positioning
   useEffect(() => {
@@ -99,6 +101,8 @@ export function Composer({ overrideSend, onAfterSend }: ComposerProps = {}) {
 
     setInput('');
     editorRef.current?.setMarkdown('');
+    const pendingImages = images;
+    setImages([]);
 
     if (!activeSessionId) {
       await handleNewSession(text);
@@ -113,7 +117,7 @@ export function Composer({ overrideSend, onAfterSend }: ComposerProps = {}) {
     onAfterSend?.(activeSessionId, text);
 
     try {
-      await ccSendMessage(activeSessionId, text);
+      await ccSendMessage(activeSessionId, text, pendingImages);
       if (!isConnected) setConnected(true);
     } catch (error) {
       console.error('[CCInput] Failed to send message:', error);
@@ -123,7 +127,7 @@ export function Composer({ overrideSend, onAfterSend }: ComposerProps = {}) {
         message: { content: [{ type: 'text', text: `Error: ${error}` }] },
       });
     }
-  }, [input, isLoading, activeSessionId, isConnected, addMessage, setInput, setLoading, setConnected, handleNewSession, setCurrentAgentCardId]);
+  }, [input, images, isLoading, activeSessionId, isConnected, addMessage, setInput, setLoading, setConnected, handleNewSession, setCurrentAgentCardId]);
 
   const handleInterrupt = useCallback(async () => {
     if (!activeSessionId) return;
@@ -189,8 +193,28 @@ export function Composer({ overrideSend, onAfterSend }: ComposerProps = {}) {
             />
           </div>
 
+          {images.length > 0 && (
+            <div className="absolute left-10 bottom-11 flex items-center gap-1 px-1">
+              {images.map((path, i) => (
+                <div key={path} className="relative group/img">
+                  <img
+                    src={convertFileSrc(path)}
+                    alt=""
+                    className="h-10 w-10 object-cover rounded border border-border"
+                  />
+                  <button
+                    onClick={() => setImages((prev) => prev.filter((_, idx) => idx !== i))}
+                    className="absolute -top-1 -right-1 hidden group-hover/img:flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-destructive-foreground"
+                  >
+                    <X className="h-2.5 w-2.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
           <div className="absolute left-1 bottom-1 flex items-center gap-0.5">
-            <CCAttachmentButton />
+            <CCAttachmentButton onImagesSelected={(paths) => setImages((prev) => [...prev, ...paths])} />
             <CCPermissionModeSelect />
           </div>
 
@@ -201,7 +225,7 @@ export function Composer({ overrideSend, onAfterSend }: ComposerProps = {}) {
               size="icon"
               className="h-7 w-7"
               variant={isLoading ? 'destructive' : 'default'}
-              disabled={!input.trim() && !isLoading}
+              disabled={!input.trim() && images.length === 0 && !isLoading}
             >
               {isLoading ? (
                 <CircleStop className="h-3.5 w-3.5" />

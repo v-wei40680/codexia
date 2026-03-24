@@ -277,6 +277,7 @@ pub async fn new_session_and_send(
     message_service::send_message(
         &temp_id,
         &initial_message,
+        &[],
         state,
         move |msg| {
             let current_id = session_id_arc_clone.lock().unwrap().clone();

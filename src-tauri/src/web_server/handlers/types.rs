@@ -160,6 +160,8 @@ pub(crate) struct CcSendMessageParams {
     #[serde(rename = "session_id", alias = "sessionId")]
     pub(crate) session_id: String,
     pub(crate) message: String,
+    #[serde(default)]
+    pub(crate) image_paths: Vec<String>,
 }
 
 #[derive(Deserialize)]

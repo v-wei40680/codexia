@@ -1,10 +1,28 @@
 use crate::cc::state::CCState;
-use claude_agent_sdk_rs::Message;
+use claude_agent_sdk_rs::{Message, UserContentBlock};
 use futures::StreamExt;
 
-pub async fn send_message_and_wait(
+fn image_path_to_content_block(path: &str) -> Result<UserContentBlock, String> {
+    let bytes = std::fs::read(path).map_err(|e| format!("Failed to read image {path}: {e}"))?;
+    let ext = std::path::Path::new(path)
+        .extension()
+        .and_then(|e| e.to_str())
+        .unwrap_or("")
+        .to_lowercase();
+    let mime = match ext.as_str() {
+        "jpg" | "jpeg" => "image/jpeg",
+        "gif" => "image/gif",
+        "webp" => "image/webp",
+        _ => "image/png",
+    };
+    let b64 = base64::Engine::encode(&base64::engine::general_purpose::STANDARD, &bytes);
+    UserContentBlock::image_base64(mime, &b64).map_err(|e| e.to_string())
+}
+
+pub(crate) async fn send_message_and_wait(
     session_id: &str,
     message: &str,
+    image_paths: &[String],
     state: &CCState,
     mut message_callback: impl FnMut(Message) + Send,
 ) -> Result<(), String> {
@@ -18,9 +36,22 @@ pub async fn send_message_and_wait(
         client.connect().await.map_err(|e| e.to_string())?;
     }
 
-    {
+    if image_paths.is_empty() {
         let mut client = client.write().await;
         client.query(message).await.map_err(|e| e.to_string())?;
+    } else {
+        let mut content: Vec<UserContentBlock> = Vec::new();
+        if !message.is_empty() {
+            content.push(UserContentBlock::text(message));
+        }
+        for path in image_paths {
+            content.push(image_path_to_content_block(path)?);
+        }
+        if content.is_empty() {
+            content.push(UserContentBlock::text(""));
+        }
+        let mut client = client.write().await;
+        client.query_with_content(content).await.map_err(|e| e.to_string())?;
     }
 
     loop {
@@ -49,6 +80,7 @@ pub async fn send_message_and_wait(
 pub async fn send_message(
     session_id: &str,
     message: &str,
+    image_paths: &[String],
     state: &CCState,
     message_callback: impl Fn(Message) + Send + 'static,
 ) -> Result<(), String> {
@@ -58,13 +90,14 @@ pub async fn send_message(
 
     let session_id_owned = session_id.to_string();
     let message_owned = message.to_string();
+    let image_paths_owned = image_paths.to_vec();
     let state_cloned = state.clone();
 
-    // Start streaming responses
     tokio::spawn(async move {
         if let Err(err) = send_message_and_wait(
             &session_id_owned,
             &message_owned,
+            &image_paths_owned,
             &state_cloned,
             message_callback,
         )
