@@ -15,7 +15,7 @@ use crate::features::sleep::SleepState;
 use crate::web_server::filesystem_watch::WebWatchState;
 
 pub async fn start_web_server_with_events(
-    codex_state: Arc<AppState>,
+    codex_state: Option<Arc<AppState>>,
     cc_state: Arc<CCState>,
     event_tx: broadcast::Sender<(String, Value)>,
     host: &str,
@@ -30,7 +30,7 @@ pub async fn start_web_server_with_events(
 
     let automation_sink: Arc<dyn EventSink> = Arc::new(WebSocketEventSink::new(event_tx.clone()));
     crate::features::automation::initialize_automation_runtime(
-        Some(codex_state.codex.clone()),
+        codex_state.as_ref().map(|s| s.codex.clone()),
         cc_state.as_ref().clone(),
         automation_sink,
     )
@@ -68,34 +68,43 @@ pub async fn start_web_server(host: &str, port: u16) -> Result<(), Box<dyn std::
     let init_state = CodexInitializationState::new(Arc::clone(&event_sink));
 
     let connect_started_at = Instant::now();
-    let codex = connect_codex(Arc::clone(&event_sink))
-        .await
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
-    log::info!(
-        "[web] startup timing: connect_codex finished in {:?}",
-        connect_started_at.elapsed()
-    );
-
-    if !init_state.initialized.load(Ordering::SeqCst) {
-        let _guard = init_state.init_lock.lock().await;
-        if !init_state.initialized.load(Ordering::SeqCst) {
-            let initialize_started_at = Instant::now();
-            initialize_codex(&codex, Arc::clone(&init_state.event_sink))
-                .await
-                .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+    let codex_state = match connect_codex(Arc::clone(&event_sink)).await {
+        Ok(codex) => {
             log::info!(
-                "[web] startup timing: initialize_codex finished in {:?}",
-                initialize_started_at.elapsed()
+                "[web] startup timing: connect_codex finished in {:?}",
+                connect_started_at.elapsed()
             );
-            init_state.initialized.store(true, Ordering::SeqCst);
-        }
-    }
 
-    let codex_state = Arc::new(AppState { codex });
+            if !init_state.initialized.load(Ordering::SeqCst) {
+                let _guard = init_state.init_lock.lock().await;
+                if !init_state.initialized.load(Ordering::SeqCst) {
+                    let initialize_started_at = Instant::now();
+                    if let Err(e) =
+                        initialize_codex(&codex, Arc::clone(&init_state.event_sink)).await
+                    {
+                        log::warn!("[web] codex initialize failed, continuing without codex: {e}");
+                    } else {
+                        log::info!(
+                            "[web] startup timing: initialize_codex finished in {:?}",
+                            initialize_started_at.elapsed()
+                        );
+                        init_state.initialized.store(true, Ordering::SeqCst);
+                    }
+                }
+            }
+
+            Some(Arc::new(AppState { codex }))
+        }
+        Err(e) => {
+            log::warn!(
+                "[web] codex binary not found or failed to start ({}), continuing without codex backend",
+                e
+            );
+            None
+        }
+    };
+
     let cc_state = Arc::new(CCState::new(Arc::new(WebSocketEventSink::new(event_tx.clone()))));
-    log::info!(
-        "[web] boot completed in {:?}",
-        boot_started_at.elapsed()
-    );
+    log::info!("[web] boot completed in {:?}", boot_started_at.elapsed());
     start_web_server_with_events(codex_state, cc_state, event_tx, host, port).await
 }

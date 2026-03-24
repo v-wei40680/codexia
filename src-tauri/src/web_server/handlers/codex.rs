@@ -15,15 +15,21 @@ use serde_json::{Value, json};
 use crate::web_server::types::{ErrorResponse, WebServerState};
 
 use crate::codex::scan::{list_archived_threads_payload, list_threads_payload};
+use crate::codex::AppState;
 use crate::features::{mcp, usage};
+
+fn require_codex(state: &WebServerState) -> Result<&AppState, ErrorResponse> {
+    state.codex_state.as_deref().ok_or_else(|| ErrorResponse {
+        error: "codex backend is not available (codex binary not found in PATH)".to_string(),
+    })
+}
 
 pub(crate) async fn api_start_thread(
     AxumState(state): AxumState<WebServerState>,
     Json(params): Json<ThreadStartParams>,
 ) -> Result<Json<Value>, ErrorResponse> {
     let params_value = serde_json::to_value(params).map_err(to_error_response)?;
-    let result = state
-        .codex_state
+    let result = require_codex(&state)?
         .codex
         .send_request("thread/start", params_value)
         .await
@@ -36,8 +42,7 @@ pub(crate) async fn api_resume_thread(
     Json(params): Json<ThreadResumeParams>,
 ) -> Result<Json<Value>, ErrorResponse> {
     let params_value = serde_json::to_value(params).map_err(to_error_response)?;
-    let result = state
-        .codex_state
+    let result = require_codex(&state)?
         .codex
         .send_request("thread/resume", params_value)
         .await
@@ -50,8 +55,7 @@ pub(crate) async fn api_fork_thread(
     Json(params): Json<ThreadForkParams>,
 ) -> Result<Json<Value>, ErrorResponse> {
     let params_value = serde_json::to_value(params).map_err(to_error_response)?;
-    let result = state
-        .codex_state
+    let result = require_codex(&state)?
         .codex
         .send_request("thread/fork", params_value)
         .await
@@ -64,8 +68,7 @@ pub(crate) async fn api_rollback_thread(
     Json(params): Json<ThreadRollbackParams>,
 ) -> Result<Json<Value>, ErrorResponse> {
     let params_value = serde_json::to_value(params).map_err(to_error_response)?;
-    let result = state
-        .codex_state
+    let result = require_codex(&state)?
         .codex
         .send_request("thread/rollback", params_value)
         .await
@@ -97,8 +100,7 @@ pub(crate) async fn api_archive_thread(
     Json(params): Json<ThreadArchiveParams>,
 ) -> Result<Json<Value>, ErrorResponse> {
     let params_value = serde_json::to_value(params).map_err(to_error_response)?;
-    let result = state
-        .codex_state
+    let result = require_codex(&state)?
         .codex
         .send_request("thread/archive", params_value)
         .await
@@ -111,8 +113,7 @@ pub(crate) async fn api_turn_start(
     Json(params): Json<TurnStartParams>,
 ) -> Result<Json<Value>, ErrorResponse> {
     let params_value = serde_json::to_value(params).map_err(to_error_response)?;
-    let result = state
-        .codex_state
+    let result = require_codex(&state)?
         .codex
         .send_request("turn/start", params_value)
         .await
@@ -125,8 +126,7 @@ pub(crate) async fn api_turn_interrupt(
     Json(params): Json<TurnInterruptParams>,
 ) -> Result<Json<Value>, ErrorResponse> {
     let params_value = serde_json::to_value(params).map_err(to_error_response)?;
-    let result = state
-        .codex_state
+    let result = require_codex(&state)?
         .codex
         .send_request("turn/interrupt", params_value)
         .await
@@ -137,8 +137,7 @@ pub(crate) async fn api_turn_interrupt(
 pub(crate) async fn api_model_list(
     AxumState(state): AxumState<WebServerState>,
 ) -> Result<Json<Value>, ErrorResponse> {
-    let result = state
-        .codex_state
+    let result = require_codex(&state)?
         .codex
         .send_request("model/list", json!({}))
         .await
@@ -151,8 +150,7 @@ pub(crate) async fn api_model_list_post(
     Json(params): Json<ModelListParams>,
 ) -> Result<Json<Value>, ErrorResponse> {
     let params_value = serde_json::to_value(params).map_err(to_error_response)?;
-    let result = state
-        .codex_state
+    let result = require_codex(&state)?
         .codex
         .send_request("model/list", params_value)
         .await
@@ -163,8 +161,7 @@ pub(crate) async fn api_model_list_post(
 pub(crate) async fn api_account_rate_limits(
     AxumState(state): AxumState<WebServerState>,
 ) -> Result<Json<Value>, ErrorResponse> {
-    let result = state
-        .codex_state
+    let result = require_codex(&state)?
         .codex
         .send_request("account/rateLimits/read", Value::Null)
         .await
@@ -177,8 +174,7 @@ pub(crate) async fn api_get_account(
     Json(params): Json<GetAccountParams>,
 ) -> Result<Json<Value>, ErrorResponse> {
     let params_value = serde_json::to_value(params).map_err(to_error_response)?;
-    let result = state
-        .codex_state
+    let result = require_codex(&state)?
         .codex
         .send_request("account/read", params_value)
         .await
@@ -191,8 +187,7 @@ pub(crate) async fn api_login_account(
     Json(params): Json<LoginAccountParams>,
 ) -> Result<Json<Value>, ErrorResponse> {
     let params_value = serde_json::to_value(params).map_err(to_error_response)?;
-    let result = state
-        .codex_state
+    let result = require_codex(&state)?
         .codex
         .send_request("account/login/start", params_value)
         .await
@@ -205,8 +200,7 @@ pub(crate) async fn api_skills_list(
     Json(params): Json<SkillsListParams>,
 ) -> Result<Json<Value>, ErrorResponse> {
     let params_value = serde_json::to_value(params).map_err(to_error_response)?;
-    let result = state
-        .codex_state
+    let result = require_codex(&state)?
         .codex
         .send_request("skills/list", params_value)
         .await
@@ -219,8 +213,7 @@ pub(crate) async fn api_skills_config_write(
     Json(params): Json<SkillsConfigWriteParams>,
 ) -> Result<Json<Value>, ErrorResponse> {
     let payload = serde_json::to_value(params).map_err(to_error_response)?;
-    let result = state
-        .codex_state
+    let result = require_codex(&state)?
         .codex
         .send_request("skills/config/write", payload)
         .await
@@ -239,8 +232,7 @@ pub(crate) async fn api_respond_command_execution_approval(
     )
     .map_err(to_error_response)?;
 
-    state
-        .codex_state
+    require_codex(&state)?
         .codex
         .send_response(params.request_id, result_value)
         .await
@@ -260,8 +252,7 @@ pub(crate) async fn api_respond_file_change_approval(
     )
     .map_err(to_error_response)?;
 
-    state
-        .codex_state
+    require_codex(&state)?
         .codex
         .send_response(params.request_id, result_value)
         .await
@@ -276,8 +267,7 @@ pub(crate) async fn api_respond_user_input(
 ) -> Result<StatusCode, ErrorResponse> {
     let result_value = serde_json::to_value(params.response).map_err(to_error_response)?;
 
-    state
-        .codex_state
+    require_codex(&state)?
         .codex
         .send_response(params.request_id, result_value)
         .await
@@ -291,8 +281,7 @@ pub(crate) async fn api_start_review(
     Json(params): Json<ReviewStartParams>,
 ) -> Result<Json<Value>, ErrorResponse> {
     let params_value = serde_json::to_value(params).map_err(to_error_response)?;
-    let result = state
-        .codex_state
+    let result = require_codex(&state)?
         .codex
         .send_request("review/start", params_value)
         .await

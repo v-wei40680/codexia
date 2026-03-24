@@ -12,7 +12,7 @@ pub(crate) async fn api_list_automations(
     AxumState(state): AxumState<WebServerState>,
 ) -> Result<Json<Vec<AutomationTask>>, ErrorResponse> {
     let tasks = list_automations(
-        Some(state.codex_state.codex.clone()),
+        state.codex_state.as_ref().map(|s| s.codex.clone()),
         Some(state.cc_state.as_ref().clone()),
     )
         .await
@@ -40,7 +40,7 @@ pub(crate) async fn api_create_automation(
         params.agent,
         params.model_provider,
         params.model,
-        Some(state.codex_state.codex.clone()),
+        state.codex_state.as_ref().map(|s| s.codex.clone()),
         Some(state.cc_state.as_ref().clone()),
     )
     .await
@@ -55,7 +55,7 @@ pub(crate) async fn api_set_automation_paused(
     let task = crate::features::automation::set_automation_paused(
         params.id,
         params.paused,
-        Some(state.codex_state.codex.clone()),
+        state.codex_state.as_ref().map(|s| s.codex.clone()),
         Some(state.cc_state.as_ref().clone()),
     )
     .await
@@ -76,7 +76,7 @@ pub(crate) async fn api_update_automation(
         params.agent,
         params.model_provider,
         params.model,
-        Some(state.codex_state.codex.clone()),
+        state.codex_state.as_ref().map(|s| s.codex.clone()),
         Some(state.cc_state.as_ref().clone()),
     )
     .await
@@ -90,7 +90,7 @@ pub(crate) async fn api_delete_automation(
 ) -> Result<StatusCode, ErrorResponse> {
     crate::features::automation::delete_automation(
         params.id,
-        Some(state.codex_state.codex.clone()),
+        state.codex_state.as_ref().map(|s| s.codex.clone()),
         Some(state.cc_state.as_ref().clone()),
     )
     .await
@@ -104,7 +104,7 @@ pub(crate) async fn api_run_automation_now(
 ) -> Result<StatusCode, ErrorResponse> {
     crate::features::automation::run_automation_now(
         params.id,
-        Some(state.codex_state.codex.clone()),
+        state.codex_state.as_ref().map(|s| s.codex.clone()),
         Some(state.cc_state.as_ref().clone()),
     )
     .await

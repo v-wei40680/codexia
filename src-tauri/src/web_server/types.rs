@@ -18,7 +18,7 @@ use crate::web_server::terminal::WebTerminalState;
 
 #[derive(Clone)]
 pub struct WebServerState {
-    pub codex_state: Arc<AppState>,
+    pub codex_state: Option<Arc<AppState>>,
     pub cc_state: Arc<CCState>,
     pub(crate) sleep_state: Arc<SleepState>,
     pub(crate) terminal_state: Arc<WebTerminalState>,

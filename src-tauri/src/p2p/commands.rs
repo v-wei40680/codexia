@@ -74,7 +74,7 @@ pub async fn p2p_start(
             crate::features::p2p_bridge::register(event_tx.clone());
 
             let state = WebServerState {
-                codex_state,
+                codex_state: Some(codex_state),
                 cc_state,
                 sleep_state: Arc::new(SleepState::default()),
                 terminal_state: Arc::new(WebTerminalState::default()),
