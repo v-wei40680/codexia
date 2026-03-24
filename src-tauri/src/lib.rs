@@ -255,6 +255,8 @@ pub fn run() {
                 crate::codex::codex_home,
                 crate::commands::usage::read_token_usage,
                 crate::commands::insights::get_agent_heatmaps,
+                crate::commands::insights::get_insight_filter_options,
+                crate::commands::insights::get_insight_rankings,
                 crate::commands::dxt::load_manifests,
                 crate::commands::dxt::load_manifest,
                 crate::commands::dxt::read_dxt_setting,

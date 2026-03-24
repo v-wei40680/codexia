@@ -38,6 +38,51 @@ export interface AgentHeatmaps {
   gemini: HeatmapData | null;
 }
 
-export async function getAgentHeatmaps(since?: string): Promise<AgentHeatmaps> {
-  return invoke<AgentHeatmaps>('get_agent_heatmaps', { since: since ?? null });
+export interface InsightFilters {
+  range?: string;      // "day" | "week" | "month" | "year" | "all"
+  cwd?: string;
+  session_id?: string;
+  agent?: string;      // "Claude" | "Codex" | "Gemini"
+}
+
+export interface FilterOptions {
+  cwds: string[];
+  session_ids: string[];
+}
+
+export async function getAgentHeatmaps(filters: InsightFilters): Promise<AgentHeatmaps> {
+  return invoke<AgentHeatmaps>('get_agent_heatmaps', {
+    range: filters.range ?? null,
+    cwd: filters.cwd ?? null,
+    sessionId: filters.session_id ?? null,
+    agent: filters.agent ?? null,
+  });
+}
+
+export async function getInsightFilterOptions(): Promise<FilterOptions> {
+  return invoke<FilterOptions>('get_insight_filter_options');
+}
+
+export interface RankItem {
+  key: string;
+  sessions: number;
+  total_tokens: number;
+  input_tokens: number;
+  output_tokens: number;
+  cache_read_tokens: number;
+  agents: string[];
+}
+
+export interface Rankings {
+  by_cwd: RankItem[];
+  by_session: RankItem[];
+}
+
+export async function getInsightRankings(filters: InsightFilters): Promise<Rankings> {
+  return invoke<Rankings>('get_insight_rankings', {
+    range: filters.range ?? null,
+    cwd: filters.cwd ?? null,
+    sessionId: filters.session_id ?? null,
+    agent: filters.agent ?? null,
+  });
 }

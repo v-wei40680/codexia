@@ -1,16 +1,5 @@
-import { subDays, subMonths, format } from 'date-fns';
 import { type Range, type AgentKey, type ModelPricing } from './constants';
 import type { TokenStats } from '@/services/tauri/insights';
-
-/** Convert a Range to an ISO date string for the backend `since` param, or undefined for "all". */
-export function rangeToSince(range: Range): string | undefined {
-  const now = new Date();
-  if (range === '1d') return format(subDays(now, 1), 'yyyy-MM-dd');
-  if (range === '7d') return format(subDays(now, 7), 'yyyy-MM-dd');
-  if (range === '1m') return format(subMonths(now, 1), 'yyyy-MM-dd');
-  if (range === '3m') return format(subMonths(now, 3), 'yyyy-MM-dd');
-  return undefined;
-}
 
 /** Default pricing per 1M tokens (USD).
  *  Keys are lowercase substrings matched against model names (most specific first). */
@@ -93,9 +82,9 @@ export function fmtCost(usd: number): string {
 }
 
 export function weeksForRange(range: Range): number {
-  if (range === '1d') return 2;
-  if (range === '7d') return 3;
-  if (range === '1m') return 6;
-  if (range === '3m') return 14;
-  return 26;
+  if (range === 'day')   return 2;
+  if (range === 'week')  return 3;
+  if (range === 'month') return 6;
+  if (range === 'year')  return 26;
+  return 53;
 }
