@@ -93,7 +93,7 @@ Community forks:
 - [Itexoft/codexia](https://github.com/Itexoft/codexia) — SSH integration
 - [nuno5645/codexia](https://github.com/nuno5645/codexia) — Reasoning and token count events
 
-Related: [awesome-codex-cli](https://github.com/milisp/awesome-codex-cli)
+Related: [awesome-codex-cli](https://github.com/milisp/awesome-codex-cli) | [claw-army/claude-node](https://github.com/claw-army/claude-node)
 
 ## Community
 
