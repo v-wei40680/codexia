@@ -40,6 +40,7 @@ const buildCommandTitle = (
   begin: ExecCommandMessage | null | undefined,
   shellCommandParts: string[]
 ) => {
+  console.info(shellCommandParts, begin?.arguments)
   const hasMultipleParts =
     shellCommandParts.length >= 2 && ['zsh', 'bash'].includes(shellCommandParts[0]);
   const slicedParts = hasMultipleParts ? shellCommandParts.slice(2) : shellCommandParts;
@@ -52,12 +53,13 @@ const buildCommandTitle = (
     return shellCommandParts.join(' ');
   }
 
-  if (begin?.name) {
+  if (begin?.name && begin.name !== 'exec_command') {
     return begin.name;
   }
 
   if (begin?.arguments) {
-    return begin.arguments;
+    const parsedArgs = JSON.parse(begin.arguments);
+    return parsedArgs.cmd;
   }
 
   return '';
@@ -139,13 +141,6 @@ const extractCommandOutput = (end?: ExecCommandMessage | null) => {
   }
 };
 
-const getCommandHeading = (begin?: ExecCommandMessage | null) => {
-  if (begin?.name === 'shell' || begin?.name === 'shell_command') {
-    return 'Shell';
-  }
-  return begin?.name || 'Command';
-};
-
 export default function HistoryExecCommandItem({
   begin,
   end,
@@ -158,7 +153,6 @@ export default function HistoryExecCommandItem({
   const commandLabel = commandTitle || 'command';
   const commandOutput = extractCommandOutput(end);
   const argumentSummary = formatArgumentSummary(parsedBeginArguments);
-  const commandHeading = getCommandHeading(begin);
 
   return (
     <div className="flex flex-col">
@@ -172,7 +166,7 @@ export default function HistoryExecCommandItem({
       {isOpen && commandOutput && (
         <div className="border">
           <div className="flex justify-between bg-gray-200 dark:bg-gray-800 px-2">
-            {commandHeading}
+            Bash
             <span className="flex gap-2">
               <Copy size={16} />
               <Minimize2 size={16} />
@@ -181,7 +175,7 @@ export default function HistoryExecCommandItem({
           <div className="flex font-mono text-sm px-2 py-1 bg-black/5 dark:bg-white/5 rounded">
             {commandParts.length ? `$ ${commandParts.join(' ')}` : argumentSummary || 'No args'}
           </div>
-          <div className="max-h-24 overflow-auto">
+          <div className="max-h-36 overflow-auto">
             <pre>
               <code>{commandOutput}</code>
             </pre>

@@ -14,6 +14,7 @@ import { PlanDisplay, SimplePlanStep } from './PlanDisplay';
 import { HistoryFilters, createInitialFilterState } from './HistoryFilters';
 import { Markdown } from '@/components/Markdown';
 import { readTextFileLines } from '@/services';
+import { Streamdown } from 'streamdown';
 
 export function History() {
   const currentThread = useCurrentThread();
@@ -149,106 +150,106 @@ export function History() {
         </Popover>
       </div>
       <div className="flex flex-col p-4 gap-2 overflow-auto flex-1">
-      {filteredMessages.map((msg, index) => {
-        switch (msg.type) {
-          case 'agent_message':
-            return (
-              <div className="flex w-full" key={`agent-${index}`}>
-                <Markdown value={msg.message} />
-              </div>
-            );
-          case 'user_message':
-            return (
-              <div key={`user-${index}`} className="p-3 rounded-lg max-w-[90%] self-end shadow-md">
-                {msg.images && msg.images.length > 0 && (
-                  <div className="flex flex-wrap gap-2 mb-2">
-                    {msg.images.map((image: string, index: number) => (
-                      <img
-                        key={index}
-                        src={image}
-                        alt={`Uploaded ${index + 1}`}
-                        className="max-w-full max-h-48 rounded object-contain"
-                      />
-                    ))}
-                  </div>
-                )}
-                <Markdown value={msg.message} />
-              </div>
-            );
-
-          case 'agent_reasoning_raw_content':
-          case 'agent_reasoning': {
-            if (!msg.text.includes('\n')) {
+        {filteredMessages.map((msg, index) => {
+          switch (msg.type) {
+            case 'agent_message':
               return (
-                <span className="flex items-center gap-2" key={index}>
+                <div className="flex w-full" key={`agent-${index}`}>
+                  <Markdown value={msg.message} />
+                </div>
+              );
+            case 'user_message':
+              return (
+                <div key={`user-${index}`} className="p-3 rounded-lg max-w-[90%] self-end shadow-md">
+                  {msg.images && msg.images.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-2">
+                      {msg.images.map((image: string, index: number) => (
+                        <img
+                          key={index}
+                          src={image}
+                          alt={`Uploaded ${index + 1}`}
+                          className="max-w-full max-h-48 rounded object-contain"
+                        />
+                      ))}
+                    </div>
+                  )}
+                  <Streamdown>{msg.message}</Streamdown>
+                </div>
+              );
+
+            case 'agent_reasoning_raw_content':
+            case 'agent_reasoning': {
+              if (!msg.text.includes('\n')) {
+                return (
+                  <span className="flex items-center gap-2" key={index}>
+                    <Dot size={8} />
+                    <Markdown value={msg.text} />
+                  </span>
+                );
+              }
+              const firstNewlineIndex = msg.text.indexOf('\n');
+              const title = msg.text.substring(0, firstNewlineIndex);
+              const content = msg.text.substring(firstNewlineIndex + 1);
+              return (
+                <span className="flex items-center" key={index}>
                   <Dot size={8} />
-                  <Markdown value={msg.text} />
+                  <AccordionMsg title={title} content={content} />
                 </span>
               );
             }
-            const firstNewlineIndex = msg.text.indexOf('\n');
-            const title = msg.text.substring(0, firstNewlineIndex);
-            const content = msg.text.substring(firstNewlineIndex + 1);
-            return (
-              <span className="flex items-center" key={index}>
-                <Dot size={8} />
-                <AccordionMsg title={title} content={content} />
-              </span>
-            );
+            case 'turn_aborted':
+              return (
+                <Badge key={index} className="bg-red-200 dark:bg-red-500">
+                  {msg.reason}
+                </Badge>
+              );
+            case 'exec_command': {
+              const begin = msg.begin ?? null;
+              const end = msg.end ?? null;
+              const callId = begin?.call_id ?? end?.call_id ?? `exec-${index}`;
+              const isOpen = expandedExecCommands[callId] ?? false;
+              return (
+                <HistoryExecCommandItem
+                  key={`${callId}-${index}`}
+                  begin={begin}
+                  end={end}
+                  isOpen={isOpen}
+                  onToggle={() => toggleExecCommand(callId)}
+                />
+              );
+            }
+            case 'update_plan':
+              let planArgs: { plan: SimplePlanStep[]; explanation: string } = JSON.parse(
+                msg.arguments
+              );
+              return <PlanDisplay steps={planArgs.plan} />;
+            case 'apply_patch':
+              let applyPatchArgs = JSON.parse(msg.arguments);
+              return (
+                <div key={index}>
+                  <DiffViewer unifiedDiff={applyPatchArgs.input} />
+                </div>
+              );
+            case 'custom_tool_call':
+              return (
+                <div key={index}>
+                  <DiffViewer unifiedDiff={msg.input} />
+                </div>
+              );
+            case 'custom_tool_call_output':
+              return (
+                <div key={index}>
+                  <HistoryPatchOutputIcon patch_output={msg.output} />
+                </div>
+              );
+            case 'ghost_snapshot':
+            case 'task_started':
+            case 'task_complete':
+              return null;
+            default:
+              return <code key={index}>{JSON.stringify(msg)}</code>;
           }
-          case 'turn_aborted':
-            return (
-              <Badge key={index} className="bg-red-200 dark:bg-red-500">
-                {msg.reason}
-              </Badge>
-            );
-          case 'exec_command': {
-            const begin = msg.begin ?? null;
-            const end = msg.end ?? null;
-            const callId = begin?.call_id ?? end?.call_id ?? `exec-${index}`;
-            const isOpen = expandedExecCommands[callId] ?? false;
-            return (
-              <HistoryExecCommandItem
-                key={`${callId}-${index}`}
-                begin={begin}
-                end={end}
-                isOpen={isOpen}
-                onToggle={() => toggleExecCommand(callId)}
-              />
-            );
-          }
-          case 'update_plan':
-            let planArgs: { plan: SimplePlanStep[]; explanation: string } = JSON.parse(
-              msg.arguments
-            );
-            return <PlanDisplay steps={planArgs.plan} />;
-          case 'apply_patch':
-            let applyPatchArgs = JSON.parse(msg.arguments);
-            return (
-              <div key={index}>
-                <DiffViewer unifiedDiff={applyPatchArgs.input} />
-              </div>
-            );
-          case 'custom_tool_call':
-            return (
-              <div key={index}>
-                <DiffViewer unifiedDiff={msg.input} />
-              </div>
-            );
-          case 'custom_tool_call_output':
-            return (
-              <div key={index}>
-                <HistoryPatchOutputIcon patch_output={msg.output} />
-              </div>
-            );
-          case 'ghost_snapshot':
-          case 'task_started':
-          case 'task_complete':
-            return null;
-          default:
-            return <code key={index}>{JSON.stringify(msg)}</code>;
-        }
-      })}
+        })}
       </div>
     </div>
   );
