@@ -176,13 +176,30 @@ pub fn git_push(
             .unwrap_or_else(|| "HEAD".to_string())
     });
 
-    // gix 0.78 implements only the fetch half of the git protocol;
-    // push (send-pack / receive-pack) is not yet available in the blocking
-    // network client.  Return a clear error so callers can fall back or
-    // surface the limitation to the user.
-    Err(format!(
-        "Push of '{branch_name}' to remote '{remote_name}' is not yet supported \
-         by the gix library (0.78).  Push support is tracked upstream at \
-         https://github.com/Byron/gitoxide/issues/516."
-    ))
+    let mut cmd = std::process::Command::new("git");
+    cmd.arg("push")
+        .arg(&remote_name)
+        .arg(&branch_name)
+        .current_dir(&cwd);
+
+    // Suppress console window on Windows
+    #[cfg(target_os = "windows")]
+    {
+        use std::os::windows::process::CommandExt;
+        const CREATE_NO_WINDOW: u32 = 0x0800_0000;
+        cmd.creation_flags(CREATE_NO_WINDOW);
+    }
+
+    let output = cmd
+        .output()
+        .map_err(|e| format!("Failed to run git push: {e}"))?;
+
+    if output.status.success() {
+        let stdout = String::from_utf8_lossy(&output.stdout).into_owned();
+        let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
+        Ok(if stdout.is_empty() { stderr } else { stdout })
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr).into_owned();
+        Err(format!("git push failed: {stderr}"))
+    }
 }
