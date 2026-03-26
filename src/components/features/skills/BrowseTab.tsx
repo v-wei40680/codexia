@@ -20,6 +20,7 @@ import {
   Plus,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useWorkspaceStore } from '@/stores';
 
 type BoardType = 'alltime' | 'trending' | 'hot';
 
@@ -32,16 +33,15 @@ const BOARD_TABS: { value: BoardType; label: string; icon: React.ReactNode }[] =
 export function BrowseTab({
   searchQuery,
   scope,
-  cwd,
   installedIds,
   onInstalled,
 }: {
   searchQuery: string;
   scope: SkillScope;
-  cwd: string | null;
   installedIds: Set<string>;
   onInstalled: () => void;
 }) {
+  const { cwd } = useWorkspaceStore();
   const [board, setBoard] = useState<BoardType>('alltime');
   const [skills, setSkills] = useState<MarketSkillItem[]>([]);
   const [loading, setLoading] = useState(true);

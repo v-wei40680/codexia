@@ -21,18 +21,18 @@ import {
 } from '@/services';
 import { Loader2, Package, Trash2 } from 'lucide-react';
 import { AgentBadge } from './AgentBadge';
+import { useWorkspaceStore } from '@/stores';
 
 export function InstalledTab({
   searchQuery,
   scope,
-  cwd,
   refreshKey,
 }: {
   searchQuery: string;
   scope: SkillScope;
-  cwd: string | null;
   refreshKey: number;
 }) {
+  const { cwd } = useWorkspaceStore();
   const [skills, setSkills] = useState<CentralSkillItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [togglingKey, setTogglingKey] = useState<string | null>(null); // "<name>:<agent>"

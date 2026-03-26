@@ -33,7 +33,7 @@ export function SkillsView() {
   useEffect(() => {
     listCentralSkills(scope, cwd ?? undefined)
       .then((skills) => setInstalledNames(new Set(skills.map((s) => s.name))))
-      .catch(() => {});
+      .catch(() => { });
   }, [scope, cwd, installedRefreshKey]);
 
 
@@ -43,13 +43,13 @@ export function SkillsView() {
         {/* toolbar */}
         <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
           <TabsList className="bg-muted/50">
+            <TabsTrigger value="installed" className="h-8 gap-1.5">
+              <Package className="h-3.5 w-3.5" />
+              My Skills
+            </TabsTrigger>
             <TabsTrigger value="browse" className="h-8 gap-1.5">
               <Puzzle className="h-3.5 w-3.5" />
               Browse
-            </TabsTrigger>
-            <TabsTrigger value="installed" className="h-8 gap-1.5">
-              <Package className="h-3.5 w-3.5" />
-              Installed
             </TabsTrigger>
             <TabsTrigger value="repos" className="h-8 gap-1.5">
               <FolderGit2 className="h-3.5 w-3.5" />
@@ -94,7 +94,6 @@ export function SkillsView() {
           <BrowseTab
             searchQuery={searchQuery}
             scope={scope}
-            cwd={cwd}
             installedIds={installedNames}
             onInstalled={refreshInstalled}
           />
@@ -104,7 +103,6 @@ export function SkillsView() {
           <InstalledTab
             searchQuery={searchQuery}
             scope={scope}
-            cwd={cwd}
             refreshKey={installedRefreshKey}
           />
         </TabsContent>
