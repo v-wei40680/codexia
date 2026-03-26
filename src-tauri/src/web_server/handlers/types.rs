@@ -112,6 +112,19 @@ pub(crate) struct SkillsCloneRepoParams {
 }
 
 #[derive(Deserialize)]
+pub(crate) struct SkillGroupsScopeParams {
+    pub(crate) scope: String,
+    pub(crate) cwd: Option<String>,
+}
+
+#[derive(Deserialize)]
+pub(crate) struct SkillGroupsWriteParams {
+    pub(crate) scope: String,
+    pub(crate) cwd: Option<String>,
+    pub(crate) config: crate::features::skills::SkillGroupsConfig,
+}
+
+#[derive(Deserialize)]
 pub(crate) struct UnifiedMcpAddParams {
     #[serde(rename = "client_name", alias = "clientName")]
     pub(crate) client_name: String,

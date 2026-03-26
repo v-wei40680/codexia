@@ -1,4 +1,4 @@
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use crate::codex::utils::codex_home;
 
@@ -608,6 +608,77 @@ pub async fn delete_central_skill(
     })
     .await
     .map_err(|err| format!("Delete central skill task failed: {}", err))?
+}
+
+// ── Skill Groups ─────────────────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SkillGroup {
+    pub id: String,
+    pub name: String,
+    pub skill_names: Vec<String>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+pub struct SkillGroupsConfig {
+    pub groups: Vec<SkillGroup>,
+}
+
+fn skill_groups_path(scope: &str, cwd: Option<&str>) -> Result<PathBuf, String> {
+    match scope.trim().to_ascii_lowercase().as_str() {
+        "user" => {
+            let home = dirs::home_dir()
+                .ok_or_else(|| "Failed to resolve home directory".to_string())?;
+            Ok(home.join(".agents").join("skill-groups.json"))
+        }
+        "project" => {
+            let working_dir = cwd
+                .map(str::trim)
+                .filter(|s| !s.is_empty())
+                .ok_or_else(|| "cwd is required when scope is project".to_string())?;
+            Ok(PathBuf::from(working_dir).join(".agents").join("skill-groups.json"))
+        }
+        other => Err(format!("Unsupported scope: {}", other)),
+    }
+}
+
+pub async fn read_skill_groups(
+    scope: String,
+    cwd: Option<String>,
+) -> Result<SkillGroupsConfig, String> {
+    tokio::task::spawn_blocking(move || {
+        let path = skill_groups_path(&scope, cwd.as_deref())?;
+        if !path.exists() {
+            return Ok(SkillGroupsConfig::default());
+        }
+        let content = std::fs::read_to_string(&path)
+            .map_err(|e| format!("Failed to read skill-groups.json: {}", e))?;
+        serde_json::from_str(&content)
+            .map_err(|e| format!("Failed to parse skill-groups.json: {}", e))
+    })
+    .await
+    .map_err(|e| format!("read_skill_groups task failed: {}", e))?
+}
+
+pub async fn write_skill_groups(
+    scope: String,
+    cwd: Option<String>,
+    config: SkillGroupsConfig,
+) -> Result<(), String> {
+    tokio::task::spawn_blocking(move || {
+        let path = skill_groups_path(&scope, cwd.as_deref())?;
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)
+                .map_err(|e| format!("Failed to create directory: {}", e))?;
+        }
+        let content = serde_json::to_string_pretty(&config)
+            .map_err(|e| format!("Failed to serialize skill groups: {}", e))?;
+        std::fs::write(&path, content)
+            .map_err(|e| format!("Failed to write skill-groups.json: {}", e))
+    })
+    .await
+    .map_err(|e| format!("write_skill_groups task failed: {}", e))?
 }
 
 pub async fn clone_skills_repo(url: String) -> Result<String, String> {

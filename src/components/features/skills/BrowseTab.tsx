@@ -1,11 +1,13 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from '@/components/ui/use-toast';
 import {
   type MarketSkillItem,
+  type SkillGroupsConfig,
   type SkillScope,
   fetchMarketLeaderboard,
   installFromMarket,
+  linkSkillToAgent,
   searchMarketSkills,
 } from '@/services';
 import {
@@ -22,6 +24,7 @@ import {
 import { cn } from '@/lib/utils';
 import { useWorkspaceStore } from '@/stores';
 import { type BoardType, leaderboardCache, searchCache } from './browseCache';
+import { v4 as uuidv4 } from 'uuid';
 
 const BOARD_TABS: { value: BoardType; label: string; icon: React.ReactNode }[] = [
   { value: 'alltime', label: 'All Time', icon: <Clock className="h-3 w-3" /> },
@@ -31,22 +34,41 @@ const BOARD_TABS: { value: BoardType; label: string; icon: React.ReactNode }[] =
 
 export type { BoardType };
 
+function sourceLabel(source: string): string {
+  try {
+    const url = new URL(source);
+    const parts = url.pathname.replace(/^\//, '').split('/');
+    return parts[0] ?? source;
+  } catch {
+    return source;
+  }
+}
+
+const DEFAULT_GROUP_NAME = 'Default';
+
 export function BrowseTab({
   searchQuery,
   scope,
   installedIds,
   onInstalled,
+  groupsConfig,
+  onGroupsChange,
+  selectedGroupId,
 }: {
   searchQuery: string;
   scope: SkillScope;
   installedIds: Set<string>;
   onInstalled: () => void;
+  groupsConfig: SkillGroupsConfig;
+  onGroupsChange: (config: SkillGroupsConfig) => Promise<void>;
+  selectedGroupId: string | null;
 }) {
-  const { cwd } = useWorkspaceStore();
+  const { cwd, selectedAgent } = useWorkspaceStore();
   const [board, setBoard] = useState<BoardType>('alltime');
   const [skills, setSkills] = useState<MarketSkillItem[]>(() => leaderboardCache['alltime'] ?? []);
   const [loading, setLoading] = useState(!leaderboardCache['alltime']);
   const [installingId, setInstallingId] = useState<string | null>(null);
+  const [selectedSource, setSelectedSource] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadLeaderboard = useCallback(async (b: BoardType) => {
@@ -69,31 +91,23 @@ export function BrowseTab({
     }
   }, []);
 
-  // Leaderboard on mount and board change (when no search query)
   useEffect(() => {
     if (!searchQuery) void loadLeaderboard(board);
   }, [board, loadLeaderboard, searchQuery]);
 
-  // Debounced search
   useEffect(() => {
     if (!searchQuery) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
       const cached = searchCache.get(searchQuery);
-      if (cached) {
-        setSkills(cached);
-        setLoading(false);
-        return;
-      }
+      if (cached) { setSkills(cached); setLoading(false); return; }
       setLoading(true);
       try {
         const data = await searchMarketSkills(searchQuery, 40);
         searchCache.set(searchQuery, data);
         setSkills(data);
       } catch (err) {
-        toast.error('Search failed', {
-          description: err instanceof Error ? err.message : String(err),
-        });
+        toast.error('Search failed', { description: err instanceof Error ? err.message : String(err) });
       } finally {
         setLoading(false);
       }
@@ -101,11 +115,50 @@ export function BrowseTab({
     return () => { if (debounceRef.current) clearTimeout(debounceRef.current); };
   }, [searchQuery]);
 
+  const sources = useMemo(() => Array.from(new Set(skills.map((s) => s.source))).sort(), [skills]);
+  const filteredSkills = useMemo(
+    () => (selectedSource ? skills.filter((s) => s.source === selectedSource) : skills),
+    [skills, selectedSource]
+  );
+
   const handleInstall = async (skill: MarketSkillItem) => {
     if (installingId) return;
     setInstallingId(skill.id);
     try {
       await installFromMarket(skill.source, skill.skillId, scope, cwd ?? undefined);
+
+      // Link to currently selected agent
+      await linkSkillToAgent(skill.name, selectedAgent, scope, cwd ?? undefined);
+
+      // Add to target group: selectedGroupId if set, otherwise find/create Default if not in any group
+      const groups = groupsConfig.groups;
+      let targetId = selectedGroupId;
+      let updatedGroups = groups;
+
+      if (!targetId) {
+        // If not specific group selected, check if skill already in some group
+        const isAssigned = groups.some((g) => g.skillNames.includes(skill.name));
+        if (!isAssigned) {
+          const existing = groups.find((g) => g.name === DEFAULT_GROUP_NAME);
+          if (existing) {
+            targetId = existing.id;
+          } else {
+            targetId = uuidv4();
+            updatedGroups = [...groups, { id: targetId, name: DEFAULT_GROUP_NAME, skillNames: [] }];
+          }
+        }
+      }
+
+      if (targetId) {
+        await onGroupsChange({
+          groups: updatedGroups.map((g) =>
+            g.id === targetId && !g.skillNames.includes(skill.name)
+              ? { ...g, skillNames: [...g.skillNames, skill.name] }
+              : g
+          ),
+        });
+      }
+
       onInstalled();
       toast.success(`Installed ${skill.name}`);
     } catch (err) {
@@ -119,7 +172,7 @@ export function BrowseTab({
 
   return (
     <div className="space-y-3">
-      {/* board tabs (hidden when searching) */}
+      {/* Board tabs */}
       {!searchQuery && (
         <div className="flex gap-1">
           {BOARD_TABS.map((t) => (
@@ -130,9 +183,7 @@ export function BrowseTab({
               onClick={() => setBoard(t.value)}
               className={cn(
                 'h-7 gap-1.5 px-3 text-xs',
-                board === t.value
-                  ? 'bg-muted text-foreground'
-                  : 'text-muted-foreground hover:text-foreground'
+                board === t.value ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground'
               )}
             >
               {t.icon}
@@ -142,12 +193,45 @@ export function BrowseTab({
         </div>
       )}
 
+      {/* Source filter chips – single scrollable row */}
+      {sources.length > 1 && !loading && (
+        <div className="flex items-center gap-1 overflow-x-auto pb-0.5 scrollbar-none">
+          <button
+            type="button"
+            onClick={() => setSelectedSource(null)}
+            className={cn(
+              'shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium transition-colors',
+              !selectedSource
+                ? 'border-primary/40 bg-primary/10 text-primary'
+                : 'border-muted text-muted-foreground hover:border-muted-foreground/50 hover:text-foreground'
+            )}
+          >
+            All
+          </button>
+          {sources.map((src) => (
+            <button
+              key={src}
+              type="button"
+              onClick={() => setSelectedSource(src === selectedSource ? null : src)}
+              className={cn(
+                'shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-mono transition-colors',
+                selectedSource === src
+                  ? 'border-primary/40 bg-primary/10 text-primary'
+                  : 'border-muted text-muted-foreground hover:border-muted-foreground/50 hover:text-foreground'
+              )}
+            >
+              {sourceLabel(src)}
+            </button>
+          ))}
+        </div>
+      )}
+
       {loading ? (
         <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
           <Loader2 className="h-7 w-7 animate-spin" />
           <p className="mt-3 text-sm">{searchQuery ? 'Searching…' : 'Loading…'}</p>
         </div>
-      ) : skills.length === 0 ? (
+      ) : filteredSkills.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-16 text-center">
           <div className="rounded-full bg-muted p-4">
             <SearchX className="h-7 w-7 text-muted-foreground" />
@@ -158,7 +242,7 @@ export function BrowseTab({
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pb-4">
-          {skills.map((skill) => {
+          {filteredSkills.map((skill) => {
             const installed = installedIds.has(skill.name);
             return (
               <div
@@ -173,9 +257,8 @@ export function BrowseTab({
                     <div className="flex items-center gap-2 justify-between">
                       <span className="truncate text-sm font-bold tracking-tight">{skill.name}</span>
                       {installed ? (
-                        <span className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium shrink-0">
+                        <span className="text-emerald-600 dark:text-emerald-400 font-medium shrink-0">
                           <CheckCircle className="h-3.5 w-3.5" />
-                          Installed
                         </span>
                       ) : (
                         <Button
@@ -183,19 +266,27 @@ export function BrowseTab({
                           variant="default"
                           className="h-7 w-7 shrink-0"
                           disabled={Boolean(installingId)}
-                          onClick={() => handleInstall(skill)}
+                          onClick={() => void handleInstall(skill)}
                         >
-                          {installingId === skill.id ? (
-                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                          ) : (
-                            <Plus className="h-3.5 w-3.5" />
-                          )}
+                          {installingId === skill.id
+                            ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            : <Plus className="h-3.5 w-3.5" />
+                          }
                         </Button>
                       )}
                     </div>
-                    <p className="text-[11px] text-muted-foreground font-mono opacity-60 truncate">
-                      {skill.source}
-                    </p>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedSource(skill.source === selectedSource ? null : skill.source)}
+                      className={cn(
+                        'inline-block max-w-full truncate rounded px-1.5 py-px text-[10px] font-mono transition-colors',
+                        selectedSource === skill.source
+                          ? 'bg-primary/15 text-primary'
+                          : 'bg-muted/40 text-muted-foreground hover:bg-muted hover:text-foreground'
+                      )}
+                    >
+                      {sourceLabel(skill.source)}
+                    </button>
                     {skill.installs > 0 && (
                       <div className="flex items-center gap-1 text-[10px] text-muted-foreground/70">
                         <Download className="h-3 w-3" />

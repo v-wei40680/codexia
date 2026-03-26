@@ -174,6 +174,27 @@ export async function installFromMarket(
   });
 }
 
+export type SkillGroup = { id: string; name: string; skillNames: string[] };
+export type SkillGroupsConfig = { groups: SkillGroup[] };
+
+export async function readSkillGroups(scope: SkillScope, cwd?: string): Promise<SkillGroupsConfig> {
+  if (isDesktopTauri()) {
+    return await invokeTauri<SkillGroupsConfig>('read_skill_groups', { scope, cwd });
+  }
+  return await postJson<SkillGroupsConfig>('/api/skills/groups/read', { scope, cwd });
+}
+
+export async function writeSkillGroups(
+  scope: SkillScope,
+  cwd: string | undefined,
+  config: SkillGroupsConfig
+): Promise<void> {
+  if (isDesktopTauri()) {
+    return await invokeTauri<void>('write_skill_groups', { scope, cwd, config });
+  }
+  return await postJson<void>('/api/skills/groups/write', { scope, cwd, config });
+}
+
 export async function skillsConfigWrite(path: string, enabled: boolean) {
   if (isDesktopTauri()) {
     return await invokeTauri('skills_config_write', { path, enabled });

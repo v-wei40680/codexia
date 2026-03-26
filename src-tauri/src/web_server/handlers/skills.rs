@@ -1,10 +1,11 @@
 use super::to_error_response;
 use super::types::{
+    SkillGroupsScopeParams, SkillGroupsWriteParams,
     SkillsCloneRepoParams, SkillsInstallParams, SkillsMarketplaceParams, SkillsUninstallParams,
 };
 use axum::Json;
 
-use crate::features::skills::{self, InstalledSkill, MarketplaceSkill};
+use crate::features::skills::{self, InstalledSkill, MarketplaceSkill, SkillGroupsConfig};
 use crate::web_server::types::ErrorResponse;
 
 pub(crate) async fn api_skills_list_marketplace(
@@ -61,4 +62,22 @@ pub(crate) async fn api_skills_clone_repo(
         .await
         .map_err(to_error_response)?;
     Ok(Json(result))
+}
+
+pub(crate) async fn api_skill_groups_read(
+    Json(params): Json<SkillGroupsScopeParams>,
+) -> Result<Json<SkillGroupsConfig>, ErrorResponse> {
+    let config = skills::read_skill_groups(params.scope, params.cwd)
+        .await
+        .map_err(to_error_response)?;
+    Ok(Json(config))
+}
+
+pub(crate) async fn api_skill_groups_write(
+    Json(params): Json<SkillGroupsWriteParams>,
+) -> Result<Json<()>, ErrorResponse> {
+    skills::write_skill_groups(params.scope, params.cwd, params.config)
+        .await
+        .map_err(to_error_response)?;
+    Ok(Json(()))
 }

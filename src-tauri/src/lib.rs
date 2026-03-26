@@ -224,6 +224,8 @@ pub fn run() {
                 crate::commands::skills::uninstall_installed_skill,
                 crate::commands::skills::link_skill_to_agent,
                 crate::commands::skills::delete_central_skill,
+                crate::commands::skills::read_skill_groups,
+                crate::commands::skills::write_skill_groups,
                 crate::commands::notes::create_note,
                 crate::commands::notes::get_notes,
                 crate::commands::notes::get_note_by_id,

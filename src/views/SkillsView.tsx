@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Package, FolderGit2, Search, Globe, Package2 } from 'lucide-react';
+import { Package, FolderGit2, Search, Globe, Package2, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { BrowseTab } from '@/components/features/skills/BrowseTab';
@@ -9,9 +9,12 @@ import { useWorkspaceStore } from '@/stores';
 import { useLayoutStore } from '@/stores';
 import { useTrafficLightConfig } from '@/hooks';
 import { ProjectSelector } from '@/components/project-selector';
-import { type SkillScope, listCentralSkills } from '@/services';
+import { type SkillGroup, type SkillGroupsConfig, type SkillScope, listCentralSkills, readSkillGroups, writeSkillGroups } from '@/services';
 import { cn } from '@/lib/utils';
 import { AgentSwitcher } from '@/components/common/AgentSwitcher';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { toast } from '@/components/ui/use-toast';
+import { v4 as uuidv4 } from 'uuid';
 
 type SkillTab = 'browse' | 'installed' | 'repos';
 
@@ -31,6 +34,12 @@ export default function SkillsView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [installedRefreshKey, setInstalledRefreshKey] = useState(0);
   const [installedNames, setInstalledNames] = useState<Set<string>>(new Set());
+  const [groupsConfig, setGroupsConfig] = useState<SkillGroupsConfig>({ groups: [] });
+  const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+
+  // New group state
+  const [addingGroup, setAddingGroup] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
 
   useEffect(() => {
     listCentralSkills(scope, cwd ?? undefined)
@@ -38,14 +47,63 @@ export default function SkillsView() {
       .catch(() => { });
   }, [scope, cwd, installedRefreshKey]);
 
+  useEffect(() => {
+    readSkillGroups(scope, cwd ?? undefined)
+      .then((cfg) => {
+        setGroupsConfig(cfg);
+        // Clear selection if the selected group no longer exists
+        setSelectedGroupId((prev) =>
+          prev && cfg.groups.some((g) => g.id === prev) ? prev : null
+        );
+      })
+      .catch(() => { });
+  }, [scope, cwd]);
+
+
+
+  const saveGroups = useCallback(async (config: SkillGroupsConfig) => {
+    setGroupsConfig(config);
+    try {
+      await writeSkillGroups(scope, cwd ?? undefined, config);
+    } catch (err) {
+      toast.error('Failed to save groups', {
+        description: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }, [scope, cwd]);
+
   const refreshInstalled = useCallback(() => {
     setInstalledRefreshKey((k) => k + 1);
   }, []);
 
+  const handleAddGroup = async () => {
+    const name = newGroupName.trim();
+    if (!name) { setAddingGroup(false); return; }
+    const newGroupId = uuidv4();
+    const newGroup: SkillGroup = { id: newGroupId, name, skillNames: [] };
+    const updated = { groups: [...groupsConfig.groups, newGroup] };
+    await saveGroups(updated);
+    setSelectedGroupId(newGroupId);
+    setTab('installed');
+    setNewGroupName('');
+    setAddingGroup(false);
+  };
+
+  const handleGroupChipClick = (groupId: string) => {
+    if (selectedGroupId === groupId) {
+      setSelectedGroupId(null);
+    } else {
+      setSelectedGroupId(groupId);
+      setTab('installed');
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen">
-      {/* Header */}
+      {/* Drag region */}
       <header className='h-8' data-tauri-drag-region></header>
+
+      {/* Title row */}
       <div>
         <span className="flex items-center justify-between gap-2 px-4 h-12">
           <span className="flex items-center gap-2">
@@ -62,6 +120,8 @@ export default function SkillsView() {
             />
           </div>
         </span>
+
+        {/* Scope + agent switcher */}
         <div className="flex items-center justify-between px-4">
           <span className='flex'>
             <div className="flex items-center gap-0.5 rounded-lg bg-muted/50 p-0.5">
@@ -73,9 +133,7 @@ export default function SkillsView() {
                   onClick={() => setScope(s)}
                   className={cn(
                     'h-6 px-2.5 text-[10px] uppercase tracking-wider',
-                    scope === s
-                      ? 'bg-background text-foreground shadow-sm'
-                      : 'text-muted-foreground',
+                    scope === s ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground',
                   )}
                 >
                   {s}
@@ -86,9 +144,82 @@ export default function SkillsView() {
           </span>
           <AgentSwitcher />
         </div>
+
+        {/* Groups bar */}
+        <div className="flex items-center gap-1.5 px-4 py-1.5 min-h-[32px]">
+          <Button
+            size="icon-sm"
+            variant="ghost"
+            onClick={() => setAddingGroup(true)}
+            title="New group"
+          >
+            <Plus />
+          </Button>
+          <div className="flex flex-1 items-center gap-1 overflow-x-auto scrollbar-none">
+            {/* Default chip — always visible, active when nothing is selected */}
+            <button
+              type="button"
+              onClick={() => setSelectedGroupId(null)}
+              className={cn(
+                'shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition-colors whitespace-nowrap',
+                selectedGroupId === null
+                  ? 'border-primary/50 bg-primary/10 text-primary'
+                  : 'border-muted text-muted-foreground hover:border-muted-foreground/50 hover:text-foreground'
+              )}
+            >
+              All groups
+            </button>
+
+            {groupsConfig.groups.map((g) => (
+              <button
+                key={g.id}
+                type="button"
+                onClick={() => handleGroupChipClick(g.id)}
+                className={cn(
+                  'shrink-0 rounded-full border px-2.5 py-0.5 text-[11px] font-medium transition-colors whitespace-nowrap',
+                  selectedGroupId === g.id
+                    ? 'border-primary/50 bg-primary/10 text-primary'
+                    : 'border-muted text-muted-foreground hover:border-muted-foreground/50 hover:text-foreground'
+                )}
+              >
+                {g.name}
+                {g.skillNames.length > 0 && (
+                  <span className="ml-1 opacity-50">{g.skillNames.length}</span>
+                )}
+              </button>
+            ))}
+
+          </div>
+        </div>
+
+        <Dialog open={addingGroup} onOpenChange={setAddingGroup}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>New Skill Group</DialogTitle>
+            </DialogHeader>
+            <Input
+              id="name"
+              value={newGroupName}
+              onChange={(e) => setNewGroupName(e.target.value)}
+              placeholder="Group name..."
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') void handleAddGroup();
+              }}
+            />
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => { setAddingGroup(false); setNewGroupName(''); }}>
+                Cancel
+              </Button>
+              <Button onClick={() => void handleAddGroup()}>
+                Save changes
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
 
-      {/* Nav bar */}
+      {/* Nav tabs */}
       <div className="shrink-0 border-b px-4">
         <nav className="flex gap-0.5">
           {NAV_TABS.map(({ value, label, icon: Icon }) => (
@@ -123,6 +254,9 @@ export default function SkillsView() {
             scope={scope}
             installedIds={installedNames}
             onInstalled={refreshInstalled}
+            groupsConfig={groupsConfig}
+            onGroupsChange={saveGroups}
+            selectedGroupId={selectedGroupId}
           />
         </div>
         <div className={tab !== 'installed' ? 'hidden' : ''}>
@@ -130,6 +264,9 @@ export default function SkillsView() {
             searchQuery={searchQuery}
             scope={scope}
             refreshKey={installedRefreshKey}
+            groupsConfig={groupsConfig}
+            onGroupsChange={saveGroups}
+            selectedGroupId={selectedGroupId}
           />
         </div>
         {tab === 'repos' && <Clone />}

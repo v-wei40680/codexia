@@ -178,23 +178,59 @@ pub fn install_from_skillssh(
 }
 
 fn find_skill_dir(repo_root: &std::path::Path, skill_id: &str) -> Result<PathBuf> {
-    for entry in std::fs::read_dir(repo_root).context("Failed to read cloned repo")? {
-        let entry = entry?;
-        let path = entry.path();
-        if path.is_dir()
-            && entry.file_name().to_string_lossy().eq_ignore_ascii_case(skill_id)
-            && path.join("SKILL.md").exists()
-        {
-            return Ok(path);
+    // 1. Direct subdirectory match: repo/{skill_id}
+    let direct = repo_root.join(skill_id);
+    if direct.is_dir() {
+        return Ok(direct);
+    }
+
+    // 2. Inside a skills/ container: repo/skills/{skill_id}
+    let in_skills = repo_root.join("skills").join(skill_id);
+    if in_skills.is_dir() {
+        return Ok(in_skills);
+    }
+
+    // 3. Recursive search up to depth 6: match by dir name or SKILL.md `name` field
+    let mut name_match: Option<PathBuf> = None;
+    for entry in walkdir::WalkDir::new(repo_root).max_depth(6).into_iter().flatten() {
+        if entry.file_type().is_dir() {
+            let entry_name = entry.file_name().to_string_lossy();
+            if entry_name == skill_id {
+                return Ok(entry.path().to_path_buf());
+            }
+            if name_match.is_none() {
+                let skill_md = entry.path().join("SKILL.md");
+                if skill_md.exists() {
+                    if let Ok(fm) = crate::features::skills::parse_skill_front_matter(&skill_md) {
+                        if fm.name.as_deref() == Some(skill_id) {
+                            name_match = Some(entry.path().to_path_buf());
+                        }
+                    }
+                }
+            }
         }
     }
-    if repo_root.join("SKILL.md").exists() {
+    if let Some(path) = name_match {
+        return Ok(path);
+    }
+
+    // 4. Root is a single-skill repo (has SKILL.md or CLAUDE.md)
+    if repo_root.join("SKILL.md").exists() || repo_root.join("CLAUDE.md").exists() {
         return Ok(repo_root.to_path_buf());
     }
-    anyhow::bail!(
-        "Skill '{}' not found in repository (expected a subdirectory with SKILL.md)",
-        skill_id
-    )
+
+    // 5. skills/ or skill/ subdirectory without a name match
+    let skills_subdir = repo_root.join("skills");
+    if skills_subdir.is_dir() {
+        return Ok(skills_subdir);
+    }
+    let skill_subdir = repo_root.join("skill");
+    if skill_subdir.is_dir() {
+        return Ok(skill_subdir);
+    }
+
+    // 6. Fall back to repo root rather than hard-failing
+    Ok(repo_root.to_path_buf())
 }
 
 fn percent_encode(input: &str) -> String {

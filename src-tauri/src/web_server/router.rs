@@ -38,6 +38,7 @@ use super::{
         api_save_dxt_setting,
         api_search_files, api_search_files_by_name, api_skills_config_write, api_skills_list, api_start_review,
         api_start_thread, api_start_watch_file, api_start_watch_path, api_stop_watch_file,
+        api_skill_groups_read, api_skill_groups_write,
         api_skills_clone_repo, api_skills_install_marketplace, api_skills_list_installed,
         api_skills_list_marketplace, api_skills_uninstall_installed,
         api_stop_watch_path, api_terminal_resize, api_terminal_start, api_terminal_stop,
@@ -193,6 +194,8 @@ pub fn create_router(state: WebServerState) -> Router {
             post(api_skills_uninstall_installed),
         )
         .route("/api/skills/clone-repo", post(api_skills_clone_repo))
+        .route("/api/skills/groups/read", post(api_skill_groups_read))
+        .route("/api/skills/groups/write", post(api_skill_groups_write))
         .route("/api/codex/mcp/read", post(api_unified_read_mcp_config))
         .route("/api/codex/mcp/add", post(api_unified_add_mcp_server))
         .route("/api/codex/mcp/remove", post(api_unified_remove_mcp_server))

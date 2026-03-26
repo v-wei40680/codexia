@@ -1,6 +1,6 @@
 use crate::features::skills;
 
-pub use skills::{CentralSkill, InstalledSkill, MarketplaceSkill};
+pub use skills::{CentralSkill, InstalledSkill, MarketplaceSkill, SkillGroupsConfig};
 
 #[tauri::command]
 pub async fn list_marketplace_skills() -> Result<Vec<MarketplaceSkill>, String> {
@@ -67,4 +67,21 @@ pub async fn delete_central_skill(
 #[tauri::command]
 pub async fn clone_skills_repo(url: String) -> Result<String, String> {
     skills::clone_skills_repo(url).await
+}
+
+#[tauri::command]
+pub async fn read_skill_groups(
+    scope: String,
+    cwd: Option<String>,
+) -> Result<SkillGroupsConfig, String> {
+    skills::read_skill_groups(scope, cwd).await
+}
+
+#[tauri::command]
+pub async fn write_skill_groups(
+    scope: String,
+    cwd: Option<String>,
+    config: SkillGroupsConfig,
+) -> Result<(), String> {
+    skills::write_skill_groups(scope, cwd, config).await
 }
