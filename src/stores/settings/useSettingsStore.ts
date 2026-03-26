@@ -46,6 +46,8 @@ export interface SettingState {
   setAnalyticsConsentShown: (shown: boolean) => void;
   customStunServers: string[];
   setCustomStunServers: (servers: string[]) => void;
+  p2pAutoStart: boolean;
+  setP2pAutoStart: (enabled: boolean) => void;
 }
 
 type LegacySettingState = {
@@ -122,6 +124,8 @@ export const useSettingsStore = create<SettingState>()(
       setAnalyticsConsentShown: (shown: boolean) => set({ analyticsConsentShown: shown }),
       customStunServers: [],
       setCustomStunServers: (servers: string[]) => set({ customStunServers: servers }),
+      p2pAutoStart: false,
+      setP2pAutoStart: (enabled: boolean) => set({ p2pAutoStart: enabled }),
     }),
     {
       name: 'settings-storage',

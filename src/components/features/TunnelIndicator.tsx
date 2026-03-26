@@ -7,9 +7,14 @@ import {
 } from '@/components/ui/tooltip'
 import { useTunnel } from '@/hooks/useTunnel'
 import { isTauri, isPhone } from '@/hooks/runtime'
+import { useSettingsStore } from '@/stores/settings/useSettingsStore'
 
 export function TunnelIndicator() {
   const { status, loading, error, start, stop } = useTunnel()
+  const setP2pAutoStart = useSettingsStore((s) => s.setP2pAutoStart)
+
+  const handleStart = () => { setP2pAutoStart(true); start() }
+  const handleStop = () => { setP2pAutoStart(false); stop() }
 
   // Desktop only — mobile connects via useP2PConnection in App.tsx
   if (!isTauri() || isPhone) return null
@@ -21,7 +26,7 @@ export function TunnelIndicator() {
           variant="ghost"
           size="icon"
           className="relative h-8 w-8"
-          onClick={status.connected ? stop : start}
+          onClick={status.connected ? handleStop : handleStart}
           disabled={loading}
         >
           {loading ? (

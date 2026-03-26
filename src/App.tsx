@@ -21,7 +21,8 @@ import { useAgentLimit } from '@/hooks/useAgentLimit';
 import { useP2PConnection } from '@/hooks/useP2PConnection';
 import { DesktopOfflineScreen } from '@/components/features/DesktopOfflineScreen';
 import { toast } from 'sonner';
-import { useTunnel } from '@/hooks/useTunnel';
+import { useTunnel } from '@/hooks/useTunnel'
+import { useSettingsStore } from '@/stores/settings/useSettingsStore';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -68,13 +69,14 @@ function AppShell() {
     }
   }, [p2pState, p2pError, p2pRetry, isPhone]);
 
-  // Desktop: auto-start P2P server on login so mobile can connect
+  // Desktop: auto-start P2P server on login only if user has opted in
   const { start: p2pStart, status: p2pStatus } = useTunnel();
+  const p2pAutoStart = useSettingsStore((s) => s.p2pAutoStart);
   useEffect(() => {
-    if (!isTauri() || isPhone !== false || p2pStatus.connected) return;
+    if (!isTauri() || isPhone !== false || p2pStatus.connected || !p2pAutoStart) return;
     void p2pStart();
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPhone]);
+  }, [isPhone, p2pAutoStart]);
 
   // Sync the subscription-derived limit into the store so all addAgentCard callers respect it.
   useEffect(() => {
