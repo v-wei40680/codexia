@@ -1,4 +1,5 @@
-import { Plug, Globe, CheckCircle } from 'lucide-react';
+import { Globe, CheckCircle } from 'lucide-react';
+import { MCP } from '@lobehub/icons';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { CodexMcpView } from '@/components/features/mcp/CodexMcpView';
 import CCMcpView from '@/components/cc/mcp/CCMcpView';
@@ -19,7 +20,7 @@ export default function McpView() {
         className={`flex items-center gap-2 h-11 shrink-0 py-2 pr-3 ${needsTrafficLightOffset ? 'pl-32' : 'pl-4'}`}
         data-tauri-drag-region
       >
-        <Plug className="shrink-0 h-4 w-4" />
+        <MCP />
         <span className="font-semibold">MCP</span>
         <div className="flex-1" />
         <AgentSwitcher />

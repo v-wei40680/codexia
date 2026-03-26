@@ -1,4 +1,5 @@
-import { BarChart2, ListFilter, Lock, Package, Plug, Timer, Trash2 } from 'lucide-react';
+import { BarChart2, ListFilter, Lock, Package, Timer, Trash2 } from 'lucide-react';
+import { MCP } from '@lobehub/icons';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { useAgentLimit } from '@/hooks/useAgentLimit';
 import { useCallback, useState } from 'react';
@@ -139,7 +140,7 @@ export function SideBar() {
                   className={navBtnCls(view === 'mcp')}
                   onClick={() => setView('mcp')}
                 >
-                  <Plug className="h-4 w-4" />
+                  <MCP />
                   MCP
                 </Button>
               </>
