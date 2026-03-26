@@ -1,4 +1,4 @@
-import { BarChart2, ListFilter, Lock, Package, Timer, Trash2 } from 'lucide-react';
+import { BarChart2, ListFilter, Lock, Package, Plug, Timer, Trash2 } from 'lucide-react';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { useAgentLimit } from '@/hooks/useAgentLimit';
 import { useCallback, useState } from 'react';
@@ -37,7 +37,7 @@ import { FeedbackDialog } from '../dialogs/FeedbackDialog';
 const focusCCInput = () => window.dispatchEvent(new Event('cc-input-focus-request'));
 
 // Shared class for nav buttons (Automations / Marketplace)
-const navBtnBase = 'h-8 justify-start gap-1.5 rounded-md border pl-0 pr-2 has-[>svg]:pl-0';
+const navBtnBase = 'justify-start gap-2 rounded-md border px-2.5';
 const navBtnActive = 'border-border bg-accent/70 text-foreground';
 const navBtnInactive = 'border-transparent hover:border-border/60';
 const navBtnCls = (active: boolean) => `${navBtnBase} ${active ? navBtnActive : navBtnInactive}`;
@@ -123,15 +123,26 @@ export function SideBar() {
             </Button>
 
             {showSidebarMarketplace && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className={navBtnCls(view === 'marketplace')}
-                onClick={() => setView('marketplace')}
-              >
-                <Package className="h-4 w-4" />
-                Skills | MCP
-              </Button>
+              <>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={navBtnCls(view === 'skills')}
+                  onClick={() => setView('skills')}
+                >
+                  <Package className="h-4 w-4" />
+                  Skills
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={navBtnCls(view === 'mcp')}
+                  onClick={() => setView('mcp')}
+                >
+                  <Plug className="h-4 w-4" />
+                  MCP
+                </Button>
+              </>
             )}
           </div>
 

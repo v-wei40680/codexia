@@ -12,23 +12,24 @@ import {
   CheckCircle,
   Download,
   Loader2,
-  Puzzle,
   SearchX,
   TrendingUp,
   Flame,
   Clock,
   Plus,
+  Package,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useWorkspaceStore } from '@/stores';
-
-type BoardType = 'alltime' | 'trending' | 'hot';
+import { type BoardType, leaderboardCache, searchCache } from './browseCache';
 
 const BOARD_TABS: { value: BoardType; label: string; icon: React.ReactNode }[] = [
   { value: 'alltime', label: 'All Time', icon: <Clock className="h-3 w-3" /> },
   { value: 'trending', label: 'Trending', icon: <TrendingUp className="h-3 w-3" /> },
   { value: 'hot', label: 'Hot', icon: <Flame className="h-3 w-3" /> },
 ];
+
+export type { BoardType };
 
 export function BrowseTab({
   searchQuery,
@@ -43,15 +44,22 @@ export function BrowseTab({
 }) {
   const { cwd } = useWorkspaceStore();
   const [board, setBoard] = useState<BoardType>('alltime');
-  const [skills, setSkills] = useState<MarketSkillItem[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [skills, setSkills] = useState<MarketSkillItem[]>(() => leaderboardCache['alltime'] ?? []);
+  const [loading, setLoading] = useState(!leaderboardCache['alltime']);
   const [installingId, setInstallingId] = useState<string | null>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const loadLeaderboard = useCallback(async (b: BoardType) => {
+    if (leaderboardCache[b]) {
+      setSkills(leaderboardCache[b]!);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
-      setSkills(await fetchMarketLeaderboard(b));
+      const data = await fetchMarketLeaderboard(b);
+      leaderboardCache[b] = data;
+      setSkills(data);
     } catch (err) {
       toast.error('Failed to load marketplace', {
         description: err instanceof Error ? err.message : String(err),
@@ -71,9 +79,17 @@ export function BrowseTab({
     if (!searchQuery) return;
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(async () => {
+      const cached = searchCache.get(searchQuery);
+      if (cached) {
+        setSkills(cached);
+        setLoading(false);
+        return;
+      }
       setLoading(true);
       try {
-        setSkills(await searchMarketSkills(searchQuery, 40));
+        const data = await searchMarketSkills(searchQuery, 40);
+        searchCache.set(searchQuery, data);
+        setSkills(data);
       } catch (err) {
         toast.error('Search failed', {
           description: err instanceof Error ? err.message : String(err),
@@ -150,35 +166,40 @@ export function BrowseTab({
                 className="group flex flex-col justify-between gap-3 rounded-lg border border-muted/60 bg-card/50 p-4 transition-all hover:border-primary/30 hover:shadow-md hover:bg-card"
               >
                 <div className="flex items-start gap-3">
-                  <div className="mt-0.5 rounded-md bg-muted/50 p-2 text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary">
-                    <Puzzle className="h-5 w-5" />
+                  <div className="mt-0.5 rounded-md bg-muted/50 p-2 text-muted-foreground transition-colors group-hover:bg-primary/10 group-hover:text-primary shrink-0">
+                    <Package className="h-5 w-5" />
                   </div>
                   <div className="min-w-0 flex-1 space-y-1">
                     <div className="flex items-center gap-2 justify-between">
                       <span className="truncate text-sm font-bold tracking-tight">{skill.name}</span>
                       {installed ? (
-                        <CheckCircle className="h-3 w-3" />
+                        <span className="flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400 font-medium shrink-0">
+                          <CheckCircle className="h-3.5 w-3.5" />
+                          Installed
+                        </span>
                       ) : (
                         <Button
                           size="icon"
                           variant="default"
-                          disabled={Boolean(installingId) || installed}
+                          className="h-7 w-7 shrink-0"
+                          disabled={Boolean(installingId)}
                           onClick={() => handleInstall(skill)}
                         >
                           {installingId === skill.id ? (
-                            <Loader2 className="h-3 w-3 animate-spin" />
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
                           ) : (
-                            <Plus className="h-3 w-3" />
+                            <Plus className="h-3.5 w-3.5" />
                           )}
                         </Button>
                       )}
                     </div>
-                    <p className="text-xs text-muted-foreground font-mono opacity-60 line-clamp-1">
+                    <p className="text-[11px] text-muted-foreground font-mono opacity-60 truncate">
                       {skill.source}/{skill.skillId}
                     </p>
                     {skill.installs > 0 && (
-                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground/80">
+                      <div className="flex items-center gap-1 text-[10px] text-muted-foreground/70">
                         <Download className="h-3 w-3" />
+                        <span>{skill.installs.toLocaleString()}</span>
                       </div>
                     )}
                   </div>

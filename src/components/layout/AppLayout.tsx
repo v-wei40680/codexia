@@ -18,9 +18,8 @@ const SettingsView = lazy(() =>
   import('@/components/settings').then((module) => ({ default: module.SettingsView })),
 );
 const UsageView = lazy(() => import('@/views/UsageView'));
-const MarketplaceView = lazy(() =>
-  import('@/views/MarketplaceView').then((module) => ({ default: module.MarketplaceView })),
-);
+const SkillsView = lazy(() => import('@/views/SkillsView'));
+const McpView = lazy(() => import('@/views/McpView'));
 const AgentsView = lazy(() => import('@/views/AgentsView'));
 const AgentView = lazy(() => import('@/views/AgentView'));
 const LoginView = lazy(() => import('@/views/LoginView'));
@@ -172,7 +171,8 @@ export function AppLayout() {
           {view === 'automations' && <AutoMationsView />}
           {view === 'history' && <History />}
           {view === 'login' && <LoginView />}
-          {view === 'marketplace' && <MarketplaceView />}
+          {view === 'skills' && <SkillsView />}
+          {view === 'mcp' && <McpView />}
           {view === 'usage' && <UsageView />}
           {view === 'insights' && (isPro || import.meta.env.DEV ? <InsightsView /> : (
             <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-8">
