@@ -194,7 +194,7 @@ export function BrowseTab({
                       )}
                     </div>
                     <p className="text-[11px] text-muted-foreground font-mono opacity-60 truncate">
-                      {skill.source}/{skill.skillId}
+                      {skill.source}
                     </p>
                     {skill.installs > 0 && (
                       <div className="flex items-center gap-1 text-[10px] text-muted-foreground/70">
