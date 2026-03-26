@@ -1,35 +1,28 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Plus, Save, X } from 'lucide-react';
+import { Save, X } from 'lucide-react';
 import { McpServerConfig } from '@/types';
 import { toast } from 'sonner';
 import {
   McpServerForm,
-  McpLinkerButton,
   DefaultMcpServers,
   McpServerCard,
   getServerProtocol,
 } from '@/components/features/mcp';
 import {
-  unifiedAddMcpServer,
   unifiedReadMcpConfig,
   unifiedRemoveMcpServer,
+  unifiedAddMcpServer,
 } from '@/services';
 
-export function CodexMcpView() {
+interface CodexMcpViewProps {
+  refreshKey?: number;
+}
+
+export function CodexMcpView({ refreshKey }: CodexMcpViewProps) {
   const [servers, setServers] = useState<Record<string, McpServerConfig>>({});
   const [activeTab, setActiveTab] = useState('configured');
-  const [newServerName, setNewServerName] = useState('');
-  const [newServerProtocol, setNewServerProtocol] = useState<'stdio' | 'http' | 'sse'>('stdio');
-  const [commandConfig, setCommandConfig] = useState({
-    command: '',
-    args: '',
-    env: '',
-  });
-  const [httpConfig, setHttpConfig] = useState({
-    url: '',
-  });
   const [editingServer, setEditingServer] = useState<string | null>(null);
   const [editConfig, setEditConfig] = useState<{
     name: string;
@@ -49,52 +42,7 @@ export function CodexMcpView() {
 
   useEffect(() => {
     loadServers();
-  }, []);
-
-  const handleAddServer = async () => {
-    if (!newServerName) return;
-
-    try {
-      let config: McpServerConfig;
-
-      if (newServerProtocol === 'stdio') {
-        config = {
-          type: 'stdio',
-          command: commandConfig.command,
-          args: commandConfig.args.split(' ').filter((arg) => arg.trim()),
-        };
-
-        if (commandConfig.env && commandConfig.env.trim()) {
-          try {
-            config.env = JSON.parse(commandConfig.env);
-          } catch (e) {
-            toast.error('Invalid JSON format for environment variables');
-            return;
-          }
-        }
-      } else {
-        config = {
-          type: newServerProtocol,
-          url: httpConfig.url,
-        };
-      }
-
-      await unifiedAddMcpServer({
-        clientName: 'codex',
-        serverName: newServerName,
-        serverConfig: config,
-      });
-
-      setNewServerName('');
-      setCommandConfig({ command: '', args: '', env: '' });
-      setHttpConfig({ url: '' });
-      setActiveTab('configured');
-      loadServers();
-    } catch (error) {
-      console.error('Failed to add MCP server:', error);
-      toast.error('Failed to add MCP server: ' + error);
-    }
-  };
+  }, [refreshKey]);
 
   const handleEditServer = (name: string, config: McpServerConfig) => {
     const protocol = getServerProtocol(config);
@@ -169,26 +117,13 @@ export function CodexMcpView() {
     setEditConfig(null);
   };
 
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-  };
-
   return (
     <div className="container mx-auto">
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">Codex MCP Server Management</h1>
-        <McpLinkerButton />
-      </div>
-
       <div className="space-y-6">
-        <Tabs value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="grid w-full grid-cols-3">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="configured">Configured</TabsTrigger>
             <TabsTrigger value="quick">Quick</TabsTrigger>
-            <TabsTrigger value="add">
-              <Plus className="h-4 w-4 mr-2" />
-              Add
-            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="quick" className="mt-6">
@@ -254,26 +189,6 @@ export function CodexMcpView() {
               {Object.keys(servers).length === 0 && (
                 <div className="text-gray-500 text-center py-8">No MCP servers configured</div>
               )}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="add" className="mt-6">
-            <div className="max-w-md space-y-4">
-              <McpServerForm
-                serverName={newServerName}
-                onServerNameChange={setNewServerName}
-                protocol={newServerProtocol}
-                onProtocolChange={setNewServerProtocol}
-                commandConfig={commandConfig}
-                onCommandConfigChange={setCommandConfig}
-                httpConfig={httpConfig}
-                onHttpConfigChange={setHttpConfig}
-              />
-
-              <Button onClick={handleAddServer} disabled={!newServerName} className="w-full">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Server
-              </Button>
             </div>
           </TabsContent>
         </Tabs>

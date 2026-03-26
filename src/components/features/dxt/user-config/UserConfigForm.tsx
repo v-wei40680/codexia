@@ -2,6 +2,8 @@ import { DxtUserConfigurationOptionSchema } from '../schemas';
 import { Folder } from 'lucide-react';
 import { z } from 'zod';
 import { FolderSelector } from '../FolderSelector';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 // Generic input renderer for different types
 function ConfigInput({
@@ -20,9 +22,8 @@ function ConfigInput({
   switch (type) {
     case 'string':
       return (
-        <input
+        <Input
           type={option.sensitive ? 'password' : 'text'}
-          className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1 rounded w-full"
           placeholder={option.description}
           value={value ?? ''}
           onChange={(e) => onChange(e.target.value)}
@@ -30,9 +31,8 @@ function ConfigInput({
       );
     case 'number':
       return (
-        <input
+        <Input
           type="number"
-          className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1 rounded w-full"
           placeholder={option.description}
           value={value ?? ''}
           min={option.min}
@@ -51,17 +51,16 @@ function ConfigInput({
     case 'file':
       return (
         <div className="flex items-center gap-2">
-          <input
+          <Input
             type="text"
-            className="border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 px-2 py-1 rounded w-full"
             placeholder={option.description + ' (file path)'}
             value={value ?? ''}
             onChange={(e) => onChange(e.target.value)}
           />
           {/* TODO: Implement file picker logic */}
-          <button type="button" onClick={() => {}}>
+          <Button size="icon" variant="ghost" onClick={() => { }}>
             <Folder />
-          </button>
+          </Button>
         </div>
       );
     default:
@@ -128,9 +127,10 @@ function UserConfigField({
               idx={idx}
               name={name}
             />
-            <button
+            <Button
               type="button"
-              className="text-red-500 hover:text-red-700 px-2"
+              size="icon"
+              variant="ghost"
               title="Remove"
               onClick={() => {
                 const newArr = values.filter((_, i) => i !== idx);
@@ -138,16 +138,17 @@ function UserConfigField({
               }}
             >
               ×
-            </button>
+            </Button>
           </div>
         ))}
-        <button
+        <Button
           type="button"
-          className="mt-1 px-2 py-1 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 rounded text-sm border border-gray-300 dark:border-gray-600"
+          variant="outline"
+          size="sm"
           onClick={() => onChange(name, [...values, option.type === 'number' ? 0 : ''])}
         >
           {addLabel}
-        </button>
+        </Button>
       </div>
     );
   }
@@ -203,7 +204,7 @@ export function UserConfigForm({
 }) {
   return (
     // Make the form take full width with padding
-    <form className="w-full px-4 grid grid-cols-1 gap-4">
+    <form className="w-full grid grid-cols-1 gap-4">
       {Object.entries(schema).map(([key, option]) => (
         <UserConfigField
           key={key}

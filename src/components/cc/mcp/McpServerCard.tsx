@@ -161,13 +161,12 @@ export function McpServerCard({ server, workingDir, onServerUpdated }: McpServer
               </Badge>
               <Badge
                 variant="outline"
-                className={`text-[10px] font-normal px-1.5 h-4 uppercase ${
-                  server.scope === 'global'
+                className={`text-[10px] font-normal px-1.5 h-4 uppercase ${server.scope === 'global'
                     ? 'bg-blue-500/10 text-blue-500'
                     : server.scope === 'project'
                       ? 'bg-green-500/10 text-green-500'
                       : 'bg-orange-500/10 text-orange-500'
-                }`}
+                  }`}
               >
                 {server.scope}
               </Badge>
@@ -205,7 +204,6 @@ export function McpServerCard({ server, workingDir, onServerUpdated }: McpServer
               variant="ghost"
               onClick={handleDeleteServer}
               className="h-7 w-7 text-destructive"
-              disabled={server.scope !== 'local'}
             >
               <Trash2 className="h-3.5 w-3.5" />
             </Button>

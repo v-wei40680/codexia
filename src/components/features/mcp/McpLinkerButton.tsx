@@ -1,4 +1,5 @@
 import { Button } from '@/components/ui/button';
+import { Download } from 'lucide-react';
 
 export function McpLinkerButton() {
   return (
@@ -8,7 +9,7 @@ export function McpLinkerButton() {
         window.open(url, '_blank', 'noopener,noreferrer');
       }}
     >
-      Go to download MCP Linker to manage mcp
+      <Download /> MCP Linker for more
     </Button>
   );
 }

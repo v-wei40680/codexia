@@ -6,16 +6,8 @@ import { DxtManifestSchema } from './schemas';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
 import { MCPConfigType } from '@/types/cc/cc-mcp';
-import { McpProjectSelector } from '@/components/cc/mcp/McpProjectSelector';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { AgentType, useWorkspaceStore } from '@/stores';
+import { McpConfigScopeSelector } from '@/components/cc/mcp/McpConfigScopeSelector';
+import { useWorkspaceStore } from '@/stores';
 import {
   loadManifest,
   unifiedAddMcpServer,
@@ -24,6 +16,7 @@ import {
   unifiedReadMcpConfig,
   unifiedRemoveMcpServer,
 } from '@/services';
+import { Plus } from 'lucide-react';
 
 // Helper function to validate URLs
 function isValidUrl(url: any): boolean {
@@ -316,92 +309,34 @@ export default function DxtDetail({
       };
       try {
         await unifiedEnableMcpServer(_serverItem);
-      } catch (error) {}
+      } catch (error) { }
     }
   }
 
   return (
-    <div className="px-6 flex flex-col h-full">
-      <div className="py-4 flex-none">
+    <div className="flex flex-col h-full">
+      <div className="flex gap-2">
         <BackButton onClick={onBack} />
+        <h1 className="text-2xl font-bold mb-2">{manifest.display_name ?? manifest.name}</h1>
       </div>
-      <div className="flex-1 overflow-y-auto min-h-0 pb-10 pr-2">
+      <div className="flex-1 overflow-y-auto min-h-0 px-2">
         {/* Top section */}
         <div className="flex justify-between items-start mb-6">
-          <div>
-            <h1 className="text-2xl font-bold mb-2">{manifest.display_name ?? manifest.name}</h1>
-            <p className="text-gray-700 dark:text-gray-300 mb-1">{manifest.description}</p>
-          </div>
+          <p className="text-gray-700 dark:text-gray-300 mb-1">{manifest.description}</p>
         </div>
 
         <div className="mb-6 border rounded-xl overflow-hidden bg-card shadow-sm">
           <div className="p-4 space-y-6">
             {/* Configuration Grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {/* Target Agent Selection */}
-              <div className="space-y-2">
-                <Label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/80">
-                  Target Agent
-                </Label>
-                <Select
-                  value={selectedAgent}
-                  onValueChange={(val) =>
-                    useWorkspaceStore.getState().setSelectedAgent(val as AgentType)
-                  }
-                >
-                  <SelectTrigger className="w-full h-10 bg-background/50 backdrop-blur-sm border-muted-foreground/20 hover:border-primary/50 transition-colors">
-                    <SelectValue placeholder="Select Agent" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="codex">Codex</SelectItem>
-                    <SelectItem value="cc">Claude Code</SelectItem>
-                  </SelectContent>
-                </Select>
-                <p className="text-[10px] text-muted-foreground/70 italic">
-                  Choose the AI agent for this server.
-                </p>
-              </div>
-
-              {selectedAgent === 'cc' && (
-                <>
-                  {/* Scope Selection */}
-                  <div className="space-y-2 animate-in fade-in slide-in-from-left-2 duration-300">
-                    <Label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/80">
-                      Configuration Scope
-                    </Label>
-                    <Select value={selectedScope} onValueChange={setSelectedScope}>
-                      <SelectTrigger className="w-full h-10 bg-background/50 backdrop-blur-sm border-muted-foreground/20 hover:border-primary/50 transition-colors">
-                        <SelectValue placeholder="Select Scope" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="local">Local (This Project Only)</SelectItem>
-                        <SelectItem value="project">Project (Shared in .mcp.json)</SelectItem>
-                        <SelectItem value="global">Global (User Level)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <p className="text-[10px] text-muted-foreground/70 italic">
-                      Visibility of this MCP server.
-                    </p>
-                  </div>
-
-                  {/* Path selector */}
-                  <div className="space-y-2 animate-in fade-in slide-in-from-left-4 duration-300">
-                    <Label className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/80">
-                      Working Directory / Path
-                    </Label>
-                    <div className="rounded-md border border-muted-foreground/20 bg-background/50 backdrop-blur-sm overflow-hidden">
-                      <McpProjectSelector />
-                    </div>
-                    <p className="text-[10px] text-muted-foreground/70 italic">
-                      Required project context for settings.
-                    </p>
-                  </div>
-                </>
-              )}
-            </div>
+            {selectedAgent === 'cc' && (
+                <McpConfigScopeSelector 
+                  selectedScope={selectedScope} 
+                  onScopeChange={setSelectedScope} 
+                />
+            )}
 
             {/* Enable/Disable and Add button */}
-            <div className="pt-4 border-t flex justify-between items-center">
+            <div className={`${selectedAgent === 'cc' ? 'pt-4 border-t' : ''} flex justify-between items-center`}>
               <div className="flex flex-col gap-1">
                 <span className="flex items-center gap-3">
                   <Switch onCheckedChange={changeStatus} checked={enabled} />
@@ -432,7 +367,7 @@ export default function DxtDetail({
                       disabled={selectedAgent === 'cc' && !cwd}
                       className="px-8"
                     >
-                      Add to {selectedAgent === 'codex' ? 'Codex' : 'Claude Code'}
+                      <Plus className="h-4 w-4" /> Add to {selectedAgent === 'codex' ? 'Codex' : 'Claude Code'}
                     </Button>
                     {selectedAgent === 'cc' && !cwd && (
                       <p className="text-[10px] text-destructive font-medium underline underline-offset-2">

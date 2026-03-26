@@ -1,17 +1,29 @@
-import { Globe, CheckCircle } from 'lucide-react';
+import { useState } from 'react';
+import { Globe, CheckCircle, Plus } from 'lucide-react';
 import { MCP } from '@lobehub/icons';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Button } from '@/components/ui/button';
 import { CodexMcpView } from '@/components/features/mcp/CodexMcpView';
 import CCMcpView from '@/components/cc/mcp/CCMcpView';
 import DxtView from '@/components/features/dxt/DxtView';
+import { McpAddSheet } from '@/components/features/mcp/McpAddSheet';
 import { useWorkspaceStore, useLayoutStore } from '@/stores';
 import { AgentSwitcher } from '@/components/common/AgentSwitcher';
 import { useTrafficLightConfig } from '@/hooks';
+import { McpLinkerButton } from '@/components/features/mcp';
 
 export default function McpView() {
   const { selectedAgent } = useWorkspaceStore();
   const { isSidebarOpen } = useLayoutStore();
   const { needsTrafficLightOffset } = useTrafficLightConfig(isSidebarOpen);
+  const [activeTab, setActiveTab] = useState('browser');
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  const handleServerAdded = () => {
+    setRefreshKey((k) => k + 1);
+    setActiveTab('installed');
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -23,13 +35,21 @@ export default function McpView() {
         <MCP />
         <span className="font-semibold">MCP</span>
         <div className="flex-1" />
+        <Button
+          size="icon"
+          variant="ghost"
+          className="h-7 w-7"
+          onClick={() => setSheetOpen(true)}
+        >
+          <Plus className="h-4 w-4" />
+        </Button>
         <AgentSwitcher />
       </div>
 
       {/* Content */}
-      <div className="flex-1 min-h-0 px-4 pt-3 flex flex-col">
-        <Tabs defaultValue="browser" className="flex flex-col h-full">
-          <div className="shrink-0 border-b -mx-4 px-4">
+      <div className="flex-1 min-h-0 pt-3 flex flex-col">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
+          <div className="shrink-0 border-b flex justify-between">
             <nav className="flex gap-0.5">
               <TabsList className="bg-transparent p-0 h-auto gap-0">
                 <TabsTrigger
@@ -48,18 +68,30 @@ export default function McpView() {
                 </TabsTrigger>
               </TabsList>
             </nav>
+            <McpLinkerButton />
           </div>
 
-          <div className="flex-1 min-h-0 pt-3">
+          <div className="flex-1 min-h-0">
             <TabsContent value="browser" className="h-full m-0 overflow-hidden">
               <DxtView />
             </TabsContent>
             <TabsContent value="installed" className="h-full m-0 overflow-hidden">
-              {selectedAgent === 'codex' ? <CodexMcpView /> : <CCMcpView />}
+              {selectedAgent === 'codex' ? (
+                <CodexMcpView refreshKey={refreshKey} />
+              ) : (
+                <CCMcpView refreshKey={refreshKey} />
+              )}
             </TabsContent>
           </div>
         </Tabs>
       </div>
+
+      <McpAddSheet
+        open={sheetOpen}
+        onOpenChange={setSheetOpen}
+        selectedAgent={selectedAgent}
+        onServerAdded={handleServerAdded}
+      />
     </div>
   );
 }

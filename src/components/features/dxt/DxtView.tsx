@@ -246,16 +246,16 @@ export default function DxtView() {
           {/* loading indicator */}
           {loading && (
             <div className="mb-4 text-center">
-              <div className="text-sm text-gray-500 dark:text-gray-400">Loading manifests...</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">Loading...</div>
             </div>
           )}
           {/* action */}
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
-            <div className="relative w-full sm:max-w-lg">
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input
                 className="pl-9 pr-10 h-10"
-                placeholder="Search extensions by name, author or description..."
+                placeholder="Search"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
@@ -272,10 +272,9 @@ export default function DxtView() {
                 </button>
               )}
             </div>
-
-            <div className="flex items-center gap-2 w-full sm:w-auto">
-              <Button className="flex-1 sm:flex-none h-10 px-6 font-medium" onClick={handleSearch}>
-                Search
+            <div className="flex items-center gap-2 shrink-0">
+              <Button size="icon" onClick={handleSearch} className="h-10 w-10">
+                <Search className="h-4 w-4" />
               </Button>
               <Button
                 variant="outline"
@@ -290,7 +289,7 @@ export default function DxtView() {
             </div>
           </div>
           {/* Grid layout for DXT cards */}
-          <div className="grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4">
             {dxtList.map((dxt, idx) => {
               const getUserRepo = () => {
                 const user = dxt.author?.name || 'unknown';

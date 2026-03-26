@@ -1,5 +1,6 @@
-import { Card, CardContent, CardDescription } from '@/components/ui/card';
+import { Card, CardHeader, CardContent, CardDescription } from '@/components/ui/card';
 import { ChevronRight } from 'lucide-react';
+import { MCP } from '@lobehub/icons';
 import { Button } from '@/components/ui/button';
 
 // DxtCard component to display manifest info
@@ -10,26 +11,31 @@ export function DxtCard({ dxt, onClick }: { dxt: any; onClick?: () => void }) {
   const hasMore = toolsArray.length > 3;
 
   return (
-    <Card className="w-full h-full flex flex-col justify-between cursor-pointer hover:shadow-lg transition-shadow">
-      <CardContent className="flex flex-col flex-1">
-        <div className="flex gap-2 items-start">
+    <Card className="w-full h-full flex flex-col hover:shadow-lg transition-shadow">
+      <CardHeader className="flex flex-row items-center gap-2">
+        {dxt.icon ? (
           <img src={dxt.icon} alt="icon" className="w-10 h-10 rounded" />
-          <div className="flex flex-col flex-1">
-            <span className="font-bold text-lg">{dxt.display_name}</span>
-            <div className="text-sm text-muted-foreground">{dxt.author?.name}</div>
-          </div>
-          <Button
-            size="icon"
-            variant="secondary"
-            className="hover:bg-gray-500"
-            onClick={(e) => {
-              e.stopPropagation();
-              onClick?.();
-            }}
-          >
-            <ChevronRight />
-          </Button>
+        ) : (
+          <MCP />
+        )}
+
+        <div className="flex flex-col flex-1">
+          <span className="font-bold text-lg">{dxt.display_name}</span>
+          <div className="text-sm text-muted-foreground">{dxt.author?.name}</div>
         </div>
+        <Button
+          size="icon"
+          variant="secondary"
+          className="hover:bg-gray-500"
+          onClick={(e) => {
+            e.stopPropagation();
+            onClick?.();
+          }}
+        >
+          <ChevronRight />
+        </Button>
+      </CardHeader>
+      <CardContent className="flex flex-col flex-1">
         <CardDescription className="line-clamp-2">{dxt.description}</CardDescription>
         {/* Tools */}
         <div className="flex items-center gap-2 flex-wrap mt-2">
