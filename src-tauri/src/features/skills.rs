@@ -7,7 +7,12 @@ fn plugins_root_dir() -> Result<PathBuf, String> {
     Ok(home.join(".agents").join("plugins"))
 }
 
-fn resolve_skills_install_root(
+pub(crate) fn central_skills_dir() -> Result<PathBuf, String> {
+    let home = dirs::home_dir().ok_or_else(|| "Failed to resolve home directory".to_string())?;
+    Ok(home.join(".agents").join("skills"))
+}
+
+pub(crate) fn resolve_skills_install_root(
     selected_agent: &str,
     scope: &str,
     cwd: Option<&str>,
@@ -119,11 +124,24 @@ pub struct InstalledSkill {
     pub description: Option<String>,
 }
 
+/// A skill that lives in the central store (~/.agents/skills/).
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CentralSkill {
+    pub name: String,
+    pub path: String,
+    pub description: Option<String>,
+    /// Whether a link exists in the codex agent skills directory.
+    pub linked_codex: bool,
+    /// Whether a link exists in the cc agent skills directory.
+    pub linked_cc: bool,
+}
+
 #[derive(Debug, Default)]
-struct SkillFrontMatter {
-    name: Option<String>,
-    description: Option<String>,
-    license: Option<String>,
+pub(crate) struct SkillFrontMatter {
+    pub(crate) name: Option<String>,
+    pub(crate) description: Option<String>,
+    pub(crate) license: Option<String>,
 }
 
 fn parse_field(line: &str, key: &str) -> Option<Option<String>> {
@@ -143,7 +161,7 @@ fn parse_field(line: &str, key: &str) -> Option<Option<String>> {
     Some(Some(parsed.to_string()))
 }
 
-fn parse_skill_front_matter(path: &std::path::Path) -> Result<SkillFrontMatter, String> {
+pub(crate) fn parse_skill_front_matter(path: &std::path::Path) -> Result<SkillFrontMatter, String> {
     let content = std::fs::read_to_string(path)
         .map_err(|err| format!("Failed to read {}: {}", path.display(), err))?;
     let mut front_matter = SkillFrontMatter::default();
@@ -207,11 +225,13 @@ fn collect_skill_md_files(dir: &std::path::Path, output: &mut Vec<PathBuf>) -> R
     Ok(())
 }
 
-fn scan_marketplace_skills(install_root: &Path) -> Result<Vec<MarketplaceSkill>, String> {
+fn scan_marketplace_skills() -> Result<Vec<MarketplaceSkill>, String> {
     let plugins_root = plugins_root_dir()?;
     if !plugins_root.exists() {
         return Ok(Vec::new());
     }
+    // Check installed state against the central store, not a specific agent dir.
+    let central_dir = central_skills_dir()?;
 
     let mut skill_files = Vec::new();
     collect_skill_md_files(&plugins_root, &mut skill_files)?;
@@ -233,7 +253,7 @@ fn scan_marketplace_skills(install_root: &Path) -> Result<Vec<MarketplaceSkill>,
         if resolved_name.is_empty() {
             continue;
         }
-        let installed = install_root.join(&resolved_name).join("SKILL.md").is_file();
+        let installed = central_dir.join(&resolved_name).join("SKILL.md").is_file();
         skills.push(MarketplaceSkill {
             name: resolved_name,
             description: front_matter.description.filter(|value| !value.is_empty()),
@@ -295,7 +315,7 @@ fn scan_installed_skills(install_root: &Path) -> Result<Vec<InstalledSkill>, Str
     Ok(skills)
 }
 
-fn copy_dir_recursive(from: &std::path::Path, to: &std::path::Path) -> Result<(), String> {
+pub(crate) fn copy_dir_recursive(from: &std::path::Path, to: &std::path::Path) -> Result<(), String> {
     std::fs::create_dir_all(to)
         .map_err(|err| format!("Failed to create directory {}: {}", to.display(), err))?;
     let entries = std::fs::read_dir(from)
@@ -320,17 +340,43 @@ fn copy_dir_recursive(from: &std::path::Path, to: &std::path::Path) -> Result<()
     Ok(())
 }
 
-pub async fn list_marketplace_skills(
-    selected_agent: String,
-    scope: String,
-    cwd: Option<String>,
-) -> Result<Vec<MarketplaceSkill>, String> {
-    tokio::task::spawn_blocking(move || {
-        let install_root = resolve_skills_install_root(&selected_agent, &scope, cwd.as_deref())?;
-        scan_marketplace_skills(&install_root)
-    })
-    .await
-    .map_err(|err| format!("List marketplace skills task failed: {}", err))?
+/// On Unix: create a symlink `target -> source`.
+/// On other platforms: fall back to a full directory copy.
+pub(crate) fn link_skill(source: &std::path::Path, target: &std::path::Path) -> Result<(), String> {
+    #[cfg(unix)]
+    {
+        std::os::unix::fs::symlink(source, target).map_err(|err| {
+            format!(
+                "Failed to create symlink {} -> {}: {}",
+                target.display(),
+                source.display(),
+                err
+            )
+        })
+    }
+    #[cfg(not(unix))]
+    {
+        copy_dir_recursive(source, target)
+    }
+}
+
+/// Remove a skill link (symlink or copied directory) without touching the central store.
+fn remove_skill_link(target: &std::path::Path) -> Result<(), String> {
+    if target.is_symlink() {
+        std::fs::remove_file(target)
+            .map_err(|err| format!("Failed to remove symlink {}: {}", target.display(), err))
+    } else if target.is_dir() {
+        std::fs::remove_dir_all(target)
+            .map_err(|err| format!("Failed to remove {}: {}", target.display(), err))
+    } else {
+        Ok(())
+    }
+}
+
+pub async fn list_marketplace_skills() -> Result<Vec<MarketplaceSkill>, String> {
+    tokio::task::spawn_blocking(scan_marketplace_skills)
+        .await
+        .map_err(|err| format!("List marketplace skills task failed: {}", err))?
 }
 
 pub async fn list_installed_skills(
@@ -382,19 +428,35 @@ pub async fn install_marketplace_skill(
                 source_skill_md.display()
             )
         })?;
+
+        // Step 1: install into central store (~/.agents/skills/<name>/)
+        let central_dir = central_skills_dir()?;
+        std::fs::create_dir_all(&central_dir).map_err(|err| {
+            format!(
+                "Failed to create central skills directory {}: {}",
+                central_dir.display(),
+                err
+            )
+        })?;
+        let central_skill_dir = central_dir.join(requested_name);
+        if !central_skill_dir.exists() {
+            copy_dir_recursive(source_dir, &central_skill_dir)?;
+        }
+
+        // Step 2: link central skill into the agent's skills directory
         let install_root = resolve_skills_install_root(&selected_agent, &scope, cwd.as_deref())?;
         std::fs::create_dir_all(&install_root).map_err(|err| {
             format!(
-                "Failed to create skills install directory {}: {}",
+                "Failed to create agent skills directory {}: {}",
                 install_root.display(),
                 err
             )
         })?;
         let target_dir = install_root.join(requested_name);
-        if target_dir.exists() {
+        if target_dir.exists() || target_dir.is_symlink() {
             return Ok(target_dir.to_string_lossy().to_string());
         }
-        copy_dir_recursive(source_dir, &target_dir)?;
+        link_skill(&central_skill_dir, &target_dir)?;
         Ok(target_dir.to_string_lossy().to_string())
     })
     .await
@@ -418,22 +480,134 @@ pub async fn uninstall_installed_skill(
 
         let install_root = resolve_skills_install_root(&selected_agent, &scope, cwd.as_deref())?;
         let target_dir = install_root.join(requested_name);
-        if !target_dir.exists() {
-            return Ok(target_dir.to_string_lossy().to_string());
-        }
-        if !target_dir.is_dir() {
-            return Err(format!(
-                "Target is not a directory: {}",
-                target_dir.display()
-            ));
-        }
-
-        std::fs::remove_dir_all(&target_dir)
-            .map_err(|err| format!("Failed to remove {}: {}", target_dir.display(), err))?;
+        // Remove the agent link only; the central store (~/.agents/skills/) is kept intact
+        remove_skill_link(&target_dir)?;
         Ok(target_dir.to_string_lossy().to_string())
     })
     .await
     .map_err(|err| format!("Uninstall installed skill task failed: {}", err))?
+}
+
+/// List all skills in the central store with per-agent link status.
+pub async fn list_central_skills(
+    scope: String,
+    cwd: Option<String>,
+) -> Result<Vec<CentralSkill>, String> {
+    tokio::task::spawn_blocking(move || {
+        let central_dir = central_skills_dir()?;
+        if !central_dir.exists() {
+            return Ok(Vec::new());
+        }
+        let codex_root = resolve_skills_install_root("codex", &scope, cwd.as_deref())?;
+        let cc_root = resolve_skills_install_root("cc", &scope, cwd.as_deref())?;
+
+        let entries = std::fs::read_dir(&central_dir)
+            .map_err(|err| format!("Failed to read central skills dir: {}", err))?;
+
+        let mut skills = Vec::new();
+        for entry in entries {
+            let entry = entry.map_err(|err| format!("Failed to read entry: {}", err))?;
+            let path = entry.path();
+            if !path.is_dir() {
+                continue;
+            }
+            let name = path
+                .file_name()
+                .and_then(|n| n.to_str())
+                .unwrap_or("")
+                .trim()
+                .to_string();
+            if name.is_empty() {
+                continue;
+            }
+            let skill_md = path.join("SKILL.md");
+            if !skill_md.is_file() {
+                continue;
+            }
+            let front_matter = parse_skill_front_matter(&skill_md)?;
+            let description = front_matter.description.filter(|v| !v.is_empty());
+            let codex_link = codex_root.join(&name);
+            let cc_link = cc_root.join(&name);
+            skills.push(CentralSkill {
+                name,
+                path: path.to_string_lossy().to_string(),
+                description,
+                linked_codex: codex_link.exists() || codex_link.is_symlink(),
+                linked_cc: cc_link.exists() || cc_link.is_symlink(),
+            });
+        }
+        skills.sort_by(|a, b| a.name.to_lowercase().cmp(&b.name.to_lowercase()));
+        Ok(skills)
+    })
+    .await
+    .map_err(|err| format!("List central skills task failed: {}", err))?
+}
+
+/// Create a link from the central store to the given agent's skills directory.
+pub async fn link_skill_to_agent(
+    skill_name: String,
+    agent: String,
+    scope: String,
+    cwd: Option<String>,
+) -> Result<(), String> {
+    tokio::task::spawn_blocking(move || {
+        let requested_name = skill_name.trim();
+        if requested_name.is_empty() {
+            return Err("skill_name cannot be empty".to_string());
+        }
+        let central_skill_dir = central_skills_dir()?.join(requested_name);
+        if !central_skill_dir.exists() {
+            return Err(format!(
+                "Skill '{}' not found in central store",
+                requested_name
+            ));
+        }
+        let agent_root = resolve_skills_install_root(&agent, &scope, cwd.as_deref())?;
+        std::fs::create_dir_all(&agent_root).map_err(|err| {
+            format!(
+                "Failed to create agent skills directory {}: {}",
+                agent_root.display(),
+                err
+            )
+        })?;
+        let target = agent_root.join(requested_name);
+        if target.exists() || target.is_symlink() {
+            return Ok(());
+        }
+        link_skill(&central_skill_dir, &target)
+    })
+    .await
+    .map_err(|err| format!("Link skill task failed: {}", err))?
+}
+
+/// Remove a skill entirely from the central store and all agent links.
+pub async fn delete_central_skill(
+    skill_name: String,
+    scope: String,
+    cwd: Option<String>,
+) -> Result<(), String> {
+    tokio::task::spawn_blocking(move || {
+        let requested_name = skill_name.trim();
+        if requested_name.is_empty() {
+            return Err("skill_name cannot be empty".to_string());
+        }
+        // Remove agent links first
+        for agent in &["codex", "cc"] {
+            if let Ok(root) = resolve_skills_install_root(agent, &scope, cwd.as_deref()) {
+                remove_skill_link(&root.join(requested_name)).ok();
+            }
+        }
+        // Remove central copy
+        let central = central_skills_dir()?.join(requested_name);
+        if central.exists() {
+            std::fs::remove_dir_all(&central).map_err(|err| {
+                format!("Failed to remove central skill {}: {}", central.display(), err)
+            })?;
+        }
+        Ok(())
+    })
+    .await
+    .map_err(|err| format!("Delete central skill task failed: {}", err))?
 }
 
 pub async fn clone_skills_repo(url: String) -> Result<String, String> {

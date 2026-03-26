@@ -5,6 +5,7 @@ pub mod git;
 pub mod mcp;
 pub mod notes;
 pub mod skills;
+pub mod skillssh;
 pub mod sleep;
 pub mod terminal;
 pub mod insights;

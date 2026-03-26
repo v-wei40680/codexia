@@ -8,15 +8,11 @@ use crate::features::skills::{self, InstalledSkill, MarketplaceSkill};
 use crate::web_server::types::ErrorResponse;
 
 pub(crate) async fn api_skills_list_marketplace(
-    Json(params): Json<SkillsMarketplaceParams>,
+    _: Json<SkillsMarketplaceParams>,
 ) -> Result<Json<Vec<MarketplaceSkill>>, ErrorResponse> {
-    let skills = skills::list_marketplace_skills(
-        params.selected_agent,
-        params.scope,
-        params.cwd,
-    )
-    .await
-    .map_err(to_error_response)?;
+    let skills = skills::list_marketplace_skills()
+        .await
+        .map_err(to_error_response)?;
     Ok(Json(skills))
 }
 

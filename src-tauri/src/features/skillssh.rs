@@ -1,0 +1,211 @@
+use anyhow::{Context, Result};
+use serde::Serialize;
+use std::collections::HashMap;
+use std::path::PathBuf;
+
+use crate::features::skills::{
+    central_skills_dir, copy_dir_recursive, link_skill, parse_skill_front_matter,
+    resolve_skills_install_root,
+};
+
+const USER_AGENT: &str = "skills-manager";
+const SEARCH_URL: &str = "https://skills.sh/api/search";
+
+// ─── types ───────────────────────────────────────────────────────────────────
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MarketSkill {
+    pub id: String,
+    /// GitHub "owner/repo"
+    pub source: String,
+    /// Skill subdirectory name within the repo
+    pub skill_id: String,
+    pub name: String,
+    pub installs: u64,
+}
+
+// ─── HTTP ────────────────────────────────────────────────────────────────────
+
+fn build_client() -> reqwest::Client {
+    reqwest::Client::builder()
+        .user_agent(USER_AGENT)
+        .timeout(std::time::Duration::from_secs(20))
+        .build()
+        .unwrap_or_default()
+}
+
+async fn search_raw(client: &reqwest::Client, query: &str, limit: usize) -> Result<Vec<MarketSkill>> {
+    let url = format!("{}?q={}&limit={}", SEARCH_URL, percent_encode(query), limit);
+    let resp: serde_json::Value = client
+        .get(&url)
+        .send()
+        .await
+        .context("Failed to fetch skills.sh")?
+        .json()
+        .await
+        .context("Failed to parse response")?;
+
+    Ok(parse_skills_response(&resp))
+}
+
+fn parse_skills_response(resp: &serde_json::Value) -> Vec<MarketSkill> {
+    let arr = if let Some(a) = resp.get("skills").and_then(|v| v.as_array()) {
+        a
+    } else if let Some(a) = resp.as_array() {
+        a
+    } else {
+        return Vec::new();
+    };
+
+    let mut out = Vec::new();
+    for item in arr {
+        let source = item.get("source").and_then(|v| v.as_str()).unwrap_or("").to_string();
+        let skill_id = item
+            .get("skillId")
+            .or_else(|| item.get("skill_id"))
+            .and_then(|v| v.as_str())
+            .unwrap_or("")
+            .to_string();
+        if source.is_empty() || skill_id.is_empty() {
+            continue;
+        }
+        let id = format!("{}/{}", source, skill_id);
+        let name = item
+            .get("name")
+            .and_then(|v| v.as_str())
+            .filter(|s| !s.is_empty())
+            .unwrap_or(&skill_id)
+            .to_string();
+        let installs = item.get("installs").and_then(|v| v.as_u64()).unwrap_or(0);
+        out.push(MarketSkill { id, source, skill_id, name, installs });
+    }
+    out
+}
+
+// ─── leaderboard ─────────────────────────────────────────────────────────────
+
+/// skills.sh no longer embeds data in HTML (client-side rendered).
+/// Approximate leaderboard by running several broad searches in parallel,
+/// merging and sorting by install count.
+pub async fn fetch_leaderboard(_board: &str) -> Result<Vec<MarketSkill>> {
+    let terms = ["github", "code", "test", "ai", "react", "python", "skill"];
+    let client = build_client();
+
+    let mut handles = Vec::new();
+    for term in &terms {
+        let c = client.clone();
+        let t = term.to_string();
+        handles.push(tokio::spawn(async move {
+            search_raw(&c, &t, 30).await.unwrap_or_default()
+        }));
+    }
+
+    let mut seen: HashMap<String, MarketSkill> = HashMap::new();
+    for handle in handles {
+        if let Ok(skills) = handle.await {
+            for s in skills {
+                seen.entry(s.id.clone())
+                    .and_modify(|e| e.installs = e.installs.max(s.installs))
+                    .or_insert(s);
+            }
+        }
+    }
+
+    let mut results: Vec<MarketSkill> = seen.into_values().collect();
+    results.sort_by(|a, b| b.installs.cmp(&a.installs));
+    Ok(results)
+}
+
+// ─── search ──────────────────────────────────────────────────────────────────
+
+pub async fn search_skills(query: &str, limit: usize) -> Result<Vec<MarketSkill>> {
+    search_raw(&build_client(), query, limit).await
+}
+
+// ─── install ─────────────────────────────────────────────────────────────────
+
+/// Clone `https://github.com/{source}`, extract `{skill_id}` subdirectory,
+/// install to central store, then link to both codex and cc agents.
+pub fn install_from_skillssh(
+    source: &str,
+    skill_id: &str,
+    scope: &str,
+    cwd: Option<&str>,
+) -> Result<String> {
+    let temp_dir = tempfile::tempdir().context("Failed to create temp dir")?;
+    let clone_path = temp_dir.path().join("repo");
+    let repo_url = format!("https://github.com/{}.git", source);
+
+    crate::features::git::clone(&repo_url, &clone_path)
+        .context("Failed to clone repository")?;
+
+    let skill_dir = find_skill_dir(&clone_path, skill_id)?;
+
+    let install_name = {
+        let md = skill_dir.join("SKILL.md");
+        if md.is_file() {
+            parse_skill_front_matter(&md)
+                .ok()
+                .and_then(|fm| fm.name)
+                .filter(|n| !n.is_empty())
+                .unwrap_or_else(|| skill_id.to_string())
+        } else {
+            skill_id.to_string()
+        }
+    };
+
+    let central_dir = central_skills_dir().map_err(|e| anyhow::anyhow!(e))?;
+    std::fs::create_dir_all(&central_dir).context("Failed to create central skills dir")?;
+    let central_skill_dir = central_dir.join(&install_name);
+    if !central_skill_dir.exists() {
+        copy_dir_recursive(&skill_dir, &central_skill_dir)
+            .map_err(|e| anyhow::anyhow!(e))
+            .context("Failed to copy skill to central store")?;
+    }
+
+    for agent in &["codex", "cc"] {
+        if let Ok(root) = resolve_skills_install_root(agent, scope, cwd) {
+            let _ = std::fs::create_dir_all(&root);
+            let target = root.join(&install_name);
+            if !target.exists() && !target.is_symlink() {
+                link_skill(&central_skill_dir, &target).ok();
+            }
+        }
+    }
+
+    Ok(central_skill_dir.to_string_lossy().to_string())
+}
+
+fn find_skill_dir(repo_root: &std::path::Path, skill_id: &str) -> Result<PathBuf> {
+    for entry in std::fs::read_dir(repo_root).context("Failed to read cloned repo")? {
+        let entry = entry?;
+        let path = entry.path();
+        if path.is_dir()
+            && entry.file_name().to_string_lossy().eq_ignore_ascii_case(skill_id)
+            && path.join("SKILL.md").exists()
+        {
+            return Ok(path);
+        }
+    }
+    if repo_root.join("SKILL.md").exists() {
+        return Ok(repo_root.to_path_buf());
+    }
+    anyhow::bail!(
+        "Skill '{}' not found in repository (expected a subdirectory with SKILL.md)",
+        skill_id
+    )
+}
+
+fn percent_encode(input: &str) -> String {
+    input
+        .bytes()
+        .flat_map(|b| {
+            if b.is_ascii_alphanumeric() || matches!(b, b'-' | b'_' | b'.' | b'~') {
+                vec![b as char]
+            } else {
+                format!("%{:02X}", b).chars().collect::<Vec<_>>()
+            }
+        })
+        .collect()
+}

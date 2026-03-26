@@ -1,14 +1,10 @@
 use crate::features::skills;
 
-pub use skills::{InstalledSkill, MarketplaceSkill};
+pub use skills::{CentralSkill, InstalledSkill, MarketplaceSkill};
 
 #[tauri::command]
-pub async fn list_marketplace_skills(
-    selected_agent: String,
-    scope: String,
-    cwd: Option<String>,
-) -> Result<Vec<MarketplaceSkill>, String> {
-    skills::list_marketplace_skills(selected_agent, scope, cwd).await
+pub async fn list_marketplace_skills() -> Result<Vec<MarketplaceSkill>, String> {
+    skills::list_marketplace_skills().await
 }
 
 #[tauri::command]
@@ -18,6 +14,14 @@ pub async fn list_installed_skills(
     cwd: Option<String>,
 ) -> Result<Vec<InstalledSkill>, String> {
     skills::list_installed_skills(selected_agent, scope, cwd).await
+}
+
+#[tauri::command]
+pub async fn list_central_skills(
+    scope: String,
+    cwd: Option<String>,
+) -> Result<Vec<CentralSkill>, String> {
+    skills::list_central_skills(scope, cwd).await
 }
 
 #[tauri::command]
@@ -39,6 +43,25 @@ pub async fn uninstall_installed_skill(
     cwd: Option<String>,
 ) -> Result<String, String> {
     skills::uninstall_installed_skill(skill_name, selected_agent, scope, cwd).await
+}
+
+#[tauri::command]
+pub async fn link_skill_to_agent(
+    skill_name: String,
+    agent: String,
+    scope: String,
+    cwd: Option<String>,
+) -> Result<(), String> {
+    skills::link_skill_to_agent(skill_name, agent, scope, cwd).await
+}
+
+#[tauri::command]
+pub async fn delete_central_skill(
+    skill_name: String,
+    scope: String,
+    cwd: Option<String>,
+) -> Result<(), String> {
+    skills::delete_central_skill(skill_name, scope, cwd).await
 }
 
 #[tauri::command]
