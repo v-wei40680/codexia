@@ -22,14 +22,14 @@ import {
 } from '@/components/ui/sidebar';
 import { UserInfo } from './UserInfo';
 import { useThreadList } from '@/hooks/codex';
-import { AgentType, useWorkspaceStore } from '@/stores/useWorkspaceStore';
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useSettingsStore } from '@/stores/settings';
 import { useCCSessionManager } from '@/hooks/useCCSessionManager';
 import { UpdateButton } from '../features/UpdateButton';
 import { useTrafficLightConfig } from '@/hooks';
 import { SideBarCodexTab } from './SideBarCodexTab';
 import { SideBarClaudeTab } from './SideBarClaudeTab';
-import { AgentIcon } from '@/components/common/AgentIcon';
+import { AgentSwitcher } from '@/components/common/AgentSwitcher';
 import { SessionManagerDialog } from './SessionManagerDialog';
 import { TunnelIndicator } from '@/components/features/TunnelIndicator';
 import { FeedbackDialog } from '../dialogs/FeedbackDialog';
@@ -137,22 +137,7 @@ export function SideBar() {
 
           {/* Tab switcher row */}
           <span className="flex justify-between">
-            <span className="flex gap-2">
-              {(['cc', 'codex'] as AgentType[]).map((agent) => (
-                <Button
-                  key={agent}
-                  variant="ghost"
-                  size="icon"
-                  className={`h-8 w-8 ${activeSidebarTab === agent ? 'bg-accent' : ''}`}
-                  onClick={() => {
-                    setSelectedAgent(agent);
-                    setActiveSidebarTab(agent);
-                  }}
-                >
-                  <AgentIcon agent={agent} />
-                </Button>
-              ))}
-            </span>
+            <AgentSwitcher className="flex gap-2" />
 
             <span className="flex gap-2">
               <Button

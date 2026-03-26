@@ -1,9 +1,9 @@
 import { useCallback, useEffect } from 'react';
 import { emitTo } from '@tauri-apps/api/event';
 import { showMainWindow } from '@/services/tauri/tray';
-import { AgentIcon } from './AgentIcon';
 import { Composer as CCComposer } from '@/components/cc/composer';
-import { useWorkspaceStore, AgentType } from '@/stores/useWorkspaceStore';
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
+import { AgentSwitcher } from './AgentSwitcher';
 import { useAgentCenterStore, useLayoutStore } from '@/stores';
 import { useCCStore } from '@/stores/cc';
 import { Composer as CodexComposer, ComposerControls } from '@/components/codex/Composer';
@@ -51,19 +51,7 @@ export function AgentComposer({ trayMode = false }: AgentComposerProps) {
     <div className="flex flex-col">
       {/* Agent tabs */}
       <div className="flex items-center shrink-0">
-        {(['cc', 'codex'] as AgentType[]).map((agent) => (
-          <button
-            key={agent}
-            onClick={() => setSelectedAgent(agent)}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${selectedAgent === agent
-              ? 'bg-muted text-foreground'
-              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
-              }`}
-          >
-            <AgentIcon agent={agent} />
-            <span>{agent === 'cc' ? 'Claude Code' : 'Codex'}</span>
-          </button>
-        ))}
+        <AgentSwitcher variant="tab" />
         <TunnelIndicator />
       </div>
 

@@ -1,18 +1,17 @@
 import { ShoppingBag, Globe, CheckCircle } from 'lucide-react';
 import { SkillsView } from '@/components/features/skills';
-import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { CodexMcpView } from '@/components/features/mcp/CodexMcpView';
 import CCMcpView from '@/components/cc/mcp/CCMcpView';
 import DxtView from '@/components/features/dxt/DxtView';
-import { AgentType, useWorkspaceStore } from '@/stores';
+import { useWorkspaceStore } from '@/stores';
 import { useLayoutStore } from '@/stores';
-import { AgentIcon } from '@/components/common/AgentIcon';
+import { AgentSwitcher } from '@/components/common/AgentSwitcher';
 import { useTrafficLightConfig } from '@/hooks';
 import { ProjectSelector } from '@/components/project-selector';
 
 export function MarketplaceView() {
-  const { selectedAgent, setSelectedAgent } = useWorkspaceStore();
+  const { selectedAgent } = useWorkspaceStore();
   const { isSidebarOpen } = useLayoutStore();
   const { needsTrafficLightOffset } = useTrafficLightConfig(isSidebarOpen);
 
@@ -37,21 +36,7 @@ export function MarketplaceView() {
             </TabsTrigger>
           </TabsList>
 
-          <span>
-            {(['cc', 'codex'] as AgentType[]).map((agent) => (
-              <Button
-                key={agent}
-                variant="ghost"
-                size="icon"
-                className={`h-8 w-8 ${selectedAgent === agent ? 'bg-accent' : ''}`}
-                onClick={() => {
-                  setSelectedAgent(agent);
-                }}
-              >
-                <AgentIcon agent={agent} />
-              </Button>
-            ))}
-          </span>
+          <AgentSwitcher />
         </div>
 
         <TabsContent value="skills" className="h-[calc(100%-3rem)] min-h-0 overflow-hidden">

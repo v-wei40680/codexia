@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 export type AgentType = 'codex' | 'cc';
+export const AGENT_TYPES: AgentType[] = ['cc', 'codex'];
 export type ProjectSortKey = 'added_desc' | 'added_asc' | 'name_asc' | 'name_desc';
 const MAX_HISTORY_PROJECTS = 30;
 
