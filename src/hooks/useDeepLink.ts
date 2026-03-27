@@ -56,8 +56,7 @@ export const useDeepLink = (enabled = true) => {
 
           if (data.session) {
             toast.success('User authenticated successfully');
-            // Reload page to reset app state
-            window.location.reload();
+            // onAuthStateChange in useAuth will detect the new session automatically
             return;
           }
         }
@@ -71,17 +70,21 @@ export const useDeepLink = (enabled = true) => {
     };
 
     const setupDeepLinkHandlers = async () => {
-      try {
+      // Try getCurrent() up to 3 times with 300ms delay — on iOS the plugin
+      // may not have the launch URL ready immediately after mount.
+      for (let attempt = 0; attempt < 3; attempt++) {
         try {
+          if (attempt > 0) {
+            await new Promise((r) => setTimeout(r, 300));
+          }
           const current = await getCurrent();
           if (current && current.length) {
             await handleUrl(current);
+            break;
           }
         } catch (err) {
-          console.error('Failed to read current deep link', err);
+          console.error('Failed to read current deep link (attempt', attempt, ')', err);
         }
-      } catch (err) {
-        console.error('Failed to read current deep link', err);
       }
 
       let pluginUnlisten: UnlistenFn | null = null;

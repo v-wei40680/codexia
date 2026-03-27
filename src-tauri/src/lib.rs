@@ -43,6 +43,8 @@ pub fn run() {
     #[cfg(not(feature = "desktop"))]
     let builder = tauri::Builder::default()
         .plugin(tauri_plugin_os::init())
+        .plugin(tauri_plugin_deep_link::init())
+        .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![
             crate::p2p::p2p_stun,
             crate::p2p::p2p_connect,

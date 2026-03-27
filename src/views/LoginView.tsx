@@ -7,10 +7,18 @@ import { Badge, Github } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
-import { open } from '@tauri-apps/plugin-shell';
 import { useAuthStore } from '@/stores/useAuthStore';
-import { getIsPhone } from '@/hooks/runtime';
+import { getIsPhone, isTauri } from '@/hooks/runtime';
 import { useLayoutStore } from '@/stores';
+
+async function openExternalUrl(url: string) {
+  if (isTauri()) {
+    const { openUrl } = await import('@tauri-apps/plugin-opener');
+    await openUrl(url);
+  } else {
+    window.location.href = url;
+  }
+}
 
 export default function AuthPage() {
   const { user } = useAuth();
@@ -26,14 +34,14 @@ export default function AuthPage() {
     getIsPhone().then(setIsMobile);
   }, []);
 
-  // If user is logged in but view is stuck on login, redirect to agents
+  // If user is logged in but view is stuck on login, redirect to agent
   useEffect(() => {
     if (user) setView('agent');
   }, [user, setView]);
 
   if (user) return null;
 
-  const handleOAuthLogin = async (provider: 'github' | 'google') => {
+  const handleOAuthLogin = async (provider: 'github' | 'google' | 'apple') => {
     if (!isSupabaseConfigured || !supabase) return;
     try {
       setLastOAuthProvider(provider);
@@ -42,17 +50,20 @@ export default function AuthPage() {
       const { data } = await client.auth.signInWithOAuth({
         provider,
         options: {
-          skipBrowserRedirect: true,
-          redirectTo: import.meta.env.VITE_REDIRECT_URL,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
+          ...(isTauri() && { skipBrowserRedirect: true }),
+          redirectTo: isTauri()
+            ? `${import.meta.env.VITE_REDIRECT_URL}?app=tauri`
+            : `${window.location.origin}/auth/callback`,
+          queryParams:
+            provider !== 'apple'
+              ? { access_type: 'offline', prompt: 'consent' }
+              : undefined,
         },
       });
 
+      if (!isTauri()) return;
       if (!data?.url) throw new Error('No auth URL returned');
-      open(data.url);
+      await openExternalUrl(data.url);
     } catch (error: any) {
       console.error(`Error signing in with ${provider}:`, error);
       toast.error(error?.message || `Failed to sign in with ${provider}`);
@@ -99,6 +110,9 @@ export default function AuthPage() {
       setLoadingForm(false);
     }
   };
+
+  // Show OAuth on desktop or on iOS (deep-link capable); hide on Android
+  const showOAuth = !isMobile || isTauri();
 
   return (
     <div className="flex flex-col items-center justify-center h-full text-center">
@@ -186,7 +200,7 @@ export default function AuthPage() {
           </TabsContent>
         </Tabs>
 
-        {!isMobile && (
+        {showOAuth && (
           <>
             <div className="relative my-4">
               <div className="absolute inset-0 flex items-center">
@@ -197,35 +211,53 @@ export default function AuthPage() {
               </div>
             </div>
 
-            <div className="relative mb-4">
-              <Button
-                onClick={() => handleOAuthLogin('github')}
-                className="w-full flex items-center justify-center gap-2"
-              >
-                <Github />
-                Continue with GitHub
-              </Button>
-              {lastOAuthProvider === 'github' && (
-                <Badge className="absolute -top-2 -right-2 text-xs bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-300">
-                  Last used
-                </Badge>
-              )}
-            </div>
+            <div className="space-y-2">
+              <div className="relative">
+                <Button
+                  onClick={() => handleOAuthLogin('github')}
+                  className="w-full flex items-center justify-center gap-2"
+                >
+                  <Github className="h-4 w-4" />
+                  Continue with GitHub
+                </Button>
+                {lastOAuthProvider === 'github' && (
+                  <Badge className="absolute -top-2 -right-2 text-xs bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-300">
+                    Last used
+                  </Badge>
+                )}
+              </div>
 
-            <div className="relative">
-              <Button
-                onClick={() => handleOAuthLogin('google')}
-                className="w-full flex items-center justify-center gap-2"
-                variant="outline"
-              >
-                <span className="text-sm">🔍</span>
-                Continue with Google
-              </Button>
-              {lastOAuthProvider === 'google' && (
-                <Badge className="absolute -top-2 -right-2 text-xs bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-300">
-                  Last used
-                </Badge>
-              )}
+              <div className="relative">
+                <Button
+                  onClick={() => handleOAuthLogin('google')}
+                  className="w-full flex items-center justify-center gap-2"
+                  variant="outline"
+                >
+                  <span className="text-sm font-bold">G</span>
+                  Continue with Google
+                </Button>
+                {lastOAuthProvider === 'google' && (
+                  <Badge className="absolute -top-2 -right-2 text-xs bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-300">
+                    Last used
+                  </Badge>
+                )}
+              </div>
+
+              <div className="relative">
+                <Button
+                  onClick={() => handleOAuthLogin('apple')}
+                  className="w-full flex items-center justify-center gap-2"
+                  variant="outline"
+                >
+                  <span className="text-sm"></span>
+                  Continue with Apple
+                </Button>
+                {lastOAuthProvider === 'apple' && (
+                  <Badge className="absolute -top-2 -right-2 text-xs bg-blue-50 border-blue-200 text-blue-700 dark:bg-blue-950 dark:border-blue-800 dark:text-blue-300">
+                    Last used
+                  </Badge>
+                )}
+              </div>
             </div>
           </>
         )}

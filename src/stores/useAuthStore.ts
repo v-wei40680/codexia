@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-export type OAuthProvider = 'github' | 'google';
+export type OAuthProvider = 'github' | 'google' | 'apple';
 
 interface AuthState {
   lastOAuthProvider: OAuthProvider | null;

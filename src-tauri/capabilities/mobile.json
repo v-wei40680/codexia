@@ -15,6 +15,8 @@
     "core:event:allow-listen",
     "core:event:allow-emit",
     "os:default",
-    "log:default"
+    "log:default",
+    "opener:allow-open-url",
+    "deep-link:default"
   ]
 }
