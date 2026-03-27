@@ -1,4 +1,5 @@
 pub(crate) mod automation;
+pub(crate) mod insights;
 #[cfg(feature = "desktop")]
 pub(crate) mod p2p_bridge;
 pub(crate) mod dxt;

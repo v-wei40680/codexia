@@ -340,3 +340,15 @@ pub(crate) struct DeleteAutomationParams {
 pub(crate) struct RunAutomationNowParams {
     pub(crate) id: String,
 }
+
+#[derive(Deserialize)]
+pub(crate) struct InsightFiltersParams {
+    #[serde(default)]
+    pub(crate) range: Option<String>,
+    #[serde(default)]
+    pub(crate) cwd: Option<String>,
+    #[serde(default, rename = "session_id", alias = "sessionId")]
+    pub(crate) session_id: Option<String>,
+    #[serde(default)]
+    pub(crate) agent: Option<String>,
+}

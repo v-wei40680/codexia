@@ -21,7 +21,8 @@ use super::{
         api_update_automation,
         api_check_manifests_exist, api_codex_home, api_create_note, api_delete_file,
         api_delete_note, api_download_and_extract_manifests,
-        api_get_account, api_get_home_directory, api_get_note_by_id, api_get_notes,
+        api_get_account, api_get_agent_heatmaps, api_get_home_directory, api_get_insight_filter_options,
+        api_get_insight_rankings, api_get_note_by_id, api_get_notes,
         api_get_unsynced_notes,
         api_git_branch_info, api_git_checkout_branch, api_git_diff_stats, api_git_file_diff,
         api_git_file_diff_meta, api_git_list_branches, api_git_prepare_thread_worktree,
@@ -255,6 +256,9 @@ pub fn create_router(state: WebServerState) -> Router {
         .route("/api/cc/mcp/disable", post(api_cc_mcp_disable))
         .route("/api/cc/mcp/enable", post(api_cc_mcp_enable))
         .route("/api/cc/mcp/projects", get(api_cc_list_projects))
+        .route("/api/insights/heatmaps", post(api_get_agent_heatmaps))
+        .route("/api/insights/rankings", post(api_get_insight_rankings))
+        .route("/api/insights/filter-options", post(api_get_insight_filter_options))
         .route("/api/sleep/prevent", post(api_prevent_sleep))
         .route("/api/sleep/allow", post(api_allow_sleep))
         .fallback_service(static_site)

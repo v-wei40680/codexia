@@ -1,4 +1,4 @@
-import { invoke } from '@tauri-apps/api/core';
+import { invokeTauri, isDesktopTauri, postJson } from './shared';
 
 export interface DayActivity {
   date: string;
@@ -51,16 +51,27 @@ export interface FilterOptions {
 }
 
 export async function getAgentHeatmaps(filters: InsightFilters): Promise<AgentHeatmaps> {
-  return invoke<AgentHeatmaps>('get_agent_heatmaps', {
+  if (isDesktopTauri()) {
+    return invokeTauri<AgentHeatmaps>('get_agent_heatmaps', {
+      range: filters.range ?? null,
+      cwd: filters.cwd ?? null,
+      sessionId: filters.session_id ?? null,
+      agent: filters.agent ?? null,
+    });
+  }
+  return postJson<AgentHeatmaps>('/api/insights/heatmaps', {
     range: filters.range ?? null,
     cwd: filters.cwd ?? null,
-    sessionId: filters.session_id ?? null,
+    session_id: filters.session_id ?? null,
     agent: filters.agent ?? null,
   });
 }
 
 export async function getInsightFilterOptions(): Promise<FilterOptions> {
-  return invoke<FilterOptions>('get_insight_filter_options');
+  if (isDesktopTauri()) {
+    return invokeTauri<FilterOptions>('get_insight_filter_options');
+  }
+  return postJson<FilterOptions>('/api/insights/filter-options');
 }
 
 export interface RankItem {
@@ -79,10 +90,18 @@ export interface Rankings {
 }
 
 export async function getInsightRankings(filters: InsightFilters): Promise<Rankings> {
-  return invoke<Rankings>('get_insight_rankings', {
+  if (isDesktopTauri()) {
+    return invokeTauri<Rankings>('get_insight_rankings', {
+      range: filters.range ?? null,
+      cwd: filters.cwd ?? null,
+      sessionId: filters.session_id ?? null,
+      agent: filters.agent ?? null,
+    });
+  }
+  return postJson<Rankings>('/api/insights/rankings', {
     range: filters.range ?? null,
     cwd: filters.cwd ?? null,
-    sessionId: filters.session_id ?? null,
+    session_id: filters.session_id ?? null,
     agent: filters.agent ?? null,
   });
 }
