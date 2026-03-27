@@ -1,11 +1,12 @@
 use super::to_error_response;
 use super::types::{
     SkillGroupsScopeParams, SkillGroupsWriteParams,
-    SkillsCloneRepoParams, SkillsInstallParams, SkillsMarketplaceParams, SkillsUninstallParams,
+    SkillsCloneRepoParams, SkillsDeleteCentralParams, SkillsInstallParams,
+    SkillsLinkToAgentParams, SkillsMarketplaceParams, SkillsUninstallParams,
 };
 use axum::Json;
 
-use crate::features::skills::{self, InstalledSkill, MarketplaceSkill, SkillGroupsConfig};
+use crate::features::skills::{self, CentralSkill, InstalledSkill, MarketplaceSkill, SkillGroupsConfig};
 use crate::web_server::types::ErrorResponse;
 
 pub(crate) async fn api_skills_list_marketplace(
@@ -77,6 +78,33 @@ pub(crate) async fn api_skill_groups_write(
     Json(params): Json<SkillGroupsWriteParams>,
 ) -> Result<Json<()>, ErrorResponse> {
     skills::write_skill_groups(params.scope, params.cwd, params.config)
+        .await
+        .map_err(to_error_response)?;
+    Ok(Json(()))
+}
+
+pub(crate) async fn api_skills_list_central(
+    Json(params): Json<SkillGroupsScopeParams>,
+) -> Result<Json<Vec<CentralSkill>>, ErrorResponse> {
+    let skills = skills::list_central_skills(params.scope, params.cwd)
+        .await
+        .map_err(to_error_response)?;
+    Ok(Json(skills))
+}
+
+pub(crate) async fn api_skills_link_to_agent(
+    Json(params): Json<SkillsLinkToAgentParams>,
+) -> Result<Json<()>, ErrorResponse> {
+    skills::link_skill_to_agent(params.skill_name, params.agent, params.scope, params.cwd)
+        .await
+        .map_err(to_error_response)?;
+    Ok(Json(()))
+}
+
+pub(crate) async fn api_skills_delete_central(
+    Json(params): Json<SkillsDeleteCentralParams>,
+) -> Result<Json<()>, ErrorResponse> {
+    skills::delete_central_skill(params.skill_name, params.scope, params.cwd)
         .await
         .map_err(to_error_response)?;
     Ok(Json(()))

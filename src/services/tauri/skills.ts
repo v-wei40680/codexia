@@ -106,7 +106,7 @@ export async function linkSkillToAgent(
   if (isDesktopTauri()) {
     return await invokeTauri<void>('link_skill_to_agent', { skillName, agent, scope, cwd });
   }
-  return await postJson<void>('/api/skills/link', {
+  return await postJson<void>('/api/skills/link-to-agent', {
     skill_name: skillName,
     agent,
     scope,
@@ -147,14 +147,14 @@ export async function fetchMarketLeaderboard(board: 'alltime' | 'trending' | 'ho
   if (isDesktopTauri()) {
     return await invokeTauri<Array<MarketSkillItem>>('fetch_market_leaderboard', { board });
   }
-  return await postJson<Array<MarketSkillItem>>('/api/skills/market/leaderboard', { board });
+  return await postJson<Array<MarketSkillItem>>('/api/skillssh/leaderboard', { board });
 }
 
 export async function searchMarketSkills(query: string, limit = 40) {
   if (isDesktopTauri()) {
     return await invokeTauri<Array<MarketSkillItem>>('search_market_skills', { query, limit });
   }
-  return await postJson<Array<MarketSkillItem>>('/api/skills/market/search', { query, limit });
+  return await postJson<Array<MarketSkillItem>>('/api/skillssh/search', { query, limit });
 }
 
 export async function installFromMarket(
@@ -166,7 +166,7 @@ export async function installFromMarket(
   if (isDesktopTauri()) {
     return await invokeTauri<string>('install_from_market', { source, skillId, scope, cwd });
   }
-  return await postJson<string>('/api/skills/market/install', {
+  return await postJson<string>('/api/skillssh/install', {
     source,
     skill_id: skillId,
     scope,

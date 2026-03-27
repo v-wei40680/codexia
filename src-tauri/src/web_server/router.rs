@@ -39,8 +39,10 @@ use super::{
         api_search_files, api_search_files_by_name, api_skills_config_write, api_skills_list, api_start_review,
         api_start_thread, api_start_watch_file, api_start_watch_path, api_stop_watch_file,
         api_skill_groups_read, api_skill_groups_write,
-        api_skills_clone_repo, api_skills_install_marketplace, api_skills_list_installed,
+        api_skills_clone_repo, api_skills_delete_central, api_skills_install_marketplace,
+        api_skills_link_to_agent, api_skills_list_central, api_skills_list_installed,
         api_skills_list_marketplace, api_skills_uninstall_installed,
+        api_skillssh_install, api_skillssh_leaderboard, api_skillssh_search,
         api_stop_watch_path, api_terminal_resize, api_terminal_start, api_terminal_stop,
         api_terminal_write, api_toggle_favorite, api_turn_interrupt, api_turn_start,
         api_unified_add_mcp_server, api_unified_disable_mcp_server,
@@ -194,6 +196,12 @@ pub fn create_router(state: WebServerState) -> Router {
             post(api_skills_uninstall_installed),
         )
         .route("/api/skills/clone-repo", post(api_skills_clone_repo))
+        .route("/api/skills/list-central", post(api_skills_list_central))
+        .route("/api/skills/link-to-agent", post(api_skills_link_to_agent))
+        .route("/api/skills/delete-central", post(api_skills_delete_central))
+        .route("/api/skillssh/leaderboard", post(api_skillssh_leaderboard))
+        .route("/api/skillssh/search", post(api_skillssh_search))
+        .route("/api/skillssh/install", post(api_skillssh_install))
         .route("/api/skills/groups/read", post(api_skill_groups_read))
         .route("/api/skills/groups/write", post(api_skill_groups_write))
         .route("/api/codex/mcp/read", post(api_unified_read_mcp_config))

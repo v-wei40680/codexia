@@ -11,6 +11,7 @@ mod git;
 mod note;
 mod automation;
 mod skills;
+mod skillssh;
 mod terminal;
 mod types;
 
@@ -22,6 +23,7 @@ pub(super) use git::*;
 pub(super) use note::*;
 pub(super) use automation::*;
 pub(super) use skills::*;
+pub(super) use skillssh::*;
 pub(super) use terminal::*;
 pub(super) use types::*;
 

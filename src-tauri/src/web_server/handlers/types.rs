@@ -118,6 +118,40 @@ pub(crate) struct SkillGroupsScopeParams {
 }
 
 #[derive(Deserialize)]
+pub(crate) struct SkillsLinkToAgentParams {
+    pub(crate) skill_name: String,
+    pub(crate) agent: String,
+    pub(crate) scope: String,
+    pub(crate) cwd: Option<String>,
+}
+
+#[derive(Deserialize)]
+pub(crate) struct SkillsDeleteCentralParams {
+    pub(crate) skill_name: String,
+    pub(crate) scope: String,
+    pub(crate) cwd: Option<String>,
+}
+
+#[derive(Deserialize)]
+pub(crate) struct SkillsshLeaderboardParams {
+    pub(crate) board: String,
+}
+
+#[derive(Deserialize)]
+pub(crate) struct SkillsshSearchParams {
+    pub(crate) query: String,
+    pub(crate) limit: u32,
+}
+
+#[derive(Deserialize)]
+pub(crate) struct SkillsshInstallParams {
+    pub(crate) source: String,
+    pub(crate) skill_id: String,
+    pub(crate) scope: String,
+    pub(crate) cwd: Option<String>,
+}
+
+#[derive(Deserialize)]
 pub(crate) struct SkillGroupsWriteParams {
     pub(crate) scope: String,
     pub(crate) cwd: Option<String>,
