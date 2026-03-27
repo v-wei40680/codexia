@@ -8,13 +8,14 @@ export async function ccNewSession(options: Record<string, unknown>, initialMess
 }
 
 export async function ccSendMessage(sessionId: string, message: string, imagePaths: string[] = []) {
+  const trimmed = message.trim();
   if (isDesktopTauri()) {
-    await invokeTauri('cc_send_message', { sessionId, message, imagePaths });
+    await invokeTauri('cc_send_message', { sessionId, message: trimmed, imagePaths });
     return;
   }
   await postNoContent('/api/cc/send-message', {
     session_id: sessionId,
-    message,
+    message: trimmed,
     image_paths: imagePaths,
   });
 }
