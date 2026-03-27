@@ -11,7 +11,7 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { BottomTerminal } from '../terminal/BottomTerminal';
 import { useTrafficLightConfig } from '@/hooks';
 import { useEdgeSwipe } from '@/hooks/useEdgeSwipe';
-import { useAgentLimit } from '@/hooks/useAgentLimit';
+import { useProTrial } from '@/hooks/useProTrial';
 import { openUrl } from '@tauri-apps/plugin-opener';
 
 const SettingsView = lazy(() =>
@@ -149,7 +149,7 @@ const ViewLoadingFallback = () => (
 
 export function AppLayout() {
   const { view, setView, isSidebarOpen, setSidebarOpen, isTerminalOpen, setIsTerminalOpen } = useLayoutStore();
-  const { isPro } = useAgentLimit();
+  const { isPro, inTrial } = useProTrial();
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -174,7 +174,7 @@ export function AppLayout() {
           {view === 'skills' && <SkillsView />}
           {view === 'mcp' && <McpView />}
           {view === 'usage' && <UsageView />}
-          {view === 'insights' && (isPro || import.meta.env.DEV ? <InsightsView /> : (
+          {view === 'insights' && (isPro || inTrial || import.meta.env.DEV ? <InsightsView /> : (
             <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-8">
               <div className="text-4xl">📊</div>
               <h2 className="text-lg font-semibold">Insights is a Pro feature</h2>

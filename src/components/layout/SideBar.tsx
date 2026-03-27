@@ -1,6 +1,5 @@
 import { BarChart2, ListFilter, Lock, Package, Timer, Trash2 } from 'lucide-react';
 import { MCP } from '@lobehub/icons';
-import { openUrl } from '@tauri-apps/plugin-opener';
 import { useAgentLimit } from '@/hooks/useAgentLimit';
 import { useCallback, useState } from 'react';
 import { useLayoutStore } from '@/stores';
@@ -42,8 +41,6 @@ const navBtnBase = 'justify-start gap-2 rounded-md border px-2.5';
 const navBtnActive = 'border-border bg-accent/70 text-foreground';
 const navBtnInactive = 'border-transparent hover:border-border/60';
 const navBtnCls = (active: boolean) => `${navBtnBase} ${active ? navBtnActive : navBtnInactive}`;
-
-const PRICING_URL = 'https://milisp.dev/pricing';
 
 export function SideBar() {
   const { cwd, setCwd, setSelectedAgent } = useWorkspaceStore();
@@ -116,7 +113,7 @@ export function SideBar() {
               variant="ghost"
               size="sm"
               className={navBtnCls(view === 'insights')}
-              onClick={() => isPro || import.meta.env.DEV ? setView('insights') : void openUrl(PRICING_URL)}
+              onClick={() => setView('insights')}
             >
               <BarChart2 className="h-4 w-4" />
               Insights

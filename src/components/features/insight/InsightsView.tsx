@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { RefreshCw, Settings2, ChevronDown } from 'lucide-react';
+import { RefreshCw, Settings2, ChevronDown, Sparkles } from 'lucide-react';
+import { openUrl } from '@tauri-apps/plugin-opener';
+import { useProTrial } from '@/hooks/useProTrial';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import {
@@ -18,6 +20,7 @@ import {
   type Rankings,
 } from '@/services/tauri/insights';
 import { type Range, type AgentKey, AGENT_CONFIG, RANGES, type ModelPricing } from './constants';
+import { PRICING_URL } from '@/lib/constants';
 import { loadPricing, savePricing } from './utils';
 import { LoadingState, ErrorState } from './States';
 import { PricingEditor } from './PricingEditor';
@@ -26,6 +29,8 @@ import { OverviewTab } from './OverviewTab';
 import { RankingsTab } from './RankingsTab';
 
 export default function InsightsView() {
+  const { isPro, trialDaysLeft } = useProTrial();
+
   const [data, setData] = useState<AgentHeatmaps | null>(null);
   const [rankings, setRankings] = useState<Rankings | null>(null);
   const [loading, setLoading] = useState(true);
@@ -135,6 +140,34 @@ export default function InsightsView() {
           </Button>
         </div>
       </motion.div>
+
+      {/* ── pro trial banner ── */}
+      {!isPro && !import.meta.env.DEV && (
+        <motion.div
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          className="mb-4 flex items-center justify-between gap-3 rounded-lg border border-violet-500/30 bg-violet-500/10 px-3.5 py-2.5"
+        >
+          <div className="flex items-center gap-2 text-sm text-violet-300">
+            <Sparkles className="h-3.5 w-3.5 shrink-0" />
+            <span>
+              This is a <span className="font-semibold text-violet-200">Pro</span> feature.
+              {trialDaysLeft !== null && trialDaysLeft > 0
+                ? <> Trial ends in <span className="font-semibold text-violet-200">{trialDaysLeft} day{trialDaysLeft !== 1 ? 's' : ''}</span>.</>
+                : trialDaysLeft === 0
+                  ? <> Your trial has ended.</>
+                  : null}
+            </span>
+          </div>
+          <button
+            onClick={() => void openUrl(PRICING_URL)}
+            className="shrink-0 rounded-md bg-violet-500 px-2.5 py-1 text-xs font-medium text-white hover:bg-violet-400 transition-colors"
+          >
+            Upgrade
+          </button>
+        </motion.div>
+      )}
 
       {/* ── filter bar ── */}
       <motion.div

@@ -2,8 +2,7 @@ import { Sparkles } from 'lucide-react';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { useAgentLimit } from '@/hooks/useAgentLimit';
 import { useAgentCenterStore } from '@/stores';
-
-const PRICING_URL = 'https://milisp.dev/pricing';
+import { PRICING_URL } from '@/lib/constants';
 
 export function GetProButton() {
   const { isPro } = useAgentLimit();
