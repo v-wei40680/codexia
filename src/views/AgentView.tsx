@@ -311,6 +311,9 @@ function AgentGrid() {
             className="grid gap-3"
             style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}
           >
+            {tab === 'all' && cards.length >= maxCards && maxCards !== Infinity && (
+              <GhostCard />
+            )}
             {visible.map((card) => (
               <GridCard
                 key={card.id}
@@ -320,9 +323,6 @@ function AgentGrid() {
                 isSelected={card.id === currentAgentCardId}
               />
             ))}
-            {tab === 'all' && cards.length >= maxCards && maxCards !== Infinity && (
-              <GhostCard />
-            )}
           </div>
         )}
       </div>
