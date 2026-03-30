@@ -55,11 +55,6 @@ jobs:
       - name: install frontend dependencies
         run: bun install
 
-      - name: Export TS bindings
-        run: |
-          bun add -g @openai/codex
-          codex app-server generate-ts -o src/bindings
-
       - name: Package web
         run: |
           WEB_TARGET_TRIPLE="${{ matrix.target }}" \
@@ -86,7 +81,7 @@ jobs:
     permissions:
       contents: write
     runs-on: macos-latest
-    if: false # Temporarily disabled
+    # if: false # Temporarily disabled
     steps:
       - uses: actions/checkout@v4
 
@@ -110,11 +105,6 @@ jobs:
 
       - name: install frontend dependencies
         run: bun install
-
-      - name: Export TS bindings
-        run: |
-          bun add -g @openai/codex
-          codex app-server generate-ts -o src/bindings
 
       - name: Package web
         run: |
@@ -164,11 +154,6 @@ jobs:
 
       - name: install frontend dependencies
         run: bun install
-
-      - name: Export TS bindings
-        run: |
-          bun add -g @openai/codex
-          codex app-server generate-ts -o src/bindings
 
       - name: Package web for Windows
         shell: cmd

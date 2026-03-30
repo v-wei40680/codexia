@@ -95,11 +95,6 @@ jobs:
       - name: install frontend dependencies
         run: bun install
 
-      - name: Export TS bindings
-        run: |
-          bun add -g @openai/codex
-          codex app-server generate-ts -o src/bindings
-
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
