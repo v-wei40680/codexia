@@ -5,9 +5,9 @@ use serde::Deserialize;
 use crate::features::git::{
     GitBranchInfoResponse, GitBranchListResponse, GitDiffStatsResponse, GitFileDiffMetaResponse,
     GitFileDiffResponse, GitPrepareThreadWorktreeResponse, GitStatusResponse, git_branch_info,
-    git_checkout_branch, git_delete_thread_worktree, git_diff_stats, git_file_diff,
-    git_file_diff_meta, git_list_branches, git_prepare_thread_worktree, git_reverse_files,
-    git_stage_files, git_status, git_unstage_files,
+    git_checkout_branch, git_create_branch, git_delete_thread_worktree, git_diff_stats,
+    git_file_diff, git_file_diff_meta, git_list_branches, git_prepare_thread_worktree,
+    git_reverse_files, git_stage_files, git_status, git_unstage_files,
 };
 use crate::web_server::types::ErrorResponse;
 
@@ -86,6 +86,13 @@ pub(crate) async fn api_git_list_branches(
 pub(crate) struct GitCheckoutBranchParams {
     cwd: String,
     branch: String,
+}
+
+pub(crate) async fn api_git_create_branch(
+    Json(params): Json<GitCheckoutBranchParams>,
+) -> Result<StatusCode, ErrorResponse> {
+    git_create_branch(params.cwd, params.branch).map_err(to_error_response)?;
+    Ok(StatusCode::OK)
 }
 
 pub(crate) async fn api_git_checkout_branch(

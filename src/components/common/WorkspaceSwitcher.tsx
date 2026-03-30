@@ -1,12 +1,22 @@
 import { useEffect, useState, useCallback } from 'react';
-import { GitBranch, Check, Loader2, FolderOpen, FolderPlus, ChevronDown, ArrowLeft } from 'lucide-react';
+import { GitBranch, GitBranchPlus, Check, Loader2, FolderOpen, FolderPlus, ChevronDown, ArrowLeft } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { gitListBranches, gitCheckoutBranch, gitBranchInfo, type GitBranchInfoResponse } from '@/services/tauri/git';
+import { gitListBranches, gitCheckoutBranch, gitCreateBranch, gitBranchInfo, gitStatus, type GitBranchInfoResponse } from '@/services/tauri/git';
 import { cn } from '@/lib/utils';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { open } from '@tauri-apps/plugin-dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { BrowserProjects } from '@/components/project-selector';
 import { canonicalizePath, getHomeDirectory, readDirectory, type TauriFileEntry } from '@/services/tauri';
 import { isDesktopTauri } from '@/hooks/runtime';
@@ -25,6 +35,12 @@ export function WorkspaceSwitcher() {
   const [browseLoading, setBrowseLoading] = useState(false);
   const [browseSearch, setBrowseSearch] = useState('');
   const [browseError, setBrowseError] = useState<string | null>(null);
+  const [dirtyBranch, setDirtyBranch] = useState<string | null>(null);
+  const [dirtyCount, setDirtyCount] = useState(0);
+  const [newBranchMode, setNewBranchMode] = useState(false);
+  const [newBranchName, setNewBranchName] = useState('');
+  const [newBranchCreating, setNewBranchCreating] = useState(false);
+  const [newBranchError, setNewBranchError] = useState<string | null>(null);
 
   const { cwd, projects, addProject, setCwd } = useWorkspaceStore();
 
@@ -47,8 +63,7 @@ export function WorkspaceSwitcher() {
       .finally(() => setLoading(false));
   }, [branchOpen, cwd]);
 
-  async function handleSelectBranch(branch: string) {
-    if (branch === branchInfo?.branch || switching) return;
+  async function doCheckoutBranch(branch: string) {
     setSwitching(branch);
     try {
       await gitCheckoutBranch(cwd, branch);
@@ -58,6 +73,42 @@ export function WorkspaceSwitcher() {
       // error is shown via toast from postNoContent/invokeTauri
     } finally {
       setSwitching(null);
+    }
+  }
+
+  async function handleSelectBranch(branch: string) {
+    if (branch === branchInfo?.branch || switching) return;
+    try {
+      const status = await gitStatus(cwd);
+      if (status.entries.length > 0) {
+        setDirtyCount(status.entries.length);
+        setDirtyBranch(branch);
+        return;
+      }
+    } catch {
+      // if status check fails, proceed with checkout anyway
+    }
+    await doCheckoutBranch(branch);
+  }
+
+  async function handleCreateBranch() {
+    const name = newBranchName.trim();
+    if (!name || newBranchCreating) return;
+    setNewBranchError(null);
+    setNewBranchCreating(true);
+    try {
+      // Check for uncommitted changes and stash/warn if needed (still proceed — new branch keeps working tree)
+      await gitCreateBranch(cwd, name);
+      setBranchInfo((prev) => prev ? { ...prev, branch: name } : prev);
+      setBranches((prev) => [...prev, name].sort());
+      setNewBranchMode(false);
+      setNewBranchName('');
+      setBranchOpen(false);
+      refreshBranchInfo();
+    } catch (e) {
+      setNewBranchError(String(e));
+    } finally {
+      setNewBranchCreating(false);
     }
   }
 
@@ -208,8 +259,33 @@ export function WorkspaceSwitcher() {
         </PopoverContent>
       </Popover>
 
+      {/* Dirty working tree confirmation */}
+      <AlertDialog open={dirtyBranch !== null} onOpenChange={(o) => { if (!o) setDirtyBranch(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Uncommitted changes</AlertDialogTitle>
+            <AlertDialogDescription>
+              You have {dirtyCount} uncommitted {dirtyCount === 1 ? 'file' : 'files'}. Switch to{' '}
+              <span className="font-mono font-semibold">{dirtyBranch}</span> anyway?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setDirtyBranch(null)}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                const branch = dirtyBranch!;
+                setDirtyBranch(null);
+                doCheckoutBranch(branch);
+              }}
+            >
+              Switch anyway
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {/* Right: Branch switcher (only when in a git repo) */}
-      {branchInfo && <Popover open={branchOpen} onOpenChange={setBranchOpen}>
+      {branchInfo && <Popover open={branchOpen} onOpenChange={(o) => { setBranchOpen(o); if (!o) { setNewBranchMode(false); setNewBranchName(''); setNewBranchError(null); } }}>
         <PopoverTrigger asChild>
           <Button variant="ghost" size="sm" className="h-auto gap-1 px-1.5 py-0.5 text-xs text-muted-foreground">
             <GitBranch className="h-3 w-3 shrink-0" />
@@ -223,35 +299,70 @@ export function WorkspaceSwitcher() {
               <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
             </div>
           ) : (
-            <div className="max-h-60 overflow-y-auto">
-              {branches.map((branch) => {
-                const isCurrent = branch === branchInfo.branch;
-                const isSwitching = switching === branch;
-                return (
+            <>
+              <div className="max-h-60 overflow-y-auto">
+                {branches.map((branch) => {
+                  const isCurrent = branch === branchInfo.branch;
+                  const isSwitching = switching === branch;
+                  return (
+                    <Button
+                      key={branch}
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleSelectBranch(branch)}
+                      disabled={!!switching}
+                      className={cn(
+                        'h-auto w-full justify-start gap-2 px-2 py-1.5 text-xs font-mono',
+                        isCurrent ? 'text-foreground' : 'text-muted-foreground',
+                        switching && !isSwitching && 'opacity-50'
+                      )}
+                    >
+                      {isSwitching ? (
+                        <Loader2 className="h-3 w-3 shrink-0 animate-spin" />
+                      ) : isCurrent ? (
+                        <Check className="h-3 w-3 shrink-0 text-primary" />
+                      ) : (
+                        <span className="h-3 w-3 shrink-0" />
+                      )}
+                      <span className="truncate">{branch}</span>
+                    </Button>
+                  );
+                })}
+              </div>
+              <div className="border-t pt-1 mt-1">
+                {newBranchMode ? (
+                  <div className="px-1 pb-1 flex flex-col gap-1">
+                    <Input
+                      autoFocus
+                      placeholder="New branch name..."
+                      value={newBranchName}
+                      onChange={(e) => { setNewBranchName(e.target.value); setNewBranchError(null); }}
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleCreateBranch(); if (e.key === 'Escape') { setNewBranchMode(false); setNewBranchName(''); } }}
+                      className="h-7 text-xs font-mono"
+                    />
+                    {newBranchError && <p className="text-[10px] text-destructive px-1">{newBranchError}</p>}
+                    <div className="flex gap-1">
+                      <Button size="sm" className="h-6 flex-1 text-xs" onClick={handleCreateBranch} disabled={!newBranchName.trim() || newBranchCreating}>
+                        {newBranchCreating ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Create'}
+                      </Button>
+                      <Button size="sm" variant="ghost" className="h-6 text-xs" onClick={() => { setNewBranchMode(false); setNewBranchName(''); setNewBranchError(null); }}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
                   <Button
-                    key={branch}
                     variant="ghost"
                     size="sm"
-                    onClick={() => handleSelectBranch(branch)}
-                    disabled={!!switching}
-                    className={cn(
-                      'h-auto w-full justify-start gap-2 px-2 py-1.5 text-xs font-mono',
-                      isCurrent ? 'text-foreground' : 'text-muted-foreground',
-                      switching && !isSwitching && 'opacity-50'
-                    )}
+                    onClick={() => setNewBranchMode(true)}
+                    className="h-auto w-full justify-start gap-2 px-2 py-1.5 text-xs text-muted-foreground"
                   >
-                    {isSwitching ? (
-                      <Loader2 className="h-3 w-3 shrink-0 animate-spin" />
-                    ) : isCurrent ? (
-                      <Check className="h-3 w-3 shrink-0 text-primary" />
-                    ) : (
-                      <span className="h-3 w-3 shrink-0" />
-                    )}
-                    <span className="truncate">{branch}</span>
+                    <GitBranchPlus className="h-3 w-3 shrink-0" />
+                    <span>New branch</span>
                   </Button>
-                );
-              })}
-            </div>
+                )}
+              </div>
+            </>
           )}
         </PopoverContent>
       </Popover>}

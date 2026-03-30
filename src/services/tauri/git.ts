@@ -65,6 +65,13 @@ export async function gitListBranches(cwd: string) {
   return await postJson<GitBranchListResponse>('/api/git/list-branches', { cwd });
 }
 
+export async function gitCreateBranch(cwd: string, branch: string) {
+  if (isDesktopTauri()) {
+    return await invokeTauri<void>('git_create_branch', { cwd, branch });
+  }
+  await postNoContent('/api/git/create-branch', { cwd, branch });
+}
+
 export async function gitCheckoutBranch(cwd: string, branch: string) {
   if (isDesktopTauri()) {
     return await invokeTauri<void>('git_checkout_branch', { cwd, branch });

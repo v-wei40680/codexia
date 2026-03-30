@@ -16,6 +16,11 @@ pub async fn git_list_branches(cwd: String) -> Result<GitBranchListResponse, Str
 }
 
 #[tauri::command]
+pub async fn git_create_branch(cwd: String, branch: String) -> Result<(), String> {
+    crate::features::git::git_create_branch(cwd, branch)
+}
+
+#[tauri::command]
 pub async fn git_checkout_branch(cwd: String, branch: String) -> Result<(), String> {
     crate::features::git::git_checkout_branch(cwd, branch)
 }

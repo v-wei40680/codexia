@@ -24,7 +24,8 @@ use super::{
         api_get_account, api_get_agent_heatmaps, api_get_home_directory, api_get_insight_filter_options,
         api_get_insight_rankings, api_get_note_by_id, api_get_notes,
         api_get_unsynced_notes,
-        api_git_branch_info, api_git_checkout_branch, api_git_delete_thread_worktree,
+        api_git_branch_info, api_git_checkout_branch, api_git_create_branch,
+        api_git_delete_thread_worktree,
         api_git_diff_stats, api_git_file_diff, api_git_file_diff_meta, api_git_list_branches,
         api_git_prepare_thread_worktree, api_git_reverse_files, api_git_stage_files,
         api_git_status, api_git_unstage_files, api_git_commit, api_git_push,
@@ -226,6 +227,7 @@ pub fn create_router(state: WebServerState) -> Router {
         )
         .route("/api/git/branch-info", post(api_git_branch_info))
         .route("/api/git/list-branches", post(api_git_list_branches))
+        .route("/api/git/create-branch", post(api_git_create_branch))
         .route("/api/git/checkout-branch", post(api_git_checkout_branch))
         .route("/api/git/status", post(api_git_status))
         .route("/api/git/file-diff", post(api_git_file_diff))

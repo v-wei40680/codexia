@@ -98,6 +98,43 @@ pub fn git_list_branches(cwd: String) -> Result<GitBranchListResponse, String> {
     Ok(GitBranchListResponse { current, branches })
 }
 
+pub fn git_create_branch(cwd: String, branch: String) -> Result<(), String> {
+    let repo = open_repo(&cwd)?;
+
+    let head_id = repo
+        .head_id()
+        .map_err(|e| format!("Failed to resolve HEAD: {e}"))?
+        .detach();
+
+    let branch_ref: gix::refs::FullName = format!("refs/heads/{branch}")
+        .try_into()
+        .map_err(|_| format!("Invalid branch name: '{branch}'"))?;
+
+    repo.edit_reference(gix::refs::transaction::RefEdit {
+        change: gix::refs::transaction::Change::Update {
+            log: gix::refs::transaction::LogChange {
+                mode: gix::refs::transaction::RefLog::AndReference,
+                force_create_reflog: false,
+                message: "branch: Created from HEAD".into(),
+            },
+            expected: gix::refs::transaction::PreviousValue::MustNotExist,
+            new: gix::refs::Target::Object(head_id),
+        },
+        name: branch_ref,
+        deref: false,
+    })
+    .map_err(|e| format!("Failed to create branch '{branch}': {e}"))?;
+
+    // Point HEAD at the new branch
+    std::fs::write(
+        repo.git_dir().join("HEAD"),
+        format!("ref: refs/heads/{branch}\n"),
+    )
+    .map_err(|e| format!("Failed to update HEAD: {e}"))?;
+
+    Ok(())
+}
+
 pub fn git_checkout_branch(cwd: String, branch: String) -> Result<(), String> {
     let repo = open_repo(&cwd)?;
 

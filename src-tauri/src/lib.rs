@@ -247,6 +247,7 @@ pub fn run() {
                 crate::tray::show_main_window,
                 crate::commands::git::git_branch_info,
                 crate::commands::git::git_list_branches,
+                crate::commands::git::git_create_branch,
                 crate::commands::git::git_checkout_branch,
                 crate::commands::git::git_status,
                 crate::commands::git::git_file_diff,
