@@ -625,30 +625,15 @@ pub struct SkillGroupsConfig {
     pub groups: Vec<SkillGroup>,
 }
 
-fn skill_groups_path(scope: &str, cwd: Option<&str>) -> Result<PathBuf, String> {
-    match scope.trim().to_ascii_lowercase().as_str() {
-        "user" => {
-            let home = dirs::home_dir()
-                .ok_or_else(|| "Failed to resolve home directory".to_string())?;
-            Ok(home.join(".agents").join("skill-groups.json"))
-        }
-        "project" => {
-            let working_dir = cwd
-                .map(str::trim)
-                .filter(|s| !s.is_empty())
-                .ok_or_else(|| "cwd is required when scope is project".to_string())?;
-            Ok(PathBuf::from(working_dir).join(".agents").join("skill-groups.json"))
-        }
-        other => Err(format!("Unsupported scope: {}", other)),
-    }
+fn skill_groups_path() -> Result<PathBuf, String> {
+    let home = dirs::home_dir()
+        .ok_or_else(|| "Failed to resolve home directory".to_string())?;
+    Ok(home.join(".agents").join("skill-groups.json"))
 }
 
-pub async fn read_skill_groups(
-    scope: String,
-    cwd: Option<String>,
-) -> Result<SkillGroupsConfig, String> {
+pub async fn read_skill_groups() -> Result<SkillGroupsConfig, String> {
     tokio::task::spawn_blocking(move || {
-        let path = skill_groups_path(&scope, cwd.as_deref())?;
+        let path = skill_groups_path()?;
         if !path.exists() {
             return Ok(SkillGroupsConfig::default());
         }
@@ -661,13 +646,9 @@ pub async fn read_skill_groups(
     .map_err(|e| format!("read_skill_groups task failed: {}", e))?
 }
 
-pub async fn write_skill_groups(
-    scope: String,
-    cwd: Option<String>,
-    config: SkillGroupsConfig,
-) -> Result<(), String> {
+pub async fn write_skill_groups(config: SkillGroupsConfig) -> Result<(), String> {
     tokio::task::spawn_blocking(move || {
-        let path = skill_groups_path(&scope, cwd.as_deref())?;
+        let path = skill_groups_path()?;
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)
                 .map_err(|e| format!("Failed to create directory: {}", e))?;

@@ -65,10 +65,8 @@ pub(crate) async fn api_skills_clone_repo(
     Ok(Json(result))
 }
 
-pub(crate) async fn api_skill_groups_read(
-    Json(params): Json<SkillGroupsScopeParams>,
-) -> Result<Json<SkillGroupsConfig>, ErrorResponse> {
-    let config = skills::read_skill_groups(params.scope, params.cwd)
+pub(crate) async fn api_skill_groups_read() -> Result<Json<SkillGroupsConfig>, ErrorResponse> {
+    let config = skills::read_skill_groups()
         .await
         .map_err(to_error_response)?;
     Ok(Json(config))
@@ -77,7 +75,7 @@ pub(crate) async fn api_skill_groups_read(
 pub(crate) async fn api_skill_groups_write(
     Json(params): Json<SkillGroupsWriteParams>,
 ) -> Result<Json<()>, ErrorResponse> {
-    skills::write_skill_groups(params.scope, params.cwd, params.config)
+    skills::write_skill_groups(params.config)
         .await
         .map_err(to_error_response)?;
     Ok(Json(()))

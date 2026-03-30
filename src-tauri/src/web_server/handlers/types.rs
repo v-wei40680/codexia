@@ -153,8 +153,6 @@ pub(crate) struct SkillsshInstallParams {
 
 #[derive(Deserialize)]
 pub(crate) struct SkillGroupsWriteParams {
-    pub(crate) scope: String,
-    pub(crate) cwd: Option<String>,
     pub(crate) config: crate::features::skills::SkillGroupsConfig,
 }
 

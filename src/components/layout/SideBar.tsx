@@ -1,5 +1,4 @@
-import { BarChart2, ListFilter, Lock, Package, Timer, Trash2 } from 'lucide-react';
-import { MCP } from '@lobehub/icons';
+import { BarChart2, ListFilter, Lock, Package2, Timer, Trash2 } from 'lucide-react';
 import { useAgentLimit } from '@/hooks/useAgentLimit';
 import { useCallback, useState } from 'react';
 import { useLayoutStore } from '@/stores';
@@ -121,26 +120,15 @@ export function SideBar() {
             </Button>
 
             {showSidebarMarketplace && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={navBtnCls(view === 'skills')}
-                  onClick={() => setView('skills')}
-                >
-                  <Package className="h-4 w-4" />
-                  Skills
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={navBtnCls(view === 'mcp')}
-                  onClick={() => setView('mcp')}
-                >
-                  <MCP />
-                  MCP
-                </Button>
-              </>
+              <Button
+                variant="ghost"
+                size="sm"
+                className={navBtnCls(view === 'plugins')}
+                onClick={() => setView('plugins')}
+              >
+                <Package2 className="h-4 w-4" />
+                Plugins
+              </Button>
             )}
           </div>
 

@@ -3,9 +3,8 @@ import { DxtManifestSchema } from './schemas';
 import DxtDetail from './DxtDetail';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { X, Search, RotateCcw } from 'lucide-react';
+import { Search } from 'lucide-react';
 import {
   checkManifestsExist,
   downloadAndExtractManifests,
@@ -124,7 +123,7 @@ function cleanUserConfig(userConfig: any): any {
   return cleaned;
 }
 
-export default function DxtView() {
+export default function DxtView({ refreshTrigger }: { refreshTrigger?: number } = {}) {
   const [dxtList, setDxtList] = useState<z.infer<typeof DxtManifestSchema>[]>([]);
   const [search, setSearch] = useState('');
   const [loading, setLoading] = useState(true);
@@ -134,6 +133,10 @@ export default function DxtView() {
   useEffect(() => {
     initializeManifests();
   }, []);
+
+  useEffect(() => {
+    if (refreshTrigger) void initializeManifests();
+  }, [refreshTrigger]);
 
   async function initializeManifests() {
     setLoading(true);
@@ -260,32 +263,6 @@ export default function DxtView() {
                 onChange={(e) => setSearch(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
               />
-              {search && (
-                <button
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  onClick={async () => {
-                    setSearch('');
-                    await loadManifests();
-                  }}
-                >
-                  <X className="h-4 w-4" />
-                </button>
-              )}
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <Button size="icon" onClick={handleSearch} className="h-10 w-10">
-                <Search className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-10 w-10"
-                title="Reload extensions"
-                onClick={initializeManifests}
-                disabled={loading}
-              >
-                <RotateCcw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
-              </Button>
             </div>
           </div>
           {/* Grid layout for DXT cards */}

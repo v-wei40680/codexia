@@ -70,18 +70,11 @@ pub async fn clone_skills_repo(url: String) -> Result<String, String> {
 }
 
 #[tauri::command]
-pub async fn read_skill_groups(
-    scope: String,
-    cwd: Option<String>,
-) -> Result<SkillGroupsConfig, String> {
-    skills::read_skill_groups(scope, cwd).await
+pub async fn read_skill_groups() -> Result<SkillGroupsConfig, String> {
+    skills::read_skill_groups().await
 }
 
 #[tauri::command]
-pub async fn write_skill_groups(
-    scope: String,
-    cwd: Option<String>,
-    config: SkillGroupsConfig,
-) -> Result<(), String> {
-    skills::write_skill_groups(scope, cwd, config).await
+pub async fn write_skill_groups(config: SkillGroupsConfig) -> Result<(), String> {
+    skills::write_skill_groups(config).await
 }

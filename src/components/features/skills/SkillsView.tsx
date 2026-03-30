@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Package, FolderGit2, Search, Globe, Package2, Plus } from 'lucide-react';
+import { FolderGit2, Search, Globe, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { BrowseTab } from '@/components/features/skills/BrowseTab';
-import { InstalledTab } from '@/components/features/skills/InstalledTab';
 import { Clone } from '@/components/features/skills/Clone';
 import { useWorkspaceStore } from '@/stores';
 import { useLayoutStore } from '@/stores';
@@ -11,16 +10,14 @@ import { useTrafficLightConfig } from '@/hooks';
 import { ProjectSelector } from '@/components/project-selector';
 import { type SkillGroup, type SkillGroupsConfig, type SkillScope, listCentralSkills, readSkillGroups, writeSkillGroups } from '@/services';
 import { cn } from '@/lib/utils';
-import { AgentSwitcher } from '@/components/common/AgentSwitcher';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/use-toast';
 import { v4 as uuidv4 } from 'uuid';
 
-type SkillTab = 'browse' | 'installed' | 'repos';
+type SkillTab = 'browse' | 'repos';
 
 const NAV_TABS: { value: SkillTab; label: string; icon: React.ElementType }[] = [
   { value: 'browse', label: 'Browse', icon: Globe },
-  { value: 'installed', label: 'My Skills', icon: Package },
   { value: 'repos', label: 'Repos', icon: FolderGit2 },
 ];
 
@@ -48,29 +45,26 @@ export default function SkillsView() {
   }, [scope, cwd, installedRefreshKey]);
 
   useEffect(() => {
-    readSkillGroups(scope, cwd ?? undefined)
+    readSkillGroups()
       .then((cfg) => {
         setGroupsConfig(cfg);
-        // Clear selection if the selected group no longer exists
         setSelectedGroupId((prev) =>
           prev && cfg.groups.some((g) => g.id === prev) ? prev : null
         );
       })
       .catch(() => { });
-  }, [scope, cwd]);
-
-
+  }, []);
 
   const saveGroups = useCallback(async (config: SkillGroupsConfig) => {
     setGroupsConfig(config);
     try {
-      await writeSkillGroups(scope, cwd ?? undefined, config);
+      await writeSkillGroups(config);
     } catch (err) {
       toast.error('Failed to save groups', {
         description: err instanceof Error ? err.message : String(err),
       });
     }
-  }, [scope, cwd]);
+  }, []);
 
   const refreshInstalled = useCallback(() => {
     setInstalledRefreshKey((k) => k + 1);
@@ -84,7 +78,6 @@ export default function SkillsView() {
     const updated = { groups: [...groupsConfig.groups, newGroup] };
     await saveGroups(updated);
     setSelectedGroupId(newGroupId);
-    setTab('installed');
     setNewGroupName('');
     setAddingGroup(false);
   };
@@ -94,22 +87,15 @@ export default function SkillsView() {
       setSelectedGroupId(null);
     } else {
       setSelectedGroupId(groupId);
-      setTab('installed');
     }
   };
 
   return (
-    <div className="flex flex-col h-screen">
-      {/* Drag region */}
-      <header className='h-8' data-tauri-drag-region></header>
+    <div className="flex flex-col h-full">
 
       {/* Title row */}
       <div>
         <span className="flex items-center justify-between gap-2 px-4 h-12">
-          <span className="flex items-center gap-2">
-            <Package2 className="shrink-0 h-5 w-5" />
-            <h1 className="text-2xl font-bold tracking-tight">Skills</h1>
-          </span>
           <div className="relative">
             <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground pointer-events-none" />
             <Input
@@ -142,7 +128,6 @@ export default function SkillsView() {
             </div>
             {scope === 'project' && <ProjectSelector />}
           </span>
-          <AgentSwitcher />
         </div>
 
         {/* Groups bar */}
@@ -236,11 +221,6 @@ export default function SkillsView() {
             >
               <Icon className="h-3.5 w-3.5" />
               {label}
-              {value === 'installed' && installedNames.size > 0 && (
-                <span className="ml-0.5 rounded-full bg-primary/15 px-1.5 py-px text-[10px] font-semibold text-primary">
-                  {installedNames.size}
-                </span>
-              )}
             </button>
           ))}
         </nav>
@@ -254,16 +234,6 @@ export default function SkillsView() {
             scope={scope}
             installedIds={installedNames}
             onInstalled={refreshInstalled}
-            groupsConfig={groupsConfig}
-            onGroupsChange={saveGroups}
-            selectedGroupId={selectedGroupId}
-          />
-        </div>
-        <div className={tab !== 'installed' ? 'hidden' : ''}>
-          <InstalledTab
-            searchQuery={searchQuery}
-            scope={scope}
-            refreshKey={installedRefreshKey}
             groupsConfig={groupsConfig}
             onGroupsChange={saveGroups}
             selectedGroupId={selectedGroupId}

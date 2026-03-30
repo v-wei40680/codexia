@@ -10,8 +10,7 @@ export type viewType =
   | 'history'
   | 'learn'
   | 'login'
-  | 'skills'
-  | 'mcp'
+  | 'plugins'
   | 'settings'
   | 'usage'
   | 'insights';

@@ -177,22 +177,18 @@ export async function installFromMarket(
 export type SkillGroup = { id: string; name: string; skillNames: string[] };
 export type SkillGroupsConfig = { groups: SkillGroup[] };
 
-export async function readSkillGroups(scope: SkillScope, cwd?: string): Promise<SkillGroupsConfig> {
+export async function readSkillGroups(): Promise<SkillGroupsConfig> {
   if (isDesktopTauri()) {
-    return await invokeTauri<SkillGroupsConfig>('read_skill_groups', { scope, cwd });
+    return await invokeTauri<SkillGroupsConfig>('read_skill_groups', {});
   }
-  return await postJson<SkillGroupsConfig>('/api/skills/groups/read', { scope, cwd });
+  return await postJson<SkillGroupsConfig>('/api/skills/groups/read', {});
 }
 
-export async function writeSkillGroups(
-  scope: SkillScope,
-  cwd: string | undefined,
-  config: SkillGroupsConfig
-): Promise<void> {
+export async function writeSkillGroups(config: SkillGroupsConfig): Promise<void> {
   if (isDesktopTauri()) {
-    return await invokeTauri<void>('write_skill_groups', { scope, cwd, config });
+    return await invokeTauri<void>('write_skill_groups', { config });
   }
-  return await postJson<void>('/api/skills/groups/write', { scope, cwd, config });
+  return await postJson<void>('/api/skills/groups/write', { config });
 }
 
 export async function skillsConfigWrite(path: string, enabled: boolean) {

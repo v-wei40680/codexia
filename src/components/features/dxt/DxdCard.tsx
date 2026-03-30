@@ -1,52 +1,44 @@
-import { Card, CardHeader, CardContent, CardDescription } from '@/components/ui/card';
 import { ChevronRight } from 'lucide-react';
 import { MCP } from '@lobehub/icons';
 import { Button } from '@/components/ui/button';
 
 // DxtCard component to display manifest info
 export function DxtCard({ dxt, onClick }: { dxt: any; onClick?: () => void }) {
-  // Always treat dxt.tools as an array
-  const toolsArray = Array.isArray(dxt.tools) ? dxt.tools : [];
-  const showTools = toolsArray.slice(0, 3);
-  const hasMore = toolsArray.length > 3;
-
   return (
-    <Card className="w-full h-full flex flex-col hover:shadow-lg transition-shadow">
-      <CardHeader className="flex flex-row items-center gap-2">
+    <div 
+      className="flex flex-col p-3 rounded-xl border bg-card text-card-foreground shadow-sm hover:shadow-lg transition-shadow cursor-pointer"
+      onClick={onClick}
+    >
+      <div className="flex flex-row items-center gap-3">
         {dxt.icon ? (
-          <img src={dxt.icon} alt="icon" className="w-10 h-10 rounded" />
+          <img src={dxt.icon} alt="icon" className="w-10 h-10 rounded-lg object-cover" />
         ) : (
-          <MCP />
+          <div className="w-10 h-10 flex items-center justify-center bg-muted rounded-lg">
+            <MCP size={24} />
+          </div>
         )}
 
-        <div className="flex flex-col flex-1">
-          <span className="font-bold text-lg">{dxt.display_name}</span>
-          <div className="text-sm text-muted-foreground">{dxt.author?.name}</div>
+        <div className="flex flex-col flex-1 min-w-0">
+          <span className="font-bold text-lg truncate">{dxt.display_name}</span>
+          <div className="text-sm text-muted-foreground truncate">{dxt.author?.name}</div>
         </div>
         <Button
           size="icon"
-          variant="secondary"
-          className="hover:bg-gray-500"
+          variant="ghost"
+          className="shrink-0"
           onClick={(e) => {
             e.stopPropagation();
             onClick?.();
           }}
         >
-          <ChevronRight />
+          <ChevronRight className="w-5 h-5" />
         </Button>
-      </CardHeader>
-      <CardContent className="flex flex-col flex-1">
-        <CardDescription className="line-clamp-2">{dxt.description}</CardDescription>
-        {/* Tools */}
-        <div className="flex items-center gap-2 flex-wrap mt-2">
-          {showTools.map((tool: any) => (
-            <span key={tool.name} className="bg-muted px-2 py-0.5 rounded text-xs font-medium">
-              {tool.name}
-            </span>
-          ))}
-          {hasMore && <span className="text-xs text-muted-foreground">more</span>}
+      </div>
+      <div className="mt-3 flex-1">
+        <div className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+          {dxt.description}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
