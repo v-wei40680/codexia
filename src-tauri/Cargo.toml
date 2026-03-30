@@ -60,33 +60,19 @@ core = [
 # desktop: core + P2P server deps; omit with --no-default-features for iOS builds
 desktop = [
   "core",
+  "dep:fix-path-env",
+  "dep:nosleep",
+  "dep:tauri-plugin-screenshots",
+  "dep:tauri-plugin-single-instance",
+  "dep:tauri-plugin-updater",
+  "dep:tauri-plugin-fs",
+  "dep:tauri-plugin-process",
+  "dep:tauri-plugin-dialog",
   # p2p (desktop server)
   "dep:quinn",
   "dep:rcgen",
   "dep:rustls",
   "dep:local-ip-address",
-]
-tauri = [
-  "dep:tokio",
-  "dep:log",
-  # p2p client (mobile) — quinn QUIC is used on both desktop and iOS
-  "dep:quinn",
-  "dep:rustls",
-  "dep:fix-path-env",
-  "dep:nosleep",
-  "dep:tauri",
-  "dep:serde",        # needed by tauri macros
-  "dep:serde_json",   # needed by tauri::generate_context!
-  "dep:tauri-plugin-deep-link",
-  "dep:tauri-plugin-dialog",
-  "dep:tauri-plugin-fs",
-  "dep:tauri-plugin-log",
-  "dep:tauri-plugin-opener",
-  "dep:tauri-plugin-process",
-  "dep:tauri-plugin-screenshots",  # gated to non-mobile via target cfg below
-  "dep:tauri-plugin-shell",
-  "dep:tauri-plugin-single-instance",  # gated to linux/windows via target cfg below
-  "dep:tauri-plugin-updater",  # compiled in always; only used on desktop (App Store blocks self-update)
   # in-process axum router for P2P backend (no port opened, no web feature needed)
   "dep:axum",
   "dep:tower",
@@ -94,7 +80,21 @@ tauri = [
   "dep:http-body-util",
   "dep:httparse",
 ]
-web = ["core", "dep:axum", "dep:tower", "dep:tower-http", "dep:http-body-util", "dep:httparse", "dep:env_logger"]
+tauri = [
+  "dep:tokio",
+  "dep:log",
+  # p2p client (mobile) — quinn QUIC is used on both desktop and iOS
+  "dep:quinn",
+  "dep:rustls",
+  "dep:tauri",
+  "dep:serde",        # needed by tauri macros
+  "dep:serde_json",   # needed by tauri::generate_context!
+  "dep:tauri-plugin-deep-link",
+  "dep:tauri-plugin-log",
+  "dep:tauri-plugin-opener",
+  "dep:tauri-plugin-shell",
+]
+web = ["core", "dep:env_logger"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }

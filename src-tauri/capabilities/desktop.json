@@ -14,15 +14,10 @@
     "tray"
   ],
   "permissions": [
-    "core:default",
-    "core:event:default",
-    "core:event:allow-listen",
-    "core:event:allow-emit",
     "core:event:allow-emit-to",
     "core:window:allow-start-dragging",
     "core:window:allow-set-title",
     "core:webview:default",
-    "opener:default",
     "opener:allow-reveal-item-in-dir",
     "dialog:default",
     "dialog:allow-ask",
@@ -62,9 +57,6 @@
     "shell:allow-stdin-write",
     "shell:allow-kill",
     "screenshots:default",
-    "log:default",
-    "deep-link:default",
-    "updater:default",
-    "os:default"
+    "updater:default"
   ]
 }
