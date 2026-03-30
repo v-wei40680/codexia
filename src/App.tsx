@@ -20,7 +20,6 @@ import { useCCSessionManager } from '@/hooks/useCCSessionManager';
 import { codexService } from '@/services/codexService';
 import { useAgentLimit } from '@/hooks/useAgentLimit';
 import { useP2PConnection } from '@/hooks/useP2PConnection';
-import { DesktopOfflineScreen } from '@/components/features/DesktopOfflineScreen';
 import { toast } from 'sonner';
 import { useTunnel } from '@/hooks/useTunnel'
 import { useSettingsStore } from '@/stores/settings/useSettingsStore';
@@ -52,7 +51,7 @@ function AppShell() {
   const { maxCards } = useAgentLimit();
 
   // Mobile: auto-connect to desktop via Quinn P2P
-  const { state: p2pState, error: p2pError, logs: p2pLogs, retry: p2pRetry } = useP2PConnection();
+  const { state: p2pState, error: p2pError, retry: p2pRetry } = useP2PConnection();
 
   // Toast on P2P state changes so the user always sees what's happening
   const prevP2PState = useRef(p2pState);
@@ -83,7 +82,7 @@ function AppShell() {
   useEffect(() => {
     if (!isTauri() || isPhone !== false || p2pStatus.connected || !p2pAutoStart) return;
     void p2pStart();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPhone, p2pAutoStart]);
 
   // Sync the subscription-derived limit into the store so all addAgentCard callers respect it.
@@ -144,7 +143,7 @@ function AppShell() {
       unlistenQuit.then((fn) => fn());
       unlistenTray.then((fn) => fn());
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPhone]);
 
   // Listen to codex events
@@ -156,13 +155,6 @@ function AppShell() {
   // Mobile: no session → show login so the user can authenticate first
   if (isPhone === true && p2pState === 'idle') {
     return <Suspense fallback={null}><LoginView /></Suspense>;
-  }
-
-  // Mobile: show connection screen until P2P is established
-  if (isPhone === true && p2pState !== 'connected') {
-    return (
-      <DesktopOfflineScreen state={p2pState} error={p2pError} logs={p2pLogs} retry={p2pRetry} />
-    );
   }
 
   return (
