@@ -13,7 +13,7 @@ export const useCCSettingsStore = create<CCSettingsState>()(
     (set) => ({
       enabledThinking: false,
       toggleThinking: () => set((state) => ({ enabledThinking: !state.enabledThinking })),
-      showPermissionCards: true,
+      showPermissionCards: false,
       toggleShowPermissionCards: () => set((state) => ({ showPermissionCards: !state.showPermissionCards })),
     }),
     {
