@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 
 export type AgentType = 'codex' | 'cc';
 export const AGENT_TYPES: AgentType[] = ['cc', 'codex'];
@@ -74,80 +73,72 @@ interface WorkspaceStore {
   setInstructionType: (type: string) => void;
 }
 
-export const useWorkspaceStore = create(
-  persist<WorkspaceStore>(
-    (set, get) => ({
-      selectedAgent: 'codex',
-      setSelectedAgent: (agent) => set({ selectedAgent: agent }),
-      projects: [],
-      setProjects: (projects) => set({ projects: dedupeProjects(projects) }),
-      addProject: (project) =>
-        set((state) => {
-          const normalized = normalizeProjectPath(project);
-          if (!normalized) {
-            return state;
-          }
-          return {
-            projects: state.projects.includes(normalized)
-              ? state.projects
-              : [...state.projects, normalized],
-            historyProjects: pushRecentProject(state.historyProjects, normalized),
-          };
-        }),
-      removeProject: (project) =>
-        set((state) => {
-          const normalized = normalizeProjectPath(project);
-          const projects = state.projects.filter((p) => p !== normalized);
-          const shouldClearCwd = state.cwd === normalized;
-          const nextCwd = shouldClearCwd ? projects[0] ?? '' : state.cwd;
-
-          return {
-            projects,
-            cwd: nextCwd,
-            selectedFilePath: shouldClearCwd ? null : state.selectedFilePath,
-          };
-        }),
-      addProjectAndSelect: (project) => {
-        const trimmed = normalizeProjectPath(project);
-        const state = get();
-        if (trimmed && !state.projects.includes(trimmed)) {
-          set({
-            projects: [...state.projects, trimmed],
-            cwd: trimmed,
-            historyProjects: pushRecentProject(state.historyProjects, trimmed),
-          });
-        }
-      },
-      historyProjects: [],
-      setHistoryProjects: (projects) => set({ historyProjects: dedupeProjects(projects) }),
-      addHistoryProject: (project) =>
-        set((state) => ({
-          historyProjects: pushRecentProject(state.historyProjects, project),
-        })),
-      clearHistoryProjects: () => set({ historyProjects: [] }),
-      projectSort: 'added_desc',
-      setProjectSort: (sortKey) => set({ projectSort: sortKey }),
-      historyMode: false,
-      setHistoryMode: (historyMode) => set({ historyMode }),
-      cwd: '',
-      setCwd: (path) => {
-        const normalized = normalizeProjectPath(path);
-        set((state) => ({
-          cwd: normalized,
-          selectedFilePath: null,
-          historyProjects: pushRecentProject(state.historyProjects, normalized),
-        }));
-      },
-      selectedFilePath: null,
-      setSelectedFilePath: (path) => set({ selectedFilePath: path }),
-      hasConfirmedGitRevert: false,
-      setHasConfirmedGitRevert: (value) => set({ hasConfirmedGitRevert: value }),
-      instructionType: 'system',
-      setInstructionType: (type) => set({ instructionType: type }),
+export const useWorkspaceStore = create<WorkspaceStore>((set, get) => ({
+  selectedAgent: 'codex',
+  setSelectedAgent: (agent) => set({ selectedAgent: agent }),
+  projects: [],
+  setProjects: (projects) => set({ projects: dedupeProjects(projects) }),
+  addProject: (project) =>
+    set((state) => {
+      const normalized = normalizeProjectPath(project);
+      if (!normalized) {
+        return state;
+      }
+      return {
+        projects: state.projects.includes(normalized)
+          ? state.projects
+          : [...state.projects, normalized],
+        historyProjects: pushRecentProject(state.historyProjects, normalized),
+      };
     }),
-    {
-      name: 'workspace-store',
-      version: 3,
+  removeProject: (project) =>
+    set((state) => {
+      const normalized = normalizeProjectPath(project);
+      const projects = state.projects.filter((p) => p !== normalized);
+      const shouldClearCwd = state.cwd === normalized;
+      const nextCwd = shouldClearCwd ? (projects[0] ?? '') : state.cwd;
+
+      return {
+        projects,
+        cwd: nextCwd,
+        selectedFilePath: shouldClearCwd ? null : state.selectedFilePath,
+      };
+    }),
+  addProjectAndSelect: (project) => {
+    const trimmed = normalizeProjectPath(project);
+    const state = get();
+    if (trimmed && !state.projects.includes(trimmed)) {
+      set({
+        projects: [...state.projects, trimmed],
+        cwd: trimmed,
+        historyProjects: pushRecentProject(state.historyProjects, trimmed),
+      });
     }
-  )
-);
+  },
+  historyProjects: [],
+  setHistoryProjects: (projects) => set({ historyProjects: dedupeProjects(projects) }),
+  addHistoryProject: (project) =>
+    set((state) => ({
+      historyProjects: pushRecentProject(state.historyProjects, project),
+    })),
+  clearHistoryProjects: () => set({ historyProjects: [] }),
+  projectSort: 'added_desc',
+  setProjectSort: (sortKey) => set({ projectSort: sortKey }),
+  historyMode: false,
+  setHistoryMode: (historyMode) => set({ historyMode }),
+  cwd: '',
+  setCwd: (path) => {
+    const normalized = normalizeProjectPath(path);
+    set((state) => ({
+      cwd: normalized,
+      selectedFilePath: null,
+      historyProjects: pushRecentProject(state.historyProjects, normalized),
+    }));
+  },
+  selectedFilePath: null,
+  setSelectedFilePath: (path) => set({ selectedFilePath: path }),
+  hasConfirmedGitRevert: false,
+  setHasConfirmedGitRevert: (value) => set({ hasConfirmedGitRevert: value }),
+  instructionType: 'system',
+  setInstructionType: (type) => set({ instructionType: type }),
+}));

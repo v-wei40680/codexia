@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 
 export type TaskDetail = 'steps' | 'stepsWithCommand' | 'stepsWithOutput';
 export type TaskCompleteBeepMode = 'never' | 'unfocused' | 'always';
@@ -50,10 +49,6 @@ export interface SettingState {
   setP2pAutoStart: (enabled: boolean) => void;
 }
 
-type LegacySettingState = {
-  enableTaskCompleteBeep?: boolean | TaskCompleteBeepMode;
-};
-
 const DEFAULT_HIDDEN_NAMES = [
   'node_modules',
   'DS_Store',
@@ -68,95 +63,52 @@ const DEFAULT_HIDDEN_NAMES = [
   'target',
 ];
 
-export const useSettingsStore = create<SettingState>()(
-  persist(
-    (set) => ({
-      hiddenNames: DEFAULT_HIDDEN_NAMES,
-      showExplorer: true,
-      taskDetail: 'steps',
-      setHiddenNames: (hiddenNames: string[]) => set({ hiddenNames }),
-      addHiddenName: (name: string) =>
-        set((state) =>
-          state.hiddenNames.includes(name) ? state : { hiddenNames: [...state.hiddenNames, name] }
-        ),
-      removeHiddenName: (name: string) =>
-        set((state) => ({ hiddenNames: state.hiddenNames.filter((item) => item !== name) })),
-      resetHiddenNames: () => set({ hiddenNames: DEFAULT_HIDDEN_NAMES }),
-      setShowExplorer: (showExplorer: boolean) => set({ showExplorer }),
-      setTaskDetail: (taskDetail: TaskDetail) => set({ taskDetail }),
-      autoCommitGitWorktree: true,
-      enableTaskCompleteBeep: 'always',
-      preventSleepDuringTasks: true,
-      showReasoning: true,
-      enabledQuoteCategories: [
-        'economics',
-        'interest',
-        'life',
-        'management',
-        'programming',
-      ],
-      setAutoCommitGitWorktree: (enabled: boolean) => set({ autoCommitGitWorktree: enabled }),
-      setEnableTaskCompleteBeep: (mode: TaskCompleteBeepMode) =>
-        set({ enableTaskCompleteBeep: mode }),
-      setPreventSleepDuringTasks: (enabled: boolean) => set({ preventSleepDuringTasks: enabled }),
-      setShowReasoning: (enabled: boolean) => set({ showReasoning: enabled }),
-      setEnabledQuoteCategories: (categories: string[]) =>
-        set({ enabledQuoteCategories: categories }),
-      showSidebarMarketplace: true,
-      setShowSidebarMarketplace: (show: boolean) => set({ showSidebarMarketplace: show }),
-      showHeaderTerminalButton: true,
-      setShowHeaderTerminalButton: (show: boolean) => set({ showHeaderTerminalButton: show }),
-      showHeaderWebPreviewButton: true,
-      setShowHeaderWebPreviewButton: (show: boolean) => set({ showHeaderWebPreviewButton: show }),
-      showHeaderNotesButton: true,
-      setShowHeaderNotesButton: (show: boolean) => set({ showHeaderNotesButton: show }),
-      showHeaderFilesButton: true,
-      setShowHeaderFilesButton: (show: boolean) => set({ showHeaderFilesButton: show }),
-      showHeaderDiffButton: true,
-      setShowHeaderDiffButton: (show: boolean) => set({ showHeaderDiffButton: show }),
-      showQuotes: false,
-      setShowQuotes: (show: boolean) => set({ showQuotes: show }),
-      showTips: false,
-      setShowTips: (show: boolean) => set({ showTips: show }),
-      analyticsEnabled: false,
-      setAnalyticsEnabled: (enabled: boolean) => set({ analyticsEnabled: enabled }),
-      analyticsConsentShown: false,
-      setAnalyticsConsentShown: (shown: boolean) => set({ analyticsConsentShown: shown }),
-      customStunServers: [],
-      setCustomStunServers: (servers: string[]) => set({ customStunServers: servers }),
-      p2pAutoStart: false,
-      setP2pAutoStart: (enabled: boolean) => set({ p2pAutoStart: enabled }),
-    }),
-    {
-      name: 'settings-storage',
-      version: 4,
-      migrate: (persistedState, version) => {
-        if (!persistedState) {
-          return persistedState;
-        }
-
-        let nextState = persistedState as Record<string, unknown>;
-
-        if (version < 2) {
-          const state = nextState as LegacySettingState & Record<string, unknown>;
-          if (typeof state.enableTaskCompleteBeep === 'boolean') {
-            nextState = {
-              ...state,
-              enableTaskCompleteBeep: state.enableTaskCompleteBeep ? 'always' : 'never',
-            };
-          }
-        }
-
-        if (version < 4) {
-          return {
-            ...nextState,
-            showQuotes: typeof nextState.showQuotes === 'boolean' ? nextState.showQuotes : true,
-            showTips: typeof nextState.showTips === 'boolean' ? nextState.showTips : true,
-          };
-        }
-
-        return nextState;
-      },
-    }
-  )
-);
+export const useSettingsStore = create<SettingState>()((set) => ({
+  hiddenNames: DEFAULT_HIDDEN_NAMES,
+  showExplorer: true,
+  taskDetail: 'steps',
+  setHiddenNames: (hiddenNames: string[]) => set({ hiddenNames }),
+  addHiddenName: (name: string) =>
+    set((state) =>
+      state.hiddenNames.includes(name) ? state : { hiddenNames: [...state.hiddenNames, name] }
+    ),
+  removeHiddenName: (name: string) =>
+    set((state) => ({ hiddenNames: state.hiddenNames.filter((item) => item !== name) })),
+  resetHiddenNames: () => set({ hiddenNames: DEFAULT_HIDDEN_NAMES }),
+  setShowExplorer: (showExplorer: boolean) => set({ showExplorer }),
+  setTaskDetail: (taskDetail: TaskDetail) => set({ taskDetail }),
+  autoCommitGitWorktree: true,
+  enableTaskCompleteBeep: 'always',
+  preventSleepDuringTasks: true,
+  showReasoning: true,
+  enabledQuoteCategories: ['economics', 'interest', 'life', 'management', 'programming'],
+  setAutoCommitGitWorktree: (enabled: boolean) => set({ autoCommitGitWorktree: enabled }),
+  setEnableTaskCompleteBeep: (mode: TaskCompleteBeepMode) => set({ enableTaskCompleteBeep: mode }),
+  setPreventSleepDuringTasks: (enabled: boolean) => set({ preventSleepDuringTasks: enabled }),
+  setShowReasoning: (enabled: boolean) => set({ showReasoning: enabled }),
+  setEnabledQuoteCategories: (categories: string[]) => set({ enabledQuoteCategories: categories }),
+  showSidebarMarketplace: true,
+  setShowSidebarMarketplace: (show: boolean) => set({ showSidebarMarketplace: show }),
+  showHeaderTerminalButton: true,
+  setShowHeaderTerminalButton: (show: boolean) => set({ showHeaderTerminalButton: show }),
+  showHeaderWebPreviewButton: true,
+  setShowHeaderWebPreviewButton: (show: boolean) => set({ showHeaderWebPreviewButton: show }),
+  showHeaderNotesButton: true,
+  setShowHeaderNotesButton: (show: boolean) => set({ showHeaderNotesButton: show }),
+  showHeaderFilesButton: true,
+  setShowHeaderFilesButton: (show: boolean) => set({ showHeaderFilesButton: show }),
+  showHeaderDiffButton: true,
+  setShowHeaderDiffButton: (show: boolean) => set({ showHeaderDiffButton: show }),
+  showQuotes: false,
+  setShowQuotes: (show: boolean) => set({ showQuotes: show }),
+  showTips: false,
+  setShowTips: (show: boolean) => set({ showTips: show }),
+  analyticsEnabled: false,
+  setAnalyticsEnabled: (enabled: boolean) => set({ analyticsEnabled: enabled }),
+  analyticsConsentShown: false,
+  setAnalyticsConsentShown: (shown: boolean) => set({ analyticsConsentShown: shown }),
+  customStunServers: [],
+  setCustomStunServers: (servers: string[]) => set({ customStunServers: servers }),
+  p2pAutoStart: false,
+  setP2pAutoStart: (enabled: boolean) => set({ p2pAutoStart: enabled }),
+}));

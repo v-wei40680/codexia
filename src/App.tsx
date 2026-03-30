@@ -12,6 +12,7 @@ import { AnalyticsConsentDialog } from '@/components/settings/AnalyticsConsentDi
 import { initializeCodexAsync } from '@/services/tauri';
 import type { InitializeResponse } from './bindings';
 import { useAgentCenterStore, useLayoutStore } from '@/stores';
+import { loadSettings, initSettingsSync } from '@/lib/settings';
 import { StoreErrorBoundary } from '@/components/StoreErrorBoundary';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useTrayPendingStore } from '@/stores/useTrayPendingStore';
@@ -37,7 +38,14 @@ import {
 function AppShell() {
   const [quitDialogOpen, setQuitDialogOpen] = useState(false);
   const [isPhone, setIsPhone] = useState<boolean | null>(null);
+  const [settingsReady, setSettingsReady] = useState(false);
+
   useEffect(() => { void getIsPhone().then(setIsPhone); }, []);
+
+  useEffect(() => {
+    void loadSettings().finally(() => setSettingsReady(true));
+    return initSettingsSync();
+  }, []);
   const { pending, clearPending } = useTrayPendingStore();
   const { handleNewSession } = useCCSessionManager();
   const { addAgentCard, setCurrentAgentCardId, setMaxCards } = useAgentCenterStore();
@@ -142,8 +150,8 @@ function AppShell() {
   // Listen to codex events
   useCodexEvents();
 
-  // Wait for platform detection before rendering anything
-  if (isPhone === null) return null;
+  // Wait for platform detection and settings load before rendering
+  if (isPhone === null || !settingsReady) return null;
 
   // Mobile: no session → show login so the user can authenticate first
   if (isPhone === true && p2pState === 'idle') {
