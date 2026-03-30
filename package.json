@@ -10,8 +10,8 @@
     "preview": "vite preview",
     "tauri": "tauri",
     "tauri:ios": "tauri ios dev",
-    "tauri:build:desktop": "tauri build --features desktop",
-    "tauri:build:web": "tauri build --features web",
+    "tauri:dev:desktop": "tauri dev --features desktop",
+    "tauri:dev:web": "tauri dev -- --no-default-features --features web",
     "lint": "biome check",
     "lint:fix": "biome check --write",
     "format": "biome format --write"
