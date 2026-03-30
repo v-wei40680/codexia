@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { Archive, GitFork, Pin } from 'lucide-react';
+import { Archive, GitFork, Pin, FolderX } from 'lucide-react';
 import { listen } from '@tauri-apps/api/event';
 import { useThreadFilter } from '@/hooks/codex/useThreadFilter';
 import { codexService } from '@/services/codexService';
@@ -27,6 +27,8 @@ import { formatThreadAge } from '@/utils/formatThreadAge';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import type { ThreadListItem } from '@/types/codex/ThreadListItem';
 import { useLayoutStore, useAgentCenterStore } from '@/stores';
+import { gitDeleteThreadWorktree } from '@/services/tauri/git';
+import { toast } from '@/components/ui/use-toast';
 
 type SessionMetaEntry = {
   text?: string;
@@ -286,6 +288,18 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
     [isProjectScoped, setView, mergedThreads, addAgentCard, setCurrentAgentCardId]
   );
 
+  const handleDeleteWorktree = useCallback(async (thread: ThreadListItem) => {
+    const { cwd: mainCwd } = useWorkspaceStore.getState();
+    if (!mainCwd || !thread.cwd.includes('/.codexia-worktrees/')) return;
+    const worktreeKey = thread.cwd.split('/').pop() ?? '';
+    try {
+      await gitDeleteThreadWorktree(mainCwd, worktreeKey);
+      toast.success('Worktree deleted');
+    } catch (err) {
+      toast.error('Failed to delete worktree', { description: String(err) });
+    }
+  }, []);
+
   const handleDeleteThreadByPath = useCallback(
     async (threadId: string, threadPath: string) => {
       if (!threadPath) {
@@ -486,6 +500,14 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
               <ContextMenuItem onSelect={() => void handleArchiveThread(thread.id)}>
                 Archive
               </ContextMenuItem>
+              {thread.cwd.includes('/.codexia-worktrees/') && (
+                <ContextMenuItem
+                  onSelect={() => void handleDeleteWorktree(thread)}
+                >
+                  <FolderX className="mr-2 h-4 w-4" />
+                  Delete Worktree
+                </ContextMenuItem>
+              )}
               <ContextMenuItem
                 variant="destructive"
                 onSelect={() => void handleDeleteThreadByPath(thread.id, thread.path ?? '')}

@@ -57,4 +57,6 @@ pub struct GitPrepareThreadWorktreeResponse {
     pub repo_root: String,
     pub worktree_path: String,
     pub existed: bool,
+    /// Env files copied from the main repo (e.g. ".env", ".env.local")
+    pub copied_env_files: Vec<String>,
 }

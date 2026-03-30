@@ -2,6 +2,7 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { CircleStop, Send, X } from 'lucide-react';
 import { useCCStore } from '@/stores/cc';
+import type { ThreadCwdMode } from '@/stores/codex/useConfigStore';
 import { useCCInputStore, useAgentCenterStore } from '@/stores';
 import { CCPermissionModeSelect } from '@/components/cc/composer';
 import { ModelSelector } from './ModelSelector';
@@ -11,6 +12,8 @@ import { CCSkillsPopover } from './CCSkillsPopover';
 import { useCCSessionManager } from '@/hooks/useCCSessionManager';
 import { ccInterrupt, ccSendMessage } from '@/services';
 import { WorkspaceSwitcher, FileMentionPopover } from '@/components/common';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Monitor, Split } from 'lucide-react';
 import { convertFileSrc } from '@tauri-apps/api/core';
 
 import {
@@ -42,6 +45,8 @@ export function Composer({ overrideSend, onAfterSend }: ComposerProps = {}) {
     addMessage,
     setLoading,
     setConnected,
+    options,
+    updateOptions,
   } = useCCStore();
   const { inputValue: input, setInputValue: setInput } = useCCInputStore();
   const { setCurrentAgentCardId } = useAgentCenterStore();
@@ -235,7 +240,31 @@ export function Composer({ overrideSend, onAfterSend }: ComposerProps = {}) {
             </Button>
           </div>
         </div>
-        <WorkspaceSwitcher />
+        <div className="flex items-center justify-between">
+          <WorkspaceSwitcher />
+          <Select
+            value={options.worktreeMode ?? 'local'}
+            onValueChange={(v) => updateOptions({ worktreeMode: v as ThreadCwdMode })}
+          >
+            <SelectTrigger className="w-fit h-7 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="local">
+                <span className="inline-flex items-center gap-1.5">
+                  <Monitor className="size-3.5" />
+                  <span>Local</span>
+                </span>
+              </SelectItem>
+              <SelectItem value="worktree">
+                <span className="inline-flex items-center gap-1.5">
+                  <Split className="size-3.5" />
+                  <span>Worktree</span>
+                </span>
+              </SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <CCSlashCommandPopover

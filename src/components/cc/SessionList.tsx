@@ -5,7 +5,8 @@ import { getSessions, SessionData } from '@/lib/sessions';
 import { ccGetSessionFilePath, ccDeleteSession } from '@/services/tauri/cc';
 import { readTextFileLines } from '@/services/tauri/filesystem';
 import { parseSessionJsonl } from '@/components/cc/utils/parseSessionJsonl';
-import { MoreVertical, Copy, Loader2, Trash2 } from 'lucide-react';
+import { MoreVertical, Copy, Loader2, Trash2, FolderX } from 'lucide-react';
+import { gitDeleteThreadWorktree } from '@/services/tauri/git';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -165,6 +166,19 @@ export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Pr
     }
   };
 
+  const doDeleteWorktree = async (session: SessionData) => {
+    if (!session.project.includes('/.codexia-worktrees/')) return;
+    const worktreeKey = session.project.split('/').pop() ?? '';
+    const mainCwd = useWorkspaceStore.getState().cwd;
+    if (!mainCwd) return;
+    try {
+      await gitDeleteThreadWorktree(mainCwd, worktreeKey);
+      toast({ description: 'Worktree deleted' });
+    } catch {
+      toast({ description: 'Failed to delete worktree', variant: 'destructive' });
+    }
+  };
+
   const copySessionId = (e: React.MouseEvent, id: string) => {
     e.stopPropagation();
     navigator.clipboard.writeText(id);
@@ -227,6 +241,17 @@ export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Pr
                       <Copy className="h-3 w-3" />
                       <span>Copy Session ID</span>
                     </DropdownMenuItem>
+                    {session.project.includes('/.codexia-worktrees/') && (
+                      <DropdownMenuItem
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          void doDeleteWorktree(session);
+                        }}
+                      >
+                        <FolderX className="h-3 w-3" />
+                        <span>Delete Worktree</span>
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem
                       onClick={(e) => {
                         e.stopPropagation();

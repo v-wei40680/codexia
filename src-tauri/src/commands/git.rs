@@ -3,6 +3,8 @@ pub use crate::features::git::{
     GitFileDiffResponse, GitPrepareThreadWorktreeResponse, GitStatusResponse,
 };
 
+use tokio::task::spawn_blocking;
+
 #[tauri::command]
 pub async fn git_branch_info(cwd: String) -> Result<GitBranchInfoResponse, String> {
     crate::features::git::git_branch_info(cwd)
@@ -23,7 +25,19 @@ pub async fn git_prepare_thread_worktree(
     cwd: String,
     thread_key: String,
 ) -> Result<GitPrepareThreadWorktreeResponse, String> {
-    crate::features::git::git_prepare_thread_worktree(cwd, thread_key)
+    spawn_blocking(move || crate::features::git::git_prepare_thread_worktree(cwd, thread_key))
+        .await
+        .map_err(|e| format!("Task join error: {e}"))?
+}
+
+#[tauri::command]
+pub async fn git_delete_thread_worktree(
+    cwd: String,
+    thread_key: String,
+) -> Result<(), String> {
+    spawn_blocking(move || crate::features::git::git_delete_thread_worktree(cwd, thread_key))
+        .await
+        .map_err(|e| format!("Task join error: {e}"))?
 }
 
 #[tauri::command]

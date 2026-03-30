@@ -20,4 +20,4 @@ pub use self::types::{
     GitBranchInfoResponse, GitBranchListResponse, GitDiffStatsResponse, GitFileDiffMetaResponse,
     GitFileDiffResponse, GitPrepareThreadWorktreeResponse, GitStatusResponse,
 };
-pub use self::worktree::{clone, git_prepare_thread_worktree};
+pub use self::worktree::{clone, git_delete_thread_worktree, git_prepare_thread_worktree};

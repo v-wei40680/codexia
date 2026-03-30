@@ -37,6 +37,7 @@ export type GitPrepareThreadWorktreeResponse = {
   repo_root: string;
   worktree_path: string;
   existed: boolean;
+  copied_env_files: string[];
 };
 
 export type GitBranchInfoResponse = {
@@ -139,6 +140,14 @@ export async function gitPrepareThreadWorktree(cwd: string, threadKey: string) {
     cwd,
     threadKey,
   });
+}
+
+export async function gitDeleteThreadWorktree(cwd: string, threadKey: string): Promise<void> {
+  if (isDesktopTauri()) {
+    await invokeTauri<void>('git_delete_thread_worktree', { cwd, threadKey });
+    return;
+  }
+  await postNoContent('/api/git/delete-thread-worktree', { cwd, threadKey });
 }
 
 function resolveCwd(filePath: string): string {

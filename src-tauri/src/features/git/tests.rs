@@ -112,6 +112,12 @@ fn git_prepare_thread_worktree_creates_and_reuses_worktree_path() {
     let worktree_repo = gix::discover(&worktree).expect("open worktree repo");
     let worktree_head = worktree_repo.head_id().expect("worktree head").detach();
     assert_eq!(source_head, worktree_head, "worktree should point to same HEAD");
+
+    // Clean up: the worktree is stored in ~/.codexia/worktrees/{repo}-{hash}/
+    // Remove only the per-repo directory to avoid touching other test data.
+    if let Some(per_repo_dir) = worktree.parent() {
+        let _ = std::fs::remove_dir_all(per_repo_dir);
+    }
 }
 
 #[test]

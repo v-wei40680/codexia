@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import type { CCMessage } from '@/components/cc/types/messages';
 import type { CCMcpServers } from '@/types/cc/cc-mcp';
+import type { ThreadCwdMode } from '@/stores/codex/useConfigStore';
 
 export type PermissionMode = 'default' | 'acceptEdits' | 'plan' | 'bypassPermissions';
 export type ModelType = 'sonnet' | 'haiku' | 'opus';
@@ -24,6 +25,7 @@ export interface CCOptions {
   // Note: enabledSkills removed - skills are auto-discovered by Claude Code CLI
   // from ~/.claude/skills/ and cannot be filtered per-session
   mcpServers?: CCMcpServers;
+  worktreeMode?: ThreadCwdMode;
 }
 
 interface CCStoreState {
