@@ -38,6 +38,8 @@ function AppShell() {
   const [quitDialogOpen, setQuitDialogOpen] = useState(false);
   const [isPhone, setIsPhone] = useState<boolean | null>(null);
   const [settingsReady, setSettingsReady] = useState(false);
+  // True once codex backend signals it is ready; non-Tauri skips init entirely.
+  const [codexReady, setCodexReady] = useState(!isTauri());
 
   useEffect(() => { void getIsPhone().then(setIsPhone); }, []);
 
@@ -119,6 +121,7 @@ function AppShell() {
     // Listen for codex initialized event
     const unlisten = listen<InitializeResponse>('codex:initialized', (event) => {
       console.log('[App] Codex initialized, userAgent:', event.payload.userAgent);
+      setCodexReady(true);
     });
 
     // Show quit confirmation when Cmd+Q is pressed
@@ -146,8 +149,8 @@ function AppShell() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPhone]);
 
-  // Listen to codex events
-  useCodexEvents();
+  // Listen to codex events only after backend is initialized
+  useCodexEvents(codexReady);
 
   // Wait for platform detection and settings load before rendering
   if (isPhone === null || !settingsReady) return null;
