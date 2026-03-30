@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
-import { FolderGit2, Search, Globe, Plus } from 'lucide-react';
+import { Search, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { BrowseTab } from '@/components/features/skills/BrowseTab';
-import { Clone } from '@/components/features/skills/Clone';
 import { useWorkspaceStore } from '@/stores';
 import { useLayoutStore } from '@/stores';
 import { useTrafficLightConfig } from '@/hooks';
@@ -14,19 +13,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '
 import { toast } from '@/components/ui/use-toast';
 import { v4 as uuidv4 } from 'uuid';
 
-type SkillTab = 'browse' | 'repos';
-
-const NAV_TABS: { value: SkillTab; label: string; icon: React.ElementType }[] = [
-  { value: 'browse', label: 'Browse', icon: Globe },
-  { value: 'repos', label: 'Repos', icon: FolderGit2 },
-];
-
 export default function SkillsView() {
   const { cwd } = useWorkspaceStore();
   const { isSidebarOpen } = useLayoutStore();
   useTrafficLightConfig(isSidebarOpen);
 
-  const [tab, setTab] = useState<SkillTab>('browse');
   const [scope, setScope] = useState<SkillScope>('user');
   const [searchQuery, setSearchQuery] = useState('');
   const [installedRefreshKey, setInstalledRefreshKey] = useState(0);
@@ -34,7 +25,6 @@ export default function SkillsView() {
   const [groupsConfig, setGroupsConfig] = useState<SkillGroupsConfig>({ groups: [] });
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
 
-  // New group state
   const [addingGroup, setAddingGroup] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
 
@@ -83,17 +73,13 @@ export default function SkillsView() {
   };
 
   const handleGroupChipClick = (groupId: string) => {
-    if (selectedGroupId === groupId) {
-      setSelectedGroupId(null);
-    } else {
-      setSelectedGroupId(groupId);
-    }
+    setSelectedGroupId((prev) => (prev === groupId ? null : groupId));
   };
 
   return (
     <div className="flex flex-col h-full">
 
-      {/* Title row */}
+      {/* Search row */}
       <div>
         <span className="flex items-center justify-between gap-2 px-4 h-12">
           <div className="relative">
@@ -107,7 +93,7 @@ export default function SkillsView() {
           </div>
         </span>
 
-        {/* Scope + agent switcher */}
+        {/* Scope selector */}
         <div className="flex items-center justify-between px-4">
           <span className='flex'>
             <div className="flex items-center gap-0.5 rounded-lg bg-muted/50 p-0.5">
@@ -141,7 +127,6 @@ export default function SkillsView() {
             <Plus />
           </Button>
           <div className="flex flex-1 items-center gap-1 overflow-x-auto scrollbar-none">
-            {/* Default chip — always visible, active when nothing is selected */}
             <button
               type="button"
               onClick={() => setSelectedGroupId(null)}
@@ -154,7 +139,6 @@ export default function SkillsView() {
             >
               All groups
             </button>
-
             {groupsConfig.groups.map((g) => (
               <button
                 key={g.id}
@@ -173,7 +157,6 @@ export default function SkillsView() {
                 )}
               </button>
             ))}
-
           </div>
         </div>
 
@@ -204,42 +187,17 @@ export default function SkillsView() {
         </Dialog>
       </div>
 
-      {/* Nav tabs */}
-      <div className="shrink-0 border-b px-4">
-        <nav className="flex gap-0.5">
-          {NAV_TABS.map(({ value, label, icon: Icon }) => (
-            <button
-              key={value}
-              type="button"
-              onClick={() => setTab(value)}
-              className={cn(
-                'flex items-center gap-1.5 px-3 py-2 text-sm border-b-2 -mb-px transition-colors',
-                tab === value
-                  ? 'border-primary text-foreground font-medium'
-                  : 'border-transparent text-muted-foreground hover:text-foreground',
-              )}
-            >
-              <Icon className="h-3.5 w-3.5" />
-              {label}
-            </button>
-          ))}
-        </nav>
-      </div>
-
       {/* Content */}
       <div className="flex-1 min-h-0 overflow-y-auto px-4 pt-3">
-        <div className={tab !== 'browse' ? 'hidden' : ''}>
-          <BrowseTab
-            searchQuery={searchQuery}
-            scope={scope}
-            installedIds={installedNames}
-            onInstalled={refreshInstalled}
-            groupsConfig={groupsConfig}
-            onGroupsChange={saveGroups}
-            selectedGroupId={selectedGroupId}
-          />
-        </div>
-        {tab === 'repos' && <Clone />}
+        <BrowseTab
+          searchQuery={searchQuery}
+          scope={scope}
+          installedIds={installedNames}
+          onInstalled={refreshInstalled}
+          groupsConfig={groupsConfig}
+          onGroupsChange={saveGroups}
+          selectedGroupId={selectedGroupId}
+        />
       </div>
     </div>
   );
