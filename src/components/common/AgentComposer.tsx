@@ -52,7 +52,7 @@ export function AgentComposer({ trayMode = false }: AgentComposerProps) {
       {/* Agent tabs */}
       <div className="flex items-center shrink-0">
         <AgentSwitcher variant="tab" />
-        <TunnelIndicator />
+        <TunnelIndicator variant="switch" />
       </div>
 
       {/* Input area */}

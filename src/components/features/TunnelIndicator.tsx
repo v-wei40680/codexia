@@ -5,11 +5,16 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import { Switch } from '@/components/ui/switch'
 import { useTunnel } from '@/hooks/useTunnel'
 import { isTauri, isPhone } from '@/hooks/runtime'
 import { useSettingsStore } from '@/stores/settings/useSettingsStore'
 
-export function TunnelIndicator() {
+interface TunnelIndicatorProps {
+  variant?: 'icon' | 'switch'
+}
+
+export function TunnelIndicator({ variant = 'icon' }: TunnelIndicatorProps) {
   const { status, loading, error, start, stop } = useTunnel()
   const setP2pAutoStart = useSettingsStore((s) => s.setP2pAutoStart)
 
@@ -18,6 +23,20 @@ export function TunnelIndicator() {
 
   // Desktop only — mobile connects via useP2PConnection in App.tsx
   if (!isTauri() || isPhone) return null
+
+  if (variant === 'switch') {
+    return (
+      <div className="flex items-center gap-1.5 px-1">
+        <span className="text-xs text-muted-foreground">Remote</span>
+        <Switch
+          checked={status.connected}
+          onCheckedChange={(v) => v ? handleStart() : handleStop()}
+          disabled={loading}
+          className="scale-75 origin-right"
+        />
+      </div>
+    )
+  }
 
   return (
     <Tooltip>
