@@ -6,10 +6,6 @@ interface CursorPosition {
 }
 
 interface EditorState {
-  // Theme settings
-  isDarkTheme: boolean;
-  setIsDarkTheme: (isDark: boolean) => void;
-
   // Search state
   searchTerm: string;
   searchResults: number[];
@@ -38,9 +34,6 @@ interface EditorState {
 }
 
 export const useEditorStore = create<EditorState>((set, get) => ({
-  // Theme settings
-  isDarkTheme: false,
-  setIsDarkTheme: (isDark) => set({ isDarkTheme: isDark }),
 
   // Search state
   searchTerm: '',
