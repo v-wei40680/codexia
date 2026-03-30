@@ -1,22 +1,16 @@
 import { DxtCard } from './DxdCard';
 import DxtDetail from './DxtDetail';
-import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 import { useDxt } from './useDxt';
+import { usePluginStore } from '@/stores';
 
 export default function DxtView({ refreshTrigger }: { refreshTrigger?: number } = {}) {
   const { dxtList, search, setSearch, loading, handleSearch } = useDxt(refreshTrigger);
-  const [selectedDxt, setSelectedDxt] = useState<{ user: string; repo: string } | null>(null);
+  const { selectedDxt, setSelectedDxt } = usePluginStore();
 
   if (selectedDxt) {
-    return (
-      <DxtDetail
-        user={selectedDxt.user}
-        repo={selectedDxt.repo}
-        onBack={() => setSelectedDxt(null)}
-      />
-    );
+    return <DxtDetail user={selectedDxt.user} repo={selectedDxt.repo} />;
   }
 
   return (

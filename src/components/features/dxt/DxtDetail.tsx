@@ -1,4 +1,3 @@
-import { BackButton } from './BackButton';
 import { UserConfigForm, Footer, ToolPrompt } from '@/components/features/dxt';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
@@ -131,11 +130,9 @@ function sanitizeManifest(raw: any) {
 export default function DxtDetail({
   user,
   repo,
-  onBack,
 }: {
   user: string;
   repo: string;
-  onBack: () => void;
 }) {
   const { cwd, selectedAgent } = useWorkspaceStore();
   const { mcpScope: selectedScope } = usePluginStore();
@@ -315,7 +312,6 @@ export default function DxtDetail({
   return (
     <div className="flex flex-col h-full">
       <div className="flex gap-2">
-        <BackButton onClick={onBack} />
         <h1 className="text-2xl font-bold mb-2">{manifest.display_name ?? manifest.name}</h1>
       </div>
       <div className="flex-1 overflow-y-auto min-h-0 px-2">

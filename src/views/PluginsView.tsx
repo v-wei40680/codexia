@@ -64,7 +64,7 @@ function TabSwitcher<T extends string>({
 
 export default function PluginsView() {
   const isMobile = useIsMobile();
-  const [tab, setTab] = useState<ActiveTab>('manage');
+  const [tab, setTab] = useState<ActiveTab>('Skills');
   const [manageTab, setManageTab] = useState<ManageTab>('MCPs');
   const [addTab, setAddTab] = useState<AddTab>('MCP');
   const [refreshTrigger, setRefreshTrigger] = useState(0);
@@ -74,7 +74,7 @@ export default function PluginsView() {
   const { selectedAgent } = useWorkspaceStore();
   const { isSidebarOpen } = useLayoutStore();
   const { needsTrafficLightOffset } = useTrafficLightConfig(isSidebarOpen);
-  const { skillScope: scope, setSkillScope: setScope } = usePluginStore();
+  const { skillScope: scope, setSkillScope: setScope, selectedDxt, setSelectedDxt } = usePluginStore();
 
   useEffect(() => {
     readSkillGroups()
@@ -97,33 +97,48 @@ export default function PluginsView() {
     <div className="flex flex-col h-screen">
       <div className={`flex items-center gap-1.5 p-2 ${needsTrafficLightOffset && 'pl-32'}`} data-tauri-drag-region>
 
-        {tab === 'add' ? (
-          <>
-            <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => setTab('manage')}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <TabSwitcher tabs={['MCP', 'Skill'] as const} active={addTab} onChange={setAddTab} showLabel={!isMobile} />
-            <div className="flex-1" />
-            <AgentSwitcher />
-          </>
+        {/* Back button: shown in add tab or dxt detail */}
+        {(tab === 'add' || (tab === 'MCP' && selectedDxt)) && (
+          <Button variant="ghost" size="icon" className="h-8 w-8"
+            onClick={() => tab === 'add' ? setTab('manage') : setSelectedDxt(null)}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+        )}
+
+        {/* Tab switcher: shown in normal browsing */}
+        {tab === 'manage' ? (
+          <Button variant="ghost" size="sm" onClick={() => setTab('MCP')}>
+            <ArrowLeft className="h-4 w-4" />
+            {isMobile ? '' : 'Plugin'}
+          </Button>
         ) : (
           <>
-            <TabSwitcher tabs={['MCP', 'Skills'] as const} active={tab as 'MCP' | 'Skills'} onChange={(t) => setTab(t)} showLabel={!isMobile} />
+            {tab !== 'add' && !selectedDxt && (
+              <TabSwitcher tabs={['MCP', 'Skills'] as const} active={tab as 'MCP' | 'Skills'} onChange={(t) => { setTab(t); }} showLabel={!isMobile} />
+            )}
+            {tab === 'add' && (
+              <TabSwitcher tabs={['MCP', 'Skill'] as const} active={addTab} onChange={setAddTab} showLabel={!isMobile} />
+            )}</>
+        )}
 
-            <div className="flex-1" />
+        <div className="flex-1" />
 
-            <Button
-              variant="ghost"
-              size="sm"
-              className={`h-8 gap-1.5 text-sm ${tab === 'manage' ? 'bg-background text-foreground shadow-sm' : ''}`}
-              onClick={() => setTab(tab === 'manage' ? 'MCP' : 'manage')}
-            >
-              <Settings className="h-3.5 w-3.5" />
-              {isMobile ? '' : 'Manage'}
-            </Button>
+        {tab !== 'add' && !selectedDxt && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className={`h-8 gap-1.5 text-sm ${tab === 'manage' ? 'bg-background text-foreground shadow-sm' : ''}`}
+            onClick={() => setTab(tab === 'manage' ? 'MCP' : 'manage')}
+          >
+            <Settings className="h-3.5 w-3.5" />
+            {isMobile ? '' : 'Manage'}
+          </Button>
+        )}
 
-            <AgentSwitcher />
+        <AgentSwitcher />
 
+        {tab !== 'add' && !selectedDxt && (
+          <>
             <Button
               variant="ghost"
               size="icon"
@@ -136,7 +151,6 @@ export default function PluginsView() {
             >
               <Plus className="h-4 w-4" />
             </Button>
-
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -161,7 +175,7 @@ export default function PluginsView() {
 
         {tab === 'manage' && (
           <div className="flex flex-col h-full">
-            <div className="flex items-center gap-0.5 px-3 pt-2 pb-1">
+            <div className="flex items-center gap-0.5 rounded-lg bg-muted/50 p-0.5 mx-3 mt-2">
               <TabSwitcher tabs={['MCPs', 'Skills'] as const} active={manageTab} onChange={setManageTab} />
             </div>
             <div className="flex-1 min-h-0 overflow-y-auto py-3">
