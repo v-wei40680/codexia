@@ -3,11 +3,9 @@ import { Search, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { BrowseTab } from '@/components/features/skills/BrowseTab';
-import { useWorkspaceStore } from '@/stores';
-import { useLayoutStore } from '@/stores';
+import { useWorkspaceStore, useLayoutStore, usePluginStore } from '@/stores';
 import { useTrafficLightConfig } from '@/hooks';
-import { ProjectSelector } from '@/components/project-selector';
-import { type SkillGroup, type SkillGroupsConfig, type SkillScope, listCentralSkills, readSkillGroups, writeSkillGroups } from '@/services';
+import { type SkillGroup, type SkillGroupsConfig, listCentralSkills, readSkillGroups, writeSkillGroups } from '@/services';
 import { cn } from '@/lib/utils';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { toast } from '@/components/ui/use-toast';
@@ -16,9 +14,8 @@ import { v4 as uuidv4 } from 'uuid';
 export default function SkillsView() {
   const { cwd } = useWorkspaceStore();
   const { isSidebarOpen } = useLayoutStore();
+  const { skillScope: scope } = usePluginStore();
   useTrafficLightConfig(isSidebarOpen);
-
-  const [scope, setScope] = useState<SkillScope>('user');
   const [searchQuery, setSearchQuery] = useState('');
   const [installedRefreshKey, setInstalledRefreshKey] = useState(0);
   const [installedNames, setInstalledNames] = useState<Set<string>>(new Set());
@@ -79,7 +76,6 @@ export default function SkillsView() {
   return (
     <div className="flex flex-col h-full">
 
-      {/* Search row */}
       <div>
         <span className="flex items-center justify-between gap-2 px-4 h-12">
           <div className="relative">
@@ -92,29 +88,6 @@ export default function SkillsView() {
             />
           </div>
         </span>
-
-        {/* Scope selector */}
-        <div className="flex items-center justify-between px-4">
-          <span className='flex'>
-            <div className="flex items-center gap-0.5 rounded-lg bg-muted/50 p-0.5">
-              {(['user', 'project'] as const).map((s) => (
-                <Button
-                  key={s}
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setScope(s)}
-                  className={cn(
-                    'h-6 px-2.5 text-[10px] uppercase tracking-wider',
-                    scope === s ? 'bg-background text-foreground shadow-sm' : 'text-muted-foreground',
-                  )}
-                >
-                  {s}
-                </Button>
-              ))}
-            </div>
-            {scope === 'project' && <ProjectSelector />}
-          </span>
-        </div>
 
         {/* Groups bar */}
         <div className="flex items-center gap-1.5 px-4 py-1.5 min-h-[32px]">

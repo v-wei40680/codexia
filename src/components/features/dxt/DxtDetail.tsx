@@ -6,8 +6,7 @@ import { DxtManifestSchema } from './schemas';
 import { useEffect, useState } from 'react';
 import { z } from 'zod';
 import { MCPConfigType } from '@/types/cc/cc-mcp';
-import { McpConfigScopeSelector } from '@/components/cc/mcp/McpConfigScopeSelector';
-import { useWorkspaceStore } from '@/stores';
+import { useWorkspaceStore, usePluginStore } from '@/stores';
 import {
   loadManifest,
   unifiedAddMcpServer,
@@ -139,13 +138,13 @@ export default function DxtDetail({
   onBack: () => void;
 }) {
   const { cwd, selectedAgent } = useWorkspaceStore();
+  const { mcpScope: selectedScope } = usePluginStore();
   const [manifest, setManifest] = useState<z.infer<typeof DxtManifestSchema> | null>(null);
   const [userConfig, setUserConfig] = useState<Record<string, any>>({});
   const [loading, setLoading] = useState(true);
   const [enabled, setEnabled] = useState(false);
   const [isInstalled, setIsInstalled] = useState(false);
   const [installedScope, setInstalledScope] = useState<string | null>(null);
-  const [selectedScope, setSelectedScope] = useState<string>('local');
 
   // First useEffect: load manifest
   useEffect(() => {
@@ -327,16 +326,8 @@ export default function DxtDetail({
 
         <div className="mb-6 border rounded-xl overflow-hidden bg-card shadow-sm">
           <div className="p-4 space-y-6">
-            {/* Configuration Grid */}
-            {selectedAgent === 'cc' && (
-                <McpConfigScopeSelector 
-                  selectedScope={selectedScope} 
-                  onScopeChange={setSelectedScope} 
-                />
-            )}
-
             {/* Enable/Disable and Add button */}
-            <div className={`${selectedAgent === 'cc' ? 'pt-4 border-t' : ''} flex justify-between items-center`}>
+            <div className="flex justify-between items-center">
               <div className="flex flex-col gap-1">
                 <span className="flex items-center gap-3">
                   <Switch onCheckedChange={changeStatus} checked={enabled} />

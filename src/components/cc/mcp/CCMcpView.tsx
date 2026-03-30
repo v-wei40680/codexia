@@ -5,8 +5,7 @@ import { Card } from '@/components/ui/card';
 import type { ClaudeCodeMcpServer } from '@/types/cc/cc-mcp';
 import { toast } from 'sonner';
 import { McpServerCard } from '@/components/cc/mcp/McpServerCard';
-import { McpConfigScopeSelector } from '@/components/cc/mcp/McpConfigScopeSelector';
-import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
+import { useWorkspaceStore } from '@/stores';
 import { ccMcpList } from '@/services';
 
 interface CCMcpViewProps {
@@ -17,7 +16,6 @@ export default function CCMcpView({ refreshKey }: CCMcpViewProps) {
   const { cwd } = useWorkspaceStore();
   const [servers, setServers] = useState<ClaudeCodeMcpServer[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [selectedScope, setSelectedScope] = useState<string>('local');
 
   const workingDir = cwd || '';
 
@@ -48,13 +46,6 @@ export default function CCMcpView({ refreshKey }: CCMcpViewProps) {
       >
         <RefreshCw className={`h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
       </Button>
-      <McpConfigScopeSelector 
-        selectedScope={selectedScope} 
-        onScopeChange={setSelectedScope} 
-        onProjectChange={fetchServers} 
-        disabled={isLoading} 
-      />
-
       {!workingDir ? (
         <Card className="p-8 text-center flex-1 flex flex-col justify-center items-center">
           <p className="text-xs text-muted-foreground">Please select a project directory first.</p>

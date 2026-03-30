@@ -1,31 +1,33 @@
-import { McpProjectSelector } from './McpProjectSelector';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { useEffect, useRef } from 'react';
+import { ProjectSelector } from '@/components/project-selector';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { usePluginStore, useWorkspaceStore, type McpScope } from '@/stores';
 
 interface McpConfigScopeSelectorProps {
-  selectedScope: string;
-  onScopeChange: (scope: string) => void;
   onProjectChange?: () => void;
-  disabled?: boolean;
 }
 
-export function McpConfigScopeSelector({
-  selectedScope,
-  onScopeChange,
-  onProjectChange,
-  disabled
-}: McpConfigScopeSelectorProps) {
+export function McpConfigScopeSelector({ onProjectChange }: McpConfigScopeSelectorProps) {
+  const { mcpScope, setMcpScope } = usePluginStore();
+  const { cwd } = useWorkspaceStore();
+  const mountedRef = useRef(false);
+
+  useEffect(() => {
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      return;
+    }
+    onProjectChange?.();
+  }, [cwd]);
+
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-      {/* Scope Selection */}
-      <Select value={selectedScope} onValueChange={onScopeChange} disabled={disabled}>
-        <SelectTrigger className="w-full h-10 bg-background/50 backdrop-blur-sm border-muted-foreground/20 hover:border-primary/50 transition-colors">
-          <SelectValue placeholder="Select Scope" />
+    <div className="flex items-center gap-2">
+      Scope:
+      <Select value={mcpScope} onValueChange={(s) => setMcpScope(s as McpScope)}>
+        <SelectTrigger>
+          <SelectValue placeholder="Select Scope">
+            {mcpScope}
+          </SelectValue>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="local">Local (This Project Only)</SelectItem>
@@ -33,8 +35,8 @@ export function McpConfigScopeSelector({
           <SelectItem value="global">Global (User Level)</SelectItem>
         </SelectContent>
       </Select>
-      {selectedScope !== 'global' && (
-        <McpProjectSelector onProjectChange={onProjectChange} disabled={disabled} />
+      {mcpScope !== 'global' && (
+        <ProjectSelector />
       )}
     </div>
   );
