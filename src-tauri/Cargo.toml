@@ -56,6 +56,12 @@ core = [
   "dep:codex-finder",
   # scheduling (automation)
   "dep:tokio-cron-scheduler",
+  # in-process axum router for P2P backend (no port opened, no web feature needed)
+  "dep:axum",
+  "dep:tower",
+  "dep:tower-http",
+  "dep:http-body-util",
+  "dep:httparse",
 ]
 # desktop: core + P2P server deps; omit with --no-default-features for iOS builds
 desktop = [
@@ -73,12 +79,6 @@ desktop = [
   "dep:rcgen",
   "dep:rustls",
   "dep:local-ip-address",
-  # in-process axum router for P2P backend (no port opened, no web feature needed)
-  "dep:axum",
-  "dep:tower",
-  "dep:tower-http",
-  "dep:http-body-util",
-  "dep:httparse",
 ]
 tauri = [
   "dep:tokio",
