@@ -167,7 +167,7 @@ export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Pr
   };
 
   const doDeleteWorktree = async (session: SessionData) => {
-    if (!session.project.includes('/.codexia-worktrees/')) return;
+    if (!session.project.includes('/.codexia/worktrees/')) return;
     const worktreeKey = session.project.split('/').pop() ?? '';
     const mainCwd = useWorkspaceStore.getState().cwd;
     if (!mainCwd) return;
@@ -241,7 +241,7 @@ export function ClaudeCodeSessionList({ project, sessions, onSelectSession }: Pr
                       <Copy className="h-3 w-3" />
                       <span>Copy Session ID</span>
                     </DropdownMenuItem>
-                    {session.project.includes('/.codexia-worktrees/') && (
+                    {session.project.includes('/.codexia/worktrees/') && (
                       <DropdownMenuItem
                         onClick={(e) => {
                           e.stopPropagation();

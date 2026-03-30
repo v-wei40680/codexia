@@ -290,7 +290,7 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
 
   const handleDeleteWorktree = useCallback(async (thread: ThreadListItem) => {
     const { cwd: mainCwd } = useWorkspaceStore.getState();
-    if (!mainCwd || !thread.cwd.includes('/.codexia-worktrees/')) return;
+    if (!mainCwd || !thread.cwd.includes('/.codexia/worktrees/')) return;
     const worktreeKey = thread.cwd.split('/').pop() ?? '';
     try {
       await gitDeleteThreadWorktree(mainCwd, worktreeKey);
@@ -500,7 +500,7 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
               <ContextMenuItem onSelect={() => void handleArchiveThread(thread.id)}>
                 Archive
               </ContextMenuItem>
-              {thread.cwd.includes('/.codexia-worktrees/') && (
+              {thread.cwd.includes('/.codexia/worktrees/') && (
                 <ContextMenuItem
                   onSelect={() => void handleDeleteWorktree(thread)}
                 >
