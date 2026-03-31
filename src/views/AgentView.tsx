@@ -8,13 +8,7 @@ import { codexService } from '@/services/codexService';
 import { ArrowLeft, X, Maximize2 } from 'lucide-react';
 import type { AgentCenterCard } from '@/stores/useAgentCenterStore';
 import { AgentIcon } from '@/components/common/AgentIcon';
-import { AgentComposer, GetProButton } from '@/components/common';
-import { openUrl } from '@tauri-apps/plugin-opener';
-import { Lock, Plus } from 'lucide-react';
-
-import { PRICING_URL } from '@/lib/constants';
-import { useProTrial } from '@/hooks/useProTrial';
-import { Sparkles } from 'lucide-react';
+import { AgentComposer } from '@/components/common';
 import { CodexGridCard } from './CodexGridCard';
 import { CCGridCard } from './CCGridCard';
 
@@ -172,32 +166,10 @@ function AgentFullscreen() {
   );
 }
 
-function GhostCard() {
-  return (
-    <button
-      onClick={() => void openUrl(PRICING_URL)}
-      className="flex flex-col items-center justify-center gap-3 rounded-lg border-2 border-dashed border-border/50 bg-muted/20 text-muted-foreground transition-colors hover:border-amber-400/60 hover:bg-amber-50/30 hover:text-amber-600 dark:hover:bg-amber-900/10 min-h-[160px]"
-    >
-      <div className="flex items-center justify-center rounded-full bg-muted/50 p-3">
-        <Lock className="h-4 w-4" />
-      </div>
-      <div className="text-center">
-        <p className="text-xs font-medium">Add more agents</p>
-        <p className="mt-0.5 text-[10px] opacity-60">Upgrade to Pro</p>
-      </div>
-      <div className="flex items-center gap-1 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-1 text-[10px] font-semibold text-white">
-        <Plus className="h-3 w-3" />
-        Get Pro
-      </div>
-    </button>
-  );
-}
-
 type TabFilter = 'all' | 'idle' | 'running';
 
 function AgentGrid() {
-  const { isPro, trialDaysLeft } = useProTrial();
-  const { cards, removeCard, setCurrentAgentCardId, currentAgentCardId, maxCards } = useAgentCenterStore();
+  const { cards, removeCard, setCurrentAgentCardId, currentAgentCardId } = useAgentCenterStore();
   const { setIsAgentExpanded } = useLayoutStore();
   const { switchToSession, sessionLoadingMap, activeSessionId, setActiveSessionId } = useCCStore();
   const { threadStatusMap, currentThreadId } = useCodexStore();
@@ -255,25 +227,6 @@ function AgentGrid() {
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      {/* Trial banner */}
-      {!isPro && !import.meta.env.DEV && trialDaysLeft !== null && (
-        <div className="flex items-center justify-between gap-2 border-b border-violet-500/20 bg-violet-500/10 px-3 py-1.5 shrink-0">
-          <span className="flex items-center gap-1.5 text-xs text-violet-300">
-            <Sparkles className="h-3 w-3 shrink-0" />
-            Pro feature
-            {trialDaysLeft > 0
-              ? <> · <span className="font-medium text-violet-200">{trialDaysLeft}d</span> left in trial</>
-              : ' · Trial ended'}
-          </span>
-          <button
-            onClick={() => void openUrl(PRICING_URL)}
-            className="shrink-0 rounded bg-violet-500 px-2 py-0.5 text-[10px] font-medium text-white hover:bg-violet-400 transition-colors"
-          >
-            Upgrade
-          </button>
-        </div>
-      )}
-
       {/* Tab bar */}
       <div className="flex items-center gap-1 px-3 py-2 border-b shrink-0">
         {TABS.map(({ key, label }) => (
@@ -295,9 +248,6 @@ function AgentGrid() {
             </span>
           </button>
         ))}
-        <div className="ml-auto">
-          <GetProButton />
-        </div>
       </div>
 
       {/* Grid */}
@@ -311,9 +261,6 @@ function AgentGrid() {
             className="grid gap-3"
             style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))' }}
           >
-            {tab === 'all' && cards.length >= maxCards && maxCards !== Infinity && (
-              <GhostCard />
-            )}
             {visible.map((card) => (
               <GridCard
                 key={card.id}
