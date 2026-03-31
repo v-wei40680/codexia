@@ -350,8 +350,23 @@ pub fn run() {
     };
 
     builder
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application")
+        .run(|app, event| {
+            // macOS: clicking the Dock icon when the main window is hidden should show it.
+            #[cfg(target_os = "macos")]
+            {
+            use tauri::Manager;
+            if let tauri::RunEvent::Reopen { has_visible_windows, .. } = &event {
+                if !has_visible_windows {
+                    if let Some(window) = app.get_webview_window("main") {
+                        let _ = window.show();
+                        let _ = window.set_focus();
+                    }
+                }
+            }
+            }
+        });
 }
 
 #[cfg(all(feature = "tauri", feature = "core"))]
