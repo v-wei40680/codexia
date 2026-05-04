@@ -3,7 +3,7 @@ use super::types::InsightFiltersParams;
 use axum::Json;
 
 use crate::features::insights::{AgentHeatmaps, FilterOptions, Rankings};
-use crate::web_server::types::ErrorResponse;
+use crate::web::types::ErrorResponse;
 
 pub(crate) async fn api_get_agent_heatmaps(
     Json(params): Json<InsightFiltersParams>,

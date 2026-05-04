@@ -9,8 +9,8 @@ use crate::features::filesystem::{
     file_parsers::{pdf::read_pdf_content, xlsx::read_xlsx_content},
     file_types::FileEntry,
 };
-use crate::web_server::types::{ErrorResponse, WebServerState};
-use crate::web_server::filesystem_watch;
+use crate::web::types::{ErrorResponse, WebServerState};
+use crate::web::filesystem_watch;
 
 #[derive(Deserialize)]
 pub(crate) struct FilesystemPathParams {

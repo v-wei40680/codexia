@@ -44,7 +44,7 @@ codexia/
 
 ## web server
 
-- new tauri command add a api to `src-tauri/src/web_server/handlers/` 
+- new tauri command add a api to `src-tauri/src/web/handlers/` 
 - invoke add to `src/services/tauri/`
 
 ## p2p stun for remote control

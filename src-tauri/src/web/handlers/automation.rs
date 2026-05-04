@@ -6,7 +6,7 @@ use super::types::{
 use axum::{Json, extract::State as AxumState, http::StatusCode};
 
 use crate::features::automation::{AutomationRunRecord, AutomationTask, list_automations};
-use crate::web_server::types::{ErrorResponse, WebServerState};
+use crate::web::types::{ErrorResponse, WebServerState};
 
 pub(crate) async fn api_list_automations(
     AxumState(state): AxumState<WebServerState>,

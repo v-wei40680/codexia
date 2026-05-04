@@ -10,7 +10,7 @@ use crate::features::git::{
     git_file_diff_meta, git_list_branches, git_remove_worktree, git_reverse_files,
     git_stage_files, git_status, git_unstage_files,
 };
-use crate::web_server::types::ErrorResponse;
+use crate::web::types::ErrorResponse;
 
 #[derive(Deserialize)]
 pub(crate) struct GitCwdParams {

@@ -15,10 +15,10 @@ mod commands;
 pub mod p2p;
 // web_server compiles for the standalone web binary AND the desktop Tauri app
 // (the latter uses it for in-process P2P routing without opening a port).
-#[cfg(any(feature = "web", all(feature = "core", feature = "tauri")))]
-mod web_server;
 #[cfg(feature = "web")]
 pub mod web;
+#[cfg(all(feature = "core", feature = "tauri", not(feature = "web")))]
+mod web;
 #[cfg(all(feature = "core", feature = "tauri", any(windows, target_os = "linux")))]
 mod window;
 

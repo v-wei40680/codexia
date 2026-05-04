@@ -14,15 +14,15 @@ It is used by the web frontend and can also be used for remote control scenarios
 
 ## Key Modules
 
-- `src-tauri/src/web_server/server.rs`
+- `src-tauri/src/web/server.rs`
   - Starts the Axum server and binds the TCP listener.
-- `src-tauri/src/web_server/router.rs`
+- `src-tauri/src/web/router.rs`
   - Registers all routes (`/health`, `/ws`, `/api/*`) and fallback static serving.
-- `src-tauri/src/web_server/websocket.rs`
+- `src-tauri/src/web/websocket.rs`
   - Handles WebSocket upgrade and broadcasts events to connected clients.
-- `src-tauri/src/web_server/handlers.rs`
+- `src-tauri/src/web/handlers.rs`
   - Implements HTTP handlers for API routes.
-- `src-tauri/src/web_server/types.rs`
+- `src-tauri/src/web/types.rs`
   - Shared server state (`WebServerState`) and error response types.
 
 ## Runtime Architecture
@@ -97,7 +97,7 @@ Entry point in `main.rs`:
 - `codexia --web`
 - `codexia web`
 
-This starts only the web server via `codexia_lib::start_web_server(...)`.
+This starts only the web server via `codexia_lib::start_web(...)`.
 
 ### Frontend + backend development
 
@@ -118,7 +118,7 @@ This runs:
 
 Unit test location:
 
-- `src-tauri/src/web_server/websocket.rs`
+- `src-tauri/src/web/websocket.rs`
   - `websocket_route_accepts_connection_and_forwards_events`
 
 What it validates:

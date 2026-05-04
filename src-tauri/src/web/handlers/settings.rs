@@ -1,7 +1,7 @@
 use axum::{Json, http::StatusCode};
 use serde_json::Value;
 
-use crate::web_server::types::ErrorResponse;
+use crate::web::types::ErrorResponse;
 use super::to_error_response;
 
 fn settings_path() -> Result<std::path::PathBuf, String> {

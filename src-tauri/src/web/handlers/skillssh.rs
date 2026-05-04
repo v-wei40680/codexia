@@ -3,7 +3,7 @@ use super::types::{SkillsshInstallParams, SkillsshLeaderboardParams, SkillsshSea
 use axum::Json;
 
 use crate::features::skillssh::{self, MarketSkill};
-use crate::web_server::types::ErrorResponse;
+use crate::web::types::ErrorResponse;
 
 pub(crate) async fn api_skillssh_leaderboard(
     Json(params): Json<SkillsshLeaderboardParams>,

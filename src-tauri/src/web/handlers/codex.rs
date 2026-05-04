@@ -12,7 +12,7 @@ use codex_app_server_protocol::{
     ThreadStartParams, TurnInterruptParams, TurnStartParams,
 };
 use serde_json::{Value, json};
-use crate::web_server::types::{ErrorResponse, WebServerState};
+use crate::web::types::{ErrorResponse, WebServerState};
 
 use crate::codex::scan::{list_archived_threads_payload, list_threads_payload};
 use crate::codex::AppState;

@@ -2,8 +2,8 @@ use super::to_error_response;
 use axum::{Json, extract::State as AxumState, http::StatusCode};
 use serde::Deserialize;
 
-use crate::web_server::terminal as web_terminal;
-use crate::web_server::types::{ErrorResponse, WebServerState};
+use crate::web::terminal as web_terminal;
+use crate::web::types::{ErrorResponse, WebServerState};
 
 #[derive(Deserialize)]
 pub(crate) struct TerminalStartParams {

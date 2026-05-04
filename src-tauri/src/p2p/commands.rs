@@ -57,10 +57,10 @@ pub async fn p2p_start(
             use std::sync::Arc;
             use tauri::Manager;
             use tokio::sync::broadcast;
-            use crate::web_server::{WebServerState, create_router};
+            use crate::web::{WebServerState, create_router};
             use crate::features::sleep::SleepState;
-            use crate::web_server::terminal::WebTerminalState;
-            use crate::web_server::filesystem_watch::WebWatchState;
+            use crate::web::terminal::WebTerminalState;
+            use crate::web::filesystem_watch::WebWatchState;
 
             let codex_state = Arc::new(
                 app.try_state::<crate::codex::AppState>()

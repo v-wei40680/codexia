@@ -351,7 +351,7 @@
 			path = features;
 			sourceTree = "<group>";
 		};
-		9FDB9231655A8DFCF3B2DE41 /* web_server */ = {
+		9FDB9231655A8DFCF3B2DE41 /* web */ = {
 			isa = PBXGroup;
 			children = (
 				8E95B1D66EDCD1AAA74E1149 /* filesystem_watch.rs */,
@@ -364,7 +364,7 @@
 				E97D99DC37640607898E9FE3 /* websocket.rs */,
 				339E849E44700892A5127BF3 /* handlers */,
 			);
-			path = web_server;
+			path = web;
 			sourceTree = "<group>";
 		};
 		A84D4E1797C97C44A15DE906 /* bindings */ = {
@@ -404,7 +404,7 @@
 				07E522D3B02917EAB2792A13 /* db */,
 				92500638F4BB5BC1FAAF2902 /* features */,
 				AAC3476DA7227F8024C79353 /* p2p */,
-				9FDB9231655A8DFCF3B2DE41 /* web_server */,
+				9FDB9231655A8DFCF3B2DE41 /* web */,
 			);
 			name = src;
 			path = ../../src;

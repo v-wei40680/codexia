@@ -7,7 +7,7 @@ use axum::{Json, http::StatusCode};
 
 use crate::db;
 use crate::db::notes::Note;
-use crate::web_server::types::ErrorResponse;
+use crate::web::types::ErrorResponse;
 
 pub(crate) async fn api_create_note(
     Json(params): Json<CreateNoteParams>,

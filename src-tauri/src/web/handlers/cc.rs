@@ -7,7 +7,7 @@ use super::types::{
 };
 use axum::{Json, extract::State as AxumState, http::StatusCode};
 use serde_json::Value;
-use crate::web_server::types::{ErrorResponse, WebServerState};
+use crate::web::types::{ErrorResponse, WebServerState};
 
 use crate::cc::mcp::{self as cc_mcp_commands, ClaudeCodeMcpServer, ClaudeCodeResponse};
 use crate::cc::services::{

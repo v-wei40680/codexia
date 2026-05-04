@@ -2,7 +2,7 @@ use super::to_error_response;
 use axum::{Json, http::StatusCode};
 use serde::Deserialize;
 use serde_json::Value;
-use crate::web_server::types::ErrorResponse;
+use crate::web::types::ErrorResponse;
 
 use crate::features::dxt::{
     check_manifests_exist, download_and_extract_manifests, load_manifest, load_manifests,
