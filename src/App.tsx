@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef, lazy, Suspense } from 'react';
 import { listen } from '@tauri-apps/api/event';
-import { invoke } from '@tauri-apps/api/core';
 import './App.css';
 import { useCodexEvents } from '@/hooks/codex';
 import { useDeepLink } from '@/hooks/useDeepLink';
@@ -17,17 +16,8 @@ import { StoreErrorBoundary } from '@/components/StoreErrorBoundary';
 import { useP2PConnection } from '@/hooks/useP2PConnection';
 import { useTunnel } from '@/hooks/useTunnel'
 import { useSettingsStore } from '@/stores/settings/useSettingsStore';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
 import { P2PStatusDialog } from '@/components/dialogs/P2PStatusDialog';
+import { QuitDialog } from '@/components/dialogs/QuitDialog';
 
 function AppShell() {
   const [quitDialogOpen, setQuitDialogOpen] = useState(false);
@@ -112,20 +102,7 @@ function AppShell() {
       ) :
         <AnalyticsConsentDialog />
       }
-      <AlertDialog open={quitDialogOpen} onOpenChange={setQuitDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Quit Codexia?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to quit? All running agents will be stopped.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => invoke('quit_app')}>Quit</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <QuitDialog open={quitDialogOpen} onOpenChange={setQuitDialogOpen} />
     </>
   );
 }
