@@ -59,8 +59,9 @@ pub fn run() {
         use crate::state::WatchState;
         use std::sync::Arc;
         use std::time::Instant;
-        use tauri::menu::{Menu, MenuItem, PredefinedMenuItem, Submenu};
-        use tauri::{Emitter, Manager};
+        use tauri::Manager;
+        #[cfg(target_os = "macos")]
+        use tauri::{menu::{Menu, MenuItem, PredefinedMenuItem, Submenu}, Emitter};
 
         let builder = tauri::Builder::default()
             .plugin(tauri_plugin_os::init())
@@ -101,10 +102,7 @@ pub fn run() {
                     &PredefinedMenuItem::select_all(app, None)?,
                 ])?;
 
-                let show = MenuItem::with_id(app, "app-show", "Show Main Window", true, None::<&str>)?;
-                let window_submenu = Submenu::with_items(app, "Window", true, &[&show])?;
-
-                Menu::with_items(app, &[&app_submenu, &edit_submenu, &window_submenu])
+                Menu::with_items(app, &[&app_submenu, &edit_submenu])
             })
             .on_menu_event(|app, event| match event.id().as_ref() {
                 "app-quit" => {
@@ -113,12 +111,6 @@ pub fn run() {
                         let _ = window.set_focus();
                     }
                     let _ = app.emit("quit-requested", ());
-                }
-                "app-show" => {
-                    if let Some(window) = app.get_webview_window("main") {
-                        let _ = window.show();
-                        let _ = window.set_focus();
-                    }
                 }
                 "app-about" => {
                     if let Some(window) = app.get_webview_window("about") {
@@ -129,8 +121,8 @@ pub fn run() {
                         "about",
                         tauri::WebviewUrl::App("/about".into()),
                     )
-                    .title("About Codexia")
-                    .inner_size(360.0, 320.0)
+                    .title("")
+                    .inner_size(360.0, 360.0)
                     .resizable(false)
                     .decorations(true)
                     .focused(true)
@@ -351,14 +343,14 @@ pub fn run() {
     builder
         .build(tauri::generate_context!())
         .expect("error while building tauri application")
-        .run(|app, event| {
+        .run(|_app, _event| {
             // macOS: clicking the Dock icon when the main window is hidden should show it.
             #[cfg(target_os = "macos")]
             {
             use tauri::Manager;
-            if let tauri::RunEvent::Reopen { has_visible_windows, .. } = &event {
+            if let tauri::RunEvent::Reopen { has_visible_windows, .. } = &_event {
                 if !has_visible_windows {
-                    if let Some(window) = app.get_webview_window("main") {
+                    if let Some(window) = _app.get_webview_window("main") {
                         let _ = window.show();
                         let _ = window.set_focus();
                     }
