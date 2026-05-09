@@ -9,8 +9,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { BottomTerminal } from '../terminal/BottomTerminal';
 import { useTrafficLightConfig } from '@/hooks';
 import { useEdgeSwipe } from '@/hooks/useEdgeSwipe';
-import { useProTrial } from '@/hooks/useProTrial';
-import { openUrl } from '@tauri-apps/plugin-opener';
 
 const SettingsView = lazy(() =>
   import('@/components/settings').then((module) => ({ default: module.SettingsView })),
@@ -145,7 +143,6 @@ const ViewLoadingFallback = () => (
 
 export function AppLayout() {
   const { view, setView, isSidebarOpen, setSidebarOpen, isTerminalOpen, setIsTerminalOpen } = useLayoutStore();
-  const { isPro, inTrial } = useProTrial();
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -168,21 +165,7 @@ export function AppLayout() {
           {view === 'history' && <History />}
           {view === 'login' && <LoginView />}
           {view === 'plugins' && <PluginsView />}
-          {view === 'insights' && (isPro || inTrial || import.meta.env.DEV ? <InsightsView /> : (
-            <div className="flex flex-col items-center justify-center h-full gap-4 text-center px-8">
-              <div className="text-4xl">📊</div>
-              <h2 className="text-lg font-semibold">Insights is a Pro feature</h2>
-              <p className="text-sm text-muted-foreground max-w-xs">
-                Upgrade to Pro to unlock agent usage analytics, heatmaps, and rankings.
-              </p>
-              <button
-                onClick={() => void openUrl('https://milisp.dev/pricing')}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-md text-sm bg-gradient-to-r from-amber-500 to-orange-500 text-white hover:from-amber-400 hover:to-orange-400 transition-colors"
-              >
-                Upgrade to Pro
-              </button>
-            </div>
-          ))}
+          {view === 'insights' && <InsightsView />}
         </Suspense>
       </div>
       {view === 'agent' && (

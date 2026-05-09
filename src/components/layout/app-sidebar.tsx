@@ -1,5 +1,4 @@
-import { BarChart2, History, ListFilter, Lock, Package2, Timer } from 'lucide-react';
-import { useAgentLimit } from '@/hooks/useAgentLimit';
+import { BarChart2, History, ListFilter, Package2, Timer } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useLayoutStore } from '@/stores';
 import { Button } from '@/components/ui/button';
@@ -42,7 +41,6 @@ const navBtnCls = (active: boolean) => `${navBtnBase} ${active ? navBtnActive : 
 
 export function AppSideBar() {
   const { cwd, setCwd, setSelectedAgent } = useWorkspaceStore();
-  const { isPro } = useAgentLimit();
   const { setView, view, activeSidebarTab, setActiveSidebarTab } = useLayoutStore();
   const { open: isSidebarOpen } = useSidebar();
   const { isMacos } = useTrafficLightConfig(isSidebarOpen);
@@ -115,7 +113,6 @@ export function AppSideBar() {
             >
               <BarChart2 className="h-4 w-4" />
               Insights
-              {!isPro && !import.meta.env.DEV && <Lock className="ml-auto h-3 w-3 text-muted-foreground" />}
             </Button>
 
             {showSidebarMarketplace && (
