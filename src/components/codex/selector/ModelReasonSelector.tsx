@@ -4,6 +4,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '@/components/ui/hover-card';
 import { listModels } from '@/services/tauri';
 import type { Model } from '@/bindings/v2';
 import type { ReasoningEffort } from '@/bindings';
@@ -49,35 +50,58 @@ function ModelList({ items, selectedId, onSelect }: ModelListProps) {
     );
   }
 
+  const topItems = items.slice(0, 2);
+  const otherItems = items.slice(2);
+
+  const renderItem = (item: ModelListItem) => (
+    <button
+      key={item.id}
+      type="button"
+      onClick={() => onSelect(item.id)}
+      className={cn(
+        'w-full rounded-md border px-2 py-1.5 text-left transition-colors',
+        selectedId === item.id
+          ? 'border-primary bg-accent'
+          : 'border-transparent hover:bg-accent/60',
+      )}
+    >
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <div className="flex flex-col gap-0.5">
+            <span className="text-xs">{item.label}</span>
+          </div>
+        </TooltipTrigger>
+        {item.description && (
+          <TooltipContent side="right">
+            <p className="max-w-[200px] text-xs">{item.description}</p>
+          </TooltipContent>
+        )}
+      </Tooltip>
+    </button>
+  );
+
   return (
     <TooltipProvider>
       <div className="max-h-80 space-y-1 overflow-y-auto pr-1">
-        {items.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            onClick={() => onSelect(item.id)}
-            className={cn(
-              'w-full rounded-md border px-2 py-1.5 text-left transition-colors',
-              selectedId === item.id
-                ? 'border-primary bg-accent'
-                : 'border-transparent hover:bg-accent/60',
-            )}
-          >
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="flex flex-col gap-0.5">
-                  <span className="text-xs">{item.label}</span>
-                </div>
-              </TooltipTrigger>
-              {item.description && (
-                <TooltipContent side="right">
-                  <p>{item.description}</p>
-                </TooltipContent>
-              )}
-            </Tooltip>
-          </button>
-        ))}
+        {topItems.map(renderItem)}
+
+        {otherItems.length > 0 && (
+          <HoverCard openDelay={100} closeDelay={100}>
+            <HoverCardTrigger asChild>
+              <button
+                type="button"
+                className="w-full rounded-md border border-transparent px-2 py-1.5 text-left text-xs transition-colors hover:bg-accent/60"
+              >
+                Other models...
+              </button>
+            </HoverCardTrigger>
+            <HoverCardContent side="right" align="start" className="w-64 p-2">
+              <div className="max-h-60 space-y-1 overflow-y-auto">
+                {otherItems.map(renderItem)}
+              </div>
+            </HoverCardContent>
+          </HoverCard>
+        )}
       </div>
     </TooltipProvider>
   );
