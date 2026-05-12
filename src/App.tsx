@@ -16,8 +16,7 @@ import { StoreErrorBoundary } from '@/components/StoreErrorBoundary';
 import { useP2PConnection } from '@/hooks/useP2PConnection';
 import { useTunnel } from '@/hooks/useTunnel'
 import { useSettingsStore } from '@/stores/settings/useSettingsStore';
-import { P2PStatusDialog } from '@/components/dialogs/P2PStatusDialog';
-import { QuitDialog } from '@/components/dialogs/QuitDialog';
+import { P2PStatusDialog, QuitDialog } from '@/components/dialogs';
 
 function AppShell() {
   const [quitDialogOpen, setQuitDialogOpen] = useState(false);
