@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { listModels } from '@/services/tauri';
 import type { Model } from '@/bindings/v2';
 import type { ReasoningEffort } from '@/bindings';
@@ -49,28 +50,36 @@ function ModelList({ items, selectedId, onSelect }: ModelListProps) {
   }
 
   return (
-    <div className="max-h-80 space-y-1 overflow-y-auto pr-1">
-      {items.map((item) => (
-        <button
-          key={item.id}
-          type="button"
-          onClick={() => onSelect(item.id)}
-          className={cn(
-            'w-full rounded-md border px-2 py-1.5 text-left transition-colors',
-            selectedId === item.id
-              ? 'border-primary bg-accent'
-              : 'border-transparent hover:bg-accent/60',
-          )}
-        >
-          <div className="flex flex-col gap-0.5">
-            <span className="text-xs">{item.label}</span>
-            {item.description && (
-              <span className="text-[10px] text-muted-foreground">{item.description}</span>
+    <TooltipProvider>
+      <div className="max-h-80 space-y-1 overflow-y-auto pr-1">
+        {items.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            onClick={() => onSelect(item.id)}
+            className={cn(
+              'w-full rounded-md border px-2 py-1.5 text-left transition-colors',
+              selectedId === item.id
+                ? 'border-primary bg-accent'
+                : 'border-transparent hover:bg-accent/60',
             )}
-          </div>
-        </button>
-      ))}
-    </div>
+          >
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-xs">{item.label}</span>
+                </div>
+              </TooltipTrigger>
+              {item.description && (
+                <TooltipContent side="right">
+                  <p>{item.description}</p>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          </button>
+        ))}
+      </div>
+    </TooltipProvider>
   );
 }
 
@@ -251,20 +260,28 @@ export function ModelReasonSelector() {
             <SelectValue placeholder="Default">{reasoningEffort.charAt(0)}</SelectValue>
           </SelectTrigger>
           <SelectContent>
-            {modelProvider === 'openai'
-              ? openAiReasoningOptions.map((option) => (
-                <SelectItem key={option.reasoningEffort} value={option.reasoningEffort}>
-                  <div className="flex flex-col gap-0.5">
-                    <span>{option.reasoningEffort}</span>
-                    <span className="text-[10px] text-muted-foreground">{option.description}</span>
-                  </div>
-                </SelectItem>
-              ))
-              : OLLAMA_REASONING_OPTIONS.map((option) => (
-                <SelectItem key={option} value={option}>
-                  {option}
-                </SelectItem>
-              ))}
+            <TooltipProvider>
+              {modelProvider === 'openai'
+                ? openAiReasoningOptions.map((option) => (
+                  <SelectItem key={option.reasoningEffort} value={option.reasoningEffort}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span>{option.reasoningEffort}</span>
+                      </TooltipTrigger>
+                      {option.description && (
+                        <TooltipContent side="right">
+                          <p>{option.description}</p>
+                        </TooltipContent>
+                      )}
+                    </Tooltip>
+                  </SelectItem>
+                ))
+                : OLLAMA_REASONING_OPTIONS.map((option) => (
+                  <SelectItem key={option} value={option}>
+                    {option}
+                  </SelectItem>
+                ))}
+            </TooltipProvider>
           </SelectContent>
         </Select>
       </div>
