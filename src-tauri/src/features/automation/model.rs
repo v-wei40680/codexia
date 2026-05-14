@@ -75,8 +75,8 @@ pub(super) fn normalize_model_provider(value: Option<String>) -> Result<String, 
         .unwrap_or_else(default_model_provider)
         .trim()
         .to_ascii_lowercase();
-    if normalized == "openai" || normalized == "ollama" {
+    if normalized == "openai" || normalized == "ollama" || normalized == "custom" {
         return Ok(normalized);
     }
-    Err("model provider must be 'openai' or 'ollama'".to_string())
+    Err("model provider must be 'openai', 'ollama', or 'custom'".to_string())
 }

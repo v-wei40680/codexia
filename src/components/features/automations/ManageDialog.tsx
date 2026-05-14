@@ -47,6 +47,7 @@ import { ScheduleEditor } from './ScheduleEditor';
 import type { DialogMode, FormState } from './types';
 import { formFromTask } from './utils';
 
+
 type ManageDialogProps = {
   mode: DialogMode;
   onClose: () => void;
@@ -75,15 +76,11 @@ export function ManageDialog({
   const [form, setForm] = useState<FormState>({ ...DEFAULT_FORM });
 
   const getDefaultModel = useCallback(
-    (agent: 'codex' | 'cc', provider: 'openai' | 'ollama'): string => {
+    (agent: 'codex' | 'cc', provider: string): string => {
       if (agent === 'cc') {
         return useCCStore.getState().options.model ?? 'sonnet';
       }
-      const config = useConfigStore.getState();
-      if (provider === 'ollama') {
-        return config.ollamaModel || '';
-      }
-      return config.openaiModel || '';
+      return useConfigStore.getState().providerModels[provider] ?? '';
     },
     []
   );
@@ -336,29 +333,17 @@ export function ManageDialog({
             </Select>
             {form.agent === 'codex' ? (
               <span className="flex">
-                <Select
-                  value={form.modelProvider}
-                  onValueChange={(value) => {
-                    const nextProvider = value as 'openai' | 'ollama';
-                    setForm((prev) => ({
-                      ...prev,
-                      modelProvider: nextProvider,
-                      model: getDefaultModel(prev.agent, nextProvider),
-                    }));
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select provider" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="openai">openai</SelectItem>
-                    <SelectItem value="ollama">ollama</SelectItem>
-                  </SelectContent>
-                </Select>
                 <CodexModelSelector
                   provider={form.modelProvider}
+                  onProviderChange={(value) => {
+                    setForm((prev) => ({
+                      ...prev,
+                      modelProvider: value,
+                      model: getDefaultModel(prev.agent, value),
+                    }));
+                  }}
                   value={form.model}
-                  onValueChange={(value) => setField('model', value)}
+                  onValueChange={(value: string) => setField('model', value)}
                 />
               </span>
             ) : (

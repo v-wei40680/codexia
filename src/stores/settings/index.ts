@@ -4,3 +4,4 @@ export { usePromptOptimizerStore } from './usePromptOptimizerStore';
 export * from './useThemeStore';
 export * from './useSettingsStore';
 export * from './useCCSettingsStore';
+export * from './useModelSettingsStore';

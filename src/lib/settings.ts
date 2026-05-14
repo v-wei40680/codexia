@@ -65,10 +65,10 @@ type AppData = {
 };
 
 type CodexConfigData = {
-  modelProvider: 'openai' | 'ollama';
+  modelProvider: string;
   model: string;
-  openaiModel: string;
-  ollamaModel: string;
+  // Generic per-provider last-used model map (replaces openaiModel/ollamaModel/customModel)
+  providerModels: Record<string, string>;
   sandbox: SandboxMode;
   approvalPolicy: AskForApproval;
   reasoningEffort: ReasoningEffort;
@@ -220,8 +220,7 @@ function snapshot(): SettingsFile {
     codexConfig: {
       modelProvider: config.modelProvider,
       model: config.model,
-      openaiModel: config.openaiModel,
-      ollamaModel: config.ollamaModel,
+      providerModels: config.providerModels,
       sandbox: config.sandbox,
       approvalPolicy: config.approvalPolicy,
       reasoningEffort: config.reasoningEffort,

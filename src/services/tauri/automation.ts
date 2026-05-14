@@ -1,3 +1,4 @@
+import { Provider } from '@/stores/settings';
 import { invokeTauri, isDesktopTauri, postJson, postNoContent } from './shared';
 
 export type AutomationScheduleMode = 'daily' | 'interval';
@@ -17,7 +18,7 @@ export type AutomationTask = {
   projects: string[];
   prompt: string;
   agent: 'codex' | 'cc';
-  model_provider: 'openai' | 'ollama';
+  model_provider: Provider;
   model: string;
   schedule: AutomationSchedule;
   cron_expression: string;
@@ -56,7 +57,7 @@ export async function createAutomation(payload: {
   prompt: string;
   schedule: AutomationSchedule;
   agent?: 'codex' | 'cc';
-  model_provider?: 'openai' | 'ollama';
+  model_provider?: string;
   model?: string;
 }) {
   if (isDesktopTauri()) {
@@ -75,7 +76,7 @@ export async function updateAutomation(payload: {
   prompt: string;
   schedule: AutomationSchedule;
   agent?: 'codex' | 'cc';
-  model_provider?: 'openai' | 'ollama';
+  model_provider?: string;
   model?: string;
 }) {
   if (isDesktopTauri()) {

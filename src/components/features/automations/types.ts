@@ -1,9 +1,10 @@
 import type { AutomationSchedule, AutomationTask, AutomationWeekday } from '@/services/tauri';
+import { Provider } from '@/stores/settings';
 
 export type FormState = {
   name: string;
   agent: 'codex' | 'cc';
-  modelProvider: 'openai' | 'ollama';
+  modelProvider: Provider;
   model: string;
   selectedProjects: string[];
   prompt: string;

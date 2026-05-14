@@ -1,0 +1,18 @@
+[
+    {
+        "model_provider": "ollama",
+        "base_url": "http://localhost:11434/v1",
+        "signup_url": "https://ollama.com/signup",
+        "env_key": "OLLAMA_API_KEY",
+        "auto_discover": true,
+        "models": []
+    },
+    {
+        "model_provider": "custom",
+        "base_url": "http://localhost:8000/v1",
+        "signup_url": "",
+        "env_key": "MOCK_API_KEY",
+        "auto_discover": false,
+        "models": []
+    }
+]
