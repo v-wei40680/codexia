@@ -1,7 +1,6 @@
 export {
   useLocaleStore,
   useLayoutStore,
-  usePromptOptimizerStore,
   useThemeStore,
 } from './settings';
 export { useCCStore } from './cc';
