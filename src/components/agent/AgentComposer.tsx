@@ -5,7 +5,6 @@ import { AgentSwitcher } from './AgentSwitcher';
 import { useAgentCenterStore } from '@/stores';
 import { useCCStore } from '@/stores/cc';
 import { Composer as CodexComposer, ComposerControls } from '@/components/codex/Composer';
-import { TunnelIndicator } from '@/components/features/TunnelIndicator';
 
 const focusCCInput = () => window.dispatchEvent(new Event('cc-input-focus-request'));
 
@@ -37,7 +36,6 @@ export function AgentComposer() {
       {/* Agent tabs */}
       <div className="flex items-center justify-between gap-2 shrink-0">
         <AgentSwitcher variant="tab" />
-        <TunnelIndicator />
       </div>
 
       {/* Input area */}
