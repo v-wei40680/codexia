@@ -3,16 +3,12 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { X } from 'lucide-react';
 import { useSettingsStore } from '@/stores/settings';
 
 export function ExplorerSettings() {
   const {
-    showExplorer,
-    setShowExplorer,
     hiddenNames,
     addHiddenName,
     removeHiddenName,
@@ -40,20 +36,6 @@ export function ExplorerSettings() {
       <h3 className="text-sm font-medium px-1">Explorer</h3>
       <Card>
         <CardContent className="p-4 space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="space-y-0.5">
-              <div className="text-sm font-medium">Show explorer</div>
-              <p className="text-xs text-muted-foreground">Toggle file explorer visibility.</p>
-            </div>
-            <Switch
-              checked={showExplorer}
-              onCheckedChange={setShowExplorer}
-              aria-label={showExplorer ? 'Hide explorer' : 'Show explorer'}
-            />
-          </div>
-
-          <Separator />
-
           <form className="space-y-3" onSubmit={handleHiddenNamesSubmit}>
             <div className="space-y-1">
               <Label htmlFor="hidden-names" className="text-sm font-medium">

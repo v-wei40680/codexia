@@ -14,14 +14,12 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
-  SidebarInput,
   SidebarTrigger,
   useSidebar,
 } from '@/components/ui/sidebar';
 import { UserInfo } from './UserInfo';
 import { useThreadList } from '@/hooks/codex';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
-import { useSettingsStore } from '@/stores/settings';
 import { useCCSessionManager } from '@/hooks/useCCSessionManager';
 import { UpdateButton } from '../features/UpdateButton';
 import { useTrafficLightConfig } from '@/hooks';
@@ -44,11 +42,10 @@ export function AppSideBar() {
   const { setView, view, activeSidebarTab, setActiveSidebarTab } = useLayoutStore();
   const { open: isSidebarOpen } = useSidebar();
   const { isMacos } = useTrafficLightConfig(isSidebarOpen);
-  const { searchTerm, setSearchTerm, sortKey, setSortKey, handleNewThread } = useThreadList({
+  const { sortKey, setSortKey, handleNewThread } = useThreadList({
     enabled: isSidebarOpen && activeSidebarTab === 'codex',
   });
   const { handleNewSession } = useCCSessionManager();
-  const { showSidebarMarketplace } = useSettingsStore();
   const [sessionManagerOpen, setSessionManagerOpen] = useState(false);
 
   const currentThreadSortLabel = sortKey === 'created_at' ? 'Created' : 'Updated';
@@ -86,15 +83,18 @@ export function AppSideBar() {
             <SidebarTrigger className="h-7 w-7" />
           </div>
 
-          {/* Search */}
-          <SidebarInput
-            placeholder="Search threads..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-
           {/* Nav actions */}
           <div className="flex flex-col">
+            <Button
+              variant="ghost"
+              size="sm"
+              className={navBtnCls(view === 'plugins')}
+              onClick={() => setView('plugins')}
+            >
+              <Package2 className="h-4 w-4" />
+              Plugins
+            </Button>
+
             <Button
               variant="ghost"
               size="sm"
@@ -114,18 +114,6 @@ export function AppSideBar() {
               <BarChart2 className="h-4 w-4" />
               Insights
             </Button>
-
-            {showSidebarMarketplace && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className={navBtnCls(view === 'plugins')}
-                onClick={() => setView('plugins')}
-              >
-                <Package2 className="h-4 w-4" />
-                Plugins
-              </Button>
-            )}
           </div>
 
           {/* Tab switcher row */}

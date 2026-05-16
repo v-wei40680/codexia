@@ -43,21 +43,11 @@ type LayoutData = {
 
 type AppData = {
   hiddenNames: string[];
-  showExplorer: boolean;
   taskDetail: string;
   autoCommitGitWorktree: boolean;
   enableTaskCompleteBeep: string;
   preventSleepDuringTasks: boolean;
   showReasoning: boolean;
-  enabledQuoteCategories: string[];
-  showSidebarMarketplace: boolean;
-  showHeaderTerminalButton: boolean;
-  showHeaderWebPreviewButton: boolean;
-  showHeaderNotesButton: boolean;
-  showHeaderFilesButton: boolean;
-  showHeaderDiffButton: boolean;
-  showQuotes: boolean;
-  showTips: boolean;
   analyticsEnabled: boolean;
   analyticsConsentShown: boolean;
   customStunServers: string[];
@@ -197,21 +187,11 @@ function snapshot(): SettingsFile {
     },
     app: {
       hiddenNames: app.hiddenNames,
-      showExplorer: app.showExplorer,
       taskDetail: app.taskDetail,
       autoCommitGitWorktree: app.autoCommitGitWorktree,
       enableTaskCompleteBeep: app.enableTaskCompleteBeep,
       preventSleepDuringTasks: app.preventSleepDuringTasks,
       showReasoning: app.showReasoning,
-      enabledQuoteCategories: app.enabledQuoteCategories,
-      showSidebarMarketplace: app.showSidebarMarketplace,
-      showHeaderTerminalButton: app.showHeaderTerminalButton,
-      showHeaderWebPreviewButton: app.showHeaderWebPreviewButton,
-      showHeaderNotesButton: app.showHeaderNotesButton,
-      showHeaderFilesButton: app.showHeaderFilesButton,
-      showHeaderDiffButton: app.showHeaderDiffButton,
-      showQuotes: app.showQuotes,
-      showTips: app.showTips,
       analyticsEnabled: app.analyticsEnabled,
       analyticsConsentShown: app.analyticsConsentShown,
       customStunServers: app.customStunServers,

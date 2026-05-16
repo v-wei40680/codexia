@@ -5,14 +5,12 @@ export type TaskCompleteBeepMode = 'never' | 'unfocused' | 'always';
 
 export interface SettingState {
   hiddenNames: string[];
-  showExplorer: boolean;
   taskDetail: TaskDetail;
+  setTaskDetail: (taskDetail: TaskDetail) => void;
   setHiddenNames: (hiddenNames: string[]) => void;
   addHiddenName: (name: string) => void;
   removeHiddenName: (name: string) => void;
   resetHiddenNames: () => void;
-  setShowExplorer: (showExplorer: boolean) => void;
-  setTaskDetail: (taskDetail: TaskDetail) => void;
   autoCommitGitWorktree: boolean;
   setAutoCommitGitWorktree: (enabled: boolean) => void;
   enableTaskCompleteBeep: TaskCompleteBeepMode;
@@ -23,22 +21,6 @@ export interface SettingState {
   setShowReasoning: (enabled: boolean) => void;
   enabledQuoteCategories: string[];
   setEnabledQuoteCategories: (categories: string[]) => void;
-  showSidebarMarketplace: boolean;
-  setShowSidebarMarketplace: (show: boolean) => void;
-  showHeaderTerminalButton: boolean;
-  setShowHeaderTerminalButton: (show: boolean) => void;
-  showHeaderWebPreviewButton: boolean;
-  setShowHeaderWebPreviewButton: (show: boolean) => void;
-  showHeaderNotesButton: boolean;
-  setShowHeaderNotesButton: (show: boolean) => void;
-  showHeaderFilesButton: boolean;
-  setShowHeaderFilesButton: (show: boolean) => void;
-  showHeaderDiffButton: boolean;
-  setShowHeaderDiffButton: (show: boolean) => void;
-  showQuotes: boolean;
-  setShowQuotes: (show: boolean) => void;
-  showTips: boolean;
-  setShowTips: (show: boolean) => void;
   analyticsEnabled: boolean;
   setAnalyticsEnabled: (enabled: boolean) => void;
   analyticsConsentShown: boolean;
@@ -75,7 +57,6 @@ export const useSettingsStore = create<SettingState>()((set) => ({
   removeHiddenName: (name: string) =>
     set((state) => ({ hiddenNames: state.hiddenNames.filter((item) => item !== name) })),
   resetHiddenNames: () => set({ hiddenNames: DEFAULT_HIDDEN_NAMES }),
-  setShowExplorer: (showExplorer: boolean) => set({ showExplorer }),
   setTaskDetail: (taskDetail: TaskDetail) => set({ taskDetail }),
   autoCommitGitWorktree: true,
   enableTaskCompleteBeep: 'always',
@@ -87,22 +68,6 @@ export const useSettingsStore = create<SettingState>()((set) => ({
   setPreventSleepDuringTasks: (enabled: boolean) => set({ preventSleepDuringTasks: enabled }),
   setShowReasoning: (enabled: boolean) => set({ showReasoning: enabled }),
   setEnabledQuoteCategories: (categories: string[]) => set({ enabledQuoteCategories: categories }),
-  showSidebarMarketplace: true,
-  setShowSidebarMarketplace: (show: boolean) => set({ showSidebarMarketplace: show }),
-  showHeaderTerminalButton: true,
-  setShowHeaderTerminalButton: (show: boolean) => set({ showHeaderTerminalButton: show }),
-  showHeaderWebPreviewButton: true,
-  setShowHeaderWebPreviewButton: (show: boolean) => set({ showHeaderWebPreviewButton: show }),
-  showHeaderNotesButton: true,
-  setShowHeaderNotesButton: (show: boolean) => set({ showHeaderNotesButton: show }),
-  showHeaderFilesButton: true,
-  setShowHeaderFilesButton: (show: boolean) => set({ showHeaderFilesButton: show }),
-  showHeaderDiffButton: true,
-  setShowHeaderDiffButton: (show: boolean) => set({ showHeaderDiffButton: show }),
-  showQuotes: false,
-  setShowQuotes: (show: boolean) => set({ showQuotes: show }),
-  showTips: false,
-  setShowTips: (show: boolean) => set({ showTips: show }),
   analyticsEnabled: false,
   setAnalyticsEnabled: (enabled: boolean) => set({ analyticsEnabled: enabled }),
   analyticsConsentShown: false,

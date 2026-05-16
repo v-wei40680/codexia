@@ -27,7 +27,6 @@ import { CodexAuth } from '../codex/CodexAuth';
 import { QuoteSettings } from './QuoteSettings';
 import { ProjectsSettings } from './ProjectsSettings';
 import { RateLimitSettings, TaskSettings } from './codex';
-import { UISettings } from './UISettings';
 import { RemoteSettings } from './RemoteSettings';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { isTauri } from '@/hooks/runtime';
@@ -42,12 +41,11 @@ type SettingsSection =
   | 'explorer'
   | 'quote'
   | 'task'
-  | 'ui'
   | 'claude'
   | 'remote';
 
 const codexSections = ['codexauth', 'task', 'config', 'personalization', 'archived'] as const;
-const topLevelSections = ['general', 'projects', 'claude', 'explorer', 'quote', 'ui', 'remote'] as const;
+const topLevelSections = ['general', 'projects', 'claude', 'explorer', 'quote', 'remote'] as const;
 
 const sectionLabel: Record<SettingsSection, string> = {
   general: 'General',
@@ -59,7 +57,6 @@ const sectionLabel: Record<SettingsSection, string> = {
   explorer: 'Explorer',
   quote: 'Quote',
   task: 'Task',
-  ui: 'UI',
   claude: 'Claude',
   remote: 'Remote',
 };
@@ -81,7 +78,6 @@ export function SettingsView() {
       {activeSection === 'explorer' && <ExplorerSettings />}
       {activeSection === 'quote' && <QuoteSettings />}
       {activeSection === 'task' && <TaskSettings />}
-      {activeSection === 'ui' && <UISettings />}
       {activeSection === 'claude' && <ClaudeSettings />}
       {activeSection === 'remote' && <RemoteSettings />}
     </>
