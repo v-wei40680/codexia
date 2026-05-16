@@ -6,7 +6,7 @@ import { History } from '@/components/codex/history';
 import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from '@/components/ui/resizable';
 import { SidebarInset, SidebarProvider, SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { BottomTerminal } from '../terminal/BottomTerminal';
+import { BottomTerminal } from '@/components/features/terminal/BottomTerminal';
 import { useTrafficLightConfig } from '@/hooks';
 import { useEdgeSwipe } from '@/hooks/useEdgeSwipe';
 
