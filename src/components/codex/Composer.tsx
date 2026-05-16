@@ -5,15 +5,6 @@ import {
   AttachmentSelector,
   AccessModePopover,
 } from './selector';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-
-import { Monitor, Split } from 'lucide-react';
 import { useInputStore } from '@/stores/useInputStore';
 import { useConfigStore, useCodexStore, type ThreadCwdMode } from '@/stores/codex';
 import { useAgentCenterStore } from '@/stores';
@@ -21,7 +12,7 @@ import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { codexService } from '@/services/codexService';
 import { toast } from '@/components/ui/use-toast';
 import { getErrorMessage } from '@/utils/errorUtils';
-import { WorkspaceSwitcher } from '@/components/common';
+import { WorkspaceSwitcher, AgentWorkspaceSelect } from '@/components/common';
 
 /** Full Codex bottom bar: workspace switcher + access mode + cwd mode selector. */
 export function ComposerControls() {
@@ -33,28 +24,12 @@ export function ComposerControls() {
         <WorkspaceSwitcher />
       </span>
       {!currentThreadId && (
-        <Select
+        <AgentWorkspaceSelect
           value={threadCwdMode}
-          onValueChange={(value) => setThreadCwdMode(value as ThreadCwdMode)}
-        >
-          <SelectTrigger className="w-fit">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="local">
-              <span className="inline-flex items-center gap-2">
-                <Monitor className="size-4" />
-                <span>Local</span>
-              </span>
-            </SelectItem>
-            <SelectItem value="worktree">
-              <span className="inline-flex items-center gap-2">
-                <Split className="size-4" />
-                <span>Worktree</span>
-              </span>
-            </SelectItem>
-          </SelectContent>
-        </Select>
+          onValueChange={(v: ThreadCwdMode) => setThreadCwdMode(v)}
+          triggerClassName="h-9"
+          iconSize={16}
+        />
       )}
     </div>
   );

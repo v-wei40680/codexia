@@ -11,9 +11,7 @@ import { CCSlashCommandPopover } from './CCSlashCommandPopover';
 import { CCSkillsPopover } from './CCSkillsPopover';
 import { useCCSessionManager } from '@/hooks/useCCSessionManager';
 import { ccInterrupt, ccSendMessage } from '@/services';
-import { WorkspaceSwitcher, FileMentionPopover } from '@/components/common';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Monitor, Split } from 'lucide-react';
+import { WorkspaceSwitcher, FileMentionPopover, AgentWorkspaceSelect } from '@/components/common';
 import { convertFileSrc } from '@tauri-apps/api/core';
 
 const CC_INPUT_FOCUS_EVENT = 'cc-input-focus-request';
@@ -202,28 +200,10 @@ export function Composer({ overrideSend, onAfterSend }: ComposerProps = {}) {
         </div>
         <div className="flex items-center justify-between">
           <WorkspaceSwitcher />
-          <Select
+          <AgentWorkspaceSelect
             value={options.worktreeMode ?? 'local'}
-            onValueChange={(v) => updateOptions({ worktreeMode: v as ThreadCwdMode })}
-          >
-            <SelectTrigger className="w-fit h-7 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="local">
-                <span className="inline-flex items-center gap-1.5">
-                  <Monitor className="size-3.5" />
-                  <span>Local</span>
-                </span>
-              </SelectItem>
-              <SelectItem value="worktree">
-                <span className="inline-flex items-center gap-1.5">
-                  <Split className="size-3.5" />
-                  <span>Worktree</span>
-                </span>
-              </SelectItem>
-            </SelectContent>
-          </Select>
+            onValueChange={(v: ThreadCwdMode) => updateOptions({ worktreeMode: v })}
+          />
         </div>
       </div>
 
