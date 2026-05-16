@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { SandboxMode, AskForApproval } from '@/bindings/v2';
 import type { ReasoningEffort } from '@/bindings';
 import { Provider } from '@/stores/settings';
@@ -35,54 +36,61 @@ export const SANDBOX_APPROVAL_MAP: Record<SandboxMode, AskForApproval> = {
   'danger-full-access': 'never',
 };
 
-export const useConfigStore = create<ConfigStore>()((set) => ({
-  webSearchRequest: false,
-  sandbox: 'workspace-write',
-  approvalPolicy: 'on-request',
-  reasoningEffort: 'medium',
-  modelProvider: 'openai',
-  model: '',
-  providerModels: {},
-  personality: 'friendly',
-  collaborationMode: 'default',
-  threadCwdMode: 'local',
+export const useConfigStore = create<ConfigStore>()(
+  persist(
+    (set) => ({
+      webSearchRequest: false,
+      sandbox: 'workspace-write',
+      approvalPolicy: 'on-request',
+      reasoningEffort: 'medium',
+      modelProvider: 'openai',
+      model: '',
+      providerModels: {},
+      personality: 'friendly',
+      collaborationMode: 'default',
+      threadCwdMode: 'local',
 
-  setModel: (model: string) => {
-    set((state) => ({
-      model,
-      providerModels: { ...state.providerModels, [state.modelProvider]: model },
-    }));
-  },
+      setModel: (model: string) => {
+        set((state) => ({
+          model,
+          providerModels: { ...state.providerModels, [state.modelProvider]: model },
+        }));
+      },
 
-  setModelProvider: (modelProvider: Provider) => {
-    set((state) => ({
-      modelProvider,
-      model: state.providerModels[modelProvider] ?? '',
-    }));
-  },
+      setModelProvider: (modelProvider: Provider) => {
+        set((state) => ({
+          modelProvider,
+          model: state.providerModels[modelProvider] ?? '',
+        }));
+      },
 
-  setAccessMode: (sandbox: SandboxMode) => {
-    const approvalPolicy = SANDBOX_APPROVAL_MAP[sandbox];
-    set({ sandbox, approvalPolicy });
-  },
+      setAccessMode: (sandbox: SandboxMode) => {
+        const approvalPolicy = SANDBOX_APPROVAL_MAP[sandbox];
+        set({ sandbox, approvalPolicy });
+      },
 
-  setReasoningEffort: (effort: ReasoningEffort) => {
-    set({ reasoningEffort: effort });
-  },
+      setReasoningEffort: (effort: ReasoningEffort) => {
+        set({ reasoningEffort: effort });
+      },
 
-  setWebSearch: (webSearchRequest: boolean) => {
-    set({ webSearchRequest });
-  },
+      setWebSearch: (webSearchRequest: boolean) => {
+        set({ webSearchRequest });
+      },
 
-  setPersonality: (personality: Personality | null) => {
-    set({ personality });
-  },
+      setPersonality: (personality: Personality | null) => {
+        set({ personality });
+      },
 
-  setCollaborationMode: (mode: ModeKind) => {
-    set({ collaborationMode: mode });
-  },
+      setCollaborationMode: (mode: ModeKind) => {
+        set({ collaborationMode: mode });
+      },
 
-  setThreadCwdMode: (mode: ThreadCwdMode) => {
-    set({ threadCwdMode: mode });
-  },
-}));
+      setThreadCwdMode: (mode: ThreadCwdMode) => {
+        set({ threadCwdMode: mode });
+      },
+    }),
+    {
+      name: 'codex-config-storage',
+    }
+  )
+);

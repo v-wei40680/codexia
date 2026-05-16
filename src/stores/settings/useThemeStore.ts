@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 // Light/dark mode
 export type Theme = 'light' | 'dark' | 'system';
@@ -14,17 +15,24 @@ interface ThemeState {
   setAccent: (accent: Accent) => void;
 }
 
-export const useThemeStore = create<ThemeState>()((set) => ({
-  theme: 'system',
-  accent: 'purple',
-  setTheme: (theme: Theme) => set({ theme }),
-  toggleTheme: () =>
-    set((state) => {
-      if (state.theme === 'system') {
-        const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        return { theme: isDark ? 'light' : 'dark' };
-      }
-      return { theme: state.theme === 'dark' ? 'light' : 'dark' };
+export const useThemeStore = create<ThemeState>()(
+  persist(
+    (set) => ({
+      theme: 'system',
+      accent: 'purple',
+      setTheme: (theme: Theme) => set({ theme }),
+      toggleTheme: () =>
+        set((state) => {
+          if (state.theme === 'system') {
+            const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            return { theme: isDark ? 'light' : 'dark' };
+          }
+          return { theme: state.theme === 'dark' ? 'light' : 'dark' };
+        }),
+      setAccent: (accent: Accent) => set({ accent }),
     }),
-  setAccent: (accent: Accent) => set({ accent }),
-}));
+    {
+      name: 'theme-storage',
+    }
+  )
+);

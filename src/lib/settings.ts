@@ -9,14 +9,7 @@
 
 import { getHomeDirectory, readFile, writeFile } from '@/services/tauri';
 import { fetchRemoteSettings } from '@/services/tauri/settings';
-import type { SandboxMode, AskForApproval } from '@/bindings/v2';
-import type { ReasoningEffort } from '@/bindings';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
-import { useSettingsStore } from '@/stores/settings/useSettingsStore';
-import { useThemeStore } from '@/stores/settings/useThemeStore';
-import { useLocaleStore } from '@/stores/settings/useLocaleStore';
-import { useLayoutStore } from '@/stores/settings/useLayoutStore';
-import { useConfigStore } from '@/stores/codex/useConfigStore';
 
 const SETTINGS_FILE = '/.codexia/settings.json';
 const SETTINGS_VERSION = 1;
@@ -32,50 +25,9 @@ type WorkspaceData = {
   instructionType: string;
 };
 
-type ThemeData = {
-  theme: string;
-  accent: string;
-};
-
-type LayoutData = {
-  activeSidebarTab: string;
-};
-
-type AppData = {
-  hiddenNames: string[];
-  taskDetail: string;
-  autoCommitGitWorktree: boolean;
-  enableTaskCompleteBeep: string;
-  preventSleepDuringTasks: boolean;
-  showReasoning: boolean;
-  analyticsEnabled: boolean;
-  analyticsConsentShown: boolean;
-  customStunServers: string[];
-  p2pAutoStart: boolean;
-};
-
-type CodexConfigData = {
-  modelProvider: string;
-  model: string;
-  // Generic per-provider last-used model map (replaces openaiModel/ollamaModel/customModel)
-  providerModels: Record<string, string>;
-  sandbox: SandboxMode;
-  approvalPolicy: AskForApproval;
-  reasoningEffort: ReasoningEffort;
-  webSearchRequest: boolean;
-  personality: 'friendly' | 'pragmatic' | null;
-  collaborationMode: 'default' | 'plan';
-  threadCwdMode: 'local' | 'worktree';
-};
-
 interface SettingsFile {
   version: number;
   workspace?: Partial<WorkspaceData>;
-  theme?: Partial<ThemeData>;
-  layout?: Partial<LayoutData>;
-  locale?: { locale?: string };
-  app?: Partial<AppData>;
-  codexConfig?: Partial<CodexConfigData>;
 }
 
 // ── File I/O ─────────────────────────────────────────────────────────────────
@@ -113,30 +65,6 @@ function applySettings(data: SettingsFile): void {
       ...(ws.instructionType !== undefined && { instructionType: ws.instructionType }),
     });
   }
-
-  if (data.theme) {
-    const t = data.theme;
-    useThemeStore.setState({
-      ...(t.theme !== undefined && { theme: t.theme as never }),
-      ...(t.accent !== undefined && { accent: t.accent as never }),
-    });
-  }
-
-  if (data.layout?.activeSidebarTab !== undefined) {
-    useLayoutStore.setState({ activeSidebarTab: data.layout.activeSidebarTab as never });
-  }
-
-  if (data.locale?.locale !== undefined) {
-    useLocaleStore.setState({ locale: data.locale.locale as never });
-  }
-
-  if (data.app) {
-    useSettingsStore.setState(data.app as never);
-  }
-
-  if (data.codexConfig) {
-    useConfigStore.setState(data.codexConfig as never);
-  }
 }
 
 export async function loadSettings(): Promise<void> {
@@ -159,11 +87,6 @@ export async function loadRemoteSettings(): Promise<void> {
 
 function snapshot(): SettingsFile {
   const ws = useWorkspaceStore.getState();
-  const theme = useThemeStore.getState();
-  const layout = useLayoutStore.getState();
-  const locale = useLocaleStore.getState();
-  const app = useSettingsStore.getState();
-  const config = useConfigStore.getState();
 
   return {
     version: SETTINGS_VERSION,
@@ -174,40 +97,6 @@ function snapshot(): SettingsFile {
       cwd: ws.cwd,
       projectSort: ws.projectSort,
       instructionType: ws.instructionType,
-    },
-    theme: {
-      theme: theme.theme,
-      accent: theme.accent,
-    },
-    layout: {
-      activeSidebarTab: layout.activeSidebarTab,
-    },
-    locale: {
-      locale: locale.locale,
-    },
-    app: {
-      hiddenNames: app.hiddenNames,
-      taskDetail: app.taskDetail,
-      autoCommitGitWorktree: app.autoCommitGitWorktree,
-      enableTaskCompleteBeep: app.enableTaskCompleteBeep,
-      preventSleepDuringTasks: app.preventSleepDuringTasks,
-      showReasoning: app.showReasoning,
-      analyticsEnabled: app.analyticsEnabled,
-      analyticsConsentShown: app.analyticsConsentShown,
-      customStunServers: app.customStunServers,
-      p2pAutoStart: app.p2pAutoStart,
-    },
-    codexConfig: {
-      modelProvider: config.modelProvider,
-      model: config.model,
-      providerModels: config.providerModels,
-      sandbox: config.sandbox,
-      approvalPolicy: config.approvalPolicy,
-      reasoningEffort: config.reasoningEffort,
-      webSearchRequest: config.webSearchRequest,
-      personality: config.personality,
-      collaborationMode: config.collaborationMode,
-      threadCwdMode: config.threadCwdMode,
     },
   };
 }
@@ -233,13 +122,6 @@ function scheduleWrite(): void {
 
 /** Subscribe all tracked stores. Returns an unsubscribe function. */
 export function initSettingsSync(): () => void {
-  const unsubs = [
-    useWorkspaceStore.subscribe(scheduleWrite),
-    useThemeStore.subscribe(scheduleWrite),
-    useLayoutStore.subscribe(scheduleWrite),
-    useLocaleStore.subscribe(scheduleWrite),
-    useSettingsStore.subscribe(scheduleWrite),
-    useConfigStore.subscribe(scheduleWrite),
-  ];
+  const unsubs = [useWorkspaceStore.subscribe(scheduleWrite)];
   return () => unsubs.forEach((fn) => fn());
 }

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import { AppLocale } from '@/locales';
 
 interface LocaleState {
@@ -6,7 +7,14 @@ interface LocaleState {
   setLocale: (locale: AppLocale) => void;
 }
 
-export const useLocaleStore = create<LocaleState>()((set) => ({
-  locale: 'en',
-  setLocale: (locale: AppLocale) => set({ locale }),
-}));
+export const useLocaleStore = create<LocaleState>()(
+  persist(
+    (set) => ({
+      locale: 'en',
+      setLocale: (locale: AppLocale) => set({ locale }),
+    }),
+    {
+      name: 'locale-storage',
+    }
+  )
+);

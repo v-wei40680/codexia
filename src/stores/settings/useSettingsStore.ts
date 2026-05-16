@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 
 export type TaskDetail = 'steps' | 'stepsWithCommand' | 'stepsWithOutput';
 export type TaskCompleteBeepMode = 'never' | 'unfocused' | 'always';
@@ -45,35 +46,45 @@ const DEFAULT_HIDDEN_NAMES = [
   'target',
 ];
 
-export const useSettingsStore = create<SettingState>()((set) => ({
-  hiddenNames: DEFAULT_HIDDEN_NAMES,
-  showExplorer: true,
-  taskDetail: 'steps',
-  setHiddenNames: (hiddenNames: string[]) => set({ hiddenNames }),
-  addHiddenName: (name: string) =>
-    set((state) =>
-      state.hiddenNames.includes(name) ? state : { hiddenNames: [...state.hiddenNames, name] }
-    ),
-  removeHiddenName: (name: string) =>
-    set((state) => ({ hiddenNames: state.hiddenNames.filter((item) => item !== name) })),
-  resetHiddenNames: () => set({ hiddenNames: DEFAULT_HIDDEN_NAMES }),
-  setTaskDetail: (taskDetail: TaskDetail) => set({ taskDetail }),
-  autoCommitGitWorktree: true,
-  enableTaskCompleteBeep: 'always',
-  preventSleepDuringTasks: true,
-  showReasoning: true,
-  enabledQuoteCategories: ['economics', 'interest', 'life', 'management', 'programming'],
-  setAutoCommitGitWorktree: (enabled: boolean) => set({ autoCommitGitWorktree: enabled }),
-  setEnableTaskCompleteBeep: (mode: TaskCompleteBeepMode) => set({ enableTaskCompleteBeep: mode }),
-  setPreventSleepDuringTasks: (enabled: boolean) => set({ preventSleepDuringTasks: enabled }),
-  setShowReasoning: (enabled: boolean) => set({ showReasoning: enabled }),
-  setEnabledQuoteCategories: (categories: string[]) => set({ enabledQuoteCategories: categories }),
-  analyticsEnabled: false,
-  setAnalyticsEnabled: (enabled: boolean) => set({ analyticsEnabled: enabled }),
-  analyticsConsentShown: false,
-  setAnalyticsConsentShown: (shown: boolean) => set({ analyticsConsentShown: shown }),
-  customStunServers: [],
-  setCustomStunServers: (servers: string[]) => set({ customStunServers: servers }),
-  p2pAutoStart: false,
-  setP2pAutoStart: (enabled: boolean) => set({ p2pAutoStart: enabled }),
-}));
+export const useSettingsStore = create<SettingState>()(
+  persist(
+    (set) => ({
+      hiddenNames: DEFAULT_HIDDEN_NAMES,
+      showExplorer: true,
+      taskDetail: 'steps',
+      setHiddenNames: (hiddenNames: string[]) => set({ hiddenNames }),
+      addHiddenName: (name: string) =>
+        set((state) =>
+          state.hiddenNames.includes(name) ? state : { hiddenNames: [...state.hiddenNames, name] }
+        ),
+      removeHiddenName: (name: string) =>
+        set((state) => ({ hiddenNames: state.hiddenNames.filter((item) => item !== name) })),
+      resetHiddenNames: () => set({ hiddenNames: DEFAULT_HIDDEN_NAMES }),
+      setTaskDetail: (taskDetail: TaskDetail) => set({ taskDetail }),
+      autoCommitGitWorktree: true,
+      enableTaskCompleteBeep: 'always',
+      preventSleepDuringTasks: true,
+      showReasoning: true,
+      enabledQuoteCategories: ['economics', 'interest', 'life', 'management', 'programming'],
+      setAutoCommitGitWorktree: (enabled: boolean) => set({ autoCommitGitWorktree: enabled }),
+      setEnableTaskCompleteBeep: (mode: TaskCompleteBeepMode) =>
+        set({ enableTaskCompleteBeep: mode }),
+      setPreventSleepDuringTasks: (enabled: boolean) => set({ preventSleepDuringTasks: enabled }),
+      setShowReasoning: (enabled: boolean) => set({ showReasoning: enabled }),
+      setEnabledQuoteCategories: (categories: string[]) =>
+        set({ enabledQuoteCategories: categories }),
+      analyticsEnabled: false,
+      setAnalyticsEnabled: (enabled: boolean) => set({ analyticsEnabled: enabled }),
+      analyticsConsentShown: false,
+      setAnalyticsConsentShown: (shown: boolean) => set({ analyticsConsentShown: shown }),
+      customStunServers: [],
+      setCustomStunServers: (servers: string[]) => set({ customStunServers: servers }),
+      p2pAutoStart: false,
+      setP2pAutoStart: (enabled: boolean) => set({ p2pAutoStart: enabled }),
+    }),
+    {
+      name: 'settings-storage',
+      version: 10
+    }
+  )
+);
