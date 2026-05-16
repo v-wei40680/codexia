@@ -1,11 +1,12 @@
 import { useState } from 'react'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Smartphone } from 'lucide-react'
 import { toast } from 'sonner'
-import { Switch } from '@/components/ui/switch'
 import { useTunnel } from '@/hooks/useTunnel'
 import { isTauri, isPhone } from '@/hooks/runtime'
 import { useSettingsStore } from '@/stores/settings/useSettingsStore'
 import supabase from '@/lib/supabase'
+import { cn } from '@/lib/utils'
+import { Button } from '@/components/ui/button'
 
 export function TunnelIndicator() {
   const { status, loading, start, stop } = useTunnel()
@@ -32,15 +33,28 @@ export function TunnelIndicator() {
   const handleStop = () => { setP2pAutoStart(false); stop() }
 
   return (
-    <div className="flex items-center gap-1.5 px-1">
-      <span className="text-xs text-muted-foreground">Remote</span>
-      {starting && <Loader2 className="h-3 w-3 animate-spin text-muted-foreground" />}
-      <Switch
-        checked={status.connected}
-        onCheckedChange={(v) => v ? handleStart() : handleStop()}
-        disabled={loading}
-        className="scale-75 origin-right"
-      />
+    <div className="flex items-center gap-1 px-1">
+      {starting ? (
+        <div className="flex h-7 w-7 items-center justify-center">
+          <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+        </div>
+      ) : (
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7"
+          title={status.connected ? "mobile disable" : "mobile enable"}
+          disabled={loading}
+          onClick={() => status.connected ? handleStop() : handleStart()}
+        >
+          <Smartphone
+            className={cn(
+              "h-4 w-4 transition-colors",
+              status.connected ? "text-primary" : "text-muted-foreground"
+            )}
+          />
+        </Button>
+      )}
     </div>
   )
 }

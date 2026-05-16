@@ -53,11 +53,9 @@ export function UserInfo() {
                 </AvatarFallback>
               )}
             </Avatar>
-            <span className="truncate text-sm">{displayName}</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent align="start" side="top" className="w-60 p-1">
-          <div className="h-px bg-border my-1" />
           <div className="flex flex-col gap-1">
             <Button variant="ghost" className="w-full justify-start" onClick={handleOpenSettings}>
               {t('sidebar.settings')}
