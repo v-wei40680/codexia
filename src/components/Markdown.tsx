@@ -68,7 +68,7 @@ export const Markdown = memo<MarkdownProps>(({ value, className = '', inline = f
             className={cn(
               className,
               (isExternal || isInternalFileLink) &&
-                'text-blue-600 dark:text-blue-400 underline underline-offset-2 hover:text-blue-700 dark:hover:text-blue-300'
+              'text-blue-600 dark:text-blue-400 underline underline-offset-2 hover:text-blue-700 dark:hover:text-blue-300'
             )}
             title={normalizedHref || undefined}
             onClick={async (event) => {
@@ -100,7 +100,7 @@ export const Markdown = memo<MarkdownProps>(({ value, className = '', inline = f
   );
 
   return (
-    <div
+    <div dir="auto"
       className={cn(
         'w-full min-w-0 max-w-full text-sm leading-relaxed text-foreground prose prose-sm break-words [overflow-wrap:anywhere] select-text [&_p]:max-w-full [&_p]:break-words [&_li]:break-words [&_a]:break-all [&_pre]:max-w-full [&_pre]:overflow-x-auto [&_pre_code]:whitespace-pre-wrap [&_pre_code]:break-all [&_code]:break-all [&_table]:block [&_table]:w-full [&_table]:max-w-full [&_table]:table-fixed [&_table]:overflow-x-auto',
         resolvedTheme === 'dark' && 'prose-invert',
