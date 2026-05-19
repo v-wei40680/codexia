@@ -9,6 +9,7 @@ import { AgentMessageItem } from './AgentMessageItem';
 import { CommandActionItem } from './CommandActionItem';
 import { IndividualFileChanges } from './IndividualFileChanges';
 import { SummaryFileChanges } from './SummaryFileChanges';
+import { CollabAgentToolCallItem, type CollabAgentToolCallItemData } from './CollabAgentToolCallItem';
 import {
   aggregateFileChanges,
   aggregateTurnChangesFromContext,
@@ -62,7 +63,6 @@ const getRollbackTurnsForTurn = (
     }
   }
 
-  // Edit should remove the selected turn itself plus all later turns.
   return laterTurnIds.size + 1;
 };
 
@@ -131,6 +131,9 @@ export const renderEvent = (event: ServerNotification, context?: RenderEventCont
         case 'enteredReviewMode':
         case 'exitedReviewMode':
           return null;
+        case 'collabAgentToolCall':
+          // Render the multi-agent sub-agent operation card.
+          return <CollabAgentToolCallItem item={item as unknown as CollabAgentToolCallItemData} />;
         default:
           return (
             <CollapsedJsonItem label={item.type} value={item} />
@@ -173,7 +176,7 @@ export const renderEvent = (event: ServerNotification, context?: RenderEventCont
         </div>
       );
     case 'item/fileChange/outputDelta':
-      return null
+      return null;
     case 'item/commandExecution/terminalInteraction':
       return (
         <div className="rounded-md border border-slate-300/80 bg-slate-100/40 px-2 py-1 text-xs text-slate-700">
