@@ -4,7 +4,19 @@ import { persist } from 'zustand/middleware';
 export type TaskDetail = 'steps' | 'stepsWithCommand' | 'stepsWithOutput';
 export type TaskCompleteBeepMode = 'never' | 'unfocused' | 'always';
 
-export interface SettingState {
+// --- Agents config ---
+// UI caps: max_threads ≤ 12, max_depth ≤ 4 (mirrors CodexMonitor product limits).
+export const AGENTS_MAX_THREADS_CAP = 12;
+export const AGENTS_MAX_DEPTH_CAP = 4;
+
+export interface AgentsSettings {
+  agentsMaxThreads: number;
+  agentsMaxDepth: number;
+  setAgentsMaxThreads: (value: number) => void;
+  setAgentsMaxDepth: (value: number) => void;
+}
+
+export interface SettingState extends AgentsSettings {
   hiddenNames: string[];
   taskDetail: TaskDetail;
   setTaskDetail: (taskDetail: TaskDetail) => void;
@@ -81,10 +93,17 @@ export const useSettingsStore = create<SettingState>()(
       setCustomStunServers: (servers: string[]) => set({ customStunServers: servers }),
       p2pAutoStart: false,
       setP2pAutoStart: (enabled: boolean) => set({ p2pAutoStart: enabled }),
+      // Agents defaults: max_threads=6 (upstream Codex default), max_depth=1 (product default)
+      agentsMaxThreads: 6,
+      agentsMaxDepth: 1,
+      setAgentsMaxThreads: (value: number) =>
+        set({ agentsMaxThreads: Math.min(Math.max(1, value), AGENTS_MAX_THREADS_CAP) }),
+      setAgentsMaxDepth: (value: number) =>
+        set({ agentsMaxDepth: Math.min(Math.max(1, value), AGENTS_MAX_DEPTH_CAP) }),
     }),
     {
       name: 'settings-storage',
-      version: 10
+      version: 10,
     }
   )
 );

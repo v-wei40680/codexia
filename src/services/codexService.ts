@@ -30,6 +30,7 @@ import type { CollaborationMode } from '@/bindings';
 import type { ThreadListItem } from '@/types/codex/ThreadListItem';
 import { useCodexStore, useConfigStore, type ModeKind } from '@/stores/codex';
 import { useWorkspaceStore } from '@/stores';
+import { useSettingsStore } from '@/stores/settings';
 import { convertThreadHistoryToEvents } from '@/utils/threadHistoryConverter';
 import { getErrorMessage } from '@/utils/errorUtils';
 
@@ -71,6 +72,16 @@ const generateWorktreeKey = (): string => {
 
 const isExperimentalRawEventsCapabilityError = (error: unknown): boolean =>
   getErrorMessage(error).includes('experimentalRawEvents requires experimentalApi capability');
+
+/** Build the agents config fragment to inject into thread config params. */
+const buildAgentsConfigFragment = (): Record<string, unknown> => {
+  const { agentsMaxThreads, agentsMaxDepth } = useSettingsStore.getState();
+  return {
+    'features.multi_agents': true,
+    'agents.max_threads': agentsMaxThreads,
+    'agents.max_depth': agentsMaxDepth,
+  };
+};
 
 type ThreadLike = Thread & { updatedAt?: number };
 const getThreadPreviewFromInput = (userInputs: UserInput[]): string => {
@@ -271,7 +282,8 @@ export const codexService = {
           model_reasoning_summary: 'auto',
           web_search_request: webSearchRequest,
           view_image_tool: true,
-          'features.multi_agents': true,
+          // Inject user-configured multi-agent limits.
+          ...buildAgentsConfigFragment(),
         },
         experimentalRawEvents: true,
         persistExtendedHistory: true,
@@ -378,7 +390,8 @@ export const codexService = {
           model_reasoning_summary: 'auto',
           web_search_request: webSearchRequest,
           view_image_tool: true,
-          'features.multi_agents': true,
+          // Inject user-configured multi-agent limits.
+          ...buildAgentsConfigFragment(),
         },
         baseInstructions: null,
         developerInstructions: null,

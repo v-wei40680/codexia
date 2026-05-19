@@ -21,7 +21,12 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { GeneralSettings } from './GeneralSettings';
 import { ExplorerSettings } from './ExplorerSettings';
 import { useLayoutStore } from '@/stores/settings';
-import { ConfigSettings, ArchivedThreadSettings, PersonalizationSettings } from './codex';
+import {
+  ConfigSettings,
+  ArchivedThreadSettings,
+  PersonalizationSettings,
+  SettingsAgentsSection,
+} from './codex';
 import { ClaudeSettings } from './ClaudeSettings';
 import { CodexAuth } from '../codex/CodexAuth';
 import { QuoteSettings } from './QuoteSettings';
@@ -41,10 +46,11 @@ type SettingsSection =
   | 'explorer'
   | 'quote'
   | 'task'
+  | 'agents'
   | 'claude'
   | 'remote';
 
-const codexSections = ['codexauth', 'task', 'config', 'personalization', 'archived'] as const;
+const codexSections = ['codexauth', 'task', 'agents', 'config', 'personalization', 'archived'] as const;
 const topLevelSections = ['general', 'projects', 'claude', 'explorer', 'quote', 'remote'] as const;
 
 const sectionLabel: Record<SettingsSection, string> = {
@@ -57,6 +63,7 @@ const sectionLabel: Record<SettingsSection, string> = {
   explorer: 'Explorer',
   quote: 'Quote',
   task: 'Task',
+  agents: 'Multi-agent',
   claude: 'Claude',
   remote: 'Remote',
 };
@@ -78,6 +85,7 @@ export function SettingsView() {
       {activeSection === 'explorer' && <ExplorerSettings />}
       {activeSection === 'quote' && <QuoteSettings />}
       {activeSection === 'task' && <TaskSettings />}
+      {activeSection === 'agents' && <SettingsAgentsSection />}
       {activeSection === 'claude' && <ClaudeSettings />}
       {activeSection === 'remote' && <RemoteSettings />}
     </>
@@ -157,10 +165,11 @@ export function SettingsView() {
                   <button
                     type="button"
                     onClick={() => setActiveSection(section)}
-                    className={`w-full rounded-lg px-3 py-2 text-left transition-colors ${activeSection === section
-                      ? 'bg-accent text-foreground'
-                      : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
-                      }`}
+                    className={`w-full rounded-lg px-3 py-2 text-left transition-colors ${
+                      activeSection === section
+                        ? 'bg-accent text-foreground'
+                        : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                    }`}
                   >
                     {sectionLabel[section]}
                   </button>
@@ -185,10 +194,11 @@ export function SettingsView() {
                         key={section}
                         type="button"
                         onClick={() => setActiveSection(section)}
-                        className={`w-full rounded-lg px-6 py-2 text-left transition-colors ${activeSection === section
-                          ? 'bg-accent text-foreground'
-                          : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
-                          }`}
+                        className={`w-full rounded-lg px-6 py-2 text-left transition-colors ${
+                          activeSection === section
+                            ? 'bg-accent text-foreground'
+                            : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                        }`}
                       >
                         {sectionLabel[section]}
                       </button>
