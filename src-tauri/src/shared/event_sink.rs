@@ -27,7 +27,7 @@ impl EventSink for TauriEventSink {
     fn emit(&self, event: &str, payload: Value) {
         // Forward to P2P WebSocket clients before moving payload into Tauri emit.
         #[cfg(feature = "desktop")]
-        crate::features::p2p_bridge::forward(event, &payload);
+        crate::shared::p2p_bridge::forward(event, &payload);
         let _ = self.app_handle.emit(event, payload);
     }
 }

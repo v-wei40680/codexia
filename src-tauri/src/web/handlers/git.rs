@@ -2,7 +2,7 @@ use super::to_error_response;
 use axum::{Json, http::StatusCode};
 use serde::Deserialize;
 
-use crate::features::git::{
+use crate::shared::git::{
     GitApplyWorktreeResponse, GitBranchInfoResponse, GitBranchListResponse,
     GitCreateWorktreeResponse, GitDiffStatsResponse, GitFileDiffMetaResponse,
     GitFileDiffResponse, GitStatusResponse, git_apply_worktree_changes, git_branch_info,
@@ -178,7 +178,7 @@ pub(crate) struct GitPushParams {
 pub(crate) async fn api_git_commit(
     Json(params): Json<GitCommitParams>,
 ) -> Result<Json<String>, ErrorResponse> {
-    let result = crate::features::git::git_commit(params.cwd, params.message)
+    let result = crate::shared::git::git_commit(params.cwd, params.message)
         .map_err(to_error_response)?;
     Ok(Json(result))
 }
@@ -186,7 +186,7 @@ pub(crate) async fn api_git_commit(
 pub(crate) async fn api_git_push(
     Json(params): Json<GitPushParams>,
 ) -> Result<Json<String>, ErrorResponse> {
-    let result = crate::features::git::git_push(params.cwd, params.remote, params.branch)
+    let result = crate::shared::git::git_push(params.cwd, params.remote, params.branch)
         .map_err(to_error_response)?;
     Ok(Json(result))
 }

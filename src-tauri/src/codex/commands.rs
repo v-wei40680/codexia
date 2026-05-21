@@ -54,7 +54,7 @@ pub async fn initialize_codex_async(
     );
 
     let automation_started_at = Instant::now();
-    crate::features::automation::initialize_automation_runtime(
+    crate::shared::automation::initialize_automation_runtime(
         Some(state.codex.clone()),
         cc_state.inner().clone(),
         Arc::clone(&init_state.event_sink),

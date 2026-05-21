@@ -4,8 +4,8 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, LazyLock, Mutex};
 use std::sync::atomic::AtomicBool;
 
-use crate::features::git::helpers::{open_repo, repo_root_path};
-use crate::features::git::types::{GitApplyWorktreeResponse, GitCreateWorktreeResponse, GitHasWorktreeChangesResponse};
+use crate::shared::git::helpers::{open_repo, repo_root_path};
+use crate::shared::git::types::{GitApplyWorktreeResponse, GitCreateWorktreeResponse, GitHasWorktreeChangesResponse};
 
 // ---------------------------------------------------------------------------
 // Per-path locking — prevents concurrent create/remove on the same worktree.

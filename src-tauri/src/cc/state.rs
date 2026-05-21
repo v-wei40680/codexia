@@ -1,4 +1,4 @@
-use crate::features::event_sink::EventSink;
+use crate::shared::event_sink::EventSink;
 use claude_agent_sdk_rs::{ClaudeAgentOptions, ClaudeClient};
 use dashmap::DashMap;
 use serde_json::Value;

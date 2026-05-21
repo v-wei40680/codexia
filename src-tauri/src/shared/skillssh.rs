@@ -3,7 +3,7 @@ use serde::Serialize;
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use crate::features::skills::{
+use crate::shared::skills::{
     central_skills_dir, copy_dir_recursive, link_skill, parse_skill_front_matter,
     resolve_skills_install_root,
 };
@@ -137,7 +137,7 @@ pub fn install_from_skillssh(
     let clone_path = temp_dir.path().join("repo");
     let repo_url = format!("https://github.com/{}.git", source);
 
-    crate::features::git::clone(&repo_url, &clone_path)
+    crate::shared::git::clone(&repo_url, &clone_path)
         .context("Failed to clone repository")?;
 
     let skill_dir = find_skill_dir(&clone_path, skill_id)?;
@@ -201,7 +201,7 @@ fn find_skill_dir(repo_root: &std::path::Path, skill_id: &str) -> Result<PathBuf
             if name_match.is_none() {
                 let skill_md = entry.path().join("SKILL.md");
                 if skill_md.exists() {
-                    if let Ok(fm) = crate::features::skills::parse_skill_front_matter(&skill_md) {
+                    if let Ok(fm) = crate::shared::skills::parse_skill_front_matter(&skill_md) {
                         if fm.name.as_deref() == Some(skill_id) {
                             name_match = Some(entry.path().to_path_buf());
                         }

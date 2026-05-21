@@ -1,4 +1,4 @@
-use crate::features::filesystem::{
+use crate::shared::filesystem::{
     directory_ops, file_io,
     file_parsers::{pdf, xlsx},
     file_types::FileEntry,

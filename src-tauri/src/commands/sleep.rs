@@ -1,4 +1,4 @@
-use crate::features::sleep::SleepState;
+use crate::shared::sleep::SleepState;
 
 #[tauri::command]
 pub async fn prevent_sleep(

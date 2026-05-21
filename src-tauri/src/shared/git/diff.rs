@@ -1,9 +1,9 @@
-use crate::features::git::helpers::{
+use crate::shared::git::helpers::{
     head_blob_content, head_blob_size, index_blob_content, index_blob_size, open_repo, to_repo_relative_path,
     worktree_content, worktree_size,
 };
-use crate::features::git::stats::{staged_diff_stats, unstaged_diff_stats};
-use crate::features::git::types::{
+use crate::shared::git::stats::{staged_diff_stats, unstaged_diff_stats};
+use crate::shared::git::types::{
     GitDiffStatsResponse, GitFileDiffMetaResponse, GitFileDiffResponse,
 };
 

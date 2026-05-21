@@ -16,7 +16,7 @@ use crate::web::types::{ErrorResponse, WebServerState};
 
 use crate::codex::scan::{list_archived_threads_payload, list_threads_payload};
 use crate::codex::AppState;
-use crate::features::mcp;
+use crate::shared::mcp;
 
 fn require_codex(state: &WebServerState) -> Result<&AppState, ErrorResponse> {
     state.codex_state.as_deref().ok_or_else(|| ErrorResponse {

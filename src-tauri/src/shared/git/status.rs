@@ -2,10 +2,10 @@ use gix::bstr::{BString, ByteSlice};
 use std::collections::BTreeMap;
 use std::ops::ControlFlow;
 
-use crate::features::git::helpers::{
+use crate::shared::git::helpers::{
     open_repo, repo_root, stage_code_from_tree_index_change, stage_entry_path, worktree_code_from_summary,
 };
-use crate::features::git::types::{GitStatusEntry, GitStatusResponse};
+use crate::shared::git::types::{GitStatusEntry, GitStatusResponse};
 
 pub fn git_status(cwd: String) -> Result<GitStatusResponse, String> {
     let repo = open_repo(&cwd)?;

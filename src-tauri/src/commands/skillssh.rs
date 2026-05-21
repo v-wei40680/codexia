@@ -1,4 +1,4 @@
-use crate::features::skillssh::{self, MarketSkill};
+use crate::shared::skillssh::{self, MarketSkill};
 
 #[tauri::command]
 pub async fn fetch_market_leaderboard(board: String) -> Result<Vec<MarketSkill>, String> {

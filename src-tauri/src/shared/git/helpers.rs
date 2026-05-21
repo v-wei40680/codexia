@@ -1,4 +1,4 @@
-use crate::features::git::types::GitDiffStatsCounts;
+use crate::shared::git::types::GitDiffStatsCounts;
 use gix::bstr::{BStr, ByteSlice};
 use std::path::{Path, PathBuf};
 

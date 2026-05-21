@@ -1,7 +1,7 @@
-use crate::features::git::helpers::{
+use crate::shared::git::helpers::{
     add_counts, index_blob_bytes, read_blob_bytes, worktree_bytes,
 };
-use crate::features::git::types::GitDiffStatsCounts;
+use crate::shared::git::types::GitDiffStatsCounts;
 use gix::bstr::{BString, ByteSlice};
 use std::ops::ControlFlow;
 

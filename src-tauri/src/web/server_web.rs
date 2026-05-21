@@ -9,8 +9,8 @@ use super::{router::create_router, types::WebServerState};
 use crate::cc::CCState;
 use crate::codex::scan::start_history_scanner;
 use crate::codex::{AppState, CodexInitializationState, connect_codex, initialize_codex};
-use crate::features::event_sink::{EventSink, WebSocketEventSink};
-use crate::features::sleep::SleepState;
+use crate::shared::event_sink::{EventSink, WebSocketEventSink};
+use crate::shared::sleep::SleepState;
 use crate::web::filesystem_watch::WebWatchState;
 
 pub async fn start_web_server_with_events(
@@ -28,7 +28,7 @@ pub async fn start_web_server_with_events(
     log::info!("[web] requested port: {}", port);
 
     let automation_sink: Arc<dyn EventSink> = Arc::new(WebSocketEventSink::new(event_tx.clone()));
-    crate::features::automation::initialize_automation_runtime(
+    crate::shared::automation::initialize_automation_runtime(
         codex_state.as_ref().map(|s| s.codex.clone()),
         cc_state.as_ref().clone(),
         automation_sink,

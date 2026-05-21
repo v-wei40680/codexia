@@ -1,6 +1,6 @@
 use super::server_request::handle_server_request;
-use crate::features::event_sink::EventSink;
-use crate::features::automation::sync_automation_run_status;
+use crate::shared::event_sink::EventSink;
+use crate::shared::automation::sync_automation_run_status;
 use codex_app_server_protocol::{
     ClientInfo, InitializeCapabilities, InitializeParams, InitializeResponse,
     JSONRPCMessage, JSONRPCResponse, RequestId, ServerNotification, ServerRequest,

@@ -2,13 +2,13 @@ use super::to_error_response;
 use super::types::InsightFiltersParams;
 use axum::Json;
 
-use crate::features::insights::{AgentHeatmaps, FilterOptions, Rankings};
+use crate::shared::insights::{AgentHeatmaps, FilterOptions, Rankings};
 use crate::web::types::ErrorResponse;
 
 pub(crate) async fn api_get_agent_heatmaps(
     Json(params): Json<InsightFiltersParams>,
 ) -> Result<Json<AgentHeatmaps>, ErrorResponse> {
-    let result = crate::features::insights::get_agent_heatmaps(
+    let result = crate::shared::insights::get_agent_heatmaps(
         params.range, params.cwd, params.session_id, params.agent,
     )
     .await
@@ -19,7 +19,7 @@ pub(crate) async fn api_get_agent_heatmaps(
 pub(crate) async fn api_get_insight_rankings(
     Json(params): Json<InsightFiltersParams>,
 ) -> Result<Json<Rankings>, ErrorResponse> {
-    let result = crate::features::insights::get_insight_rankings(
+    let result = crate::shared::insights::get_insight_rankings(
         params.range, params.cwd, params.session_id, params.agent,
     )
     .await
@@ -29,7 +29,7 @@ pub(crate) async fn api_get_insight_rankings(
 
 pub(crate) async fn api_get_insight_filter_options(
 ) -> Result<Json<FilterOptions>, ErrorResponse> {
-    let result = crate::features::insights::get_insight_filter_options()
+    let result = crate::shared::insights::get_insight_filter_options()
         .await
         .map_err(to_error_response)?;
     Ok(Json(result))

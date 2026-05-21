@@ -8,7 +8,7 @@ use uuid::Uuid;
 
 use crate::cc::CCState;
 use crate::codex::CodexAppServer;
-use crate::features::event_sink::EventSink;
+use crate::shared::event_sink::EventSink;
 
 use super::execution::execute_task;
 use super::model::{AutomationStore, AutomationTask};

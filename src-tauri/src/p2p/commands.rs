@@ -58,7 +58,7 @@ pub async fn p2p_start(
             use tauri::Manager;
             use tokio::sync::broadcast;
             use crate::web::{WebServerState, create_router};
-            use crate::features::sleep::SleepState;
+            use crate::shared::sleep::SleepState;
             use crate::web::terminal::WebTerminalState;
             use crate::web::filesystem_watch::WebWatchState;
 
@@ -71,7 +71,7 @@ pub async fn p2p_start(
             let cc_state = Arc::new(app.state::<crate::cc::CCState>().inner().clone());
             let (event_tx, _) = broadcast::channel::<(String, serde_json::Value)>(256);
             // Register the event bridge so TauriEventSink forwards desktop events to mobile.
-            crate::features::p2p_bridge::register(event_tx.clone());
+            crate::shared::p2p_bridge::register(event_tx.clone());
 
             let state = WebServerState {
                 codex_state: Some(codex_state),

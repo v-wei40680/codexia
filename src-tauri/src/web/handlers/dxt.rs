@@ -4,7 +4,7 @@ use serde::Deserialize;
 use serde_json::Value;
 use crate::web::types::ErrorResponse;
 
-use crate::features::dxt::{
+use crate::shared::dxt::{
     check_manifests_exist, download_and_extract_manifests, load_manifest, load_manifests,
     read_dxt_setting, save_dxt_setting,
 };

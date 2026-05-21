@@ -5,7 +5,7 @@ use super::types::{
 };
 use axum::{Json, extract::State as AxumState, http::StatusCode};
 
-use crate::features::automation::{AutomationRunRecord, AutomationTask, list_automations};
+use crate::shared::automation::{AutomationRunRecord, AutomationTask, list_automations};
 use crate::web::types::{ErrorResponse, WebServerState};
 
 pub(crate) async fn api_list_automations(
@@ -22,7 +22,7 @@ pub(crate) async fn api_list_automations(
 pub(crate) async fn api_list_automation_runs(
     Json(params): Json<ListAutomationRunsParams>,
 ) -> Result<Json<Vec<AutomationRunRecord>>, ErrorResponse> {
-    let runs = crate::features::automation::list_automation_runs(params.task_id, params.limit)
+    let runs = crate::shared::automation::list_automation_runs(params.task_id, params.limit)
         .await
         .map_err(to_error_response)?;
     Ok(Json(runs))
@@ -32,7 +32,7 @@ pub(crate) async fn api_create_automation(
     AxumState(state): AxumState<WebServerState>,
     Json(params): Json<CreateAutomationParams>,
 ) -> Result<Json<AutomationTask>, ErrorResponse> {
-    let task = crate::features::automation::create_automation(
+    let task = crate::shared::automation::create_automation(
         params.name,
         params.projects,
         params.prompt,
@@ -52,7 +52,7 @@ pub(crate) async fn api_set_automation_paused(
     AxumState(state): AxumState<WebServerState>,
     Json(params): Json<SetAutomationPausedParams>,
 ) -> Result<Json<AutomationTask>, ErrorResponse> {
-    let task = crate::features::automation::set_automation_paused(
+    let task = crate::shared::automation::set_automation_paused(
         params.id,
         params.paused,
         state.codex_state.as_ref().map(|s| s.codex.clone()),
@@ -67,7 +67,7 @@ pub(crate) async fn api_update_automation(
     AxumState(state): AxumState<WebServerState>,
     Json(params): Json<UpdateAutomationParams>,
 ) -> Result<Json<AutomationTask>, ErrorResponse> {
-    let task = crate::features::automation::update_automation(
+    let task = crate::shared::automation::update_automation(
         params.id,
         params.name,
         params.projects,
@@ -88,7 +88,7 @@ pub(crate) async fn api_delete_automation(
     AxumState(state): AxumState<WebServerState>,
     Json(params): Json<DeleteAutomationParams>,
 ) -> Result<StatusCode, ErrorResponse> {
-    crate::features::automation::delete_automation(
+    crate::shared::automation::delete_automation(
         params.id,
         state.codex_state.as_ref().map(|s| s.codex.clone()),
         Some(state.cc_state.as_ref().clone()),
@@ -102,7 +102,7 @@ pub(crate) async fn api_run_automation_now(
     AxumState(state): AxumState<WebServerState>,
     Json(params): Json<RunAutomationNowParams>,
 ) -> Result<StatusCode, ErrorResponse> {
-    crate::features::automation::run_automation_now(
+    crate::shared::automation::run_automation_now(
         params.id,
         state.codex_state.as_ref().map(|s| s.codex.clone()),
         Some(state.cc_state.as_ref().clone()),

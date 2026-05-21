@@ -1,4 +1,4 @@
-use crate::features::automation::{self, AutomationRunRecord, AutomationSchedule, AutomationTask};
+use crate::shared::automation::{self, AutomationRunRecord, AutomationSchedule, AutomationTask};
 use crate::cc::CCState;
 use crate::codex::AppState;
 use tauri::State;

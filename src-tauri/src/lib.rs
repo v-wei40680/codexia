@@ -6,7 +6,7 @@ mod codex;
 #[cfg(feature = "core")]
 mod db;
 #[cfg(feature = "core")]
-mod features;
+mod shared;
 #[cfg(all(feature = "core", feature = "tauri"))]
 mod state;
 #[cfg(all(feature = "core", feature = "tauri"))]
@@ -55,7 +55,7 @@ pub fn run() {
     let builder = {
         use crate::cc::CCState;
         use crate::commands::terminal::TerminalState;
-        use crate::features::sleep::SleepState;
+        use crate::shared::sleep::SleepState;
         use crate::state::WatchState;
         use std::sync::Arc;
         use std::time::Instant;
@@ -273,8 +273,8 @@ pub fn run() {
             ])
             .setup(|app| {
                 let app_handle = app.handle().clone();
-                let event_sink: Arc<dyn crate::features::event_sink::EventSink> =
-                    Arc::new(crate::features::event_sink::TauriEventSink::new(app_handle));
+                let event_sink: Arc<dyn crate::shared::event_sink::EventSink> =
+                    Arc::new(crate::shared::event_sink::TauriEventSink::new(app_handle));
 
                 app.manage(CCState::new(Arc::clone(&event_sink)));
 
@@ -313,7 +313,7 @@ pub fn run() {
                 crate::cc::scan::start_session_scanner();
 
                 tauri::async_runtime::spawn(async {
-                    tokio::task::spawn_blocking(crate::features::git::scan_all_orphan_worktrees)
+                    tokio::task::spawn_blocking(crate::shared::git::scan_all_orphan_worktrees)
                         .await
                         .ok();
                 });

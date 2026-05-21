@@ -1,8 +1,8 @@
 use gix::bstr::ByteSlice;
 use std::collections::HashMap;
 
-use crate::features::git::helpers::open_repo;
-use crate::features::git::types::{GitBranchInfoResponse, GitBranchListResponse};
+use crate::shared::git::helpers::open_repo;
+use crate::shared::git::types::{GitBranchInfoResponse, GitBranchListResponse};
 
 pub fn git_branch_info(cwd: String) -> Result<GitBranchInfoResponse, String> {
     let repo = open_repo(&cwd)?;

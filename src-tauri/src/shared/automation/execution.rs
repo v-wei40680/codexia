@@ -8,7 +8,7 @@ use crate::cc::services::{message_service, session_service};
 use crate::cc::{CCState, CCConnectParams};
 use crate::codex::CodexAppServer;
 use crate::db::automation_runs;
-use crate::features::event_sink::EventSink;
+use crate::shared::event_sink::EventSink;
 
 use super::model::{AutomationTask, default_model, default_model_provider, normalize_model_provider};
 

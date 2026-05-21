@@ -6,7 +6,7 @@ use super::types::{
 };
 use axum::Json;
 
-use crate::features::skills::{self, CentralSkill, InstalledSkill, MarketplaceSkill, SkillGroupsConfig};
+use crate::shared::skills::{self, CentralSkill, InstalledSkill, MarketplaceSkill, SkillGroupsConfig};
 use crate::web::types::ErrorResponse;
 
 pub(crate) async fn api_skills_list_marketplace(

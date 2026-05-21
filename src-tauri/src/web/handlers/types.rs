@@ -7,7 +7,7 @@ use serde_json::Value;
 
 use crate::cc::mcp::ClaudeCodeMcpServer;
 use crate::cc::types::AgentOptions;
-use crate::features::automation::AutomationSchedule;
+use crate::shared::automation::AutomationSchedule;
 
 #[derive(Deserialize)]
 pub(crate) struct ListThreadsRequest {
@@ -153,7 +153,7 @@ pub(crate) struct SkillsshInstallParams {
 
 #[derive(Deserialize)]
 pub(crate) struct SkillGroupsWriteParams {
-    pub(crate) config: crate::features::skills::SkillGroupsConfig,
+    pub(crate) config: crate::shared::skills::SkillGroupsConfig,
 }
 
 #[derive(Deserialize)]

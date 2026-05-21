@@ -2,7 +2,7 @@ use super::to_error_response;
 use super::types::{SkillsshInstallParams, SkillsshLeaderboardParams, SkillsshSearchParams};
 use axum::Json;
 
-use crate::features::skillssh::{self, MarketSkill};
+use crate::shared::skillssh::{self, MarketSkill};
 use crate::web::types::ErrorResponse;
 
 pub(crate) async fn api_skillssh_leaderboard(

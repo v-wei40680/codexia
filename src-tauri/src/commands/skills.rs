@@ -1,4 +1,4 @@
-use crate::features::skills;
+use crate::shared::skills;
 
 pub use skills::{CentralSkill, InstalledSkill, MarketplaceSkill, SkillGroupsConfig};
 
