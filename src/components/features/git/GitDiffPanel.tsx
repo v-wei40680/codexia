@@ -28,7 +28,7 @@ export function GitDiffPanel({ cwd, isActive }: GitDiffPanelProps) {
   const [showFileTree, setShowFileTree] = useState(true);
   const [filterText, setFilterText] = useState('');
   const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
-  const [diffSource, setDiffSource] = useState<DiffSource>('uncommitted');
+  const [diffSource, setDiffSource] = useState<DiffSource>('unstaged');
   const [bulkStageDialogOpen, setBulkStageDialogOpen] = useState(false);
   const [bulkStageLoading, setBulkStageLoading] = useState(false);
   const selectedDiffPathRef = useRef<string | null>(null);
@@ -39,6 +39,18 @@ export function GitDiffPanel({ cwd, isActive }: GitDiffPanelProps) {
     (value: string) => toPosix(value).replace(/^\/+/, ''),
     [toPosix]
   );
+
+  const handleDiffSourceChange = useCallback((source: DiffSource) => {
+    setDiffSource(source);
+    if (source === 'unstaged' || source === 'staged') {
+      setSelectedDiffSection(source);
+    }
+  }, []);
+
+  const handleDiffSectionChange = useCallback((section: DiffSection) => {
+    setSelectedDiffSection(section);
+    setDiffSource(section as unknown as DiffSource);
+  }, []);
 
   const refreshGitStatus = useCallback(async () => {
     if (!cwd) return;
@@ -243,9 +255,9 @@ export function GitDiffPanel({ cwd, isActive }: GitDiffPanelProps) {
         cwd={cwd}
         gitLoading={gitLoading}
         diffSource={diffSource}
-        onDiffSourceChange={setDiffSource}
+        onDiffSourceChange={handleDiffSourceChange}
         selectedDiffSection={selectedDiffSection}
-        onDiffSectionChange={setSelectedDiffSection}
+        onDiffSectionChange={handleDiffSectionChange}
         unstagedCount={unstagedEntries.length}
         stagedCount={stagedEntries.length}
         showFileTree={showFileTree}

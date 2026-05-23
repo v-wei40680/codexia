@@ -1,7 +1,7 @@
 import type { GitStatusEntry } from '@/services/tauri';
 
 export type DiffSection = 'staged' | 'unstaged';
-export type DiffSource = 'uncommitted' | 'latest-turn';
+export type DiffSource = 'unstaged' | 'staged' | 'latest-turn';
 
 export type TreeNode = TreeFolderNode | TreeFileNode;
 

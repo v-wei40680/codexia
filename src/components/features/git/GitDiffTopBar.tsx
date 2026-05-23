@@ -35,8 +35,6 @@ export function GitDiffTopBar({
   gitLoading,
   diffSource,
   onDiffSourceChange,
-  selectedDiffSection,
-  onDiffSectionChange,
   unstagedCount,
   stagedCount,
   showFileTree,
@@ -47,14 +45,15 @@ export function GitDiffTopBar({
   return (
     <div className="border-b border-white/10 flex items-center gap-2">
       {/* Source selector — hidden on mobile, shown via dropdown instead */}
-      <div className="hidden md:block w-48 shrink-0">
+      <div className="hidden md:block shrink-0">
         <Select value={diffSource} onValueChange={(value) => onDiffSourceChange(value as DiffSource)}>
           <SelectTrigger className="h-8 text-xs">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="uncommitted">uncommitted changes</SelectItem>
-            <SelectItem value="latest-turn">latest turn changes</SelectItem>
+            <SelectItem value="unstaged">unstaged ({unstagedCount})</SelectItem>
+            <SelectItem value="staged">staged ({stagedCount})</SelectItem>
+            <SelectItem value="latest-turn">latest turn</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -62,24 +61,6 @@ export function GitDiffTopBar({
       <div className="flex-1" />
 
       <div className="flex items-center">
-        <div className="flex items-center gap-1 rounded-md border border-white/10 bg-background/60 p-1">
-          <Button
-            size="sm"
-            variant={selectedDiffSection === 'unstaged' ? 'default' : 'ghost'}
-            className="h-7 px-2 text-xs"
-            onClick={() => onDiffSectionChange('unstaged')}
-          >
-            Unstaged ({unstagedCount})
-          </Button>
-          <Button
-            size="sm"
-            variant={selectedDiffSection === 'staged' ? 'default' : 'ghost'}
-            className="h-7 px-2 text-xs"
-            onClick={() => onDiffSectionChange('staged')}
-          >
-            Staged ({stagedCount})
-          </Button>
-        </div>
         <Button
           variant={showFileTree ? 'secondary' : 'ghost'}
           size="icon-sm"
@@ -105,12 +86,12 @@ export function GitDiffTopBar({
             {/* Source selector — shown here on mobile only */}
             <DropdownMenuItem
               className="md:hidden"
-              onClick={() => onDiffSourceChange(diffSource === 'uncommitted' ? 'latest-turn' : 'uncommitted')}
+              onClick={() => onDiffSourceChange(diffSource === 'latest-turn' ? 'unstaged' : 'latest-turn')}
             >
-              {diffSource === 'uncommitted' ? (
-                <><SquareStack className="h-4 w-4" /> Latest turn changes</>
+              {diffSource === 'latest-turn' ? (
+                <><SquareDashedBottom className="h-4 w-4" /> Unstaged changes</>
               ) : (
-                <><SquareDashedBottom className="h-4 w-4" /> Uncommitted changes</>
+                <><SquareStack className="h-4 w-4" /> Latest turn changes</>
               )}
             </DropdownMenuItem>
           </DropdownMenuContent>
