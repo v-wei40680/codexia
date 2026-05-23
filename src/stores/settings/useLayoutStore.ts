@@ -3,6 +3,13 @@ import { persist } from 'zustand/middleware';
 import { AgentType } from '../useWorkspaceStore';
 import { posthog } from '@/lib/posthog';
 
+let terminalCounter = 1;
+
+export interface TerminalTab {
+  id: string;
+  label: string;
+}
+
 export type viewType =
   | 'automations'
   | 'agents-md'
@@ -34,6 +41,13 @@ interface LayoutStore {
   setActiveRightPanelTab: (tab: 'diff' | 'tasks' | 'note' | 'files' | 'webpreview') => void;
   selectedAutomationTaskId: string | null;
   setSelectedAutomationTaskId: (taskId: string | null) => void;
+  // Terminal tabs
+  terminals: TerminalTab[];
+  activeTerminalId: string | null;
+  addTerminal: () => void;
+  removeTerminal: (id: string) => void;
+  setActiveTerminalId: (id: string) => void;
+  // Derived: panel is open when at least one tab exists
   isTerminalOpen: boolean;
   setIsTerminalOpen: (open: boolean) => void;
   diffWordWrap: boolean;
@@ -64,14 +78,54 @@ export const useLayoutStore = create<LayoutStore>()(
       setActiveRightPanelTab: (tab) => set({ activeRightPanelTab: tab }),
       selectedAutomationTaskId: null,
       setSelectedAutomationTaskId: (taskId) => set({ selectedAutomationTaskId: taskId }),
+      // Terminal tabs
+      terminals: [],
+      activeTerminalId: null,
+      addTerminal: () =>
+        set((state) => {
+          const id = `term-${terminalCounter++}`;
+          const label = `Terminal ${terminalCounter - 1}`;
+          const tab: TerminalTab = { id, label };
+          return {
+            terminals: [...state.terminals, tab],
+            activeTerminalId: id,
+            isTerminalOpen: true,
+          };
+        }),
+      removeTerminal: (id) =>
+        set((state) => {
+          const next = state.terminals.filter((t) => t.id !== id);
+          const activeId =
+            state.activeTerminalId === id
+              ? (next[next.length - 1]?.id ?? null)
+              : state.activeTerminalId;
+          return {
+            terminals: next,
+            activeTerminalId: activeId,
+            isTerminalOpen: next.length > 0,
+          };
+        }),
+      setActiveTerminalId: (id) => set({ activeTerminalId: id }),
       isTerminalOpen: false,
-      setIsTerminalOpen: (open) => set({ isTerminalOpen: open }),
+      setIsTerminalOpen: (open) =>
+        set((state) => {
+          if (!open) return { isTerminalOpen: false };
+          // Open: create first tab if none exist
+          if (state.terminals.length > 0) return { isTerminalOpen: true };
+          const id = `term-${terminalCounter++}`;
+          const label = `Terminal ${terminalCounter - 1}`;
+          return {
+            terminals: [{ id, label }],
+            activeTerminalId: id,
+            isTerminalOpen: true,
+          };
+        }),
       diffWordWrap: false,
       setDiffWordWrap: (enabled) => set({ diffWordWrap: enabled }),
     }),
     {
       name: 'layout-storage',
-      version: 3,
+      version: 4,
     }
   )
 );

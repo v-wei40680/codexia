@@ -142,7 +142,7 @@ const ViewLoadingFallback = () => (
 );
 
 export function AppLayout() {
-  const { view, setView, isSidebarOpen, setSidebarOpen, isTerminalOpen, setIsTerminalOpen } = useLayoutStore();
+  const { view, setView, isSidebarOpen, setSidebarOpen } = useLayoutStore();
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -169,7 +169,7 @@ export function AppLayout() {
         </Suspense>
       </div>
       {view === 'agent' && (
-        <BottomTerminal open={isTerminalOpen} onOpenChange={setIsTerminalOpen} />
+        <BottomTerminal />
       )}
     </div>
   );

@@ -80,6 +80,7 @@ export function RightPanelHeader() {
         </div>
       )}
 
+      {/* Terminal: toggle panel visibility; creates first tab if none exist */}
       <Button
         variant={isTerminalOpen ? 'secondary' : 'ghost'}
         size="icon"

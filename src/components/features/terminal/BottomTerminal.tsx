@@ -1,272 +1,110 @@
-import { useEffect, useRef, useState } from 'react';
-import { listen } from '@tauri-apps/api/event';
-import { ChevronDown, RotateCcw, Square } from 'lucide-react';
-import { Terminal } from 'xterm';
-import { FitAddon } from 'xterm-addon-fit';
-import 'xterm/css/xterm.css';
-import { Button } from '@/components/ui/button';
+import { useLayoutStore } from '@/stores';
 import { cn } from '@/lib/utils';
-import { terminalResize, terminalStart, terminalStop, terminalWrite } from '@/services/tauri';
-import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { isTauri } from '@/hooks/runtime';
+import { Button } from '@/components/ui/button';
+import { Plus, X, Terminal } from 'lucide-react';
+import { TerminalPane } from './TerminalPane';
 
-type BottomTerminalProps = {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-};
-
-type TerminalDataPayload = {
-  session_id: string;
-  data: string;
-};
-
-type TerminalExitPayload = {
-  session_id: string;
-  message: string;
-};
-
-export function BottomTerminal({ open, onOpenChange }: BottomTerminalProps) {
-  const { cwd } = useWorkspaceStore();
+export function BottomTerminal() {
+  const {
+    isTerminalOpen,
+    setIsTerminalOpen,
+    terminals,
+    activeTerminalId,
+    addTerminal,
+    removeTerminal,
+    setActiveTerminalId,
+  } = useLayoutStore();
   const isMobile = useIsMobile();
-  const isTauriRuntime = isTauri();
-  const [shell, setShell] = useState('');
-  const [sessionId, setSessionId] = useState<string | null>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const terminalRef = useRef<Terminal | null>(null);
-  const fitAddonRef = useRef<FitAddon | null>(null);
-  const sessionIdRef = useRef<string | null>(null);
-  const isStartingRef = useRef(false);
-
-  useEffect(() => {
-    sessionIdRef.current = sessionId;
-  }, [sessionId]);
-
-  useEffect(() => {
-    if (!open || !containerRef.current || terminalRef.current) {
-      return;
-    }
-
-    const term = new Terminal({
-      convertEol: false,
-      cursorBlink: true,
-      fontFamily: 'Menlo, Monaco, Consolas, monospace',
-      fontSize: 12,
-      scrollback: 5000,
-      theme: {
-        background: '#0a0a0a',
-      },
-    });
-    const fitAddon = new FitAddon();
-    term.loadAddon(fitAddon);
-    term.open(containerRef.current);
-    fitAddon.fit();
-    term.writeln('Terminal ready.');
-
-    const disposeData = term.onData((data) => {
-      const currentSession = sessionIdRef.current;
-      if (!currentSession) {
-        return;
-      }
-      void terminalWrite(currentSession, data).catch((error) => {
-        term.writeln(`\r\n[write failed] ${String(error)}`);
-      });
-    });
-
-    terminalRef.current = term;
-    fitAddonRef.current = fitAddon;
-
-    return () => {
-      disposeData.dispose();
-      term.dispose();
-      terminalRef.current = null;
-      fitAddonRef.current = null;
-    };
-  }, [open]);
-
-  const startSession = async () => {
-    const term = terminalRef.current;
-    const fitAddon = fitAddonRef.current;
-    if (!isTauriRuntime || !term || !fitAddon || sessionIdRef.current || isStartingRef.current) {
-      return;
-    }
-    isStartingRef.current = true;
-
-    try {
-      fitAddon.fit();
-      const { session_id, shell: shellName } = await terminalStart(
-        cwd,
-        Math.max(term.cols, 2),
-        Math.max(term.rows, 2)
-      );
-      setSessionId(session_id);
-      setShell(shellName);
-    } finally {
-      isStartingRef.current = false;
-    }
-  };
-
-  const stopSession = async () => {
-    if (!isTauriRuntime) {
-      return;
-    }
-    const current = sessionIdRef.current;
-    if (!current) {
-      return;
-    }
-    await terminalStop(current);
-    setSessionId(null);
-    sessionIdRef.current = null;
-  };
-
-  const restartSession = async () => {
-    await stopSession();
-    await startSession();
-  };
-
-  useEffect(() => {
-    if (open) {
-      void startSession();
-      requestAnimationFrame(() => {
-        terminalRef.current?.focus();
-      });
-    }
-  }, [open]);
-
-  useEffect(() => {
-    if (!isTauriRuntime) {
-      return;
-    }
-
-    let unlistenData: (() => void) | null = null;
-    let unlistenExit: (() => void) | null = null;
-
-    void listen<TerminalDataPayload>('terminal:data', (event) => {
-      if (event.payload.session_id !== sessionIdRef.current) {
-        return;
-      }
-      terminalRef.current?.write(event.payload.data);
-    }).then((fn) => {
-      unlistenData = fn;
-    });
-
-    void listen<TerminalExitPayload>('terminal:exit', (event) => {
-      if (event.payload.session_id !== sessionIdRef.current) {
-        return;
-      }
-      terminalRef.current?.writeln(`\r\n[${event.payload.message}]`);
-      setSessionId(null);
-      sessionIdRef.current = null;
-    }).then((fn) => {
-      unlistenExit = fn;
-    });
-
-    return () => {
-      if (unlistenData) {
-        unlistenData();
-      }
-      if (unlistenExit) {
-        unlistenExit();
-      }
-    };
-  }, [isTauriRuntime]);
-
-  useEffect(() => {
-    const fitAndResize = () => {
-      if (!open) {
-        return;
-      }
-      const term = terminalRef.current;
-      const fitAddon = fitAddonRef.current;
-      const current = sessionIdRef.current;
-      if (!term || !fitAddon) {
-        return;
-      }
-      fitAddon.fit();
-      if (isTauriRuntime && current) {
-        void terminalResize(current, Math.max(term.cols, 2), Math.max(term.rows, 2));
-      }
-    };
-
-    const observer = new ResizeObserver(fitAndResize);
-    if (open && containerRef.current) {
-      observer.observe(containerRef.current);
-    }
-    if (open) {
-      window.addEventListener('resize', fitAndResize);
-    }
-    return () => {
-      observer.disconnect();
-      if (open) {
-        window.removeEventListener('resize', fitAndResize);
-      }
-    };
-  }, [isTauriRuntime, open]);
-
-  useEffect(() => {
-    if (!isTauriRuntime) {
-      return;
-    }
-
-    return () => {
-      const current = sessionIdRef.current;
-      if (current) {
-        void terminalStop(current);
-      }
-    };
-  }, [isTauriRuntime]);
 
   return (
     <div
-      style={{ height: open ? (isMobile ? '42dvh' : '18rem') : '0px' }}
+      style={{ height: isTerminalOpen ? (isMobile ? '42dvh' : '18rem') : '0px' }}
       className={cn(
-        'border-t border-border/80 bg-black text-zinc-100 transition-[height,opacity] duration-200 ease-out',
-        open ? 'opacity-100' : 'opacity-0'
+        'border-t border-border/80 bg-black text-zinc-100 transition-[height,opacity] duration-200 ease-out flex flex-col min-h-0',
+        isTerminalOpen ? 'opacity-100' : 'opacity-0 pointer-events-none',
       )}
     >
-      <div className="flex h-full min-h-0 flex-col">
-        <div className="flex items-center gap-2 border-b border-zinc-800 px-3 py-2">
-          <div className="text-xs font-mono text-zinc-300">
-            {shell || 'terminal'} {sessionId ? '(running)' : '(stopped)'}
+      {/* Tab bar */}
+      <div className="flex items-center border-b border-zinc-800 bg-zinc-950 px-1 gap-0 shrink-0">
+        {terminals.map((tab) => (
+          <div
+            key={tab.id}
+            role="button"
+            tabIndex={0}
+            onClick={() => setActiveTerminalId(tab.id)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                setActiveTerminalId(tab.id);
+              }
+            }}
+            className={cn(
+              'group flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono border-r border-zinc-800 transition-colors cursor-pointer select-none',
+              activeTerminalId === tab.id
+                ? 'bg-black text-zinc-100'
+                : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900',
+            )}
+          >
+            {/* Close/Icon container */}
+            <div className="relative w-4 h-4 shrink-0 flex items-center justify-center">
+              <Terminal
+                className={cn(
+                  'size-3 transition-opacity group-hover:opacity-0',
+                  activeTerminalId === tab.id ? 'text-zinc-400' : 'text-zinc-500',
+                )}
+              />
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute inset-0 h-4 w-4 p-0 text-zinc-500 hover:text-zinc-200 hover:bg-zinc-800 opacity-0 group-hover:opacity-100 transition-opacity"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  removeTerminal(tab.id);
+                }}
+                title={`Close ${tab.label}`}
+              >
+                <X className="size-3" />
+              </Button>
+            </div>
+            <span>{tab.label}</span>
           </div>
-          <div className="ml-auto flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-zinc-300 hover:bg-zinc-800 hover:text-white"
-              onClick={() => void restartSession()}
-              title="Restart shell"
-            >
-              <RotateCcw className="size-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-zinc-300 hover:bg-zinc-800 hover:text-white"
-              onClick={() => void stopSession()}
-              title="Stop shell"
-            >
-              <Square className="size-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-zinc-300 hover:bg-zinc-800 hover:text-white"
-              onClick={() => onOpenChange(false)}
-              title="Hide terminal"
-            >
-              <ChevronDown className="size-4" />
-            </Button>
-          </div>
-        </div>
+        ))}
 
-        <div
-          ref={containerRef}
-          className="min-h-0 flex-1 px-2 py-2"
-          onMouseDown={() => {
-            terminalRef.current?.focus();
-          }}
-        />
+        {/* New tab button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 ml-0.5 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900 shrink-0"
+          onClick={addTerminal}
+          title="New terminal"
+        >
+          <Plus className="size-3.5" />
+        </Button>
+
+        <div className="flex-1" />
+
+        {/* Hide panel button */}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="h-7 w-7 mr-1.5 text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900 shrink-0"
+          onClick={() => setIsTerminalOpen(false)}
+          title="Close terminal panel"
+        >
+          <X className="size-3.5" />
+        </Button>
+      </div>
+
+      {/* Panes — all mounted, only active one visible (preserves xterm state) */}
+      <div className="relative flex-1 min-h-0">
+        {terminals.map((tab) => (
+          <TerminalPane
+            key={tab.id}
+            id={tab.id}
+            active={tab.id === activeTerminalId}
+            panelOpen={isTerminalOpen}
+          />
+        ))}
       </div>
     </div>
   );
