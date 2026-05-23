@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Folder, PanelLeftClose, RefreshCw, Search, X } from 'lucide-react';
+import { PanelLeftClose, RefreshCw, Search, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 interface FileTreeHeaderProps {
@@ -13,7 +13,6 @@ interface FileTreeHeaderProps {
 }
 
 export function FileTreeHeader({
-  currentFolder,
   filterText,
   onFilterTextChange,
   onRefresh,
@@ -37,12 +36,6 @@ export function FileTreeHeader({
     }
   }, [showSearchInput]);
 
-  const getCurrentDirectoryName = () => {
-    if (!currentFolder) return 'Home';
-    // Support both Unix (/) and Windows (\) path separators
-    const parts = currentFolder.split(/[/\\]+/);
-    return parts.pop() || currentFolder;
-  };
 
   const handleToggleSearch = () => {
     if (showSearchInput) {
@@ -72,13 +65,6 @@ export function FileTreeHeader({
               <PanelLeftClose className="w-3.5 h-3.5" />
             </Button>
           ) : null}
-          <Folder className="w-4 h-4 text-primary shrink-0" />
-          <span
-            className="text-sm font-medium text-foreground truncate"
-            title={currentFolder || 'Home'}
-          >
-            {getCurrentDirectoryName()}
-          </span>
         </div>
 
         {/* Right: refresh + search toggle */}
