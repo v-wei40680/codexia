@@ -1,4 +1,4 @@
-import { Chrome, Diff, Files, PanelRight, StickyNote, Terminal } from 'lucide-react';
+import { Chrome, Diff, Files, ListTodo, PanelRight, StickyNote, Terminal } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLayoutStore } from '@/stores';
 import { useGitWatch } from '@/hooks/useGitWatch';
@@ -35,7 +35,7 @@ export function RightPanelHeader() {
 
   useGitWatch(cwd || null, silentRefreshGitStats, Boolean(cwd));
 
-  const openRightPanelTab = (tab: 'diff' | 'note' | 'files' | 'webpreview') => {
+  const openRightPanelTab = (tab: 'diff' | 'tasks' | 'note' | 'files' | 'webpreview') => {
     setActiveRightPanelTab(tab);
     setRightPanelOpen(true);
   };
@@ -52,6 +52,14 @@ export function RightPanelHeader() {
             title="Web Preview"
           >
             <Chrome className="size-4" />
+          </Button>
+          <Button
+            variant={activeRightPanelTab === 'tasks' ? 'secondary' : 'ghost'}
+            size="icon"
+            onClick={() => openRightPanelTab('tasks')}
+            title="Tasks"
+          >
+            <ListTodo className="size-4" />
           </Button>
           <Button
             variant={activeRightPanelTab === 'note' ? 'secondary' : 'ghost'}

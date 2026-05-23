@@ -14,8 +14,6 @@ import {
   ArrowLeft,
   X,
   Maximize2,
-  PanelRightClose,
-  PanelRightOpen,
 } from "lucide-react";
 import type { AgentCenterCard } from "@/stores/useAgentCenterStore";
 import { AgentIcon } from "@/components/common/AgentIcon";
@@ -117,14 +115,14 @@ export function AgentCardHeader({
   );
 }
 
-interface AgentCardProps {
+export interface AgentCardProps {
   card: AgentCenterCard;
   onExpand: () => void;
   onRemove: () => void;
   isSelected: boolean;
 }
 
-function AgentCard({ card, onExpand, onRemove, isSelected }: AgentCardProps) {
+export function AgentCard({ card, onExpand, onRemove, isSelected }: AgentCardProps) {
   const { setCurrentAgentCardId } = useAgentCenterStore();
   const { sessionLoadingMap, sessionMessagesMap, activeSessionIds } =
     useCCStore();
@@ -206,7 +204,7 @@ function AgentFullscreen() {
 
 // ─── ColumnLabel ────────────────────────────────────────────────────────────
 
-function ColumnLabel({
+export function ColumnLabel({
   dot,
   label,
   count,
@@ -286,14 +284,7 @@ function AgentList() {
     }
   };
 
-  const selectCard = (card: AgentCenterCard) => {
-    setCurrentAgentCardId(card.id);
-    setSelectedAgent(card.kind);
-    if (card.kind === "codex") void codexService.setCurrentThread(card.id);
-    else switchToSession(card.id);
-  };
 
-  const [showSidePanels, setShowSidePanels] = useState(true);
   const [mobileTab, setMobileTab] = useState<"all" | "idle" | "running">("all");
   const [isDesktop, setIsDesktop] = useState(() => {
     if (typeof window === "undefined") return true;
@@ -389,22 +380,7 @@ function AgentList() {
   return (
     <div className="flex flex-row h-full min-h-0 overflow-hidden">
       {/* Left: current session */}
-      <div className="flex-1 flex flex-col min-h-0 border-r overflow-hidden">
-        <div className="flex justify-end px-1 pt-1 shrink-0">
-          <button
-            onClick={() => setShowSidePanels((v) => !v)}
-            className="text-muted-foreground/50 hover:text-muted-foreground transition-colors"
-            aria-label={
-              showSidePanels ? "Hide side panels" : "Show side panels"
-            }
-          >
-            {showSidePanels ? (
-              <PanelRightClose className="h-3.5 w-3.5" />
-            ) : (
-              <PanelRightOpen className="h-3.5 w-3.5" />
-            )}
-          </button>
-        </div>
+      <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
           <Suspense fallback={null}>
             {selectedAgent === "codex" ? (
@@ -420,68 +396,6 @@ function AgentList() {
           </div>
         </div>
       </div>
-
-      {showSidePanels && (
-        <>
-          {/* Middle: running */}
-          <div className="w-80 flex-none flex flex-col min-h-0 border-r overflow-hidden">
-            <ColumnLabel
-              dot="green"
-              label="Running"
-              count={runningCards.length}
-            />
-            <div className="flex-1 min-h-0 overflow-y-auto p-2 flex flex-col gap-2">
-              {runningCards.length === 0 ? (
-                <div className="flex h-full items-center justify-center text-xs text-muted-foreground/50 py-4">
-                  No running agents
-                </div>
-              ) : (
-                runningCards.map((card) => (
-                  <div
-                    key={card.id}
-                    onClick={() => selectCard(card)}
-                    className="cursor-pointer"
-                  >
-                    <AgentCard
-                      card={card}
-                      onExpand={() => void expand(card)}
-                      onRemove={() => handleRemove(card)}
-                      isSelected={card.id === currentAgentCardId}
-                    />
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-
-          {/* Right: idle */}
-          <div className="w-80 flex-none flex flex-col min-h-0 overflow-hidden">
-            <ColumnLabel dot="muted" label="Idle" count={idleCards.length} />
-            <div className="flex-1 min-h-0 overflow-y-auto p-2 flex flex-col gap-2">
-              {idleCards.length === 0 ? (
-                <div className="flex h-full items-center justify-center text-xs text-muted-foreground/50 py-4">
-                  No idle agents
-                </div>
-              ) : (
-                idleCards.map((card) => (
-                  <div
-                    key={card.id}
-                    onClick={() => selectCard(card)}
-                    className="cursor-pointer"
-                  >
-                    <AgentCard
-                      card={card}
-                      onExpand={() => void expand(card)}
-                      onRemove={() => handleRemove(card)}
-                      isSelected={card.id === currentAgentCardId}
-                    />
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        </>
-      )}
     </div>
   );
 }

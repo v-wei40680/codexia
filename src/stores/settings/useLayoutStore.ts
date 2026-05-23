@@ -30,8 +30,8 @@ interface LayoutStore {
   setIsAgentExpanded: (expanded: boolean) => void;
   activeSidebarTab: AgentType;
   setActiveSidebarTab: (tab: AgentType) => void;
-  activeRightPanelTab: 'diff' | 'note' | 'files' | 'webpreview';
-  setActiveRightPanelTab: (tab: 'diff' | 'note' | 'files' | 'webpreview') => void;
+  activeRightPanelTab: 'diff' | 'tasks' | 'note' | 'files' | 'webpreview';
+  setActiveRightPanelTab: (tab: 'diff' | 'tasks' | 'note' | 'files' | 'webpreview') => void;
   selectedAutomationTaskId: string | null;
   setSelectedAutomationTaskId: (taskId: string | null) => void;
   isTerminalOpen: boolean;
