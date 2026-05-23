@@ -198,14 +198,14 @@ export const codexService = {
       throw error;
     }
   },
-  async setCurrentThread(threadId: string | null, _options?: { resume?: boolean }) {
+  async setCurrentThread(threadId: string | null, options?: { resume?: boolean }) {
     // Review-first behavior: setting the current thread no longer auto-resumes
     // the agent process. Live threads (already in activeThreadIds with cached
     // events) just switch view + derive activeTurnId. Dormant threads switch
     // view but stay disconnected — ChatInterface renders an explicit Resume
     // button to spawn the agent on demand. Lets users peek at history without
     // paying the agent-spawn cost. The `options.resume` parameter is preserved
-    // for API compat but no longer triggers a resume.
+    // for API compat and will trigger a resume when requested.
     const set = useCodexStore.setState;
     try {
       if (!threadId) {
@@ -246,6 +246,9 @@ export const codexService = {
           currentTurnId: null,
           inputFocusTrigger: state.inputFocusTrigger + 1,
         }));
+        if (options?.resume) {
+          await codexService.threadResume(threadId);
+        }
       }
     } catch (error: unknown) {
       console.error('[CodexService] setCurrentThread error:', error);
