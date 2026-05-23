@@ -1,4 +1,5 @@
 import { Chrome, Diff, Files, ListTodo, PanelRight, StickyNote, Terminal } from 'lucide-react';
+import { type LucideIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useLayoutStore } from '@/stores';
 import { useGitWatch } from '@/hooks/useGitWatch';
@@ -6,6 +7,21 @@ import { useGitStatsStore } from '@/stores/useGitStatsStore';
 import { useWorkspaceStore } from '@/stores';
 import { GitActions, GitStatsIndicator } from '@/components/features/git';
 import { useCallback, useEffect } from 'react';
+
+type RightPanelTab = 'diff' | 'tasks' | 'note' | 'files' | 'webpreview';
+
+interface TabConfig {
+  tab: RightPanelTab;
+  icon: LucideIcon;
+  title: string;
+}
+
+const TAB_BUTTONS: TabConfig[] = [
+  { tab: 'webpreview', icon: Chrome,     title: 'Web Preview' },
+  { tab: 'tasks',      icon: ListTodo,   title: 'Tasks' },
+  { tab: 'note',       icon: StickyNote, title: 'Notes' },
+  { tab: 'files',      icon: Files,      title: 'Files' },
+];
 
 export function RightPanelHeader() {
   const {
@@ -21,62 +37,39 @@ export function RightPanelHeader() {
   const { cwd } = useWorkspaceStore();
   const { refreshStats } = useGitStatsStore();
 
-  const refreshGitStats = useCallback(() => {
-    void refreshStats(cwd);
-  }, [cwd, refreshStats]);
+  const makeRefresher = useCallback(
+    (silent = false) => () => void refreshStats(cwd, silent),
+    [cwd, refreshStats],
+  );
 
-  const silentRefreshGitStats = useCallback(() => {
-    void refreshStats(cwd, true);
-  }, [cwd, refreshStats]);
-
+  // Eagerly refresh on cwd change; silent=false shows loading state
   useEffect(() => {
-    refreshGitStats();
-  }, [cwd, refreshGitStats]);
+    makeRefresher()();
+  }, [makeRefresher]);
 
-  useGitWatch(cwd || null, silentRefreshGitStats, Boolean(cwd));
+  useGitWatch(cwd || null, makeRefresher(true), Boolean(cwd));
 
-  const openRightPanelTab = (tab: 'diff' | 'tasks' | 'note' | 'files' | 'webpreview') => {
+  const openRightPanelTab = useCallback((tab: RightPanelTab) => {
     setActiveRightPanelTab(tab);
     setRightPanelOpen(true);
-  };
+  }, [setActiveRightPanelTab, setRightPanelOpen]);
 
   return (
     <div className="flex items-center gap-2">
       <GitActions />
       {isRightPanelOpen && (
         <div className="flex items-center">
-          <Button
-            variant={activeRightPanelTab === 'webpreview' ? 'secondary' : 'ghost'}
-            size="icon"
-            onClick={() => openRightPanelTab('webpreview')}
-            title="Web Preview"
-          >
-            <Chrome className="size-4" />
-          </Button>
-          <Button
-            variant={activeRightPanelTab === 'tasks' ? 'secondary' : 'ghost'}
-            size="icon"
-            onClick={() => openRightPanelTab('tasks')}
-            title="Tasks"
-          >
-            <ListTodo className="size-4" />
-          </Button>
-          <Button
-            variant={activeRightPanelTab === 'note' ? 'secondary' : 'ghost'}
-            size="icon"
-            onClick={() => openRightPanelTab('note')}
-            title="Notes"
-          >
-            <StickyNote className="size-4" />
-          </Button>
-          <Button
-            variant={activeRightPanelTab === 'files' ? 'secondary' : 'ghost'}
-            size="icon"
-            onClick={() => openRightPanelTab('files')}
-            title="Files"
-          >
-            <Files className="size-4" />
-          </Button>
+          {TAB_BUTTONS.map(({ tab, icon: Icon, title }) => (
+            <Button
+              key={tab}
+              variant={activeRightPanelTab === tab ? 'secondary' : 'ghost'}
+              size="icon"
+              onClick={() => openRightPanelTab(tab)}
+              title={title}
+            >
+              <Icon className="size-4" />
+            </Button>
+          ))}
         </div>
       )}
 

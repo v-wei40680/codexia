@@ -2,6 +2,7 @@ import {
   Circle,
   History,
 } from 'lucide-react';
+import { useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { codexService } from '@/services/codexService';
 import { ProjectSelector } from '@/components/project-selector';
@@ -14,6 +15,9 @@ import { isTauri } from '@/hooks/runtime';
 import { useTrafficLightConfig } from '@/hooks';
 import { NewAgentButton } from '@/components/common/NewAgentButton';
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
+
+// isTauri() is a runtime constant — evaluate once at module load
+const IS_TAURI = isTauri();
 
 export function AppHeader() {
   const { setView, view } = useLayoutStore();
@@ -28,12 +32,15 @@ export function AppHeader() {
   const { currentThreadId, activeThreadIds } = useCodexStore();
   const currentThread = useCurrentThread();
   const isHistoryView = view === 'history';
-  const activeAgentId = selectedAgent === 'codex' ? currentThreadId : activeSessionId;
-  const hasCurrentCard = activeAgentId
-    ? cards.some((c) => c.kind === selectedAgent && c.id === activeAgentId)
-    : false;
 
-  const handleToggleHistoryMode = async () => {
+  const activeAgentId = selectedAgent === 'codex' ? currentThreadId : activeSessionId;
+
+  const hasCurrentCard = useMemo(
+    () => (activeAgentId ? cards.some((c) => c.kind === selectedAgent && c.id === activeAgentId) : false),
+    [activeAgentId, cards, selectedAgent],
+  );
+
+  const handleToggleHistoryMode = useCallback(async () => {
     const nextMode = !isHistoryView;
     setHistoryMode(nextMode);
     setView(nextMode ? 'history' : 'agent');
@@ -44,7 +51,7 @@ export function AppHeader() {
         await codexService.setCurrentThread(targetThreadId);
       }
     }
-  };
+  }, [isHistoryView, setHistoryMode, setView, currentThreadId, currentThread, activeThreadIds]);
 
   return (
     <div
@@ -88,7 +95,7 @@ export function AppHeader() {
               <History />
             </Button>
           )}
-        {!isTauri() && (
+        {!IS_TAURI && (
           <ProjectSelector forcedMode="browse" triggerMode="project-name" />
         )}
       </div>
