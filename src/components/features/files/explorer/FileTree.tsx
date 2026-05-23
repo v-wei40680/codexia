@@ -1,9 +1,13 @@
-import { FileTreeHeader } from './FileTreeHeader';
+import { useRef } from 'react';
+import { X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { FileTreeNode } from './FileTreeNode';
 import { useFileTree } from './useFileTree';
 import type { FileTreeProps } from './types';
 
-export function FileTree({ folder, isTreeVisible, onToggleTree, onFileSelect }: FileTreeProps) {
+export function FileTree({ folder, onFileSelect }: FileTreeProps) {
+  const searchInputRef = useRef<HTMLInputElement | null>(null);
   const {
     treeContainerRef,
     root,
@@ -14,7 +18,6 @@ export function FileTree({ folder, isTreeVisible, onToggleTree, onFileSelect }: 
     error,
     filterText,
     setFilterText,
-    setRefreshKey,
     searching,
     searchError,
     isSearching,
@@ -24,15 +27,32 @@ export function FileTree({ folder, isTreeVisible, onToggleTree, onFileSelect }: 
   } = useFileTree(folder);
 
   const header = (
-    <div className="shrink-0 border-b border-border/40 px-2 pb-1 pt-2">
-      <FileTreeHeader
-        currentFolder={folder}
-        filterText={filterText}
-        onFilterTextChange={setFilterText}
-        onRefresh={() => setRefreshKey((prev) => prev + 1)}
-        isTreeVisible={isTreeVisible}
-        onToggleTree={onToggleTree}
-      />
+    <div className="shrink-0 px-2 pb-1 pt-2">
+      <div className="space-y-1">
+        <div className="relative">
+          <Input
+            ref={searchInputRef}
+            placeholder="Filter files or folders…"
+            value={filterText}
+            onChange={(e) => setFilterText(e.target.value)}
+            className="h-7 pr-7 text-sm"
+          />
+          {filterText && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => {
+                setFilterText('');
+                searchInputRef.current?.focus();
+              }}
+              className="absolute right-1 top-1/2 -translate-y-1/2 h-5 w-5 rounded-sm text-muted-foreground hover:text-foreground focus:outline-none"
+              aria-label="Clear filter"
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
+      </div>
     </div>
   );
 

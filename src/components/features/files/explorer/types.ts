@@ -7,7 +7,5 @@ export type FileNode = {
 
 export type FileTreeProps = {
   folder: string;
-  isTreeVisible?: boolean;
-  onToggleTree?: () => void;
   onFileSelect?: (path: string) => void;
 };
