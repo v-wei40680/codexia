@@ -1,4 +1,4 @@
 export * from './AgentComposer';
 export * from './AgentSwitcher';
-export * from './CCCard';
-export * from './CodexCard';
+export * from './cc-agent-card';
+export * from './codex-agent-card';

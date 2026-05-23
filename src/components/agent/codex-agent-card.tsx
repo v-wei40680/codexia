@@ -76,16 +76,16 @@ export function ContextWindowBar({ used, window: win }: { used: number; window: 
   );
 }
 
-// ─── CodexCard ───────────────────────────────────────────────────────────────
+// ─── CodexAgentCard ───────────────────────────────────────────────────────────────
 
-interface CodexCardProps {
+interface CodexAgentCardProps {
   card: AgentCenterCard & { kind: 'codex' };
   onRemove: () => void;
   header: React.ReactNode;
   isSelected?: boolean;
 }
 
-export function CodexCard({ card, onRemove: _onRemove, header, isSelected }: CodexCardProps) {
+export function CodexAgentCard({ card, onRemove: _onRemove, header, isSelected }: CodexAgentCardProps) {
   const { events, threadStatusMap, activeThreadIds } = useCodexStore();
   const { pendingApprovals } = useApprovalStore();
   const { pendingRequests } = useRequestUserInputStore();

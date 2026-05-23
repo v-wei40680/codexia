@@ -21,8 +21,8 @@ import type { AgentCenterCard } from "@/stores/useAgentCenterStore";
 import { AgentIcon } from "@/components/common/AgentIcon";
 import { AgentComposer } from "@/components/agent";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CodexCard } from "./CodexCard";
-import { CCCard } from "./CCCard";
+import { CodexAgentCard } from "./codex-agent-card";
+import { CCAgentCard } from "./cc-agent-card";
 
 const ChatInterface = lazy(() =>
   import("@/components/codex/ChatInterface").then((m) => ({
@@ -31,27 +31,27 @@ const ChatInterface = lazy(() =>
 );
 const CCView = lazy(() => import("@/components/cc/CCView"));
 
-// CardHeader
+// AgentCardHeader
 
-type CardStatus = "running" | "pending" | "idle";
+type AgentStatus = "running" | "pending" | "idle";
 
-interface CardHeaderProps {
+interface AgentCardHeaderProps {
   card: AgentCenterCard;
   onClose?: () => void;
   onBack?: () => void;
   onSelect?: () => void;
   onExpand?: () => void;
-  status?: CardStatus;
+  status?: AgentStatus;
 }
 
-export function CardHeader({
+export function AgentCardHeader({
   card,
   onClose,
   onBack,
   onSelect,
   onExpand,
   status = "idle",
-}: CardHeaderProps) {
+}: AgentCardHeaderProps) {
   const title = card.preview?.slice(0, 60) || card.id.slice(0, 12);
 
   const dotColor =
@@ -147,10 +147,10 @@ function AgentCard({ card, onExpand, onRemove, isSelected }: AgentCardProps) {
       pendingApprovals.some((a) => (a as any).threadId === card.id) ||
       pendingRequests.some((r) => r.threadId === card.id);
 
-  const status: CardStatus = running ? "running" : pending ? "pending" : "idle";
+  const status: AgentStatus = running ? "running" : pending ? "pending" : "idle";
 
   const header = (
-    <CardHeader
+    <AgentCardHeader
       card={card}
       onClose={onRemove}
       onSelect={() => {
@@ -164,7 +164,7 @@ function AgentCard({ card, onExpand, onRemove, isSelected }: AgentCardProps) {
 
   if (card.kind === "codex") {
     return (
-      <CodexCard
+      <CodexAgentCard
         card={card as AgentCenterCard & { kind: "codex" }}
         onRemove={onRemove}
         header={header}
@@ -174,7 +174,7 @@ function AgentCard({ card, onExpand, onRemove, isSelected }: AgentCardProps) {
   }
 
   return (
-    <CCCard
+    <CCAgentCard
       card={card as AgentCenterCard & { kind: "cc" }}
       onRemove={onRemove}
       header={header}
@@ -194,7 +194,7 @@ function AgentFullscreen() {
 
   return (
     <div className="flex flex-col h-full min-h-0">
-      <CardHeader card={headerCard} onBack={() => setIsAgentExpanded(false)} />
+      <AgentCardHeader card={headerCard} onBack={() => setIsAgentExpanded(false)} />
       <div className="flex flex-col flex-1 min-h-0 h-full overflow-hidden">
         <Suspense fallback={null}>
           {selectedAgent === "codex" ? <ChatInterface /> : <CCView />}

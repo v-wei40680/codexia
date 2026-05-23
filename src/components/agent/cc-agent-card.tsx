@@ -30,16 +30,16 @@ function fmtElapsed(s: number): string {
   return m > 0 ? `${m}:${String(sec).padStart(2, '0')}` : `0:${String(sec).padStart(2, '0')}`;
 }
 
-// ─── CCCard ──────────────────────────────────────────────────────────────────
+// ─── CCAgentCard ──────────────────────────────────────────────────────────────────
 
-interface CCCardProps {
+interface CCAgentCardProps {
   card: AgentCenterCard & { kind: 'cc' };
   onRemove: () => void;
   header: React.ReactNode;
   isSelected?: boolean;
 }
 
-export function CCCard({ card, onRemove: _onRemove, header, isSelected }: CCCardProps) {
+export function CCAgentCard({ card, onRemove: _onRemove, header, isSelected }: CCAgentCardProps) {
   const {
     sessionMessagesMap,
     sessionLoadingMap,
