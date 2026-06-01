@@ -1,4 +1,4 @@
-import { Folder, FolderOpen, Menu, RefreshCw, SquareDashedBottom, SquareStack } from 'lucide-react';
+import { Columns2, Folder, FolderOpen, Menu, RefreshCw, SquareDashedBottom, SquareStack } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -41,7 +41,7 @@ export function GitDiffTopBar({
   onToggleFileTree,
   onRefresh,
 }: GitDiffTopBarProps) {
-  const { diffWordWrap, setDiffWordWrap } = useLayoutStore();
+  const { diffWordWrap, setDiffWordWrap, diffSplitMode, setDiffSplitMode } = useLayoutStore();
   return (
     <div className="border-b border-white/10 flex items-center gap-2">
       {/* Source selector — hidden on mobile, shown via dropdown instead */}
@@ -61,6 +61,16 @@ export function GitDiffTopBar({
       <div className="flex-1" />
 
       <div className="flex items-center">
+        <Button
+          variant={diffSplitMode ? 'secondary' : 'ghost'}
+          size="icon-sm"
+          className="hidden md:inline-flex"
+          onClick={() => setDiffSplitMode(!diffSplitMode)}
+          aria-label={diffSplitMode ? 'Unified mode' : 'Split mode'}
+          title={diffSplitMode ? 'Unified mode' : 'Split mode'}
+        >
+          <Columns2 className="h-4 w-4" />
+        </Button>
         <Button
           variant={showFileTree ? 'secondary' : 'ghost'}
           size="icon-sm"

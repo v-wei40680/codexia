@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createTwoFilesPatch } from 'diff';
 import { DiffModeEnum, DiffView } from '@git-diff-view/react';
-import { ChevronDown, ChevronRight, Columns2, Minus, Plus, Undo2 } from 'lucide-react';
+import { ChevronDown, ChevronRight, Minus, Plus, Undo2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -15,7 +15,7 @@ import {
   type GitStatusEntry,
 } from '@/services/tauri';
 import { useThemeContext } from '@/contexts/ThemeContext';
-import { useWorkspaceStore } from '@/stores';
+import { useWorkspaceStore, useLayoutStore } from '@/stores';
 import type { DiffSection, DiffSource } from './types';
 import { LARGE_DIFF_THRESHOLD_BYTES, formatBytes, statusColorByText, statusTextForSection } from './utils';
 
@@ -44,9 +44,8 @@ export function GitDiffFileItem({
 }: GitDiffFileItemProps) {
   const { resolvedTheme } = useThemeContext();
   const { hasConfirmedGitRevert, setHasConfirmedGitRevert } = useWorkspaceStore();
-
+  const { diffSplitMode } = useLayoutStore();
   const [expanded, setExpanded] = useState(defaultExpanded);
-  const [splitMode, setSplitMode] = useState(false);
   const [diffMeta, setDiffMeta] = useState<GitFileDiffMetaResponse | null>(null);
   const [diffData, setDiffData] = useState<GitFileDiffResponse | null>(null);
   const [loading, setLoading] = useState(false);
@@ -218,15 +217,6 @@ export function GitDiffFileItem({
           <span className="text-[10px] text-muted-foreground/50 shrink-0">latest-turn</span>
         )}
 
-        <Button
-          variant={splitMode ? 'secondary' : 'ghost'}
-          size="sm"
-          className="hidden md:inline-flex p-1 h-auto shrink-0"
-          onClick={() => setSplitMode((v) => !v)}
-          title={splitMode ? 'Unified mode' : 'Split mode'}
-        >
-          <Columns2 className="h-3.5 w-3.5" />
-        </Button>
 
         <Button
           variant="ghost"
@@ -315,7 +305,7 @@ export function GitDiffFileItem({
                   newFile: { fileName: `b/${entry.path}`, content: diffData.new_content ?? '' },
                   hunks: diffHunks,
                 }}
-                diffViewMode={splitMode ? DiffModeEnum.Split : DiffModeEnum.Unified}
+                diffViewMode={diffSplitMode ? DiffModeEnum.Split : DiffModeEnum.Unified}
                 diffViewTheme={resolvedTheme === 'dark' ? 'dark' : 'light'}
                 diffViewHighlight={false}
                 diffViewWrap={wordWrapEnabled}

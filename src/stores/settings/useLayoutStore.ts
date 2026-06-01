@@ -52,6 +52,8 @@ interface LayoutStore {
   setIsTerminalOpen: (open: boolean) => void;
   diffWordWrap: boolean;
   setDiffWordWrap: (enabled: boolean) => void;
+  diffSplitMode: boolean;
+  setDiffSplitMode: (enabled: boolean) => void;
 }
 
 export const useLayoutStore = create<LayoutStore>()(
@@ -122,6 +124,8 @@ export const useLayoutStore = create<LayoutStore>()(
         }),
       diffWordWrap: false,
       setDiffWordWrap: (enabled) => set({ diffWordWrap: enabled }),
+      diffSplitMode: false,
+      setDiffSplitMode: (enabled) => set({ diffSplitMode: enabled }),
     }),
     {
       name: 'layout-storage',
