@@ -23,7 +23,6 @@ export function UpdateButton() {
   return (
     <Button
       size="icon-sm"
-      variant="outline"
       onClick={() => void startUpdate()}
     >
       <Download className="h-4 w-4" />
