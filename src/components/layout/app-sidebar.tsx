@@ -1,4 +1,4 @@
-import { BarChart2, History, ListFilter, Package2, Timer } from 'lucide-react';
+import { BarChart2, ListFilter, Package2, Search, Timer } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useLayoutStore } from '@/stores';
 import { Button } from '@/components/ui/button';
@@ -29,6 +29,7 @@ import { AgentSwitcher } from '@/components/agent';
 import { SessionManagerDialog } from './SessionManagerDialog';
 import { FeedbackDialog } from '../dialogs/FeedbackDialog';
 import { TunnelIndicator } from '../features/TunnelIndicator';
+import { SideBarAddProjectButton } from './SideBarAddProjectButton';
 
 const focusCCInput = () => window.dispatchEvent(new Event('cc-input-focus-request'));
 
@@ -82,6 +83,15 @@ export function AppSideBar() {
             data-tauri-drag-region
           >
             <SidebarTrigger className="h-7 w-7" />
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              title="Manage sessions & threads"
+              onClick={() => setSessionManagerOpen(true)}
+            >
+              <Search className="h-4 w-4" />
+            </Button>
           </div>
 
           {/* Nav actions */}
@@ -122,15 +132,6 @@ export function AppSideBar() {
             <AgentSwitcher className="flex gap-2" />
 
             <span className="flex gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8"
-                title="Manage sessions & threads"
-                onClick={() => setSessionManagerOpen(true)}
-              >
-                <History className="h-4 w-4" />
-              </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -152,6 +153,7 @@ export function AppSideBar() {
                   </DropdownMenuRadioGroup>
                 </DropdownMenuContent>
               </DropdownMenu>
+              <SideBarAddProjectButton />
             </span>
           </span>
         </SidebarHeader>
