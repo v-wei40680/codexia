@@ -66,7 +66,7 @@ export function AppHeader() {
           </div>
         )}
         {view === 'agent' && !hasCurrentCard && (
-          <span className="text-xs text-muted-foreground/60">
+          <span className="text-xs text-muted-foreground/60 pl-2">
             New {selectedAgent === 'codex' ? 'thread' : 'session'}
           </span>
         )}
