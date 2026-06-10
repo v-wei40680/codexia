@@ -34,21 +34,21 @@ Run the app in development:
 bun tauri dev
 ```
 
+Copy the pre-commit hook used in this repo to prevent common frontend issues.
+```bash
+cp docs/pre-commit .git/hooks/pre-commit
+```
+
 Build the frontend only:
 ```bash
-codex app-server generate-ts -o src/bindings  # if you didn't run `bun tauri dev`
+# codex app-server generate-ts -o src/bindings  # Option to develop new codex feature
 bun run build
 ```
 
 Rust checks and formatting:
 ```bash
 cd src-tauri && cargo check
-cd src-tauri && cargo fmt --all
-```
-
-Optional: copy the pre-commit hook used in this repo to prevent common frontend issues.
-```bash
-cp docs/pre-commit .git/hooks/pre-commit
+# cd src-tauri && cargo fmt --all # Option format
 ```
 
 ## Pull Request Process
