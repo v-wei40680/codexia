@@ -22,10 +22,12 @@ Install dependencies:
 bun install
 ```
 
-Option step note or conversaion in the cloud if user require in the future:
+Optional environment setup:
 ```sh
 cp .env.example .env
 ```
+
+Use this when you need to configure local environment variables for development or cloud-backed integrations.
 
 Run the app in development:
 ```bash
