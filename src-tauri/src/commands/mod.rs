@@ -1,6 +1,6 @@
 pub mod automation;
 pub mod dxt;
-pub mod filesystem;
+pub mod fs;
 pub mod git;
 pub mod mcp;
 pub mod notes;

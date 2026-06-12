@@ -1,4 +1,4 @@
-pub(crate) mod filesystem_watch;
+pub(crate) mod watch;
 mod handlers;
 mod router;
 mod server;

@@ -29,7 +29,7 @@ export type UnifiedMcpConfig = {
 export type TauriFileEntry = {
   name: string;
   path: string;
-  is_directory: boolean;
+  is_dir: boolean;
   size: number | null;
   extension: string | null;
 };
@@ -96,7 +96,7 @@ async function extractErrorMessage(response: Response) {
     if (payload?.error) {
       return payload.error;
     }
-  } catch {}
+  } catch { }
   return `Request failed: ${response.status}`;
 }
 

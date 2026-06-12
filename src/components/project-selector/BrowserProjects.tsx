@@ -73,7 +73,7 @@ export function BrowserProjects({
   const directoryEntries = useMemo(
     () =>
       entries.filter(
-        (entry) => entry.is_directory && entry.name.toLowerCase().includes(search.toLowerCase())
+        (entry) => entry.is_dir && entry.name.toLowerCase().includes(search.toLowerCase())
       ),
     [entries, search]
   );

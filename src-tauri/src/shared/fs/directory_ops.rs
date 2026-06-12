@@ -39,14 +39,14 @@ pub async fn read_directory(path: String) -> Result<Vec<FileEntry>, String> {
                             .unwrap_or("Unknown")
                             .to_string();
 
-                        let is_directory = path.is_dir();
-                        let size = if is_directory {
+                        let is_dir = path.is_dir();
+                        let size = if is_dir {
                             None
                         } else {
                             fs::metadata(&path).ok().map(|m| m.len())
                         };
 
-                        let extension = if is_directory {
+                        let extension = if is_dir {
                             None
                         } else {
                             path.extension()
@@ -57,7 +57,7 @@ pub async fn read_directory(path: String) -> Result<Vec<FileEntry>, String> {
                         entries.push(FileEntry {
                             name,
                             path: path.to_string_lossy().to_string(),
-                            is_directory,
+                            is_dir,
                             size,
                             extension,
                         });
@@ -70,7 +70,7 @@ pub async fn read_directory(path: String) -> Result<Vec<FileEntry>, String> {
     }
 
     // Sort directories first, then files
-    entries.sort_by(|a, b| match (a.is_directory, b.is_directory) {
+    entries.sort_by(|a, b| match (a.is_dir, b.is_dir) {
         (true, false) => std::cmp::Ordering::Less,
         (false, true) => std::cmp::Ordering::Greater,
         _ => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
@@ -147,14 +147,14 @@ pub async fn search_files(
         if excluded_names.contains(&normalize_name(file_name)) || is_dot_git(file_name) {
             continue;
         }
-        let is_directory = entry.file_type().is_some_and(|ft| ft.is_dir());
+        let is_dir = entry.file_type().is_some_and(|ft| ft.is_dir());
         let path_str = path.to_string_lossy().to_string();
-        let size = if is_directory {
+        let size = if is_dir {
             None
         } else {
             fs::metadata(path).ok().map(|m| m.len())
         };
-        let extension = if is_directory {
+        let extension = if is_dir {
             None
         } else {
             path.extension()
@@ -164,7 +164,7 @@ pub async fn search_files(
         all_entries.push(FileEntry {
             name: file_name.to_string(),
             path: path_str,
-            is_directory,
+            is_dir,
             size,
             extension,
         });
@@ -274,14 +274,14 @@ pub async fn search_files_by_name(
         if excluded_names.contains(&normalize_name(file_name)) || is_dot_git(file_name) {
             continue;
         }
-        let is_directory = entry.file_type().is_some_and(|ft| ft.is_dir());
+        let is_dir = entry.file_type().is_some_and(|ft| ft.is_dir());
         let path_str = path.to_string_lossy().to_string();
-        let size = if is_directory {
+        let size = if is_dir {
             None
         } else {
             fs::metadata(path).ok().map(|m| m.len())
         };
-        let extension = if is_directory {
+        let extension = if is_dir {
             None
         } else {
             path.extension()
@@ -291,7 +291,7 @@ pub async fn search_files_by_name(
         all_entries.push(FileEntry {
             name: file_name.to_string(),
             path: path_str,
-            is_directory,
+            is_dir,
             size,
             extension,
         });
@@ -368,7 +368,7 @@ mod tests {
 
         assert!(
             results.iter().any(|entry| {
-                entry.is_directory
+                entry.is_dir
                     && entry
                         .path
                         .ends_with("src/components/features/git")
@@ -439,7 +439,7 @@ mod tests {
 
         assert!(
             results.iter().any(|entry| {
-                entry.is_directory
+                entry.is_dir
                     && entry
                         .path
                         .ends_with("src/components/features/git")

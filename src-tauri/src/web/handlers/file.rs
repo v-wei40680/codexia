@@ -3,14 +3,14 @@ use axum::{Json, extract::State as AxumState, http::StatusCode};
 use serde::Deserialize;
 
 use crate::codex::utils::codex_home;
-use crate::shared::filesystem::{
+use crate::shared::fs::{
     directory_ops::{canonicalize_path, get_home_directory, read_directory, search_files, search_files_by_name},
     file_io::{delete_file, read_file, read_text_file_lines, write_file},
     file_parsers::{pdf::read_pdf_content, xlsx::read_xlsx_content},
     file_types::FileEntry,
 };
 use crate::web::types::{ErrorResponse, WebServerState};
-use crate::web::filesystem_watch;
+use crate::web::watch;
 
 #[derive(Deserialize)]
 pub(crate) struct FilesystemPathParams {
@@ -153,7 +153,7 @@ pub(crate) async fn api_start_watch_path(
     AxumState(state): AxumState<WebServerState>,
     Json(params): Json<FilesystemPathParams>,
 ) -> Result<StatusCode, ErrorResponse> {
-    filesystem_watch::start_watch_path(
+    watch::start_watch_path(
         state.fs_watch_state.as_ref(),
         state.event_tx.clone(),
         params.path,
@@ -167,7 +167,7 @@ pub(crate) async fn api_stop_watch_path(
     AxumState(state): AxumState<WebServerState>,
     Json(params): Json<FilesystemPathParams>,
 ) -> Result<StatusCode, ErrorResponse> {
-    filesystem_watch::stop_watch_path(state.fs_watch_state.as_ref(), params.path)
+    watch::stop_watch_path(state.fs_watch_state.as_ref(), params.path)
         .await
         .map_err(to_error_response)?;
     Ok(StatusCode::OK)
@@ -177,7 +177,7 @@ pub(crate) async fn api_start_watch_file(
     AxumState(state): AxumState<WebServerState>,
     Json(params): Json<FilesystemFilePathParams>,
 ) -> Result<StatusCode, ErrorResponse> {
-    filesystem_watch::start_watch_file(
+    watch::start_watch_file(
         state.fs_watch_state.as_ref(),
         state.event_tx.clone(),
         params.file_path,
@@ -191,7 +191,7 @@ pub(crate) async fn api_stop_watch_file(
     AxumState(state): AxumState<WebServerState>,
     Json(params): Json<FilesystemFilePathParams>,
 ) -> Result<StatusCode, ErrorResponse> {
-    filesystem_watch::stop_watch_file(state.fs_watch_state.as_ref(), params.file_path)
+    watch::stop_watch_file(state.fs_watch_state.as_ref(), params.file_path)
         .await
         .map_err(to_error_response)?;
     Ok(StatusCode::OK)

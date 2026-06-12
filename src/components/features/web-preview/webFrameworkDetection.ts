@@ -2,15 +2,15 @@ import { readDirectory, readFile } from '@/services';
 
 export interface WebFrameworkInfo {
   framework:
-    | 'nextjs'
-    | 'react'
-    | 'vite'
-    | 'astro'
-    | 'nuxt'
-    | 'vue'
-    | 'svelte'
-    | 'angular'
-    | 'unknown';
+  | 'nextjs'
+  | 'react'
+  | 'vite'
+  | 'astro'
+  | 'nuxt'
+  | 'vue'
+  | 'svelte'
+  | 'angular'
+  | 'unknown';
   devPort: number;
   devUrl: string;
   startCommand?: string;
@@ -21,7 +21,7 @@ export async function detectWebFramework(projectPath: string): Promise<WebFramew
     // Check package.json existence first to avoid noisy read-file failures.
     const entries = await readDirectory(projectPath, { suppressToast: true });
     const hasPackageJson = entries.some(
-      (entry) => entry.name === 'package.json' && !entry.is_directory
+      (entry) => entry.name === 'package.json' && !entry.is_dir
     );
     if (!hasPackageJson) {
       return null;

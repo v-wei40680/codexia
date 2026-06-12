@@ -66,7 +66,7 @@ export function useFileTree(folder: string): UseFileTreeReturn {
           .map((e) => ({
             name: e.name,
             path: e.path,
-            kind: e.is_directory ? ('dir' as const) : ('file' as const),
+            kind: e.is_dir ? ('dir' as const) : ('file' as const),
           })),
       );
     },

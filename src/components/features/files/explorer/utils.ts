@@ -68,8 +68,8 @@ export const buildSearchTree = (
       const childNode: FileNode = {
         name: segment,
         path: isLeaf ? match.path : currentPath,
-        kind: isLeaf ? (match.is_directory ? 'dir' : 'file') : 'dir',
-        children: isLeaf && !match.is_directory ? undefined : [],
+        kind: isLeaf ? (match.is_dir ? 'dir' : 'file') : 'dir',
+        children: isLeaf && !match.is_dir ? undefined : [],
       };
 
       if (!parent.children) parent.children = [];

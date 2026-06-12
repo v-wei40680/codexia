@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 pub struct FileEntry {
     pub name: String,
     pub path: String,
-    pub is_directory: bool,
+    pub is_dir: bool,
     pub size: Option<u64>,
     pub extension: Option<String>,
 }

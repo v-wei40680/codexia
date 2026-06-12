@@ -1,4 +1,4 @@
-use crate::shared::filesystem::{
+use crate::shared::fs::{
     directory_ops, file_io,
     file_parsers::{pdf, xlsx},
     file_types::FileEntry,
@@ -73,8 +73,8 @@ pub async fn read_xlsx_content(file_path: String) -> Result<String, String> {
     xlsx::read_xlsx_content(file_path).await
 }
 
-fn tauri_watch_emitter(app: AppHandle) -> Arc<dyn Fn(watch::FsChangePayload) + Send + Sync> {
-    Arc::new(move |payload: watch::FsChangePayload| {
+fn tauri_watch_emitter(app: AppHandle) -> Arc<dyn Fn(watch::FsChange) + Send + Sync> {
+    Arc::new(move |payload: watch::FsChange| {
         let _ = app.emit("fs_change", &payload);
     })
 }

@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 #[derive(Serialize, Debug, Clone)]
-pub struct FsChangePayload {
+pub struct FsChange {
     pub path: String,
     pub kind: String,
 }
@@ -37,7 +37,7 @@ fn kind_to_string(kind: &EventKind) -> String {
 pub async fn start_watch_path(
     state: &WatchState,
     path: String,
-    emit: Arc<dyn Fn(FsChangePayload) + Send + Sync>,
+    emit: Arc<dyn Fn(FsChange) + Send + Sync>,
 ) -> Result<(), String> {
     let abs = expand_path(&path)?;
     if !abs.exists() {
@@ -70,7 +70,7 @@ pub async fn start_watch_path(
             if let Ok(event) = res {
                 // Send one event per affected path.
                 for p in event.paths.iter() {
-                    let payload = FsChangePayload {
+                    let payload = FsChange {
                         path: p.to_string_lossy().to_string(),
                         kind: kind_to_string(&event.kind),
                     };
@@ -112,7 +112,7 @@ pub async fn stop_watch_path(state: &WatchState, path: String) -> Result<(), Str
 pub async fn start_watch_file(
     state: &WatchState,
     file_path: String,
-    emit: Arc<dyn Fn(FsChangePayload) + Send + Sync>,
+    emit: Arc<dyn Fn(FsChange) + Send + Sync>,
 ) -> Result<(), String> {
     let abs = expand_path(&file_path)?;
     if !abs.exists() || !abs.is_file() {
