@@ -3,9 +3,9 @@ import { zh } from './zh';
 import { ja } from './ja';
 
 export const localeResources = {
-  en: { translation: en },
-  zh: { translation: zh },
-  ja: { translation: ja },
+  en: { ...en },
+  zh: { ...zh },
+  ja: { ...ja },
 } as const;
 
 export type AppLocale = keyof typeof localeResources;
