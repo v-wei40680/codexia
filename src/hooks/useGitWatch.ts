@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import { startWatchFile, stopWatchFile } from '@/services/tauri/filesystem';
+import { watchFile, unwatchFile } from '@/services/tauri/filesystem';
 import { isGitRepo } from '@/services/tauri/git';
 import { isDesktopTauri } from '@/hooks/runtime';
 
@@ -39,7 +39,7 @@ export function useGitWatch(cwd: string | null, onRefresh: () => void, enabled =
     // Listen to backend fs watcher events and trigger refresh on .git/index file changes.
     const setupWatcher = async () => {
       try {
-        await startWatchFile(gitIndexPath);
+        await watchFile(gitIndexPath);
 
         if (isDesktopTauri()) {
           const unlisten = await listen<{ path: string; kind: string }>('fs_change', (event) => {
@@ -86,7 +86,7 @@ export function useGitWatch(cwd: string | null, onRefresh: () => void, enabled =
         unlistenRef.current();
         unlistenRef.current = null;
       }
-      void stopWatchFile(gitIndexPath).catch(() => { });
+      void unwatchFile(gitIndexPath).catch(() => { });
       if (refreshTimeoutRef.current) {
         clearTimeout(refreshTimeoutRef.current);
       }

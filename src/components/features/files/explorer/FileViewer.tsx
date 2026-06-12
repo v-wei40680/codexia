@@ -13,8 +13,8 @@ import {
   readFile,
   readPdfContent,
   readXlsxContent,
-  startWatchDirectory,
-  stopWatchDirectory,
+  watchDirectory,
+  unwatchDirectory,
   writeFile,
 } from '@/services';
 import { isTauri } from '@/hooks/runtime';
@@ -144,14 +144,14 @@ export function FileViewer({ filePath }: FileViewerProps) {
       : filePath;
     const start = async () => {
       try {
-        await startWatchDirectory(parentDir);
+        await watchDirectory(parentDir);
       } catch { }
     };
     const stopPrev = async () => {
       const prev = prevWatchedDirRef.current;
       if (prev && prev !== parentDir) {
         try {
-          await stopWatchDirectory(prev);
+          await unwatchDirectory(prev);
         } catch { }
       }
     };
@@ -161,7 +161,7 @@ export function FileViewer({ filePath }: FileViewerProps) {
     return () => {
       (async () => {
         try {
-          await stopWatchDirectory(parentDir);
+          await unwatchDirectory(parentDir);
         } catch { }
       })();
     };
@@ -180,7 +180,7 @@ export function FileViewer({ filePath }: FileViewerProps) {
         if (!filePath) return;
         const target = canonicalFile || filePath;
         if (changed === target) {
-          // If user hasn’t modified content, auto-reload; otherwise show a banner
+          // If user hasn't modified content, auto-reload; otherwise show a banner
           if (currentContent === content) {
             await loadFile();
           } else {

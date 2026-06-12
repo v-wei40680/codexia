@@ -1,10 +1,15 @@
+use notify_debouncer_full::{Debouncer, FileIdMap};
 use notify::RecommendedWatcher;
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 
+pub enum WatcherKind {
+    Debouncer(Debouncer<RecommendedWatcher, FileIdMap>),
+}
+
 pub struct WatchState {
-    pub watchers: Arc<Mutex<HashMap<String, (RecommendedWatcher, usize)>>>,
+    pub watchers: Arc<Mutex<HashMap<String, (Mutex<WatcherKind>, usize)>>>,
 }
 
 impl WatchState {

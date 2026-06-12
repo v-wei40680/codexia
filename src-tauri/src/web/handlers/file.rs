@@ -10,7 +10,7 @@ use crate::shared::fs::{
     file_types::FileEntry,
 };
 use crate::web::types::{ErrorResponse, WebServerState};
-use crate::web::watch;
+use crate::web::watcher;
 
 #[derive(Deserialize)]
 pub(crate) struct FilesystemPathParams {
@@ -149,11 +149,11 @@ pub(crate) async fn api_delete_file(
     Ok(StatusCode::OK)
 }
 
-pub(crate) async fn api_start_watch_path(
+pub(crate) async fn api_watch_directory(
     AxumState(state): AxumState<WebServerState>,
     Json(params): Json<FilesystemPathParams>,
 ) -> Result<StatusCode, ErrorResponse> {
-    watch::start_watch_path(
+    watcher::start_watch_path(
         state.fs_watch_state.as_ref(),
         state.event_tx.clone(),
         params.path,
@@ -163,21 +163,21 @@ pub(crate) async fn api_start_watch_path(
     Ok(StatusCode::OK)
 }
 
-pub(crate) async fn api_stop_watch_path(
+pub(crate) async fn api_unwatch_directory(
     AxumState(state): AxumState<WebServerState>,
     Json(params): Json<FilesystemPathParams>,
 ) -> Result<StatusCode, ErrorResponse> {
-    watch::stop_watch_path(state.fs_watch_state.as_ref(), params.path)
+    watcher::unwatch_path(state.fs_watch_state.as_ref(), params.path)
         .await
         .map_err(to_error_response)?;
     Ok(StatusCode::OK)
 }
 
-pub(crate) async fn api_start_watch_file(
+pub(crate) async fn api_watch_file(
     AxumState(state): AxumState<WebServerState>,
     Json(params): Json<FilesystemFilePathParams>,
 ) -> Result<StatusCode, ErrorResponse> {
-    watch::start_watch_file(
+    watcher::start_watch_file(
         state.fs_watch_state.as_ref(),
         state.event_tx.clone(),
         params.file_path,
@@ -187,11 +187,11 @@ pub(crate) async fn api_start_watch_file(
     Ok(StatusCode::OK)
 }
 
-pub(crate) async fn api_stop_watch_file(
+pub(crate) async fn api_unwatch_file(
     AxumState(state): AxumState<WebServerState>,
     Json(params): Json<FilesystemFilePathParams>,
 ) -> Result<StatusCode, ErrorResponse> {
-    watch::stop_watch_file(state.fs_watch_state.as_ref(), params.file_path)
+    watcher::unwatch_file(state.fs_watch_state.as_ref(), params.file_path)
         .await
         .map_err(to_error_response)?;
     Ok(StatusCode::OK)

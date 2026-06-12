@@ -2,7 +2,7 @@ use crate::shared::fs::{
     directory_ops, file_io,
     file_parsers::{pdf, xlsx},
     file_types::FileEntry,
-    watch,
+    watcher,
 };
 use crate::state::WatchState;
 use std::sync::Arc;
@@ -73,42 +73,42 @@ pub async fn read_xlsx_content(file_path: String) -> Result<String, String> {
     xlsx::read_xlsx_content(file_path).await
 }
 
-fn tauri_watch_emitter(app: AppHandle) -> Arc<dyn Fn(watch::FsChange) + Send + Sync> {
-    Arc::new(move |payload: watch::FsChange| {
+fn tauri_watch_emitter(app: AppHandle) -> Arc<dyn Fn(watcher::FsChange) + Send + Sync> {
+    Arc::new(move |payload: watcher::FsChange| {
         let _ = app.emit("fs_change", &payload);
     })
 }
 
 #[tauri::command]
-pub async fn start_watch_directory(
+pub async fn watch_directory(
     app: AppHandle,
     state: State<'_, WatchState>,
     folder_path: String,
 ) -> Result<(), String> {
-    watch::start_watch_path(state.inner(), folder_path, tauri_watch_emitter(app)).await
+    watcher::watch(state.inner(), folder_path, tauri_watch_emitter(app)).await
 }
 
 #[tauri::command]
-pub async fn stop_watch_directory(
+pub async fn unwatch_directory(
     state: State<'_, WatchState>,
     folder_path: String,
 ) -> Result<(), String> {
-    watch::stop_watch_path(state.inner(), folder_path).await
+    watcher::unwatch(state.inner(), folder_path).await
 }
 
 #[tauri::command]
-pub async fn start_watch_file(
+pub async fn watch_file(
     app: AppHandle,
     state: State<'_, WatchState>,
     file_path: String,
 ) -> Result<(), String> {
-    watch::start_watch_file(state.inner(), file_path, tauri_watch_emitter(app)).await
+    watcher::watch_file(state.inner(), file_path, tauri_watch_emitter(app)).await
 }
 
 #[tauri::command]
-pub async fn stop_watch_file(
+pub async fn unwatch_file(
     state: State<'_, WatchState>,
     file_path: String,
 ) -> Result<(), String> {
-    watch::stop_watch_path(state.inner(), file_path).await
+    watcher::unwatch_file(state.inner(), file_path).await
 }

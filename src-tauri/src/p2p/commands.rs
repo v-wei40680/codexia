@@ -60,7 +60,7 @@ pub async fn p2p_start(
             use crate::web::{WebServerState, create_router};
             use crate::shared::sleep::SleepState;
             use crate::web::terminal::WebTerminalState;
-            use crate::web::watch::WebWatchState;
+            use crate::web::watcher::WebWatchState;
 
             let codex_state = Arc::new(
                 app.try_state::<crate::codex::AppState>()

@@ -173,7 +173,8 @@ walkdir = "2.3"
 agent-insights = { git = "https://github.com/milisp/agent-insights", default-features = false }
 pdf-extract = "0.7.12"
 calamine = "0.25"
-notify = "6"
+notify = { version = "8", features = ["serde", "serialization-compat-6"] }
+notify-debouncer-full = "0.6"
 portable-pty = "0.9"
 ignore = "0.4.25"
 nucleo = "0.5.0"

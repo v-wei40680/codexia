@@ -122,34 +122,34 @@ export async function deleteFile(filePath: string) {
   await postNoContent('/api/filesystem/delete-file', { filePath });
 }
 
-export async function startWatchDirectory(folderPath: string) {
+export async function watchDirectory(folderPath: string) {
   if (isDesktopTauri()) {
-    await invokeTauri('start_watch_directory', { folderPath });
+    await invokeTauri('watch_directory', { folderPath });
     return;
   }
-  await postNoContent('/api/filesystem/start-watch', { path: folderPath });
+  await postNoContent('/api/filesystem/watch', { path: folderPath });
 }
 
-export async function stopWatchDirectory(folderPath: string) {
+export async function unwatchDirectory(folderPath: string) {
   if (isDesktopTauri()) {
-    await invokeTauri('stop_watch_directory', { folderPath });
+    await invokeTauri('unwatch_directory', { folderPath });
     return;
   }
-  await postNoContent('/api/filesystem/stop-watch', { path: folderPath });
+  await postNoContent('/api/filesystem/unwatch', { path: folderPath });
 }
 
-export async function startWatchFile(filePath: string) {
+export async function watchFile(filePath: string) {
   if (isDesktopTauri()) {
-    await invokeTauri('start_watch_file', { filePath });
+    await invokeTauri('watch_file', { filePath });
     return;
   }
-  await postNoContentWithOptions('/api/filesystem/start-watch-file', { filePath }, { suppressToast: true });
+  await postNoContentWithOptions('/api/filesystem/watch-file', { filePath }, { suppressToast: true });
 }
 
-export async function stopWatchFile(filePath: string) {
+export async function unwatchFile(filePath: string) {
   if (isDesktopTauri()) {
-    await invokeTauri('stop_watch_file', { filePath });
+    await invokeTauri('unwatch_file', { filePath });
     return;
   }
-  await postNoContentWithOptions('/api/filesystem/stop-watch-file', { filePath }, { suppressToast: true });
+  await postNoContentWithOptions('/api/filesystem/unwatch-file', { filePath }, { suppressToast: true });
 }

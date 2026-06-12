@@ -11,7 +11,7 @@ use crate::codex::scan::start_history_scanner;
 use crate::codex::{AppState, CodexInitializationState, connect_codex, initialize_codex};
 use crate::shared::event_sink::{EventSink, WebSocketEventSink};
 use crate::shared::sleep::SleepState;
-use crate::web::filesystem_watch::WebWatchState;
+use crate::web::watcher::WebWatchState;
 
 pub async fn start_web_server_with_events(
     codex_state: Option<Arc<AppState>>,
