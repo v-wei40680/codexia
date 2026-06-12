@@ -1,7 +1,7 @@
 use crate::state::{WatchState, WatcherKind};
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
-use notify::{EventKind, RecursiveMode};
-use notify_debouncer_full::{new_debouncer, DebouncedEvent};
+use notify::{Config, EventKind, RecursiveMode};
+use notify_debouncer_full::{new_debouncer_opt, DebouncedEvent, FileIdMap};
 use serde::Serialize;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
@@ -99,8 +99,8 @@ pub async fn watch(
     let abs_clone = abs.clone();
     let is_dir = abs_clone.is_dir();
 
-    // Use debouncer with 50ms delay
-    let mut debouncer = new_debouncer(
+    // Use debouncer with 50ms delay and FileIdMap cache (explicit for cross-platform consistency)
+    let mut debouncer = new_debouncer_opt(
         std::time::Duration::from_millis(50),
         None,
         move |events: Result<Vec<DebouncedEvent>, Vec<notify::Error>>| {
@@ -121,6 +121,8 @@ pub async fn watch(
                 }
             }
         },
+        FileIdMap::new(),
+        Config::default(),
     )
     .map_err(|e| format!("Failed to create debouncer: {}", e))?;
 
