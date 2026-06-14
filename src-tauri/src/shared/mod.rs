@@ -10,3 +10,4 @@ pub(crate) mod mcp;
 pub(crate) mod skills;
 pub(crate) mod skillssh;
 pub(crate) mod sleep;
+pub(crate) mod terminal;

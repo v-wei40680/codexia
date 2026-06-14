@@ -54,7 +54,7 @@ pub fn run() {
     #[cfg(feature = "desktop")]
     let builder = {
         use crate::cc::CCState;
-        use crate::commands::terminal::TerminalState;
+        use crate::shared::terminal::TerminalState;
         use crate::shared::sleep::SleepState;
         use crate::state::WatchState;
         use std::sync::Arc;
