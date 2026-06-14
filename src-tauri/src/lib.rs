@@ -313,7 +313,7 @@ pub fn run() {
                 crate::cc::scan::start_session_scanner();
 
                 tauri::async_runtime::spawn(async {
-                    tokio::task::spawn_blocking(crate::shared::git::scan_all_orphan_worktrees)
+                    tokio::task::spawn_blocking(codexia_git::scan_all_orphan_worktrees)
                         .await
                         .ok();
                 });

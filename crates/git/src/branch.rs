@@ -1,10 +1,10 @@
 use gix::bstr::ByteSlice;
 use std::collections::HashMap;
 
-use crate::shared::git::helpers::open_repo;
-use crate::shared::git::types::{GitBranchInfoResponse, GitBranchListResponse};
+use crate::helpers::open_repo;
+use crate::types::{GitBranchInfoResult, GitBranchListResult};
 
-pub fn git_branch_info(cwd: String) -> Result<GitBranchInfoResponse, String> {
+pub fn git_branch_info(cwd: String) -> Result<GitBranchInfoResult, String> {
     let repo = open_repo(&cwd)?;
 
     // Get current branch name from HEAD
@@ -27,7 +27,7 @@ pub fn git_branch_info(cwd: String) -> Result<GitBranchInfoResponse, String> {
 
     let (owner, repo_name) = extract_owner_repo(&repo);
 
-    Ok(GitBranchInfoResponse {
+    Ok(GitBranchInfoResult {
         owner,
         repo: repo_name,
         branch,
@@ -61,7 +61,7 @@ fn extract_owner_repo(repo: &gix::Repository) -> (String, String) {
     (String::new(), repo_name)
 }
 
-pub fn git_list_branches(cwd: String) -> Result<GitBranchListResponse, String> {
+pub fn git_list_branches(cwd: String) -> Result<GitBranchListResult, String> {
     let repo = open_repo(&cwd)?;
 
     let current = repo
@@ -95,7 +95,7 @@ pub fn git_list_branches(cwd: String) -> Result<GitBranchListResponse, String> {
 
     branches.sort();
 
-    Ok(GitBranchListResponse { current, branches })
+    Ok(GitBranchListResult { current, branches })
 }
 
 pub fn git_create_branch(cwd: String, branch: String) -> Result<(), String> {

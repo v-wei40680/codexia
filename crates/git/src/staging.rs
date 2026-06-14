@@ -3,7 +3,7 @@ use std::fs;
 use std::io::ErrorKind;
 use std::path::Path;
 
-use crate::shared::git::helpers::{
+use crate::helpers::{
     entry_from_tree, open_repo, remove_all_entries_for_path, stat_for_worktree_path, to_repo_relative_path,
 };
 

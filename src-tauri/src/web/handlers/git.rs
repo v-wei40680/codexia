@@ -2,10 +2,10 @@ use super::to_error_response;
 use axum::{Json, http::StatusCode};
 use serde::Deserialize;
 
-use crate::shared::git::{
-    GitApplyWorktreeResponse, GitBranchInfoResponse, GitBranchListResponse,
-    GitCreateWorktreeResponse, GitDiffStatsResponse, GitFileDiffMetaResponse,
-    GitFileDiffResponse, GitStatusResponse, git_apply_worktree_changes, git_branch_info,
+use codexia_git::{
+    GitApplyWorktreeResult, GitBranchInfoResult, GitBranchListResult,
+    GitCreateWorktreeResult, GitDiffStatsResult, GitFileDiffMetaResult,
+    GitFileDiffResult, GitStatusResult, git_apply_worktree_changes, git_branch_info,
     git_checkout_branch, git_create_branch, git_create_worktree, git_diff_stats, git_file_diff,
     git_file_diff_meta, git_list_branches, git_remove_worktree, git_reverse_files,
     git_stage_files, git_status, git_unstage_files,
@@ -49,7 +49,7 @@ pub(crate) struct GitCreateWorktreeParams {
 
 pub(crate) async fn api_git_create_worktree(
     Json(params): Json<GitCreateWorktreeParams>,
-) -> Result<Json<GitCreateWorktreeResponse>, ErrorResponse> {
+) -> Result<Json<GitCreateWorktreeResult>, ErrorResponse> {
     let result = git_create_worktree(params.cwd, params.worktree_key)
         .map_err(to_error_response)?;
     Ok(Json(result))
@@ -71,7 +71,7 @@ pub(crate) async fn api_git_remove_worktree(
 
 pub(crate) async fn api_git_apply_worktree_changes(
     Json(params): Json<GitRemoveWorktreeParams>,
-) -> Result<Json<GitApplyWorktreeResponse>, ErrorResponse> {
+) -> Result<Json<GitApplyWorktreeResult>, ErrorResponse> {
     let result = git_apply_worktree_changes(params.cwd, params.worktree_key)
         .map_err(to_error_response)?;
     Ok(Json(result))
@@ -79,14 +79,14 @@ pub(crate) async fn api_git_apply_worktree_changes(
 
 pub(crate) async fn api_git_branch_info(
     Json(params): Json<GitCwdParams>,
-) -> Result<Json<GitBranchInfoResponse>, ErrorResponse> {
+) -> Result<Json<GitBranchInfoResult>, ErrorResponse> {
     let result = git_branch_info(params.cwd).map_err(to_error_response)?;
     Ok(Json(result))
 }
 
 pub(crate) async fn api_git_list_branches(
     Json(params): Json<GitCwdParams>,
-) -> Result<Json<GitBranchListResponse>, ErrorResponse> {
+) -> Result<Json<GitBranchListResult>, ErrorResponse> {
     let result = git_list_branches(params.cwd).map_err(to_error_response)?;
     Ok(Json(result))
 }
@@ -113,14 +113,14 @@ pub(crate) async fn api_git_checkout_branch(
 
 pub(crate) async fn api_git_status(
     Json(params): Json<GitCwdParams>,
-) -> Result<Json<GitStatusResponse>, ErrorResponse> {
+) -> Result<Json<GitStatusResult>, ErrorResponse> {
     let result = git_status(params.cwd).map_err(to_error_response)?;
     Ok(Json(result))
 }
 
 pub(crate) async fn api_git_file_diff(
     Json(params): Json<GitFileDiffParams>,
-) -> Result<Json<GitFileDiffResponse>, ErrorResponse> {
+) -> Result<Json<GitFileDiffResult>, ErrorResponse> {
     let result = git_file_diff(params.cwd, params.file_path, params.staged)
         .map_err(to_error_response)?;
     Ok(Json(result))
@@ -128,7 +128,7 @@ pub(crate) async fn api_git_file_diff(
 
 pub(crate) async fn api_git_file_diff_meta(
     Json(params): Json<GitFileDiffParams>,
-) -> Result<Json<GitFileDiffMetaResponse>, ErrorResponse> {
+) -> Result<Json<GitFileDiffMetaResult>, ErrorResponse> {
     let result = git_file_diff_meta(params.cwd, params.file_path, params.staged)
         .map_err(to_error_response)?;
     Ok(Json(result))
@@ -136,7 +136,7 @@ pub(crate) async fn api_git_file_diff_meta(
 
 pub(crate) async fn api_git_diff_stats(
     Json(params): Json<GitCwdParams>,
-) -> Result<Json<GitDiffStatsResponse>, ErrorResponse> {
+) -> Result<Json<GitDiffStatsResult>, ErrorResponse> {
     let result = git_diff_stats(params.cwd).map_err(to_error_response)?;
     Ok(Json(result))
 }
@@ -178,7 +178,7 @@ pub(crate) struct GitPushParams {
 pub(crate) async fn api_git_commit(
     Json(params): Json<GitCommitParams>,
 ) -> Result<Json<String>, ErrorResponse> {
-    let result = crate::shared::git::git_commit(params.cwd, params.message)
+    let result = codexia_git::git_commit(params.cwd, params.message)
         .map_err(to_error_response)?;
     Ok(Json(result))
 }
@@ -186,7 +186,7 @@ pub(crate) async fn api_git_commit(
 pub(crate) async fn api_git_push(
     Json(params): Json<GitPushParams>,
 ) -> Result<Json<String>, ErrorResponse> {
-    let result = crate::shared::git::git_push(params.cwd, params.remote, params.branch)
+    let result = codexia_git::git_push(params.cwd, params.remote, params.branch)
         .map_err(to_error_response)?;
     Ok(Json(result))
 }

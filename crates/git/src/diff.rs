@@ -1,17 +1,17 @@
-use crate::shared::git::helpers::{
+use crate::helpers::{
     head_blob_content, head_blob_size, index_blob_content, index_blob_size, open_repo, to_repo_relative_path,
     worktree_content, worktree_size,
 };
-use crate::shared::git::stats::{staged_diff_stats, unstaged_diff_stats};
-use crate::shared::git::types::{
-    GitDiffStatsResponse, GitFileDiffMetaResponse, GitFileDiffResponse,
+use crate::stats::{staged_diff_stats, unstaged_diff_stats};
+use crate::types::{
+    GitDiffStatsResult, GitFileDiffMetaResult, GitFileDiffResult,
 };
 
 pub fn git_file_diff(
     cwd: String,
     file_path: String,
     staged: bool,
-) -> Result<GitFileDiffResponse, String> {
+) -> Result<GitFileDiffResult, String> {
     let repo = open_repo(&cwd)?;
     let relative_path = to_repo_relative_path(&repo, &file_path)?;
     let index = repo
@@ -30,7 +30,7 @@ pub fn git_file_diff(
         )
     };
 
-    Ok(GitFileDiffResponse {
+    Ok(GitFileDiffResult {
         has_changes: old_content != new_content,
         old_content,
         new_content,
@@ -41,7 +41,7 @@ pub fn git_file_diff_meta(
     cwd: String,
     file_path: String,
     staged: bool,
-) -> Result<GitFileDiffMetaResponse, String> {
+) -> Result<GitFileDiffMetaResult, String> {
     let repo = open_repo(&cwd)?;
     let relative_path = to_repo_relative_path(&repo, &file_path)?;
     let index = repo
@@ -60,16 +60,16 @@ pub fn git_file_diff_meta(
         )
     };
 
-    Ok(GitFileDiffMetaResponse {
+    Ok(GitFileDiffMetaResult {
         old_bytes,
         new_bytes,
         total_bytes: old_bytes.saturating_add(new_bytes),
     })
 }
 
-pub fn git_diff_stats(cwd: String) -> Result<GitDiffStatsResponse, String> {
+pub fn git_diff_stats(cwd: String) -> Result<GitDiffStatsResult, String> {
     let repo = open_repo(&cwd)?;
     let staged = staged_diff_stats(&repo)?;
     let unstaged = unstaged_diff_stats(&repo)?;
-    Ok(GitDiffStatsResponse { staged, unstaged })
+    Ok(GitDiffStatsResult { staged, unstaged })
 }

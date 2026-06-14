@@ -2,12 +2,12 @@ use gix::bstr::{BString, ByteSlice};
 use std::collections::BTreeMap;
 use std::ops::ControlFlow;
 
-use crate::shared::git::helpers::{
+use crate::helpers::{
     open_repo, repo_root, stage_code_from_tree_index_change, stage_entry_path, worktree_code_from_summary,
 };
-use crate::shared::git::types::{GitStatusEntry, GitStatusResponse};
+use crate::types::{GitStatusEntry, GitStatusResult};
 
-pub fn git_status(cwd: String) -> Result<GitStatusResponse, String> {
+pub fn git_status(cwd: String) -> Result<GitStatusResult, String> {
     let repo = open_repo(&cwd)?;
     let mut table: BTreeMap<String, (char, char)> = BTreeMap::new();
 
@@ -84,7 +84,7 @@ pub fn git_status(cwd: String) -> Result<GitStatusResponse, String> {
         })
         .collect();
 
-    Ok(GitStatusResponse {
+    Ok(GitStatusResult {
         repo_root: repo_root(&repo),
         entries,
     })
