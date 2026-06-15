@@ -29,6 +29,10 @@ brew tap milisp/codexia
 brew install --cask codexia
 ```
 
+### Prebuilt releases (macOS / Linux / Windows)
+- [GitHub Releases](https://github.com/milisp/codexia/releases)
+- [Modern GitHub Release Mirror](https://milisp.github.io/modern-github-release/#/repo/milisp/codexia)
+
 ## Ecosystem
 
 - **Agent Tools**: Tools for Codex or Claude code
@@ -52,10 +56,6 @@ brew install --cask codexia
 - [VideoOverlayKit](https://github.com/alichherawalla/video-overlay-kit) - MCP server that renders 4-6s animated b-roll overlay videos (mp4) for short-form social (LinkedIn, IG Reels, YouTube Shorts, TikTok). Paste your script into Codex CLI / Claude Code / Cursor, the model writes the scene spec and renders the mp4. Built on Remotion + Tabler + Lottie. Free, MIT, local.
 - [**claude-codex-bridge**](https://github.com/jackcongmac/claude-codex-bridge) - Bidirectional MCP bridge for Codex CLI and Claude Code collaboration, with persistent Claude sessions and shared collaboration files.
 * *Your Server Here? [Submit an Issue/PR](https://github.com/milisp/codexia/issues)*
-
-### Prebuilt releases (macOS / Linux / Windows)
-- [GitHub Releases](https://github.com/milisp/codexia/releases)
-- [Modern GitHub Release Mirror](https://milisp.github.io/modern-github-release/#/repo/milisp/codexia)
 
 ## Quick Start
 
