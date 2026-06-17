@@ -1,4 +1,5 @@
 pub mod mcp;
+pub mod provider;
 pub mod toml_helpers;
 
 use serde::{Deserialize, Serialize};

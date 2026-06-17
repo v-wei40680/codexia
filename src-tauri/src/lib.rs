@@ -260,10 +260,16 @@ pub fn run() {
                             "codex startup timing: total connect during setup took {:?}",
                             codex_init_started_at.elapsed()
                         );
+                        let client_clone = codex_client.clone();
                         app.handle().manage(codex::AppState { codex: codex_client });
                         app.handle().manage(codex::CodexInitializationState::new(
                             Arc::clone(&event_sink),
                         ));
+                        tauri::async_runtime::spawn(async move {
+    if let Err(e) = codex::config::provider::write_model_providers(&*client_clone).await {
+                        log::error!("Failed to write model provider configs: {}", e);
+                    }
+                });
                     }
                     Err(err) => {
                         log::warn!(
