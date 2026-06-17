@@ -9,7 +9,11 @@ import { useThreadList } from '@/hooks/codex';
 
 const focusCCInput = () => window.dispatchEvent(new Event('cc-input-focus-request'));
 
-export function NewAgentButton() {
+type Props = {
+  showLabel?: boolean;
+};
+
+export function NewAgentButton({ showLabel = false }: Props) {
   const { selectedAgent, cwd, setCwd } = useWorkspaceStore();
   const { setCurrentAgentCardId } = useAgentCenterStore();
   const { view, setView, setActiveSidebarTab } = useLayoutStore();
@@ -64,11 +68,21 @@ export function NewAgentButton() {
   return (
     <Button
       onClick={() => void handleCreateNew()}
-      size="icon"
+      size={showLabel ? "default" : "icon"}
       variant="ghost"
+      className={`group ${showLabel ? 'justify-start' : ''} relative flex items-center gap-2`}
       title={selectedAgent === 'cc' ? 'New Session (⌘N)' : 'New Thread (⌘N)'}
     >
       <SquarePen size={16} />
+
+      {showLabel && (
+        <div className="flex items-center justify-between w-full">
+          <span>New Chat</span>
+          <span className="hidden group-hover:inline text-xs text-muted-foreground ml-2">
+            ⌘N
+          </span>
+        </div>
+      )}
     </Button>
   );
 }

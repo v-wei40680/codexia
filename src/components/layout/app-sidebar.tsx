@@ -82,7 +82,6 @@ export function AppSideBar() {
             data-tauri-drag-region
           >
             <SidebarTrigger className="h-7 w-7" />
-            <NewAgentButton />
             <UpdateButton />
             <Button
               variant="ghost"
@@ -97,6 +96,7 @@ export function AppSideBar() {
 
           {/* Nav actions */}
           <div className="flex flex-col">
+            <NewAgentButton showLabel />
             <Button
               variant="ghost"
               size="sm"
