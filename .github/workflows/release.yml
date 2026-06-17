@@ -94,18 +94,17 @@ jobs:
         run: bun install
 
       - name: Read Release Notes
-        id: read_notes
+        id: notes
         shell: bash
         run: |
-          if [ -f "./docs/RELEASE_NOTE.md" ]; then
-            DELIMITER="RELEASE_NOTE_$(uuidgen)"
+          if [[ -f ./docs/RELEASE_NOTE.md ]]; then
             {
-              echo "RELEASE_BODY<<$DELIMITER"
+              echo 'body<<EOF'
               cat ./docs/RELEASE_NOTE.md
-              echo "$DELIMITER"
-            } >> "$GITHUB_ENV"
+              printf '\nEOF\n'
+            } >> "$GITHUB_OUTPUT"
           else
-            echo "RELEASE_BODY=🚀 New release v__VERSION__" >> "$GITHUB_ENV"
+            echo "body=🚀 New release v__VERSION__" >> "$GITHUB_OUTPUT"
           fi
 
       - uses: tauri-apps/tauri-action@v0
@@ -117,7 +116,7 @@ jobs:
         with:
           tagName: v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version.
           releaseName: "v__VERSION__"
-          releaseBody: "${{ env.RELEASE_BODY }}"
+          releaseBody: ${{ steps.notes.outputs.body }}
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
