@@ -1,4 +1,4 @@
-import { BarChart2, ListFilter, Package2, Search, Timer } from 'lucide-react';
+import { BarChart2, Bug, ListFilter, Package2, Search, Timer } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useLayoutStore } from '@/stores';
 import { Button } from '@/components/ui/button';
@@ -26,7 +26,6 @@ import { useTrafficLightConfig } from '@/hooks';
 import { SideBarCodexTab, SideBarClaudeTab } from './SideBarTab';
 import { AgentSwitcher } from '@/components/agent';
 import { SessionManagerDialog } from './SessionManagerDialog';
-import { FeedbackDialog } from '../dialogs/FeedbackDialog';
 import { TunnelIndicator } from '../features/TunnelIndicator';
 import { SideBarAddProjectButton } from './SideBarAddProjectButton';
 import { NewAgentButton } from '../common/NewAgentButton';
@@ -176,7 +175,9 @@ export function AppSideBar() {
           </div>
           <div className="flex-shrink-0 pr-2 flex items-center gap-2">
             <TunnelIndicator />
-            <FeedbackDialog />
+            <a href='https://github.com/milisp/codexia/issues' target='_blank' rel='noopener noreferrer'>
+              <Bug className="h-4 w-4" />
+            </a>
           </div>
         </SidebarFooter>
       </Sidebar>
