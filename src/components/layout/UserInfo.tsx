@@ -13,7 +13,7 @@ export function UserInfo() {
   const { user } = useAuth();
   const { clearLastOAuthProvider } = useAuthStore();
   const { setView } = useLayoutStore();
-  const { t } = useTranslation();
+  const { t } = useTranslation("sidebar");
   const isSignedIn = Boolean(user);
   const avatarUrl = user?.user_metadata?.avatar_url || '';
   const displayName =
@@ -58,7 +58,7 @@ export function UserInfo() {
         <PopoverContent align="start" side="top" className="w-60 p-1">
           <div className="flex flex-col gap-1">
             <Button variant="ghost" className="w-full justify-start" onClick={handleOpenSettings}>
-              {t('sidebar.settings')}
+              {t('settings')}
             </Button>
             {isSignedIn ? (
               <>
@@ -66,7 +66,7 @@ export function UserInfo() {
                   {user?.email}
                 </Button>
                 <Button variant="ghost" className="w-full justify-start" onClick={handleLogout}>
-                  {t('sidebar.signOut')}
+                  {t('signOut')}
                 </Button>
               </>
             ) : (
@@ -75,7 +75,7 @@ export function UserInfo() {
                 className="w-full justify-start"
                 onClick={() => setView('login')}
               >
-                {t('sidebar.login')}
+                {t('login')}
               </Button>
             )}
           </div>
