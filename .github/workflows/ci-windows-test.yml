@@ -1,0 +1,48 @@
+name: ci windows test
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'tag version'
+        required: true
+        default: 'v0.34.0'
+
+jobs:
+  publish-tauri:
+    permissions:
+      contents: write
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: "windows-latest"
+            args: ""
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Read Release Notes
+        id: notes
+        shell: bash
+        run: |
+          {
+            echo 'body<<EOF'
+            cat docs/RELEASE_NOTE.md
+            echo
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+          
+      - name: Read Release Notes and gh
+        id: gh-notes
+        shell: bash
+        run: |
+          echo "body_path=docs/RELEASE_NOTE.md" >> "$GITHUB_OUTPUT"
+  
+      - name: gh release
+        id: gh-release
+        shell: bash
+        run: gh release create ${{ github.event.inputs.tag_name }} --notes-file docs/RELEASE_NOTE.md
+
