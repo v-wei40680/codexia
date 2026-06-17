@@ -12,7 +12,7 @@ serde_json = "1"
 
 [package]
 name = "codexia"
-version = "0.34.0"
+version = "0.35.0"
 description = "A powerful IDE/GUI and Toolkit for Codex CLI + Claude code"
 authors = ["milisp"]
 license = "AGPL-3.0"
