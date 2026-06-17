@@ -246,6 +246,7 @@ pub async fn initialize_codex(
         },
         capabilities: Some(InitializeCapabilities {
             experimental_api: true,
+            request_attestation: false,
             opt_out_notification_methods: None,
         }),
     };

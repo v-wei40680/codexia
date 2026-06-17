@@ -24,26 +24,21 @@ import type {
   ReviewStartParams,
   SandboxMode,
   SandboxPolicy,
-  ReadOnlyAccess,
 } from '@/bindings/v2';
-import type { CollaborationMode } from '@/bindings';
 import type { ThreadListItem } from '@/types/codex/ThreadListItem';
-import { useCodexStore, useConfigStore, type ModeKind } from '@/stores/codex';
+import { useCodexStore, useConfigStore } from '@/stores/codex';
 import { useWorkspaceStore } from '@/stores';
 import { useSettingsStore } from '@/stores/settings';
 import { convertThreadHistoryToEvents } from '@/utils/threadHistoryConverter';
-import { getErrorMessage } from '@/utils/errorUtils';
 
 const sandboxModeToPolicy = (mode: SandboxMode, networkAccess: boolean): SandboxPolicy => {
-  const fullReadOnlyAccess: ReadOnlyAccess = { type: 'fullAccess' };
   switch (mode) {
     case 'read-only':
-      return { type: 'readOnly', access: fullReadOnlyAccess, networkAccess };
+      return { type: 'readOnly', networkAccess };
     case 'workspace-write':
       return {
         type: 'workspaceWrite',
         writableRoots: [],
-        readOnlyAccess: fullReadOnlyAccess,
         networkAccess,
         excludeTmpdirEnvVar: false,
         excludeSlashTmp: false,
@@ -69,9 +64,6 @@ const generateWorktreeKey = (): string => {
   }
   return `thread-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
 };
-
-const isExperimentalRawEventsCapabilityError = (error: unknown): boolean =>
-  getErrorMessage(error).includes('experimentalRawEvents requires experimentalApi capability');
 
 /** Build the agents config fragment to inject into thread config params. */
 const buildAgentsConfigFragment = (): Record<string, unknown> => {
@@ -259,7 +251,7 @@ export const codexService = {
   async threadStart() {
     const set = useCodexStore.setState;
     try {
-      const { model, modelProvider, approvalPolicy, sandbox, reasoningEffort, webSearchRequest, threadCwdMode } =
+      const { model, modelProvider, approvalPolicy, sandbox, reasoningEffort, webSearchRequest, threadCwdMode, collaborationMode } =
         useConfigStore.getState();
       const { cwd } = useWorkspaceStore.getState();
       let threadCwd = cwd;
@@ -287,24 +279,18 @@ export const codexService = {
           view_image_tool: true,
           // Inject user-configured multi-agent limits.
           ...buildAgentsConfigFragment(),
+          // Inject plan mode when selected.
+          ...(collaborationMode === 'plan'
+            ? {
+                collaboration_mode: {
+                  mode: 'plan',
+                  settings: { model, reasoning_effort: reasoningEffort, developer_instructions: null },
+                },
+              }
+            : {}),
         },
-        experimentalRawEvents: true,
-        persistExtendedHistory: true,
       };
-      let response;
-      try {
-        response = await threadStart(params);
-      } catch (error) {
-        if (!isExperimentalRawEventsCapabilityError(error)) {
-          throw error;
-        }
-
-        // Fallback for servers that do not expose experimental API capability.
-        response = await threadStart({
-          ...params,
-          experimentalRawEvents: false,
-        });
-      }
+      const response = await threadStart(params);
       const thread = codexService.normalizeThreadItem(response.thread);
 
       set((state) => ({
@@ -331,8 +317,6 @@ export const codexService = {
       const resumeCwd = resolveThreadCwd(threadId);
       const response = await threadResume({
         threadId,
-        history: null,
-        path: null,
         model: model || null,
         modelProvider: modelProvider || null,
         cwd: resumeCwd,
@@ -341,7 +325,6 @@ export const codexService = {
         config: null,
         baseInstructions: null,
         developerInstructions: null,
-        persistExtendedHistory: true,
       });
       console.log(response.thread.turns);
 
@@ -381,7 +364,6 @@ export const codexService = {
       } = useConfigStore.getState();
       const params: ThreadForkParams = {
         threadId,
-        path: null,
         model,
         modelProvider,
         cwd: resolveThreadCwd(threadId),
@@ -398,7 +380,6 @@ export const codexService = {
         },
         baseInstructions: null,
         developerInstructions: null,
-        persistExtendedHistory: true,
       };
       const response = await threadFork(params);
       const forkedThreadId = response.thread.id;
@@ -463,8 +444,7 @@ export const codexService = {
   async turnStart(
     threadId: string,
     input: string,
-    images: string[] = [],
-    collaborationModeOverride?: ModeKind
+    images: string[] = []
   ) {
     const set = useCodexStore.setState;
     try {
@@ -483,18 +463,8 @@ export const codexService = {
         userInputs.push({ type: 'text', text: '', text_elements: [] });
       }
 
-      const { model, reasoningEffort, approvalPolicy, sandbox, webSearchRequest, collaborationMode } =
+      const { model, reasoningEffort, approvalPolicy, sandbox, webSearchRequest } =
         useConfigStore.getState();
-
-      const effectiveMode = collaborationModeOverride ?? collaborationMode;
-      const collaborationModeParam: CollaborationMode = {
-        mode: effectiveMode,
-        settings: {
-          model: model || '',
-          reasoning_effort: reasoningEffort ?? null,
-          developer_instructions: null,
-        },
-      };
 
       const response = await turnStart({
         threadId,
@@ -506,7 +476,6 @@ export const codexService = {
         effort: reasoningEffort ?? null,
         summary: null,
         outputSchema: null,
-        collaborationMode: collaborationModeParam,
       });
 
       const preview = getThreadPreviewFromInput(userInputs);

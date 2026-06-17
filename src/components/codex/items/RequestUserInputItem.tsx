@@ -91,7 +91,7 @@ export function RequestUserInputItem({ currentThreadId }: RequestUserInputItemPr
 
       if (currentRequest.threadId) {
         setCollaborationMode('default');
-        await codexService.turnStart(currentRequest.threadId, 'Implement the plan and patch.', [], 'default');
+        await codexService.turnStart(currentRequest.threadId, 'Implement the plan and patch.', []);
       }
     } catch (error) {
       console.error('Failed to submit request_user_input response:', error);

@@ -20,6 +20,7 @@ export function convertThreadHistoryToEvents(thread: Thread): ServerNotification
           item: item,
           threadId: thread.id,
           turnId: turn.id,
+          startedAtMs: 0,
         },
       });
 
@@ -31,6 +32,7 @@ export function convertThreadHistoryToEvents(thread: Thread): ServerNotification
           item: item,
           threadId: thread.id,
           turnId: turn.id,
+          completedAtMs: 0,
         },
       });
     }
