@@ -40,7 +40,7 @@ use super::{
         api_rollback_thread, api_fork_thread,
         api_save_dxt_setting,
         api_search_files, api_search_files_by_name, api_skills_config_write, api_skills_list, api_start_review,
-        api_start_thread, api_watch_file, api_watch_directory, api_unwatch_file, api_unwatch_directory,
+        api_start_thread, api_watch_directory, api_unwatch_directory,
         api_skill_groups_read, api_skill_groups_write,
         api_skills_clone_repo, api_skills_delete_central, api_skills_install_marketplace,
         api_skills_link_to_agent, api_skills_list_central, api_skills_list_installed,
@@ -156,8 +156,6 @@ pub fn create_router(state: WebServerState) -> Router {
         .route("/api/filesystem/delete-file", post(api_delete_file))
         .route("/api/filesystem/watch", post(api_watch_directory))
         .route("/api/filesystem/unwatch", post(api_unwatch_directory))
-        .route("/api/filesystem/watch-file", post(api_watch_file))
-        .route("/api/filesystem/unwatch-file", post(api_unwatch_file))
         .route("/api/terminal/start", post(api_terminal_start))
         .route("/api/terminal/write", post(api_terminal_write))
         .route("/api/terminal/resize", post(api_terminal_resize))

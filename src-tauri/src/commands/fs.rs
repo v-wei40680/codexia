@@ -95,20 +95,3 @@ pub async fn unwatch_directory(
 ) -> Result<(), String> {
     watcher::unwatch(state.inner(), folder_path).await
 }
-
-#[tauri::command]
-pub async fn watch_file(
-    app: AppHandle,
-    state: State<'_, WatchState>,
-    file_path: String,
-) -> Result<(), String> {
-    watcher::watch_file(state.inner(), file_path, tauri_watch_emitter(app)).await
-}
-
-#[tauri::command]
-pub async fn unwatch_file(
-    state: State<'_, WatchState>,
-    file_path: String,
-) -> Result<(), String> {
-    watcher::unwatch_file(state.inner(), file_path).await
-}

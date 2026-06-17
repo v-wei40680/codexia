@@ -4,6 +4,7 @@ use serde::Deserialize;
 
 use crate::web::terminal as web_terminal;
 use crate::web::types::{ErrorResponse, WebServerState};
+use crate::shared::terminal::TerminalStartResponse;
 
 #[derive(Deserialize)]
 pub(crate) struct TerminalStartParams {
@@ -35,7 +36,7 @@ pub(crate) struct TerminalResizeParams {
 pub(crate) async fn api_terminal_start(
     AxumState(state): AxumState<WebServerState>,
     Json(params): Json<TerminalStartParams>,
-) -> Result<Json<web_terminal::TerminalStartResponse>, ErrorResponse> {
+) -> Result<Json<TerminalStartResponse>, ErrorResponse> {
     let response = web_terminal::terminal_start(
         state.terminal_state.as_ref(),
         state.event_tx.clone(),

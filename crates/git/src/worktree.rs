@@ -4,8 +4,8 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, LazyLock, Mutex};
 use std::sync::atomic::AtomicBool;
 
-use crate::shared::git::helpers::{open_repo, repo_root_path};
-use crate::shared::git::types::{GitApplyWorktreeResponse, GitCreateWorktreeResponse, GitHasWorktreeChangesResponse};
+use crate::helpers::{open_repo, repo_root_path};
+use crate::types::{GitApplyWorktreeResult, GitCreateWorktreeResult, GitHasWorktreeChangesResult};
 
 // ---------------------------------------------------------------------------
 // Per-path locking — prevents concurrent create/remove on the same worktree.
@@ -319,7 +319,7 @@ fn git_rev_parse_head(dir: &Path) -> Result<String, String> {
 pub fn git_create_worktree(
     cwd: String,
     worktree_key: String,
-) -> Result<GitCreateWorktreeResponse, String> {
+) -> Result<GitCreateWorktreeResult, String> {
     let repo = open_repo(&cwd)?;
     let repo_root = repo_root_path(&repo)?;
     let safe_key = sanitize_worktree_key(&worktree_key);
@@ -334,7 +334,7 @@ pub fn git_create_worktree(
 
     // Validate both filesystem and git metadata.
     if is_worktree_properly_set_up(&repo_root, &worktree_path) {
-        return Ok(GitCreateWorktreeResponse {
+        return Ok(GitCreateWorktreeResult {
             repo_root: repo_root_str,
             worktree_path: worktree_path_str,
             existed: true,
@@ -373,7 +373,7 @@ pub fn git_create_worktree(
     let copied_env_files = copy_env_files(&repo_root, &worktree_path);
     log::debug!("Created worktree at {worktree_path_str}");
 
-    Ok(GitCreateWorktreeResponse {
+    Ok(GitCreateWorktreeResult {
         repo_root: repo_root_str,
         worktree_path: worktree_path_str,
         existed: false,
@@ -416,7 +416,7 @@ pub fn git_remove_worktree(cwd: String, worktree_key: String) -> Result<(), Stri
 pub fn git_apply_worktree_changes(
     cwd: String,
     worktree_key: String,
-) -> Result<GitApplyWorktreeResponse, String> {
+) -> Result<GitApplyWorktreeResult, String> {
     let repo = open_repo(&cwd)?;
     let repo_root = repo_root_path(&repo)?;
     let safe_key = sanitize_worktree_key(&worktree_key);
@@ -468,7 +468,7 @@ pub fn git_apply_worktree_changes(
         }
     }
 
-    Ok(GitApplyWorktreeResponse {
+    Ok(GitApplyWorktreeResult {
         changed_files: changed_count,
     })
 }
@@ -478,7 +478,7 @@ pub fn git_apply_worktree_changes(
 pub fn git_has_worktree_changes(
     cwd: String,
     worktree_key: String,
-) -> Result<GitHasWorktreeChangesResponse, String> {
+) -> Result<GitHasWorktreeChangesResult, String> {
     let repo = open_repo(&cwd)?;
     let repo_root = repo_root_path(&repo)?;
     let safe_key = sanitize_worktree_key(&worktree_key);
@@ -486,13 +486,13 @@ pub fn git_has_worktree_changes(
     let worktree_path = worktrees_dir.join(&safe_key);
 
     if !is_worktree_properly_set_up(&repo_root, &worktree_path) {
-        return Ok(GitHasWorktreeChangesResponse { has_changes: false });
+        return Ok(GitHasWorktreeChangesResult { has_changes: false });
     }
 
     let base_commit = git_rev_parse_head(&repo_root)?;
     let changes = collect_worktree_changes(&worktree_path, &base_commit)?;
 
-    Ok(GitHasWorktreeChangesResponse {
+    Ok(GitHasWorktreeChangesResult {
         has_changes: !changes.is_empty(),
     })
 }

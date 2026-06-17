@@ -23,6 +23,7 @@ export function GitDiffPanel({ cwd, isActive }: GitDiffPanelProps) {
   const [gitData, setGitData] = useState<GitStatusResponse | null>(null);
   const [gitLoading, setGitLoading] = useState(false);
   const [gitError, setGitError] = useState<string | null>(null);
+  const [diffRefreshKey, setDiffRefreshKey] = useState(0);
   const [selectedDiffPath, setSelectedDiffPath] = useState<string | null>(null);
   const [selectedDiffSection, setSelectedDiffSection] = useState<DiffSection>('unstaged');
   const [showFileTree, setShowFileTree] = useState(true);
@@ -68,6 +69,7 @@ export function GitDiffPanel({ cwd, isActive }: GitDiffPanelProps) {
         if (JSON.stringify(prev) === JSON.stringify(status)) return prev;
         return status;
       });
+      setDiffRefreshKey((k) => k + 1);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
       setGitError(message);
@@ -78,7 +80,7 @@ export function GitDiffPanel({ cwd, isActive }: GitDiffPanelProps) {
   }, [cwd]);
 
   const silentRefresh = useCallback(() => { void refreshGitStatus(); }, [refreshGitStatus]);
-  useGitWatch(cwd, silentRefresh, isActive);
+  useGitWatch(cwd, silentRefresh);
 
   useEffect(() => {
     if (cwd) return;
@@ -273,6 +275,7 @@ export function GitDiffPanel({ cwd, isActive }: GitDiffPanelProps) {
           diffSource={diffSource}
           wordWrapEnabled={diffWordWrap}
           selectedDiffPath={selectedDiffPath}
+          refreshKey={diffRefreshKey}
           onSelect={handleFileSelect}
           onRefreshStatus={refreshGitStatus}
         />

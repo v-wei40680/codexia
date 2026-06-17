@@ -1,4 +1,4 @@
-import { BarChart2, ListFilter, Package2, Search, Timer } from 'lucide-react';
+import { BarChart2, Bug, ListFilter, Package2, Search, Timer } from 'lucide-react';
 import { useCallback, useState } from 'react';
 import { useLayoutStore } from '@/stores';
 import { Button } from '@/components/ui/button';
@@ -23,13 +23,12 @@ import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useCCSessionManager } from '@/hooks/useCCSessionManager';
 import { UpdateButton } from '../features/UpdateButton';
 import { useTrafficLightConfig } from '@/hooks';
-import { SideBarCodexTab } from './SideBarCodexTab';
-import { SideBarClaudeTab } from './SideBarClaudeTab';
+import { SideBarCodexTab, SideBarClaudeTab } from './SideBarTab';
 import { AgentSwitcher } from '@/components/agent';
 import { SessionManagerDialog } from './SessionManagerDialog';
-import { FeedbackDialog } from '../dialogs/FeedbackDialog';
 import { TunnelIndicator } from '../features/TunnelIndicator';
 import { SideBarAddProjectButton } from './SideBarAddProjectButton';
+import { NewAgentButton } from '../common/NewAgentButton';
 
 const focusCCInput = () => window.dispatchEvent(new Event('cc-input-focus-request'));
 
@@ -83,6 +82,7 @@ export function AppSideBar() {
             data-tauri-drag-region
           >
             <SidebarTrigger className="h-7 w-7" />
+            <UpdateButton />
             <Button
               variant="ghost"
               size="icon"
@@ -96,6 +96,7 @@ export function AppSideBar() {
 
           {/* Nav actions */}
           <div className="flex flex-col">
+            <NewAgentButton showLabel />
             <Button
               variant="ghost"
               size="sm"
@@ -174,8 +175,9 @@ export function AppSideBar() {
           </div>
           <div className="flex-shrink-0 pr-2 flex items-center gap-2">
             <TunnelIndicator />
-            <UpdateButton />
-            <FeedbackDialog />
+            <a href='https://github.com/milisp/codexia/issues' target='_blank' rel='noopener noreferrer'>
+              <Bug className="h-4 w-4" />
+            </a>
           </div>
         </SidebarFooter>
       </Sidebar>

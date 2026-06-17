@@ -39,6 +39,7 @@ import {
   postNoContent,
   toast,
 } from './shared';
+import type { FrontendProviderModels, EnvStatusItem } from '@/components/codex/selector/ModelList';
 export * from './mcp';
 export * from './skills';
 
@@ -223,4 +224,25 @@ export async function allowSleep(conversationId?: string | null) {
     return await invokeTauri<void>('allow_sleep', { conversationId: conversationId ?? null });
   }
   await postNoContent('/api/sleep/allow', { conversation_id: conversationId ?? null });
+}
+
+export async function listOtherModels() {
+  if (isDesktopTauri()) {
+    return await invokeTauri<FrontendProviderModels[]>('list_other_models');
+  }
+  return await getJson<FrontendProviderModels[]>('/api/codex/model/list-other');
+}
+
+export async function loadEnvKeys() {
+  if (isDesktopTauri()) {
+    return await invokeTauri<EnvStatusItem[]>('load_env_keys');
+  }
+  return null;
+}
+
+export async function setEnv(key: string, value: string) {
+  if (isDesktopTauri()) {
+    return await invokeTauri('set_env', { key, value });
+  }
+  return null
 }

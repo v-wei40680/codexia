@@ -5,7 +5,7 @@ import { FitAddon } from 'xterm-addon-fit';
 import 'xterm/css/xterm.css';
 import { terminalResize, terminalStart, terminalStop, terminalWrite } from '@/services/tauri';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
-import { isTauri } from '@/hooks/runtime';
+import { buildWsUrl, isTauri } from '@/hooks/runtime';
 
 const IS_TAURI = isTauri();
 
@@ -98,7 +98,9 @@ export function TerminalPane({ id, active, panelOpen }: TerminalPaneProps) {
   const startSession = useCallback(async () => {
     const term = terminalRef.current;
     const fitAddon = fitAddonRef.current;
-    if (!IS_TAURI || !term || !fitAddon || sessionIdRef.current || isStartingRef.current) return;
+    // Allow both desktop Tauri and web (HTTP API) mode —
+    // service layer routes to invokeTauri or postJson accordingly.
+    if (!term || !fitAddon || sessionIdRef.current || isStartingRef.current) return;
 
     isStartingRef.current = true;
     try {
@@ -109,6 +111,8 @@ export function TerminalPane({ id, active, panelOpen }: TerminalPaneProps) {
         Math.max(term.rows, 2),
       );
       setSession(session_id);
+    } catch (err) {
+      terminalRef.current?.writeln(`\r\n[session start failed] ${String(err)}`);
     } finally {
       isStartingRef.current = false;
     }
@@ -119,7 +123,7 @@ export function TerminalPane({ id, active, panelOpen }: TerminalPaneProps) {
     void startSession();
   }, [active, panelOpen, startSession]);
 
-  // Tauri event listeners — scoped to this pane's session
+  // Tauri desktop event listeners — scoped to this pane's session
   useEffect(() => {
     if (!IS_TAURI) return;
     let cancelled = false;
@@ -149,6 +153,58 @@ export function TerminalPane({ id, active, panelOpen }: TerminalPaneProps) {
     };
   }, [setSession]);
 
+  // Web mode: WebSocket listener for terminal:data and terminal:exit
+  useEffect(() => {
+    if (IS_TAURI) return;
+
+    let ws: WebSocket | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let closedByCleanup = false;
+
+    const connect = () => {
+      ws = new WebSocket(buildWsUrl('/ws'));
+
+      ws.onmessage = (messageEvent) => {
+        try {
+          const envelope = JSON.parse(messageEvent.data as string) as {
+            event?: string;
+            payload?: unknown;
+          };
+
+          if (envelope.event === 'terminal:data' && envelope.payload) {
+            const payload = envelope.payload as TerminalDataPayload;
+            if (payload.session_id !== sessionIdRef.current) return;
+            terminalRef.current?.write(payload.data);
+          } else if (envelope.event === 'terminal:exit' && envelope.payload) {
+            const payload = envelope.payload as TerminalExitPayload;
+            if (payload.session_id !== sessionIdRef.current) return;
+            terminalRef.current?.writeln(`\r\n[${payload.message}]`);
+            setSession(null);
+          }
+        } catch (error) {
+          console.warn('[TerminalPane] Failed to parse websocket message:', error);
+        }
+      };
+
+      ws.onclose = () => {
+        if (closedByCleanup) return;
+        reconnectTimer = setTimeout(connect, 2000);
+      };
+
+      ws.onerror = () => {
+        ws?.close();
+      };
+    };
+
+    connect();
+
+    return () => {
+      closedByCleanup = true;
+      if (reconnectTimer) clearTimeout(reconnectTimer);
+      ws?.close();
+    };
+  }, [setSession]);
+
   // Resize — only when this pane is active and visible
   useEffect(() => {
     const fitAndResize = () => {
@@ -158,7 +214,7 @@ export function TerminalPane({ id, active, panelOpen }: TerminalPaneProps) {
       if (!term || !fitAddon) return;
       fitAddon.fit();
       const sid = sessionIdRef.current;
-      if (IS_TAURI && sid) {
+      if (sid) {
         void terminalResize(sid, Math.max(term.cols, 2), Math.max(term.rows, 2));
       }
     };
@@ -172,7 +228,6 @@ export function TerminalPane({ id, active, panelOpen }: TerminalPaneProps) {
 
   // Stop session on pane unmount
   useEffect(() => {
-    if (!IS_TAURI) return;
     return () => {
       const sid = sessionIdRef.current;
       if (sid) void terminalStop(sid);

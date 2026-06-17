@@ -8,20 +8,20 @@ pub struct GitStatusEntry {
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct GitStatusResponse {
+pub struct GitStatusResult {
     pub repo_root: String,
     pub entries: Vec<GitStatusEntry>,
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct GitFileDiffResponse {
+pub struct GitFileDiffResult {
     pub old_content: String,
     pub new_content: String,
     pub has_changes: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct GitFileDiffMetaResponse {
+pub struct GitFileDiffMetaResult {
     pub old_bytes: usize,
     pub new_bytes: usize,
     pub total_bytes: usize,
@@ -34,26 +34,26 @@ pub struct GitDiffStatsCounts {
 }
 
 #[derive(Debug, Clone, Serialize, Default)]
-pub struct GitDiffStatsResponse {
+pub struct GitDiffStatsResult {
     pub staged: GitDiffStatsCounts,
     pub unstaged: GitDiffStatsCounts,
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct GitBranchListResponse {
+pub struct GitBranchListResult {
     pub current: String,
     pub branches: Vec<String>,
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct GitBranchInfoResponse {
+pub struct GitBranchInfoResult {
     pub owner: String,
     pub repo: String,
     pub branch: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct GitCreateWorktreeResponse {
+pub struct GitCreateWorktreeResult {
     pub repo_root: String,
     pub worktree_path: String,
     pub existed: bool,
@@ -62,11 +62,11 @@ pub struct GitCreateWorktreeResponse {
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct GitApplyWorktreeResponse {
+pub struct GitApplyWorktreeResult {
     pub changed_files: usize,
 }
 
 #[derive(Debug, Clone, Serialize)]
-pub struct GitHasWorktreeChangesResponse {
+pub struct GitHasWorktreeChangesResult {
     pub has_changes: bool,
 }

@@ -1,6 +1,18 @@
+[workspace]
+members = [
+  ".",
+  "../crates/git",
+]
+
+[workspace.dependencies]
+anyhow = "1.0"
+log = "0.4"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
 [package]
 name = "codexia"
-version = "0.33.1"
+version = "0.34.0"
 description = "A powerful IDE/GUI and Toolkit for Codex CLI + Claude code"
 authors = ["milisp"]
 license = "AGPL-3.0"
@@ -94,7 +106,7 @@ tauri = [
   "dep:tauri-plugin-opener",
   "dep:tauri-plugin-shell",
 ]
-web = ["core", "dep:env_logger"]
+web = ["core", "dep:env_logger", "dep:open"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
@@ -120,9 +132,6 @@ indexmap = { version = "2.0", features = ["serde"], optional = true }
 thiserror = { version = "2.0", optional = true }
 moka = { version = "0.12", features = ["future"], optional = true }
 tokio = { version = "1", features = ["full"], optional = true }
-serde = { version = "1", features = ["derive"], optional = true }
-serde_json = { version = "1", optional = true }
-anyhow = { version = "1.0", optional = true }
 log = { version = "0.4", optional = true }
 env_logger = { version = "0.11", optional = true }
 dirs = { version = "6.0", optional = true }
@@ -146,6 +155,11 @@ codex-app-server-protocol = { git = "https://github.com/openai/codex.git", packa
 claude-agent-sdk-rs = { git = "https://github.com/milisp/claude-agent-sdk-rs", tag = "v0.6.6", optional = true }
 codex-finder = { git = "https://github.com/milisp/codex-finder.git", optional = true }
 
+# workspace
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
+anyhow = { workspace = true, optional = true }
+
 # --- p2p (tauri feature: desktop server + mobile client) ---
 quinn = { version = "0.11", optional = true }
 rcgen = { version = "0.13", optional = true }
@@ -158,6 +172,7 @@ tower = { version = "0.5", features = ["util"], optional = true }
 tower-http = { version = "0.5", features = ["cors", "fs"], optional = true }
 http-body-util = { version = "0.1", optional = true }
 httparse = { version = "1", optional = true }
+open = { version = "5", optional = true }
 
 [target.'cfg(any(target_os = "linux", target_os = "windows"))'.dependencies]
 tauri-plugin-single-instance = { version = "2", features = ["deep-link"], optional = true }
@@ -169,6 +184,7 @@ rustls = { version = "0.23", features = ["ring"], default-features = false }
 tauri-plugin-screenshots = { version = "2.2.0", optional = true }
 nosleep = { version = "0.2.1", optional = true }
 gix = { version = "0.80.0", features = ["blocking-network-client", "blocking-http-transport-curl"] }
+codexia-git = { path = "../crates/git" }
 walkdir = "2.3"
 agent-insights = { git = "https://github.com/milisp/agent-insights", default-features = false }
 pdf-extract = "0.7.12"

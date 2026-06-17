@@ -9,6 +9,7 @@ interface GitDiffFileListProps {
   diffSource: DiffSource;
   wordWrapEnabled: boolean;
   selectedDiffPath: string | null;
+  refreshKey: number;
   onSelect: (path: string) => void;
   onRefreshStatus: () => void;
 }
@@ -20,6 +21,7 @@ export function GitDiffFileList({
   diffSource,
   wordWrapEnabled,
   selectedDiffPath,
+  refreshKey,
   onSelect,
   onRefreshStatus,
 }: GitDiffFileListProps) {
@@ -54,6 +56,7 @@ export function GitDiffFileList({
           wordWrapEnabled={wordWrapEnabled}
           defaultExpanded={index < autoExpandThreshold}
           isSelected={selectedDiffPath === entry.path}
+          refreshKey={refreshKey}
           onSelect={() => onSelect(entry.path)}
           onRefreshStatus={onRefreshStatus}
         />

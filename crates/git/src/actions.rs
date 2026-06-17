@@ -1,4 +1,4 @@
-use crate::shared::git::helpers::open_repo;
+use crate::helpers::open_repo;
 use gix::bstr::{BStr, ByteSlice};
 use gix::objs::tree::{Entry, EntryKind, EntryMode};
 use gix::objs::Tree;

@@ -1,16 +1,16 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { listen, type UnlistenFn } from '@tauri-apps/api/event';
-import { watchFile, unwatchFile } from '@/services/tauri/filesystem';
+import { watchDirectory, unwatchDirectory } from '@/services/tauri/filesystem';
 import { isGitRepo } from '@/services/tauri/git';
 import { isDesktopTauri } from '@/hooks/runtime';
 
 /**
- * Hook to watch .git/index file changes and trigger Git status refresh
+ * Hook to watch cwd for any fs changes and trigger Git status refresh.
+ * Relies entirely on the Rust fs watcher (notify + debouncer) — no polling fallback.
  */
 export function useGitWatch(cwd: string | null, onRefresh: () => void, enabled = true) {
   const unlistenRef = useRef<UnlistenFn | null>(null);
   const refreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Debounced refresh to avoid too many calls
   const debouncedRefresh = useCallback(() => {
@@ -19,62 +19,41 @@ export function useGitWatch(cwd: string | null, onRefresh: () => void, enabled =
     }
     refreshTimeoutRef.current = setTimeout(() => {
       onRefresh();
-    }, 300); // 300ms debounce
+    }, 300);
   }, [onRefresh]);
 
   useEffect(() => {
     if (!cwd || !enabled) return;
 
     let cancelled = false;
-    const gitIndexPath = `${cwd}/.git/index`;
-    const normalizedGitIndexPath = gitIndexPath.replace(/\\/g, '/');
 
-    const isGitIndexChange = (path: string) => {
-      const normalizedPath = path.replace(/\\/g, '/');
-      return (
-        normalizedPath === normalizedGitIndexPath || normalizedPath.endsWith('/.git/index')
-      );
-    };
-
-    // Listen to backend fs watcher events and trigger refresh on .git/index file changes.
+    // Set up the Rust fs watcher on cwd and listen for change events.
+    // watcher.rs is ref-counted, so watch/unwatch here is safe even if other callers also watch cwd.
     const setupWatcher = async () => {
       try {
-        await watchFile(gitIndexPath);
-
+        await watchDirectory(cwd);
         if (isDesktopTauri()) {
-          const unlisten = await listen<{ path: string; kind: string }>('fs_change', (event) => {
-            if (isGitIndexChange(event.payload.path)) {
-              debouncedRefresh();
-            }
+          const unlisten = await listen<{ path: string; kind: string }>('fs_change', () => {
+            debouncedRefresh();
           });
           unlistenRef.current = unlisten;
           return;
         }
 
-        const onWsEvent = (event: Event) => {
-          const changedPath = (event as CustomEvent<{ path?: string }>).detail?.path;
-          if (changedPath && isGitIndexChange(changedPath)) {
-            debouncedRefresh();
-          }
-        };
+        const onWsEvent = () => debouncedRefresh();
         window.addEventListener('fs_change', onWsEvent as EventListener);
         unlistenRef.current = () => {
           window.removeEventListener('fs_change', onWsEvent as EventListener);
         };
       } catch (error) {
-        console.warn('Failed to watch .git/index:', error);
+        console.warn('Failed to subscribe to fs_change:', error);
       }
     };
 
-    // Preflight: if cwd isn't a git repo, skip polling and watcher entirely.
-    // Otherwise consumers' refresh callbacks loop on errors every 2.5s.
+    // Only set up the watcher if cwd is actually a git repo.
     const initialize = async () => {
       if (!(await isGitRepo(cwd))) return;
       if (cancelled) return;
-      // Keep a low-frequency fallback for platforms where file events may be missed.
-      pollingRef.current = setInterval(() => {
-        debouncedRefresh();
-      }, 2500);
       void setupWatcher();
     };
 
@@ -86,14 +65,11 @@ export function useGitWatch(cwd: string | null, onRefresh: () => void, enabled =
         unlistenRef.current();
         unlistenRef.current = null;
       }
-      void unwatchFile(gitIndexPath).catch(() => { });
+
       if (refreshTimeoutRef.current) {
         clearTimeout(refreshTimeoutRef.current);
       }
-      if (pollingRef.current) {
-        clearInterval(pollingRef.current);
-        pollingRef.current = null;
-      }
+      void unwatchDirectory(cwd).catch(() => { });
     };
   }, [cwd, enabled, debouncedRefresh]);
 }

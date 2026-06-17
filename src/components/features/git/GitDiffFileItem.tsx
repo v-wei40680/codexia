@@ -27,6 +27,7 @@ interface GitDiffFileItemProps {
   wordWrapEnabled: boolean;
   defaultExpanded: boolean;
   isSelected: boolean;
+  refreshKey: number;
   onSelect: () => void;
   onRefreshStatus: () => void;
 }
@@ -39,6 +40,7 @@ export function GitDiffFileItem({
   wordWrapEnabled,
   defaultExpanded,
   isSelected,
+  refreshKey,
   onSelect,
   onRefreshStatus,
 }: GitDiffFileItemProps) {
@@ -86,7 +88,7 @@ export function GitDiffFileItem({
     return () => {
       cancelled = true;
     };
-  }, [expanded, cwd, entry.path, section]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [expanded, cwd, entry.path, section, refreshKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Load full data once user confirms large diff
   useEffect(() => {

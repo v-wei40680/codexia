@@ -674,7 +674,7 @@ pub async fn clone_skills_repo(url: String) -> Result<String, String> {
 
     let target_for_clone = target.clone();
     let clone_result = tokio::task::spawn_blocking(move || {
-        crate::shared::git::clone(&clone_url, &target_for_clone)
+        codexia_git::clone(&clone_url, &target_for_clone)
     })
     .await
     .map_err(|err| format!("Clone task failed: {}", err))?;

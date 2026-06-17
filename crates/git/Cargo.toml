@@ -1,0 +1,19 @@
+[package]
+name = "codexia-git"
+version = "0.1.0"
+edition = "2024"
+
+workspace = "../../src-tauri" 
+
+[lib]
+name = "codexia_git"
+path = "src/lib.rs"
+
+[dependencies]
+anyhow = { workspace = true }
+log = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+
+[target.'cfg(not(any(target_os = "ios", target_os = "android")))'.dependencies]
+gix = { version = "0.80.0", features = ["blocking-network-client", "blocking-http-transport-curl"] }

@@ -1,37 +1,27 @@
-import { lazy, Suspense, useEffect, useMemo, useState } from "react";
-import { useAgentCenterStore } from "@/stores";
-import { useLayoutStore } from "@/stores";
-import {
-  useCodexStore,
-  useApprovalStore,
-  useRequestUserInputStore,
-} from "@/stores/codex";
-import { useCCStore } from "@/stores/cc";
-import { useWorkspaceStore } from "@/stores/useWorkspaceStore";
-import { codexService } from "@/services/codexService";
-import { gitRemoveWorktree } from "@/services/tauri/git";
-import {
-  ArrowLeft,
-  X,
-  Maximize2,
-} from "lucide-react";
-import type { AgentCenterCard } from "@/stores/useAgentCenterStore";
-import { AgentIcon } from "@/components/common/AgentIcon";
-import { AgentComposer } from "@/components/agent";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CodexAgentCard } from "./codex-agent-card";
-import { CCAgentCard } from "./cc-agent-card";
+import { lazy, Suspense } from 'react';
+import { useAgentCenterStore } from '@/stores';
+import { useLayoutStore } from '@/stores';
+import { useCodexStore, useApprovalStore, useRequestUserInputStore } from '@/stores/codex';
+import { useCCStore } from '@/stores/cc';
+import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
+import { codexService } from '@/services/codexService';
+import { ArrowLeft, X, Maximize2 } from 'lucide-react';
+import type { AgentCenterCard } from '@/stores/useAgentCenterStore';
+import { AgentIcon } from '@/components/common/AgentIcon';
+import { AgentComposer } from '@/components/agent';
+import { CodexAgentCard } from './codex-agent-card';
+import { CCAgentCard } from './cc-agent-card';
 
 const ChatInterface = lazy(() =>
-  import("@/components/codex/ChatInterface").then((m) => ({
+  import('@/components/codex/ChatInterface').then((m) => ({
     default: m.ChatInterface,
-  })),
+  }))
 );
-const CCView = lazy(() => import("@/components/cc/CCView"));
+const CCView = lazy(() => import('@/components/cc/CCView'));
 
 // AgentCardHeader
 
-type AgentStatus = "running" | "pending" | "idle";
+type AgentStatus = 'running' | 'pending' | 'idle';
 
 interface AgentCardHeaderProps {
   card: AgentCenterCard;
@@ -48,24 +38,24 @@ export function AgentCardHeader({
   onBack,
   onSelect,
   onExpand,
-  status = "idle",
+  status = 'idle',
 }: AgentCardHeaderProps) {
   const title = card.preview?.slice(0, 60) || card.id.slice(0, 12);
 
   const dotColor =
-    status === "running"
-      ? "bg-green-500"
-      : status === "pending"
-        ? "bg-amber-500"
-        : "bg-muted-foreground/40";
+    status === 'running'
+      ? 'bg-green-500'
+      : status === 'pending'
+        ? 'bg-amber-500'
+        : 'bg-muted-foreground/40';
 
-  const dotAnimate = status !== "idle" ? "animate-pulse" : "";
+  const dotAnimate = status !== 'idle' ? 'animate-pulse' : '';
 
   return (
     <div
       className="flex items-center gap-2 px-2 py-1.5 border-b bg-muted/30 shrink-0"
       onClick={onSelect}
-      style={onSelect ? { cursor: "pointer" } : undefined}
+      style={onSelect ? { cursor: 'pointer' } : undefined}
     >
       {onBack && (
         <button
@@ -96,9 +86,7 @@ export function AgentCardHeader({
         </button>
       )}
       <AgentIcon agent={card.kind} />
-      <span className="text-xs text-muted-foreground truncate flex-1 min-w-0">
-        {title}
-      </span>
+      <span className="text-xs text-muted-foreground truncate flex-1 min-w-0">{title}</span>
       {onExpand && (
         <button
           onClick={(e) => {
@@ -124,28 +112,26 @@ export interface AgentCardProps {
 
 export function AgentCard({ card, onExpand, onRemove, isSelected }: AgentCardProps) {
   const { setCurrentAgentCardId } = useAgentCenterStore();
-  const { sessionLoadingMap, sessionMessagesMap, activeSessionIds } =
-    useCCStore();
+  const { sessionLoadingMap, sessionMessagesMap, activeSessionIds } = useCCStore();
   const { threadStatusMap } = useCodexStore();
   const { pendingApprovals } = useApprovalStore();
   const { pendingRequests } = useRequestUserInputStore();
-  const codexStatus =
-    card.kind === "codex" ? threadStatusMap[card.id] : undefined;
+  const codexStatus = card.kind === 'codex' ? threadStatusMap[card.id] : undefined;
   const running =
-    card.kind === "codex"
-      ? codexStatus?.type === "active" && codexStatus.activeFlags.length === 0
+    card.kind === 'codex'
+      ? codexStatus?.type === 'active' && codexStatus.activeFlags.length === 0
       : activeSessionIds.includes(card.id) && !!sessionLoadingMap[card.id];
 
   const pending =
-    card.kind === "codex"
-      ? codexStatus?.type === "active" && codexStatus.activeFlags.length > 0
+    card.kind === 'codex'
+      ? codexStatus?.type === 'active' && codexStatus.activeFlags.length > 0
       : (sessionMessagesMap[card.id] ?? []).some(
-        (m) => m.type === "permission_request" && !(m as any).resolved,
-      ) ||
-      pendingApprovals.some((a) => (a as any).threadId === card.id) ||
-      pendingRequests.some((r) => r.threadId === card.id);
+          (m) => m.type === 'permission_request' && !(m as any).resolved
+        ) ||
+        pendingApprovals.some((a) => (a as any).threadId === card.id) ||
+        pendingRequests.some((r) => r.threadId === card.id);
 
-  const status: AgentStatus = running ? "running" : pending ? "pending" : "idle";
+  const status: AgentStatus = running ? 'running' : pending ? 'pending' : 'idle';
 
   const header = (
     <AgentCardHeader
@@ -153,17 +139,17 @@ export function AgentCard({ card, onExpand, onRemove, isSelected }: AgentCardPro
       onClose={onRemove}
       onSelect={() => {
         setCurrentAgentCardId(card.id);
-        if (card.kind === "codex") void codexService.setCurrentThread(card.id);
+        if (card.kind === 'codex') void codexService.setCurrentThread(card.id);
       }}
       onExpand={onExpand}
       status={status}
     />
   );
 
-  if (card.kind === "codex") {
+  if (card.kind === 'codex') {
     return (
       <CodexAgentCard
-        card={card as AgentCenterCard & { kind: "codex" }}
+        card={card as AgentCenterCard & { kind: 'codex' }}
         onRemove={onRemove}
         header={header}
         isSelected={isSelected}
@@ -173,7 +159,7 @@ export function AgentCard({ card, onExpand, onRemove, isSelected }: AgentCardPro
 
   return (
     <CCAgentCard
-      card={card as AgentCenterCard & { kind: "cc" }}
+      card={card as AgentCenterCard & { kind: 'cc' }}
       onRemove={onRemove}
       header={header}
       isSelected={isSelected}
@@ -188,44 +174,16 @@ function AgentFullscreen() {
 
   const card = cards.find((c) => c.id === currentAgentCardId);
   // Fallback for new thread/session (no card yet): show blank header with correct agent kind
-  const headerCard: AgentCenterCard = card ?? { kind: selectedAgent, id: "" };
+  const headerCard: AgentCenterCard = card ?? { kind: selectedAgent, id: '' };
 
   return (
     <div className="flex flex-col h-full min-h-0">
       <AgentCardHeader card={headerCard} onBack={() => setIsAgentExpanded(false)} />
       <div className="flex flex-col flex-1 min-h-0 h-full overflow-hidden">
         <Suspense fallback={null}>
-          {selectedAgent === "codex" ? <ChatInterface /> : <CCView />}
+          {selectedAgent === 'codex' ? <ChatInterface /> : <CCView />}
         </Suspense>
       </div>
-    </div>
-  );
-}
-
-// ─── ColumnLabel ────────────────────────────────────────────────────────────
-
-export function ColumnLabel({
-  dot,
-  label,
-  count,
-}: {
-  dot?: "green" | "muted";
-  label: string;
-  count: number;
-}) {
-  return (
-    <div className="flex items-center gap-1.5 px-2 py-1 border-b shrink-0 bg-muted/20">
-      {dot && (
-        <span
-          className={`h-1.5 w-1.5 rounded-full shrink-0 ${dot === "green" ? "bg-green-500" : "bg-muted-foreground/40"}`}
-        />
-      )}
-      <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
-        {label}
-      </span>
-      <span className="text-[10px] text-muted-foreground/50 ml-auto">
-        {count}
-      </span>
     </div>
   );
 }
@@ -233,143 +191,19 @@ export function ColumnLabel({
 // ─── AgentList ────────────────────────────────────────────────────────────────
 
 function AgentList() {
-  const { cards, removeCard, setCurrentAgentCardId, currentAgentCardId } =
-    useAgentCenterStore();
-  const { setIsAgentExpanded } = useLayoutStore();
-  const {
-    switchToSession,
-    sessionLoadingMap,
-    activeSessionId,
-    setActiveSessionId,
-  } = useCCStore();
-  const { threadStatusMap, currentThreadId } = useCodexStore();
-  const { setSelectedAgent, selectedAgent } = useWorkspaceStore();
+  const { selectedAgent } = useWorkspaceStore();
+  const currentThreadId = useCodexStore((s) => s.currentThreadId);
+  const activeSessionId = useCCStore((s) => s.activeSessionId);
 
-  const isRunning = (card: AgentCenterCard) =>
-    card.kind === "codex"
-      ? threadStatusMap[card.id]?.type === "active"
-      : !!sessionLoadingMap[card.id];
+  // When no active thread/session, center the composer vertically
+  const noActiveSession =
+    selectedAgent === 'codex' ? !currentThreadId : !activeSessionId;
 
-  const handleRemove = (card: AgentCenterCard) => {
-    removeCard(card);
-    if (card.id === currentAgentCardId) {
-      setCurrentAgentCardId(null);
-    }
-    if (card.kind === "codex") {
-      if (card.id === currentThreadId) {
-        void codexService.setCurrentThread(null);
-      }
-    } else {
-      if (card.id === activeSessionId) {
-        setActiveSessionId(null);
-      }
-    }
-    if (card.worktreePath) {
-      const { cwd } = useWorkspaceStore.getState();
-      const worktreeKey = card.worktreePath.split("/").pop() ?? "";
-      if (cwd && worktreeKey) {
-        void gitRemoveWorktree(cwd, worktreeKey);
-      }
-    }
-  };
-
-  const expand = async (card: AgentCenterCard) => {
-    setCurrentAgentCardId(card.id);
-    setSelectedAgent(card.kind);
-    setIsAgentExpanded(true);
-    if (card.kind === "codex") {
-      await codexService.setCurrentThread(card.id);
-    } else {
-      switchToSession(card.id);
-    }
-  };
-
-
-  const [mobileTab, setMobileTab] = useState<"all" | "idle" | "running">("all");
-  const [isDesktop, setIsDesktop] = useState(() => {
-    if (typeof window === "undefined") return true;
-    return window.matchMedia("(min-width: 768px)").matches;
-  });
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    const mediaQuery = window.matchMedia("(min-width: 768px)");
-    const handleChange = (event: MediaQueryListEvent) =>
-      setIsDesktop(event.matches);
-    setIsDesktop(mediaQuery.matches);
-    mediaQuery.addEventListener("change", handleChange);
-    return () => mediaQuery.removeEventListener("change", handleChange);
-  }, []);
-
-  const runningCards = useMemo(
-    () => cards.filter((c) => isRunning(c)),
-    [cards, threadStatusMap, sessionLoadingMap],
-  );
-
-  const idleCards = useMemo(
-    () => cards.filter((c) => !isRunning(c)),
-    [cards, threadStatusMap, sessionLoadingMap],
-  );
-
-  const mobileCards = useMemo(() => {
-    if (mobileTab === "running") return runningCards;
-    if (mobileTab === "idle") return idleCards;
-    return cards;
-  }, [cards, idleCards, mobileTab, runningCards]);
-
-  if (!isDesktop) {
+  if (noActiveSession) {
     return (
-      <div className="flex flex-col h-full overflow-hidden bg-background">
-        <Tabs
-          value={mobileTab}
-          onValueChange={(value) =>
-            setMobileTab(value as "all" | "idle" | "running")
-          }
-          className="w-full"
-        >
-          <TabsList className="flex h-auto w-full">
-            <TabsTrigger value="all" className="flex-1 text-xs">
-              All {cards.length}
-            </TabsTrigger>
-            <TabsTrigger
-              value="idle"
-              className="flex-1 text-xs flex items-center justify-center gap-1"
-            >
-              <span className="h-1.5 w-1.5 rounded-full shrink-0 bg-muted-foreground/40" />
-              Idle {idleCards.length}
-            </TabsTrigger>
-            <TabsTrigger
-              value="running"
-              className="flex-1 text-xs flex items-center justify-center gap-1"
-            >
-              <span className="h-1.5 w-1.5 rounded-full shrink-0 bg-green-500" />
-              Running {runningCards.length}
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-        <div className="flex-1 min-h-0 overflow-y-auto p-3">
-          {mobileCards.length === 0 ? (
-            <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-              No {mobileTab} agents.
-            </div>
-          ) : (
-            <div className="flex flex-wrap gap-3">
-              {mobileCards.map((card) => (
-                <div key={card.id} className="w-full sm:w-[320px] flex-grow">
-                  <AgentCard
-                    key={card.id}
-                    card={card}
-                    onExpand={() => void expand(card)}
-                    onRemove={() => handleRemove(card)}
-                    isSelected={card.id === currentAgentCardId}
-                  />
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-        <div className="flex justify-center shrink-0">
-          <div className="w-full max-w-3xl px-2">
+      <div className="flex flex-row h-full min-h-0 overflow-hidden">
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden items-center justify-center">
+          <div className="w-full px-2 md:max-w-3xl md:px-0">
             <AgentComposer />
           </div>
         </div>
@@ -383,11 +217,7 @@ function AgentList() {
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
           <Suspense fallback={null}>
-            {selectedAgent === "codex" ? (
-              <ChatInterface hideComposer />
-            ) : (
-              <CCView hideComposer />
-            )}
+            {selectedAgent === 'codex' ? <ChatInterface hideComposer /> : <CCView hideComposer />}
           </Suspense>
         </div>
         <div className="shrink-0 flex justify-center">
