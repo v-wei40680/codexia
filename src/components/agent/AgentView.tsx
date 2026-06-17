@@ -192,6 +192,24 @@ function AgentFullscreen() {
 
 function AgentList() {
   const { selectedAgent } = useWorkspaceStore();
+  const currentThreadId = useCodexStore((s) => s.currentThreadId);
+  const activeSessionId = useCCStore((s) => s.activeSessionId);
+
+  // When no active thread/session, center the composer vertically
+  const noActiveSession =
+    selectedAgent === 'codex' ? !currentThreadId : !activeSessionId;
+
+  if (noActiveSession) {
+    return (
+      <div className="flex flex-row h-full min-h-0 overflow-hidden">
+        <div className="flex-1 flex flex-col min-h-0 overflow-hidden items-center justify-center">
+          <div className="w-full px-2 md:max-w-3xl md:px-0">
+            <AgentComposer />
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-row h-full min-h-0 overflow-hidden">
