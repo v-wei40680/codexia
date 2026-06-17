@@ -5,8 +5,34 @@ import { useCCStore } from '@/stores/cc';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { codexService } from '@/services/codexService';
 import { gitRemoveWorktree } from '@/services/tauri/git';
-import { AgentCard, ColumnLabel } from './AgentView';
+import { AgentCard } from './AgentView';
 import type { AgentCenterCard } from '@/stores/useAgentCenterStore';
+
+function ColumnLabel({
+  dot,
+  label,
+  count,
+}: {
+  dot?: 'green' | 'muted';
+  label: string;
+  count: number;
+}) {
+  return (
+    <div className="flex items-center gap-1.5 px-2 py-1 border-b shrink-0 bg-muted/20">
+      {dot && (
+        <span
+          className={`h-1.5 w-1.5 rounded-full shrink-0 ${dot === 'green' ? 'bg-green-500' : 'bg-muted-foreground/40'}`}
+        />
+      )}
+      <span className="text-[11px] font-medium text-muted-foreground uppercase tracking-wide">
+        {label}
+      </span>
+      <span className="text-[10px] text-muted-foreground/50 ml-auto">
+        {count}
+      </span>
+    </div>
+  );
+}
 
 export function TasksPanel() {
   const { cards, removeCard, setCurrentAgentCardId, currentAgentCardId } =
