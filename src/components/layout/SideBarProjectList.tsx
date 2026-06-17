@@ -1,4 +1,5 @@
-import { ChevronRight, Ellipsis, ScrollText, SquarePen, X } from 'lucide-react';
+import { useState } from 'react';
+import { ChevronDown, ChevronRight, Ellipsis, FolderClosed, FolderOpen, ScrollText, SquarePen, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
@@ -18,8 +19,9 @@ type Props = {
 };
 
 export function SideBarProjectList({ onNewAction, newActionTitle, renderList }: Props) {
-  const { projects, removeProject, cwd, setCwd, setInstructionType } = useWorkspaceStore();
+  const { projects, removeProject, setCwd, setInstructionType } = useWorkspaceStore();
   const { setView, expandedProjects, setProjectExpanded } = useLayoutStore();
+  const [hoveredProject, setHoveredProject] = useState<string | null>(null);
 
   const isOpen = (project: string) => expandedProjects[project] ?? true;
   const toggleProject = (project: string, open: boolean) => setProjectExpanded(project, open);
@@ -37,20 +39,32 @@ export function SideBarProjectList({ onNewAction, newActionTitle, renderList }: 
           key={project}
           open={isOpen(project)}
           onOpenChange={(open) => toggleProject(project, open)}
-          className="rounded-lg border border-sidebar-border bg-sidebar/30"
+          className="bg-sidebar/30"
         >
           <div
-            className={`flex items-center gap-1 rounded-t-lg px-2 py-1.5 text-xs transition-colors ${cwd === project
-                ? 'bg-accent text-foreground'
-                : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
-              }`}
+            className="flex items-center gap-1 px-1 py-0.5 text-xs transition-colors hover:bg-foreground/10"
             title={project}
+            onMouseEnter={() => setHoveredProject(project)}
+            onMouseLeave={() => setHoveredProject(null)}
           >
-            <CollapsibleTrigger className="flex min-w-0 flex-1 items-center gap-1 text-left">
-              <ChevronRight
-                className={`h-3.5 w-3.5 shrink-0 transition-transform ${isOpen(project) ? 'rotate-90' : ''}`}
-              />
+            <CollapsibleTrigger className="flex min-w-0 flex-1 items-center gap-2 text-left">
+              {
+                isOpen(project) ? (
+                  <FolderOpen
+                    className={`h-3.5 w-3.5 shrink-0 transition-transform`}
+                  />
+                ) : (
+                  <FolderClosed
+                    className={`h-3.5 w-3.5 shrink-0 transition-transform`}
+                  />
+                )
+              }
               <span className="truncate font-medium">{getFilename(project) || project}</span>
+              {isOpen(project) ? (
+                <ChevronDown className={`h-3.5 w-3.5 shrink-0 transition-opacity ${hoveredProject === project ? 'opacity-100' : 'opacity-0'}`} />
+              ) : (
+                <ChevronRight className={`h-3.5 w-3.5 shrink-0 transition-opacity ${hoveredProject === project ? 'opacity-100' : 'opacity-0'}`} />
+              )}
             </CollapsibleTrigger>
 
             <DropdownMenu>
