@@ -172,27 +172,3 @@ pub(crate) async fn api_unwatch_directory(
         .map_err(to_error_response)?;
     Ok(StatusCode::OK)
 }
-
-pub(crate) async fn api_watch_file(
-    AxumState(state): AxumState<WebServerState>,
-    Json(params): Json<FilesystemFilePathParams>,
-) -> Result<StatusCode, ErrorResponse> {
-    watcher::start_watch_file(
-        state.fs_watch_state.as_ref(),
-        state.event_tx.clone(),
-        params.file_path,
-    )
-    .await
-    .map_err(to_error_response)?;
-    Ok(StatusCode::OK)
-}
-
-pub(crate) async fn api_unwatch_file(
-    AxumState(state): AxumState<WebServerState>,
-    Json(params): Json<FilesystemFilePathParams>,
-) -> Result<StatusCode, ErrorResponse> {
-    watcher::unwatch_file(state.fs_watch_state.as_ref(), params.file_path)
-        .await
-        .map_err(to_error_response)?;
-    Ok(StatusCode::OK)
-}

@@ -5,7 +5,6 @@ import {
   postJson,
   postJsonWithOptions,
   postNoContent,
-  postNoContentWithOptions,
 } from './shared';
 
 export async function readFile(filePath: string, options?: { suppressToast?: boolean }) {
@@ -136,20 +135,4 @@ export async function unwatchDirectory(folderPath: string) {
     return;
   }
   await postNoContent('/api/filesystem/unwatch', { path: folderPath });
-}
-
-export async function watchFile(filePath: string) {
-  if (isDesktopTauri()) {
-    await invokeTauri('watch_file', { filePath });
-    return;
-  }
-  await postNoContentWithOptions('/api/filesystem/watch-file', { filePath }, { suppressToast: true });
-}
-
-export async function unwatchFile(filePath: string) {
-  if (isDesktopTauri()) {
-    await invokeTauri('unwatch_file', { filePath });
-    return;
-  }
-  await postNoContentWithOptions('/api/filesystem/unwatch-file', { filePath }, { suppressToast: true });
 }

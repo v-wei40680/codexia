@@ -135,8 +135,6 @@ pub fn run() {
                 commands::fs::read_xlsx_content,
                 commands::fs::watch_directory,
                 commands::fs::unwatch_directory,
-                commands::fs::watch_file,
-                commands::fs::unwatch_file,
                 commands::sleep::prevent_sleep,
                 commands::sleep::allow_sleep,
                 cc::cc_connect,

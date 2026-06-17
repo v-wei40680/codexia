@@ -87,18 +87,6 @@ pub(crate) async fn start_watch_path(
     Ok(())
 }
 
-pub(crate) async fn start_watch_file(
-    state: &WebWatchState,
-    event_tx: broadcast::Sender<(String, Value)>,
-    file_path: String,
-) -> Result<(), String> {
-    let abs = expand_path(&file_path)?;
-    if !abs.exists() || !abs.is_file() {
-        return Err("File does not exist".to_string());
-    }
-    start_watch_path(state, event_tx, file_path).await
-}
-
 pub(crate) async fn unwatch_path(state: &WebWatchState, path: String) -> Result<(), String> {
     let abs = expand_path(&path)?;
     let key = match std::fs::canonicalize(&abs) {
@@ -117,8 +105,4 @@ pub(crate) async fn unwatch_path(state: &WebWatchState, path: String) -> Result<
         let _ = watcher.unwatch(&abs);
     }
     Ok(())
-}
-
-pub(crate) async fn unwatch_file(state: &WebWatchState, file_path: String) -> Result<(), String> {
-    unwatch_path(state, file_path).await
 }

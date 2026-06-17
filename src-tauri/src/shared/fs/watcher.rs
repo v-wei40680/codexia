@@ -161,21 +161,3 @@ pub async fn unwatch(state: &WatchState, path: String) -> Result<(), String> {
     }
     Ok(())
 }
-
-/// Start watching a file (alias for watch with file validation)
-pub async fn watch_file(
-    state: &WatchState,
-    file_path: String,
-    emit: Arc<dyn Fn(FsChange) + Send + Sync>,
-) -> Result<(), String> {
-    let abs = expand_path(&file_path)?;
-    if !abs.exists() || !abs.is_file() {
-        return Err("File does not exist".to_string());
-    }
-    watch(state, file_path, emit).await
-}
-
-/// Stop watching a file (alias for unwatch)
-pub async fn unwatch_file(state: &WatchState, file_path: String) -> Result<(), String> {
-    unwatch(state, file_path).await
-}
