@@ -31,6 +31,16 @@ pub fn codex_home() -> PathBuf {
 }
 
 #[tauri::command]
+pub async fn list_other_models() -> Result<Vec<super::providers::FrontendProviderModels>, String> {
+    super::providers::load_and_fetch_models().await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub async fn load_env_keys() -> Result<Vec<super::providers::EnvStatusItem>, String> {
+    super::providers::load_env_keys().await.map_err(|e| e.to_string())
+}
+
+#[tauri::command]
 pub async fn initialize_codex_async(
     state: State<'_, AppState>,
     init_state: State<'_, CodexInitializationState>,

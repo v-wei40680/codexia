@@ -2,6 +2,8 @@ pub mod app_server;
 #[cfg(feature = "tauri")]
 pub mod commands;
 pub mod config;
+#[cfg(desktop)]
+pub mod providers;
 pub mod scan;
 mod server_request;
 pub mod utils;
