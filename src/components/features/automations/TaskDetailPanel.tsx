@@ -500,7 +500,7 @@ export function TaskDetailPanel({ task, now, runs, togglingPauseTaskId }: TaskDe
           </CollapsibleContent>
         </Collapsible>
 
-        {/* Run history using renderEvent — same as ChatInterface */}
+        {/* Run history using renderEvent — same as CodexThread */}
         <div>
           <p className="mb-2 text-xs font-medium text-muted-foreground">Recent runs</p>
           {runs.length === 0 ? (

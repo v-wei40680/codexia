@@ -202,7 +202,7 @@ export const codexService = {
     // Review-first behavior: setting the current thread no longer auto-resumes
     // the agent process. Live threads (already in activeThreadIds with cached
     // events) just switch view + derive activeTurnId. Dormant threads switch
-    // view but stay disconnected — ChatInterface renders an explicit Resume
+    // view but stay disconnected — CodexThread renders an explicit Resume
     // button to spawn the agent on demand. Lets users peek at history without
     // paying the agent-spawn cost. The `options.resume` parameter is preserved
     // for API compat and will trigger a resume when requested.
@@ -240,7 +240,7 @@ export const codexService = {
           inputFocusTrigger: state.inputFocusTrigger + 1,
         }));
       } else {
-        // Dormant — view-only. User clicks Resume in ChatInterface to connect.
+        // Dormant — view-only. User clicks Resume in CodexThread to connect.
         set((state) => ({
           currentThreadId: threadId,
           currentTurnId: null,

@@ -9,7 +9,7 @@ import { useAgentCenterStore } from '@/stores/useAgentCenterStore';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { gitApplyWorktreeChanges, gitRemoveWorktree } from '@/services/tauri/git';
 import { getFilename } from '@/utils/getFilename';
-const CCView = lazy(() => import('@/components/cc/CCView'));
+const CCSession = lazy(() => import('@/components/cc/CCSession'));
 import type { ResultMessage } from '@/components/cc/types/messages';
 import { toast } from 'sonner';
 
@@ -152,11 +152,11 @@ export function CCAgentCard({ card, onRemove: _onRemove, header, isSelected }: C
     <div className={`flex flex-col ${attentionBorder} rounded-lg bg-background overflow-hidden h-72 transition-shadow`}>
       {header}
 
-      {/* Message area — CCView owns its own listener and display */}
-      {/* Disable the listener when the standalone left-panel CCView already covers this session */}
+      {/* Message area — CCSession owns its own listener and display */}
+      {/* Disable the listener when the standalone left-panel CCSession already covers this session */}
       <div className="flex-1 min-h-0 overflow-hidden">
         <Suspense fallback={null}>
-          <CCView
+          <CCSession
             sessionId={card.id}
             disableListener={selectedAgent === 'cc' && activeSessionId === card.id}
           />

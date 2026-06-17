@@ -30,13 +30,13 @@ export function useCCSessionListener({ disabled = false, sessionId }: CCListener
 
   useEffect(() => {
     if (disabled || !targetSessionId) return;
-    console.info('[CCView] Bind message listener', { targetSessionId });
+    console.info('[CCSession] Bind message listener', { targetSessionId });
 
     const handleMessage = (message: CCMessage) => {
       const msgSessionId = (message as { session_id?: string }).session_id;
       if (msgSessionId && msgSessionId !== targetSessionId) return;
 
-      console.info('[CCView] Received message', message);
+      console.info('[CCSession] Received message', message);
 
       if (sessionId) {
         addMessageToSession(sessionId, message);
@@ -55,7 +55,7 @@ export function useCCSessionListener({ disabled = false, sessionId }: CCListener
       });
 
       void unlistenPromise.then(() => {
-        console.info('[CCView] Message listener ready (Tauri)', { targetSessionId });
+        console.info('[CCSession] Message listener ready (Tauri)', { targetSessionId });
         if (!sessionId) {
           window.dispatchEvent(new CustomEvent(CC_LISTENER_READY_EVENT, { detail: { sessionId: targetSessionId } }));
         }
@@ -68,19 +68,19 @@ export function useCCSessionListener({ disabled = false, sessionId }: CCListener
 
     // SSE path for non-Tauri (iOS via P2P).
     const sseUrl = buildUrl('/api/events');
-    console.info('[CCView] Opening SSE connection', { url: sseUrl, targetSessionId, isTauri: 'isDesktopTauri=' + isDesktopTauri() });
+    console.info('[CCSession] Opening SSE connection', { url: sseUrl, targetSessionId, isTauri: 'isDesktopTauri=' + isDesktopTauri() });
     const es = new EventSource(sseUrl);
-    es.onopen = () => console.info('[CCView] SSE connected', { url: sseUrl });
-    es.onerror = (err) => console.error('[CCView] SSE error', { url: sseUrl, readyState: es.readyState, err });
+    es.onopen = () => console.info('[CCSession] SSE connected', { url: sseUrl });
+    es.onerror = (err) => console.error('[CCSession] SSE error', { url: sseUrl, readyState: es.readyState, err });
     es.onmessage = (e) => {
       try {
         const envelope = JSON.parse(e.data as string) as { event?: string; payload?: unknown };
         if (envelope.event === 'cc-message') {
           handleMessage(envelope.payload as CCMessage);
         }
-      } catch {}
+      } catch { }
     };
-    console.info('[CCView] Message listener ready (SSE)', { targetSessionId });
+    console.info('[CCSession] Message listener ready (SSE)', { targetSessionId });
     if (!sessionId) {
       window.dispatchEvent(new CustomEvent(CC_LISTENER_READY_EVENT, { detail: { sessionId: targetSessionId } }));
     }
@@ -102,7 +102,7 @@ export function useCCPermissionListener({ disabled = false, sessionId }: CCListe
 
   useEffect(() => {
     if (disabled || !targetSessionId) return;
-    console.info('[CCView] Bind permission listener', { targetSessionId });
+    console.info('[CCSession] Bind permission listener', { targetSessionId });
 
     type PermPayload = {
       requestId: string;
@@ -116,7 +116,7 @@ export function useCCPermissionListener({ disabled = false, sessionId }: CCListe
       const { requestId, sessionId: evtSessionId, toolName, toolInput, alwaysAllowTarget } = payload;
       if (evtSessionId !== targetSessionId) {
         if (!sessionId) {
-          console.warn('[CCView] Ignoring permission request for inactive session', {
+          console.warn('[CCSession] Ignoring permission request for inactive session', {
             targetSessionId,
             requestId,
             evtSessionId,
@@ -147,7 +147,7 @@ export function useCCPermissionListener({ disabled = false, sessionId }: CCListe
       });
 
       void unlistenPromise.then(() => {
-        console.info('[CCView] Permission listener ready (Tauri)', { targetSessionId });
+        console.info('[CCSession] Permission listener ready (Tauri)', { targetSessionId });
         if (!sessionId) {
           window.dispatchEvent(new CustomEvent(CC_PERMISSION_LISTENER_READY_EVENT, { detail: { sessionId: targetSessionId } }));
         }
@@ -160,19 +160,19 @@ export function useCCPermissionListener({ disabled = false, sessionId }: CCListe
 
     // SSE path for non-Tauri (iOS via P2P).
     const sseUrl = buildUrl('/api/events');
-    console.info('[CCView] Opening permission SSE connection', { url: sseUrl, targetSessionId });
+    console.info('[CCSession] Opening permission SSE connection', { url: sseUrl, targetSessionId });
     const es = new EventSource(sseUrl);
-    es.onopen = () => console.info('[CCView] Permission SSE connected', { url: sseUrl });
-    es.onerror = (err) => console.error('[CCView] Permission SSE error', { url: sseUrl, readyState: es.readyState, err });
+    es.onopen = () => console.info('[CCSession] Permission SSE connected', { url: sseUrl });
+    es.onerror = (err) => console.error('[CCSession] Permission SSE error', { url: sseUrl, readyState: es.readyState, err });
     es.onmessage = (e) => {
       try {
         const envelope = JSON.parse(e.data as string) as { event?: string; payload?: unknown };
         if (envelope.event === 'cc-permission-request') {
           handlePermission(envelope.payload as PermPayload);
         }
-      } catch {}
+      } catch { }
     };
-    console.info('[CCView] Permission listener ready (SSE)', { targetSessionId });
+    console.info('[CCSession] Permission listener ready (SSE)', { targetSessionId });
     if (!sessionId) {
       window.dispatchEvent(new CustomEvent(CC_PERMISSION_LISTENER_READY_EVENT, { detail: { sessionId: targetSessionId } }));
     }

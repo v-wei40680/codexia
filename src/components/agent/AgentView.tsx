@@ -12,12 +12,12 @@ import { AgentComposer } from '@/components/agent';
 import { CodexAgentCard } from './codex-agent-card';
 import { CCAgentCard } from './cc-agent-card';
 
-const ChatInterface = lazy(() =>
-  import('@/components/codex/ChatInterface').then((m) => ({
-    default: m.ChatInterface,
+const CodexThread = lazy(() =>
+  import('@/components/codex/CodexThread').then((m) => ({
+    default: m.CodexThread,
   }))
 );
-const CCView = lazy(() => import('@/components/cc/CCView'));
+const CCSession = lazy(() => import('@/components/cc/CCSession'));
 
 // AgentCardHeader
 
@@ -126,10 +126,10 @@ export function AgentCard({ card, onExpand, onRemove, isSelected }: AgentCardPro
     card.kind === 'codex'
       ? codexStatus?.type === 'active' && codexStatus.activeFlags.length > 0
       : (sessionMessagesMap[card.id] ?? []).some(
-          (m) => m.type === 'permission_request' && !(m as any).resolved
-        ) ||
-        pendingApprovals.some((a) => (a as any).threadId === card.id) ||
-        pendingRequests.some((r) => r.threadId === card.id);
+        (m) => m.type === 'permission_request' && !(m as any).resolved
+      ) ||
+      pendingApprovals.some((a) => (a as any).threadId === card.id) ||
+      pendingRequests.some((r) => r.threadId === card.id);
 
   const status: AgentStatus = running ? 'running' : pending ? 'pending' : 'idle';
 
@@ -181,7 +181,7 @@ function AgentFullscreen() {
       <AgentCardHeader card={headerCard} onBack={() => setIsAgentExpanded(false)} />
       <div className="flex flex-col flex-1 min-h-0 h-full overflow-hidden">
         <Suspense fallback={null}>
-          {selectedAgent === 'codex' ? <ChatInterface /> : <CCView />}
+          {selectedAgent === 'codex' ? <CodexThread /> : <CCSession />}
         </Suspense>
       </div>
     </div>
@@ -217,7 +217,7 @@ function AgentList() {
       <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
           <Suspense fallback={null}>
-            {selectedAgent === 'codex' ? <ChatInterface hideComposer /> : <CCView hideComposer />}
+            {selectedAgent === 'codex' ? <CodexThread hideComposer /> : <CCSession hideComposer />}
           </Suspense>
         </div>
         <div className="shrink-0 flex justify-center">

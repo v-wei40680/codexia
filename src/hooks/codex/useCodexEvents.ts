@@ -18,7 +18,7 @@ import { CodexParseErrorEvent, CodexStderrEvent } from '@/components/codex/Codex
 
 function shouldPlayCompletionBeep(
   mode: 'never' | 'unfocused' | 'always',
-  isChatInterfaceActive: boolean
+  isCodexThreadActive: boolean
 ) {
   if (mode === 'never') {
     return false;
@@ -26,7 +26,7 @@ function shouldPlayCompletionBeep(
   if (mode === 'always') {
     return true;
   }
-  return document.hidden || !document.hasFocus() || !isChatInterfaceActive;
+  return document.hidden || !document.hasFocus() || !isCodexThreadActive;
 }
 
 const extractThreadId = (payload: ServerNotification): string | undefined => {
@@ -48,13 +48,13 @@ export function useCodexEvents(enabled = true) {
   const { addRequest } = useRequestUserInputStore();
   const { preventSleepDuringTasks, showReasoning } = useSettingsStore();
   const taskCompleteBeepMode = useSettingsStore((state) => state.enableTaskCompleteBeep);
-  const isChatInterfaceActive = useLayoutStore((state) => state.view === 'agent');
+  const isCodexThreadActive = useLayoutStore((state) => state.view === 'agent');
 
   // Use refs for values that change but are only read inside callbacks.
   // This avoids re-registering all Tauri listeners whenever the user switches
   // views or settings change — listener accumulation was the cause of 100% CPU.
-  const isChatInterfaceActiveRef = useRef(isChatInterfaceActive);
-  isChatInterfaceActiveRef.current = isChatInterfaceActive;
+  const isCodexThreadActiveRef = useRef(isCodexThreadActive);
+  isCodexThreadActiveRef.current = isCodexThreadActive;
   const taskCompleteBeepModeRef = useRef(taskCompleteBeepMode);
   taskCompleteBeepModeRef.current = taskCompleteBeepMode;
   const preventSleepDuringTasksRef = useRef(preventSleepDuringTasks);
@@ -159,7 +159,7 @@ export function useCodexEvents(enabled = true) {
           const turnStatus = payload.params.turn.status;
           if (
             turnStatus === 'completed' &&
-            shouldPlayCompletionBeep(taskCompleteBeepModeRef.current, isChatInterfaceActiveRef.current)
+            shouldPlayCompletionBeep(taskCompleteBeepModeRef.current, isCodexThreadActiveRef.current)
           ) {
             playBeep();
           }

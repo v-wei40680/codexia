@@ -12,7 +12,7 @@ import { useSettingsStore } from '@/stores/settings';
 import { codexService } from '@/services/codexService';
 import { Button } from '@/components/ui/button';
 
-export function ChatInterface({ hideComposer = false }: { hideComposer?: boolean } = {}) {
+export function CodexThread({ hideComposer = false }: { hideComposer?: boolean } = {}) {
   const { currentThreadId, events, hasAccount, activeThreadIds } = useCodexStore();
   const { taskDetail, showReasoning } = useSettingsStore();
   const isLive = !!currentThreadId && activeThreadIds.includes(currentThreadId);

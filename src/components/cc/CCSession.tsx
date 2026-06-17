@@ -17,19 +17,19 @@ import type { PermissionRequestMessage } from './types/messages';
 import type { PermissionDecision } from './types/permission';
 
 
-interface CCViewProps {
+interface CCSessionProps {
   /** When provided, renders in embedded (grid-card) mode for this specific session. */
   sessionId?: string;
   /** Suppress the internal composer (e.g. when a parent renders its own composer). */
   hideComposer?: boolean;
   /**
-   * Disable the internal event listeners. Use when a sibling standalone CCView
+   * Disable the internal event listeners. Use when a sibling standalone CCSession
    * is already listening to the same session to prevent double-writing messages.
    */
   disableListener?: boolean;
 }
 
-export default function CCView({ sessionId, hideComposer = false, disableListener = false }: CCViewProps = {}) {
+export default function CCSession({ sessionId, hideComposer = false, disableListener = false }: CCSessionProps = {}) {
   const isEmbedded = !!sessionId;
 
   const {
