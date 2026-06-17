@@ -1,13 +1,13 @@
 import { ClaudeCodeSessionList } from '../cc/SessionList';
+import { ThreadList } from '@/components/codex/ThreadList';
 import { useCCSessionManager } from '@/hooks/useCCSessionManager';
 import { SideBarProjectList } from './SideBarProjectList';
 
-type Props = {
-  /** Called when user wants to start a new CC session in a given project. */
+type SideBarClaudeTabProps = {
   onStartNewSession: (directory: string) => void;
 };
 
-export function SideBarClaudeTab({ onStartNewSession }: Props) {
+export function SideBarClaudeTab({ onStartNewSession }: SideBarClaudeTabProps) {
   const { handleSessionSelect } = useCCSessionManager();
 
   return (
@@ -17,6 +17,20 @@ export function SideBarClaudeTab({ onStartNewSession }: Props) {
       renderList={(directory) => (
         <ClaudeCodeSessionList directory={directory} onSelectSession={handleSessionSelect} />
       )}
+    />
+  );
+}
+
+type SideBarCodexTabProps = {
+  onCreateNewThread: (project: string) => void;
+};
+
+export function SideBarCodexTab({ onCreateNewThread }: SideBarCodexTabProps) {
+  return (
+    <SideBarProjectList
+      onNewAction={onCreateNewThread}
+      newActionTitle={(name) => `Start new thread in ${name}`}
+      renderList={(project) => <ThreadList cwdOverride={project} />}
     />
   );
 }

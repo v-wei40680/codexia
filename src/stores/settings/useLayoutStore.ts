@@ -54,6 +54,9 @@ interface LayoutStore {
   setDiffWordWrap: (enabled: boolean) => void;
   diffSplitMode: boolean;
   setDiffSplitMode: (enabled: boolean) => void;
+  // Sidebar project collapse state: projectPath -> isOpen
+  expandedProjects: Record<string, boolean>;
+  setProjectExpanded: (project: string, open: boolean) => void;
 }
 
 export const useLayoutStore = create<LayoutStore>()(
@@ -126,10 +129,27 @@ export const useLayoutStore = create<LayoutStore>()(
       setDiffWordWrap: (enabled) => set({ diffWordWrap: enabled }),
       diffSplitMode: false,
       setDiffSplitMode: (enabled) => set({ diffSplitMode: enabled }),
+      expandedProjects: {},
+      setProjectExpanded: (project, open) =>
+        set((state) => ({
+          expandedProjects: { ...state.expandedProjects, [project]: open },
+        })),
     }),
     {
       name: 'layout-storage',
       version: 4,
+      partialize: (state) => ({
+        isSidebarOpen: state.isSidebarOpen,
+        isRightPanelOpen: state.isRightPanelOpen,
+        rightPanelSize: state.rightPanelSize,
+        view: state.view,
+        isAgentExpanded: state.isAgentExpanded,
+        activeSidebarTab: state.activeSidebarTab,
+        activeRightPanelTab: state.activeRightPanelTab,
+        diffWordWrap: state.diffWordWrap,
+        diffSplitMode: state.diffSplitMode,
+        expandedProjects: state.expandedProjects,
+      }),
     }
   )
 );

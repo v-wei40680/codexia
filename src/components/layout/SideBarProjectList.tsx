@@ -1,5 +1,4 @@
 import { ChevronRight, Ellipsis, ScrollText, SquarePen, X } from 'lucide-react';
-import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import {
@@ -20,12 +19,10 @@ type Props = {
 
 export function SideBarProjectList({ onNewAction, newActionTitle, renderList }: Props) {
   const { projects, removeProject, cwd, setCwd, setInstructionType } = useWorkspaceStore();
-  const { setView } = useLayoutStore();
+  const { setView, expandedProjects, setProjectExpanded } = useLayoutStore();
 
-  const [expandedProjects, setExpandedProjects] = useState<Record<string, boolean>>({});
   const isOpen = (project: string) => expandedProjects[project] ?? true;
-  const toggleProject = (project: string, open: boolean) =>
-    setExpandedProjects((prev) => ({ ...prev, [project]: open }));
+  const toggleProject = (project: string, open: boolean) => setProjectExpanded(project, open);
 
   const openAgentInstructions = (project: string) => {
     setCwd(project);
