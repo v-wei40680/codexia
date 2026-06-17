@@ -23,6 +23,8 @@ pub mod web;
 mod web;
 #[cfg(all(feature = "core", feature = "tauri", any(windows, target_os = "linux")))]
 mod window;
+#[cfg(all(feature = "core", feature = "tauri", target_os = "macos"))]
+mod menu;
 
 #[cfg(feature = "tauri")]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
@@ -62,8 +64,6 @@ pub fn run() {
         use std::sync::Arc;
         use std::time::Instant;
         use tauri::Manager;
-        #[cfg(target_os = "macos")]
-        use tauri::{menu::{Menu, MenuItem, PredefinedMenuItem, Submenu}, Emitter};
 
         let builder = tauri::Builder::default()
             .plugin(tauri_plugin_os::init())
@@ -89,51 +89,10 @@ pub fn run() {
         #[cfg(target_os = "macos")]
         let builder = builder
             .menu(|app| {
-                let about = MenuItem::with_id(app, "app-about", "About Codexia", true, None::<&str>)?;
-                let separator = PredefinedMenuItem::separator(app)?;
-                let quit = MenuItem::with_id(app, "app-quit", "Quit Codexia", true, Some("CmdOrControl+Q"))?;
-                let app_submenu = Submenu::with_items(app, "Codexia", true, &[&about, &separator, &quit])?;
-
-                let edit_submenu = Submenu::with_items(app, "Edit", true, &[
-                    &PredefinedMenuItem::undo(app, None)?,
-                    &PredefinedMenuItem::redo(app, None)?,
-                    &PredefinedMenuItem::separator(app)?,
-                    &PredefinedMenuItem::cut(app, None)?,
-                    &PredefinedMenuItem::copy(app, None)?,
-                    &PredefinedMenuItem::paste(app, None)?,
-                    &PredefinedMenuItem::select_all(app, None)?,
-                ])?;
-
-                Menu::with_items(app, &[&app_submenu, &edit_submenu])
+                crate::menu::build_menu(app)
             })
-            .on_menu_event(|app, event| match event.id().as_ref() {
-                "app-quit" => {
-                    if let Some(window) = app.get_webview_window("main") {
-                        let _ = window.show();
-                        let _ = window.set_focus();
-                    }
-                    let _ = app.emit("quit-requested", ());
-                }
-                "app-about" => {
-                    if let Some(window) = app.get_webview_window("about") {
-                        let _ = window.show();
-                        let _ = window.set_focus();
-                    } else if let Err(e) = tauri::WebviewWindowBuilder::new(
-                        app,
-                        "about",
-                        tauri::WebviewUrl::App("/about".into()),
-                    )
-                    .title("")
-                    .inner_size(360.0, 360.0)
-                    .resizable(false)
-                    .decorations(true)
-                    .focused(true)
-                    .build()
-                    {
-                        eprintln!("Failed to open about window: {e}");
-                    }
-                }
-                _ => {}
+            .on_menu_event(|app, event| {
+                crate::menu::on_menu_event(app, &event)
             });
 
         builder
