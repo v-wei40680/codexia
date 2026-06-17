@@ -1,3 +1,4 @@
+#[cfg(target_os = "macos")]
 use std::process::Command;
 
 #[cfg(target_os = "windows")]
@@ -39,7 +40,7 @@ pub fn set_env(key: String, value: String) -> Result<(), String> {
         let (env_key, _) = root.create_subkey("Environment").map_err(|e| e.to_string())?;
         env_key.set_value(&key, &value).map_err(|e| e.to_string())?;
 
-        extern "system" {
+        unsafe extern "system" {
             fn SendMessageTimeoutW(
                 hwnd: *mut std::ffi::c_void,
                 msg: u32,
