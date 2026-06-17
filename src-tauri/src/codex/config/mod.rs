@@ -1,4 +1,5 @@
 pub mod mcp;
+#[cfg(feature = "desktop")]
 pub mod provider;
 pub mod toml_helpers;
 

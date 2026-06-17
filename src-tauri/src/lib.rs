@@ -1,5 +1,5 @@
 // Core modules — requires the "core" feature (shared by "desktop" and "web")
-#[cfg(desktop)]
+#[cfg(feature = "desktop")]
 mod env;
 #[cfg(feature = "core")]
 mod cc;
@@ -30,7 +30,7 @@ mod menu;
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     // Mobile: thin WebView client that connects to the desktop via Quinn P2P tunnel.
-    #[cfg(not(desktop))]
+    #[cfg(not(feature = "desktop"))]
     {
         // rustls 0.23+ has no built-in default crypto provider; install ring explicitly.
         // Without this, Tauri's internal tauri:// URL scheme handler (which uses reqwest+rustls)

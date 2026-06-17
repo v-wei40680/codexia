@@ -106,7 +106,7 @@ tauri = [
   "dep:tauri-plugin-opener",
   "dep:tauri-plugin-shell",
 ]
-web = ["core", "dep:env_logger"]
+web = ["core", "dep:env_logger", "dep:open"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
@@ -172,6 +172,7 @@ tower = { version = "0.5", features = ["util"], optional = true }
 tower-http = { version = "0.5", features = ["cors", "fs"], optional = true }
 http-body-util = { version = "0.1", optional = true }
 httparse = { version = "1", optional = true }
+open = { version = "5", optional = true }
 
 [target.'cfg(any(target_os = "linux", target_os = "windows"))'.dependencies]
 tauri-plugin-single-instance = { version = "2", features = ["deep-link"], optional = true }

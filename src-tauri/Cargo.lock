@@ -1199,6 +1199,7 @@ dependencies = [
  "notify",
  "notify-debouncer-full",
  "nucleo",
+ "open",
  "pdf-extract",
  "portable-pty",
  "quinn",
