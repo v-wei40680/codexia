@@ -1,0 +1,94 @@
+name: Publish Windows Patch
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag_name:
+        description: 'tag name'
+        required: true
+        default: 'v0.34.0'
+
+env:
+  VITE_REDIRECT_URL: ${{ secrets.VITE_REDIRECT_URL }}
+  VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+  VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+  TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+  TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+  TAURI_BUNDLE: all
+
+jobs:
+  publish-tauri:
+    permissions:
+      contents: write
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: "windows-latest"
+            args: "--features desktop"
+          - platform: "windows-latest"
+            args: "--target aarch64-pc-windows-msvc --features desktop"
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: setup node
+        uses: actions/setup-node@v6
+
+      - name: Install Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.platform == 'macos-latest' && 'aarch64-apple-darwin,x86_64-apple-darwin' || matrix.platform == 'windows-latest' && 'x86_64-pc-windows-msvc,aarch64-pc-windows-msvc' || '' }}
+
+      - name: Setup Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "src-tauri"
+
+      - name: install frontend dependencies
+        run: bun install
+
+      - name: Read Release Notes
+        id: notes
+        shell: bash
+        run: |
+          {
+            echo 'body<<EOF'
+            cat docs/RELEASE_NOTE.md
+            echo
+            echo EOF
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ inputs.tag_name }}
+          releaseName: "${{ inputs.tag_name }}"
+          releaseBody: ${{ steps.notes.outputs.body }}
+          releaseDraft: false
+          prerelease: false
+          args: ${{ matrix.args }}
+
+  update-homebrew:
+    permissions:
+      contents: write
+    needs: publish-tauri
+    runs-on: ubuntu-24.04
+    if: startsWith(github.ref, 'refs/tags/')
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Update Homebrew tap
+        env:
+          GITHUB_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          bash scripts/update-homebrew-tap.sh
