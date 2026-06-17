@@ -29,6 +29,7 @@ import { SessionManagerDialog } from './SessionManagerDialog';
 import { FeedbackDialog } from '../dialogs/FeedbackDialog';
 import { TunnelIndicator } from '../features/TunnelIndicator';
 import { SideBarAddProjectButton } from './SideBarAddProjectButton';
+import { NewAgentButton } from '../common/NewAgentButton';
 
 const focusCCInput = () => window.dispatchEvent(new Event('cc-input-focus-request'));
 
@@ -82,6 +83,8 @@ export function AppSideBar() {
             data-tauri-drag-region
           >
             <SidebarTrigger className="h-7 w-7" />
+            <NewAgentButton />
+            <UpdateButton />
             <Button
               variant="ghost"
               size="icon"
@@ -173,7 +176,6 @@ export function AppSideBar() {
           </div>
           <div className="flex-shrink-0 pr-2 flex items-center gap-2">
             <TunnelIndicator />
-            <UpdateButton />
             <FeedbackDialog />
           </div>
         </SidebarFooter>

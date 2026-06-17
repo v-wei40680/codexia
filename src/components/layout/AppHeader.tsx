@@ -15,6 +15,7 @@ import { isTauri } from '@/hooks/runtime';
 import { useTrafficLightConfig } from '@/hooks';
 import { NewAgentButton } from '@/components/common/NewAgentButton';
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
+import { UpdateButton } from '../features/UpdateButton';
 
 // isTauri() is a runtime constant — evaluate once at module load
 const IS_TAURI = isTauri();
@@ -60,9 +61,10 @@ export function AppHeader() {
     >
       <div className="flex min-w-0 items-center gap-2">
         {showTrigger && (
-          <div className={`flex items-center ${needsTrafficLightOffset ? 'pl-20' : 'pl-2'}`}>
+          <div className={`flex gap-2 items-center ${needsTrafficLightOffset ? 'pl-20' : 'pl-2'}`}>
             <SidebarTrigger />
             <NewAgentButton />
+            <UpdateButton />
           </div>
         )}
         {view === 'agent' && !hasCurrentCard && (
