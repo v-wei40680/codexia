@@ -98,11 +98,14 @@ jobs:
         shell: bash
         run: |
           if [ -f "./docs/RELEASE_NOTE.md" ]; then
-            echo "RELEASE_BODY<<EOF" >> $GITHUB_ENV
-            cat ./docs/RELEASE_NOTE.md >> $GITHUB_ENV
-            echo "EOF" >> $GITHUB_ENV
+            DELIMITER="RELEASE_NOTE_$(uuidgen)"
+            {
+              echo "RELEASE_BODY<<$DELIMITER"
+              cat ./docs/RELEASE_NOTE.md
+              echo "$DELIMITER"
+            } >> "$GITHUB_ENV"
           else
-            echo "RELEASE_BODY=🚀 New release v__VERSION__" >> $GITHUB_ENV
+            echo "RELEASE_BODY=🚀 New release v__VERSION__" >> "$GITHUB_ENV"
           fi
 
       - uses: tauri-apps/tauri-action@v0
