@@ -93,6 +93,18 @@ jobs:
       - name: install frontend dependencies
         run: bun install
 
+      - name: Read Release Notes
+        id: read_notes
+        shell: bash
+        run: |
+          if [ -f "./docs/RELEASE_NOTE.md" ]; then
+            echo "RELEASE_BODY<<EOF" >> $GITHUB_ENV
+            cat ./docs/RELEASE_NOTE.md >> $GITHUB_ENV
+            echo "EOF" >> $GITHUB_ENV
+          else
+            echo "RELEASE_BODY=🚀 New release v__VERSION__" >> $GITHUB_ENV
+          fi
+
       - uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -102,7 +114,7 @@ jobs:
         with:
           tagName: v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version.
           releaseName: "v__VERSION__"
-          releaseBody: "See https://github.com/milisp/codexia/releases"
+          releaseBody: "${{ env.RELEASE_BODY }}"
           releaseDraft: false
           prerelease: false
           args: ${{ matrix.args }}
