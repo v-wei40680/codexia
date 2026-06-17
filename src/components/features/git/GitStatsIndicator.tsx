@@ -1,7 +1,6 @@
 import { Minus, Plus } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Badge } from '@/components/ui/badge';
-import { cn } from '@/lib/utils';
 import { useGitStatsStore } from '@/stores/useGitStatsStore';
 
 export function GitStatsIndicator() {
@@ -28,13 +27,6 @@ export function GitStatsIndicator() {
           <AnimatedCount value={stats.totalDeletions} />
         </span>
       </Badge>
-      <span
-        className={cn(
-          'h-1.5 w-1.5 rounded-full bg-muted-foreground transition-opacity',
-          stats.isLoading ? 'opacity-80 animate-pulse' : 'opacity-0'
-        )}
-        aria-hidden
-      />
     </div>
   );
 }

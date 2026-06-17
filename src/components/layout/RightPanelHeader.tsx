@@ -47,7 +47,8 @@ export function RightPanelHeader() {
     makeRefresher()();
   }, [makeRefresher]);
 
-  useGitWatch(cwd || null, makeRefresher(true), Boolean(cwd));
+  const silentRefresher = useCallback(() => void refreshStats(cwd, true), [cwd, refreshStats]);
+  useGitWatch(cwd || null, silentRefresher, Boolean(cwd));
 
   const openRightPanelTab = useCallback((tab: RightPanelTab) => {
     setActiveRightPanelTab(tab);
