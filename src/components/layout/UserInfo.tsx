@@ -6,7 +6,7 @@ import supabase, { isSupabaseConfigured } from '@/lib/supabase';
 import { toast } from 'sonner';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useLayoutStore } from '@/stores/settings';
+import { useLayoutStore } from '@/stores';
 import { useTranslation } from 'react-i18next';
 
 export function UserInfo() {

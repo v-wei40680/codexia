@@ -5,7 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { AutomationTask } from '@/services/tauri';
 import { listAutomations, setAutomationPaused } from '@/services/tauri';
 import { toast } from '@/components/ui/use-toast';
-import { useLayoutStore } from '@/stores/settings/useLayoutStore';
+import { useLayoutStore } from '@/stores';
 import { getErrorMessage } from '@/utils/errorUtils';
 import { BUILTIN_TEMPLATES } from './constants';
 import { AutomationTaskList } from './AutomationTaskList';

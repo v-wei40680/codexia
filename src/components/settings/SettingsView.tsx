@@ -20,7 +20,7 @@ import {
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { GeneralSettings } from './GeneralSettings';
 import { ExplorerSettings } from './ExplorerSettings';
-import { useLayoutStore } from '@/stores/settings';
+import { useLayoutStore } from '@/stores';
 import {
   ConfigSettings,
   ArchivedThreadSettings,
@@ -165,11 +165,10 @@ export function SettingsView() {
                   <button
                     type="button"
                     onClick={() => setActiveSection(section)}
-                    className={`w-full rounded-lg px-3 py-2 text-left transition-colors ${
-                      activeSection === section
+                    className={`w-full rounded-lg px-3 py-2 text-left transition-colors ${activeSection === section
                         ? 'bg-accent text-foreground'
                         : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
-                    }`}
+                      }`}
                   >
                     {sectionLabel[section]}
                   </button>
@@ -194,11 +193,10 @@ export function SettingsView() {
                         key={section}
                         type="button"
                         onClick={() => setActiveSection(section)}
-                        className={`w-full rounded-lg px-6 py-2 text-left transition-colors ${
-                          activeSection === section
+                        className={`w-full rounded-lg px-6 py-2 text-left transition-colors ${activeSection === section
                             ? 'bg-accent text-foreground'
                             : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
-                        }`}
+                          }`}
                       >
                         {sectionLabel[section]}
                       </button>

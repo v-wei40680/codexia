@@ -15,7 +15,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { cn } from '@/lib/utils';
 import { codexService } from '@/services/codexService';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
-import { useLayoutStore } from '@/stores/settings/useLayoutStore';
+import { useLayoutStore } from '@/stores/useLayoutStore';
 import { getFilename } from '@/utils/getFilename';
 
 export function HistoryProjectsDialog() {

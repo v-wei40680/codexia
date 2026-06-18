@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useLayoutStore } from '@/stores/settings';
+import { useLayoutStore } from '@/stores';
 import type { DiffSection, DiffSource } from './types';
 
 interface GitDiffTopBarProps {

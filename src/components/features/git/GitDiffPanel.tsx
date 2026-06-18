@@ -8,8 +8,7 @@ import {
 } from '@/services/tauri';
 import { isGitRepo } from '@/services/tauri/git';
 import { useGitWatch } from '@/hooks/useGitWatch';
-import { useWorkspaceStore } from '@/stores';
-import { useLayoutStore } from '@/stores/settings';
+import { useWorkspaceStore, useLayoutStore } from '@/stores';
 import { GitDiffDialogs } from './GitDiffDialogs';
 import { GitDiffFileList } from './GitDiffFileList';
 import { GitDiffTopBar } from './GitDiffTopBar';
@@ -310,9 +309,9 @@ export function GitDiffPanel({ cwd, isActive }: GitDiffPanelProps) {
           revertConfirmOpen={false}
           revertLoading={false}
           onBulkStageDialogOpenChange={setBulkStageDialogOpen}
-          onRevertConfirmOpenChange={() => {}}
+          onRevertConfirmOpenChange={() => { }}
           onBulkStageConfirm={() => { void handleBulkStageConfirm(); }}
-          onRevertConfirm={() => {}}
+          onRevertConfirm={() => { }}
         />
       </div>
     </div>

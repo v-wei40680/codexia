@@ -7,7 +7,8 @@ import {
   type ApprovalRequest,
   type RequestUserInputRequest,
 } from '@/stores/codex';
-import { useLayoutStore, useSettingsStore } from '@/stores/settings';
+import { useLayoutStore } from '@/stores';
+import { useSettingsStore } from '@/stores/settings';
 import type { ServerNotification } from '@/bindings/ServerNotification';
 import type { AccountLoginCompletedNotification } from '@/bindings/v2';
 import { playBeep } from '@/utils/beep';

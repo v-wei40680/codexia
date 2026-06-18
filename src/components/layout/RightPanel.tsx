@@ -1,6 +1,5 @@
 import { lazy, Suspense, useEffect, useState } from 'react';
-import { useLayoutStore } from '@/stores/settings';
-import { useWorkspaceStore } from '@/stores';
+import { useLayoutStore, useWorkspaceStore } from '@/stores';
 import { detectWebFramework } from '../features/web-preview/webFrameworkDetection';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { RightPanelHeader } from './RightPanelHeader';

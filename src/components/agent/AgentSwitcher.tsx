@@ -3,7 +3,7 @@ import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useLayoutStore } from '@/stores';
 import { AgentIcon } from '../common/AgentIcon';
 
-const AGENT_TYPES = ['cc', 'codex'] as const;
+const AGENT_TYPES = ['codex', 'cc'] as const;
 
 interface AgentSwitcherProps {
   /** "icon" = icon-only ghost buttons; "tab" = icon + label tabs */
@@ -24,8 +24,8 @@ export function AgentSwitcher({ variant = 'icon', className }: AgentSwitcherProp
             key={agent}
             onClick={() => setSelectedAgent(agent)}
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${selectedAgent === agent
-                ? 'bg-muted text-foreground'
-                : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
+              ? 'bg-muted text-foreground'
+              : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
               }`}
           >
             <AgentIcon agent={agent} />
