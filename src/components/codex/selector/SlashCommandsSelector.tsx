@@ -15,6 +15,7 @@ import {
   replaceAtTrigger,
   applyEditorReplacement,
 } from '@/components/common/useComposerPopover';
+import { useCodexStore } from '@/stores/codex';
 
 const SLASH_COMMANDS = [{ id: 'review', description: 'Review uncommitted changes' }];
 const detectSlash = detectWordBoundaryTrigger('/');
@@ -26,7 +27,6 @@ interface SlashCommandPopoverProps {
   setInputValue: (v: string) => void;
   editorRef: React.RefObject<HTMLTextAreaElement | null>;
   triggerElement: HTMLElement | null;
-  currentThreadId: string | null;
 }
 
 export function SlashCommandPopover({
@@ -34,8 +34,9 @@ export function SlashCommandPopover({
   setInputValue,
   editorRef,
   triggerElement,
-  currentThreadId,
 }: SlashCommandPopoverProps) {
+  const { currentThreadId } = useCodexStore();
+
   const handleSelect = useCallback(
     async (cmd: { id: string; description: string }) => {
       // Remove the /command text from input

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { Archive, GitFork, Pin, FolderX } from 'lucide-react';
+import { Archive, GitFork, FolderX, Loader2 } from 'lucide-react';
 import { useThreadFilter } from '@/hooks/codex/useThreadFilter';
 import { codexService } from '@/services/codexService';
 import { useCodexStore, useThreadListStore } from '@/stores/codex';
@@ -30,7 +30,6 @@ import { toast } from '@/components/ui/use-toast';
 
 type SessionMetaEntry = {
   text?: string;
-  pinned_at_ms?: number | null;
 };
 
 interface ThreadListProps {
@@ -41,14 +40,13 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
   const { cwd, historyMode, setCwd, setHistoryMode } = useWorkspaceStore();
   const { setView } = useLayoutStore();
   const { addAgentCard, setCurrentAgentCardId } = useAgentCenterStore();
-  const { threads, currentThreadId, threadListNextCursor } = useCodexStore();
+  const { threads, currentThreadId, threadListNextCursor, threadStatusMap } = useCodexStore();
   const { searchTerm, sortKey } = useThreadListStore();
   const isProjectScoped = !!cwdOverride;
   const listCwd = cwdOverride ?? cwd;
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [scopedThreads, setScopedThreads] = useState<ThreadListItem[]>([]);
   const [scopedNextCursor, setScopedNextCursor] = useState<string | null>(null);
-  // Stable ref so the event listener callback always calls the latest fetch
   const reloadScopedThreadsRef = useRef<(() => Promise<void>) | null>(null);
   const [sessionMeta, setSessionMeta] = useState<Record<string, SessionMetaEntry>>({});
   const [renameThreadId, setRenameThreadId] = useState<string | null>(null);
@@ -60,23 +58,12 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
       sourceThreads.map((thread) => ({
         ...thread,
         preview: sessionMeta[thread.id]?.text ?? thread.preview,
-        pinnedAtMs: sessionMeta[thread.id]?.pinned_at_ms ?? null,
       })),
     [sessionMeta, sourceThreads]
   );
   const filteredThreads = useThreadFilter(mergedThreads, searchTerm);
   const sortedThreads = useMemo(() => {
-    // Keep backend order (already sorted by sortKey) and only lift pinned rows.
-    const withIndex = filteredThreads.map((thread, index) => ({ thread, index }));
-    withIndex.sort((a, b) => {
-      const aPinned = a.thread.pinnedAtMs ?? -1;
-      const bPinned = b.thread.pinnedAtMs ?? -1;
-      if (aPinned !== bPinned) {
-        return bPinned - aPinned;
-      }
-      return a.index - b.index;
-    });
-    return withIndex.map((item) => item.thread);
+    return filteredThreads.map((thread) => thread);
   }, [filteredThreads]);
   const loadSessionMeta = useCallback(async () => {
     try {
@@ -145,7 +132,6 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
       }
     };
 
-    // Keep the ref up-to-date so the event listener below can call the latest version
     reloadScopedThreadsRef.current = loadScopedThreads;
 
     void loadScopedThreads();
@@ -223,31 +209,6 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
       await handleSelectThread(threadId, { resume: true });
     },
     [handleSelectThread, historyMode, setHistoryMode, setView, setCurrentAgentCardId, addAgentCard]
-  );
-
-  const handleTogglePin = useCallback(
-    async (threadId: string) => {
-      const meta = sessionMeta[threadId];
-      const isPinned = !!meta?.pinned_at_ms;
-      const nextMeta = { ...sessionMeta };
-      if (isPinned) {
-        if (nextMeta[threadId]) {
-          const { text } = nextMeta[threadId];
-          if (text) {
-            nextMeta[threadId] = { text, pinned_at_ms: null };
-          } else {
-            delete nextMeta[threadId];
-          }
-        }
-      } else {
-        nextMeta[threadId] = {
-          ...(nextMeta[threadId] ?? {}),
-          pinned_at_ms: Date.now(),
-        };
-      }
-      await writeSessionMeta(nextMeta);
-    },
-    [sessionMeta, writeSessionMeta]
   );
 
   const handleArchiveThread = useCallback(
@@ -422,14 +383,7 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
     const trimmed = renameValue.trim();
     const nextMeta = { ...sessionMeta };
     if (!trimmed) {
-      if (nextMeta[renameThreadId]) {
-        const { pinned_at_ms } = nextMeta[renameThreadId];
-        if (pinned_at_ms) {
-          nextMeta[renameThreadId] = { pinned_at_ms };
-        } else {
-          delete nextMeta[renameThreadId];
-        }
-      }
+      delete nextMeta[renameThreadId];
     } else {
       nextMeta[renameThreadId] = {
         ...(nextMeta[renameThreadId] ?? {}),
@@ -453,48 +407,36 @@ export function ThreadList({ cwdOverride }: ThreadListProps = {}) {
                 onKeyDown={(event) => handleRowKeyDown(event, thread)}
                 role="button"
                 tabIndex={0}
-                className={`group relative grid grid-cols-[0.5rem_1fr_auto] items-center gap-3 w-full text-left p-2 rounded-lg transition-colors ${currentThreadId === thread.id ? 'bg-zinc-700/50' : 'hover:bg-zinc-800/30'
+                className={`group grid grid-cols-[1fr_auto] items-center gap-2 w-full text-left p-2 rounded-lg transition-colors ${currentThreadId === thread.id ? 'bg-zinc-700/50' : 'hover:bg-zinc-800/30'
                   }`}
               >
-                <div className="relative h-6">
-                  <button
-                    type="button"
-                    aria-label={thread.pinnedAtMs ? 'Unpin thread' : 'Pin thread'}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      void handleTogglePin(thread.id);
-                    }}
-                    className={`absolute left-0 top-1/2 -translate-y-1/2 inline-flex items-center justify-center h-6 w-6 rounded hover:bg-accent/50 transition-colors ${thread.pinnedAtMs ? 'opacity-100' : 'opacity-0 group-hover:opacity-100 max-md:opacity-100'
-                      } ${thread.pinnedAtMs ? 'text-foreground' : 'text-muted-foreground/40'}`}
-                  >
-                    <Pin className="h-4 w-4" />
-                  </button>
-                </div>
-                <div className="text-sm font-medium truncate min-w-0 text-inherit">
+                <div className="text-sm font-medium truncate min-w-0 pr-2 flex items-center gap-1.5">
+                  {threadStatusMap[thread.id]?.type === 'active' && (
+                    <Loader2 className="h-3 w-3 shrink-0 animate-spin text-muted-foreground" />
+                  )}
                   {thread.preview}
                 </div>
-                <div className="flex items-center gap-2 text-xs text-muted-foreground whitespace-nowrap">
-                  <span className="group-hover:hidden">{formatThreadAge(thread.createdAt ?? 0)}</span>
+                <div className="flex items-center justify-end h-6 w-12 relative">
+                  <span className="text-xs text-muted-foreground whitespace-nowrap group-hover:hidden">
+                    {formatThreadAge(thread.createdAt ?? 0)}
+                  </span>
+                  <button
+                    type="button"
+                    aria-label="Archive thread"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      void handleArchiveThread(thread.id);
+                    }}
+                    className="absolute right-0 inline-flex items-center justify-center h-6 w-6 rounded hover:bg-accent/50 transition-colors text-muted-foreground opacity-0 group-hover:opacity-100 max-md:opacity-100"
+                  >
+                    <Archive className="h-3.5 w-3.5" />
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  aria-label="Archive thread"
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    void handleArchiveThread(thread.id);
-                  }}
-                  className="absolute right-0 inline-flex items-center justify-center h-6 w-6 rounded hover:bg-accent/50 transition-colors text-muted-foreground opacity-0 group-hover:opacity-100 max-md:opacity-100"
-                >
-                  <Archive className="h-3.5 w-3.5" />
-                </button>
               </div>
             </ContextMenuTrigger>
             <ContextMenuContent className="w-44">
               <ContextMenuItem onSelect={() => openRenameDialog(thread.id)}>
                 Rename
-              </ContextMenuItem>
-              <ContextMenuItem onSelect={() => void handleTogglePin(thread.id)}>
-                {thread.pinnedAtMs ? 'Unpin' : 'Pin'}
               </ContextMenuItem>
               <ContextMenuItem onSelect={() => void handleForkThread(thread.id)}>
                 <GitFork className="mr-2 h-4 w-4" />

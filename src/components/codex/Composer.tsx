@@ -1,110 +1,177 @@
-import { useState } from 'react';
-import { InputArea } from './InputArea';
-import {
-  ModelReasonSelector,
-  AttachmentSelector,
-  AccessModePopover,
-} from './selector';
+import { useRef, useEffect, useCallback, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { ArrowUp, Square, X } from 'lucide-react';
+import { convertFileSrc } from '@tauri-apps/api/core';
+import { SlashCommandPopover, SkillsInputPopover, ModelReasonSelector, AttachmentSelector, AccessModePopover } from './selector';
+import { FileMentionPopover, WorkspaceSwitcher, AgentWorkspaceSelect } from '@/components/common';
 import { useInputStore } from '@/stores/useInputStore';
 import { useConfigStore, useCodexStore, type ThreadCwdMode } from '@/stores/codex';
 import { useAgentCenterStore } from '@/stores';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
+import { useThreadStatus } from '@/hooks/codex';
 import { codexService } from '@/services/codexService';
-import { toast } from '@/components/ui/use-toast';
-import { getErrorMessage } from '@/utils/errorUtils';
-import { WorkspaceSwitcher, AgentWorkspaceSelect } from '@/components/common';
 
-/** Full Codex bottom bar: workspace switcher + access mode + cwd mode selector. */
 export function ComposerControls() {
   const { threadCwdMode, setThreadCwdMode } = useConfigStore();
   const { currentThreadId } = useCodexStore();
+
+  if (currentThreadId) return <div className="flex justify-between items-center gap-2"><WorkspaceSwitcher /></div>;
+
   return (
     <div className="flex justify-between items-center gap-2">
-      <span className="flex">
-        <WorkspaceSwitcher />
-      </span>
-      {!currentThreadId && (
-        <AgentWorkspaceSelect
-          value={threadCwdMode}
-          onValueChange={(v: ThreadCwdMode) => setThreadCwdMode(v)}
-          triggerClassName="h-9"
-          iconSize={16}
-        />
-      )}
+      <WorkspaceSwitcher />
+      <AgentWorkspaceSelect
+        value={threadCwdMode}
+        onValueChange={(v: ThreadCwdMode) => setThreadCwdMode(v)}
+        triggerClassName="h-9"
+        iconSize={16}
+      />
     </div>
   );
 }
 
 interface ComposerProps {
-  /** When false, omits the bottom controls bar. Use when the parent pins its own bottom bar. */
   showControls?: boolean;
-  /** When provided, overrides the normal send — called instead of creating a thread. */
   overrideSend?: (text: string) => void;
   onAfterSend?: (threadId: string, text: string) => void;
 }
 
 export function Composer({ showControls = true, overrideSend, onAfterSend }: ComposerProps) {
   const [images, setImages] = useState<string[]>([]);
-  const { appendFileLinks } = useInputStore();
-  const { currentThreadId, currentTurnId } = useCodexStore();
+  const { inputValue, setInputValue, appendFileLinks } = useInputStore();
+  const { currentThreadId, currentTurnId, inputFocusTrigger } = useCodexStore();
   const { addAgentCard, setCurrentAgentCardId } = useAgentCenterStore();
+  const { cwd } = useWorkspaceStore.getState();
+  const threadStatus = useThreadStatus();
 
-  const handleSend = async (message: string) => {
+  const isComposing = useRef(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    textareaRef.current?.focus();
+  }, [currentThreadId, inputFocusTrigger]);
+
+  useEffect(() => {
+    const ta = textareaRef.current;
+    if (ta) {
+      ta.style.height = 'auto';
+      ta.style.height = `${ta.scrollHeight}px`;
+    }
+  }, [inputValue]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey && !isComposing.current) {
+      e.preventDefault();
+      textareaRef.current?.form?.requestSubmit();
+    }
+  }, []);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const text = inputValue.trim();
+    if ((!text && images.length === 0) || threadStatus?.type === 'active') return;
+
     if (overrideSend) {
-      overrideSend(message);
+      overrideSend(text);
+      setInputValue('');
       return;
     }
+
     let targetThreadId = currentThreadId;
     let worktreePath: string | undefined;
+
     if (!targetThreadId) {
       try {
         const thread = await codexService.threadStart();
         targetThreadId = thread.id;
         worktreePath = thread.cwd?.includes('/.codexia/worktrees/') ? thread.cwd : undefined;
       } catch (error) {
-        console.error('Failed to start thread:', error);
-        toast.error('Failed to start thread', {
-          description: getErrorMessage(error),
-        });
+        console.error(error);
         return;
       }
     }
-    const { cwd: composerCwd } = useWorkspaceStore.getState();
-    addAgentCard({ kind: 'codex', id: targetThreadId, preview: message, worktreePath, cwd: composerCwd });
+
+    addAgentCard({ kind: 'codex', id: targetThreadId, preview: text, worktreePath, cwd });
     setCurrentAgentCardId(targetThreadId);
-    onAfterSend?.(targetThreadId, message);
+    onAfterSend?.(targetThreadId, text);
+    setInputValue('');
+
     try {
-      await codexService.turnStart(targetThreadId, message, images);
+      await codexService.turnStart(targetThreadId, text, images);
       setImages([]);
     } catch (error) {
-      console.error('Failed to send message:', error);
-      toast.error('Failed to send message', {
-        description: getErrorMessage(error),
-      });
+      console.error(error);
     }
   };
 
   const handleStop = async () => {
-    if (!currentThreadId || !currentTurnId) return;
-    await codexService.turnInterrupt(currentThreadId, currentTurnId);
+    if (currentThreadId && currentTurnId) {
+      await codexService.turnInterrupt(currentThreadId, currentTurnId);
+    }
   };
 
   return (
     <div>
-      <InputArea
-        images={images}
-        onRemoveImage={(index) => setImages((prev) => prev.filter((_, i) => i !== index))}
-        onSend={handleSend}
-        onStop={handleStop}
-      >
-        <AttachmentSelector
-          onImagesSelected={(paths) => setImages((prev) => [...prev, ...paths])}
-          onFilesSelected={(paths) => appendFileLinks(paths)}
-        />
-        <AccessModePopover />
-        <ModelReasonSelector />
-      </InputArea>
+      <form onSubmit={handleSubmit} className="pb-[env(safe-area-inset-bottom)] bg-background">
+        <FileMentionPopover input={inputValue} setInput={setInputValue} editorRef={textareaRef} triggerElement={wrapperRef.current} />
+        <SlashCommandPopover input={inputValue} setInputValue={setInputValue} editorRef={textareaRef} triggerElement={wrapperRef.current} />
+        <SkillsInputPopover input={inputValue} setInputValue={setInputValue} editorRef={textareaRef} triggerElement={wrapperRef.current} />
 
+        <div className="max-w-3xl mx-2 sm:mx-auto relative border rounded-xl bg-background shadow-sm focus-within:ring-1 focus-within:ring-ring transition-all">
+          {images.length > 0 && (
+            <div className="flex gap-2 p-3 pb-0 overflow-x-auto">
+              {images.map((path, index) => (
+                <div key={path} className="relative group shrink-0">
+                  <img src={convertFileSrc(path)} alt="attachment" className="h-16 w-16 object-cover rounded-md border" />
+                  <button
+                    type="button"
+                    onClick={() => setImages((prev) => prev.filter((_, i) => i !== index))}
+                    className="absolute -top-1 -right-1 bg-destructive text-destructive-foreground rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
+          <div ref={wrapperRef} className="max-h-64 overflow-y-auto px-3 pt-3">
+            <textarea
+              ref={textareaRef}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={handleKeyDown}
+              onCompositionStart={() => { isComposing.current = true; }}
+              onCompositionEnd={() => { isComposing.current = false; }}
+              placeholder="Do anything"
+              rows={1}
+              className="w-full resize-none bg-transparent text-base md:text-sm outline-none placeholder:text-muted-foreground"
+            />
+          </div>
+        </div>
+        <div className="flex items-center justify-between rounded-b-xl bg-muted/20">
+          <div className="flex items-center">
+            <AttachmentSelector
+              onImagesSelected={(paths) => setImages((prev) => [...prev, ...paths])}
+              onFilesSelected={appendFileLinks}
+            />
+            <AccessModePopover />
+            <ModelReasonSelector />
+          </div>
+          <div>
+            {threadStatus?.type === 'active' ? (
+              <Button onClick={handleStop} variant="destructive" size="icon" className="h-10 w-10 md:h-8 md:w-8 rounded-full">
+                <Square className="w-4 h-4" />
+              </Button>
+            ) : (
+              <Button type="submit" disabled={!inputValue.trim() && images.length === 0} size="icon" className="h-10 w-10 md:h-8 md:w-8 rounded-full">
+                <ArrowUp className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+      </form>
       {showControls && <ComposerControls />}
     </div>
   );
