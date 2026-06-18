@@ -80,11 +80,12 @@ export function useCodexEvents(enabled = true) {
     void syncAccountState(false);
 
     const handleServerNotification = (payload: ServerNotification) => {
-      if (payload.method === 'account/updated') {
+      const method = payload.method;
+      if (method === 'account/updated') {
         void syncAccountState(true);
       }
 
-      if (payload.method === 'account/login/completed') {
+      if (method === 'account/login/completed') {
         const loginCompleted = payload.params as AccountLoginCompletedNotification;
         if (loginCompleted.success) {
           void syncAccountState(true);
@@ -104,24 +105,27 @@ export function useCodexEvents(enabled = true) {
           'thread/tokenUsage/updated',
           'item/reasoning/summaryTextDelta',
           'item/reasoning/summaryPartAdded',
-        ].includes(payload.method)
+        ].includes(method)
       ) {
-        console.log(`[useCodexEvents] ${payload.method}:`, payload.params);
+        console.log(`[useCodexEvents] ${method}:`, payload.params);
       }
 
       const threadId = extractThreadId(payload);
 
       if (threadId) {
         const isReasoningEvent =
-          payload.method === 'item/reasoning/textDelta' ||
-          payload.method === 'item/reasoning/summaryTextDelta' ||
-          payload.method === 'item/reasoning/summaryPartAdded' ||
-          (payload.method === 'item/completed' && payload.params.item.type === 'reasoning');
+          method === 'item/reasoning/textDelta' ||
+          method === 'item/reasoning/summaryTextDelta' ||
+          method === 'item/reasoning/summaryPartAdded' ||
+          (method === 'item/completed' && payload.params.item.type === 'reasoning');
         if (!showReasoningRef.current && isReasoningEvent) {
           return;
         }
+        if (['thread/settings/updated', 'serverRequest/resolved'].includes(method)) {
+          return
+        }
 
-        if (payload.method === 'thread/started') {
+        if (method === 'thread/started') {
           const startedThread = payload.params.thread;
           const startedThreadId = startedThread.id;
           const startedThreadCwd = startedThread.cwd;
@@ -134,7 +138,7 @@ export function useCodexEvents(enabled = true) {
           }
         }
 
-        if (payload.method === 'thread/name/updated') {
+        if (method === 'thread/name/updated') {
           const { threadId: renamedThreadId, threadName } = payload.params;
           useCodexStore.setState((state) => ({
             threads: state.threads.map((thread) =>
@@ -145,13 +149,13 @@ export function useCodexEvents(enabled = true) {
           }));
         }
 
-        if (preventSleepDuringTasksRef.current && payload.method === 'turn/started') {
+        if (preventSleepDuringTasksRef.current && method === 'turn/started') {
           void preventSleep(threadId).catch((error) => {
             console.warn('[useCodexEvents] preventSleep failed:', error);
           });
         }
 
-        if (payload.method === 'turn/completed') {
+        if (method === 'turn/completed') {
           void allowSleep(threadId).catch((error) => {
             console.warn('[useCodexEvents] allowSleep failed:', error);
           });
@@ -165,7 +169,7 @@ export function useCodexEvents(enabled = true) {
           }
         }
 
-        if (payload.method === 'error') {
+        if (method === 'error') {
           void allowSleep(threadId).catch((error) => {
             console.warn('[useCodexEvents] allowSleep failed:', error);
           });
@@ -174,10 +178,10 @@ export function useCodexEvents(enabled = true) {
         addEvent(threadId, payload);
       } else {
         if (
-          payload.method !== 'account/rateLimits/updated' &&
-          payload.method !== 'account/updated' &&
-          payload.method !== 'error' &&
-          payload.method !== 'account/login/completed'
+          method !== 'account/rateLimits/updated' &&
+          method !== 'account/updated' &&
+          method !== 'error' &&
+          method !== 'account/login/completed'
         ) {
           console.warn('[useCodexEvents] No threadId found in payload:', payload);
         }
