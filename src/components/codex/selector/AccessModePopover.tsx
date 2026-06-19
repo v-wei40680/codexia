@@ -3,7 +3,7 @@ import { useState } from 'react';
 import type { SandboxMode } from '@/bindings/v2';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { useConfigStore } from '@/stores/codex';
+import { useConfigStore, useCodexStore } from '@/stores/codex';
 
 
 const ACCESS_MODE_OPTIONS: Array<{
@@ -19,6 +19,9 @@ const ACCESS_MODE_OPTIONS: Array<{
 export function AccessModePopover() {
   const [open, setOpen] = useState(false);
   const { sandbox, setAccessMode, collaborationMode, setCollaborationMode } = useConfigStore();
+  const { triggerInputFocus } = useCodexStore();
+
+  const closeAndFocus = () => { setOpen(false); triggerInputFocus(); };
   const selected =
     ACCESS_MODE_OPTIONS.find((item) => item.sandbox === sandbox) ?? ACCESS_MODE_OPTIONS[0];
 
@@ -41,7 +44,7 @@ export function AccessModePopover() {
             className="w-full justify-start font-normal h-8 text-xs gap-2 px-2"
             onClick={() => {
               setCollaborationMode(collaborationMode === 'plan' ? 'default' : 'plan');
-              setOpen(false);
+              closeAndFocus();
             }}
           >
             <ListChecks className="h-3.5 w-3.5" />
@@ -62,7 +65,7 @@ export function AccessModePopover() {
                 onClick={() => {
                   setAccessMode(item.sandbox);
                   setCollaborationMode('default');
-                  setOpen(false);
+                  closeAndFocus();
                 }}
               >
                 <span className="flex items-center gap-2">

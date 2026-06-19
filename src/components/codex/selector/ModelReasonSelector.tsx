@@ -25,6 +25,7 @@ type BaseModelSelectorProps = {
   reasoningEffort?: ReasoningEffort;
   onReasoningEffortChange?: (value: ReasoningEffort) => void;
   disabled?: boolean;
+  onClose?: () => void;
 };
 
 function BaseModelSelector({
@@ -35,6 +36,7 @@ function BaseModelSelector({
   reasoningEffort,
   onReasoningEffortChange,
   disabled = false,
+  onClose,
 }: BaseModelSelectorProps) {
   const [open, setOpen] = useState(false);
   const [envKeysOpen, setEnvKeysOpen] = useState(false);
@@ -56,6 +58,9 @@ function BaseModelSelector({
       } else if (onReasoningEffortChange && (!reasoningEffort || !GENERIC_REASONING_OPTIONS.includes(reasoningEffort))) {
         onReasoningEffortChange('medium');
       }
+
+      setOpen(false);
+      onClose?.();
     },
     [onValueChange, onProviderChange, provider, openAiModels, onReasoningEffortChange, reasoningEffort],
   );
@@ -172,7 +177,7 @@ function BaseModelSelector({
                         key={option}
                         type="button"
                         disabled={!canSelectReasoning}
-                        onClick={() => onReasoningEffortChange(option)}
+                        onClick={() => { onReasoningEffortChange(option); setOpen(false); onClose?.(); }}
                         className={cn(
                           "flex-1 h-6 rounded text-[11px] font-medium capitalize transition-all",
                           isSelected
@@ -211,7 +216,7 @@ function BaseModelSelector({
 }
 
 export function ModelReasonSelector() {
-  const { currentThreadId } = useCodexStore();
+  const { currentThreadId, triggerInputFocus } = useCodexStore();
   const { openAiModels } = useModels();
 
   const {
@@ -259,6 +264,7 @@ export function ModelReasonSelector() {
       onValueChange={setModel}
       reasoningEffort={reasoningEffort}
       onReasoningEffortChange={setReasoningEffort}
+      onClose={triggerInputFocus}
     />
   );
 }
