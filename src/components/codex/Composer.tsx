@@ -118,7 +118,7 @@ export function Composer({ showControls = true, overrideSend, onAfterSend }: Com
         <SlashCommandPopover input={inputValue} setInputValue={setInputValue} editorRef={textareaRef} triggerElement={wrapperRef.current} />
         <SkillsInputPopover input={inputValue} setInputValue={setInputValue} editorRef={textareaRef} triggerElement={wrapperRef.current} />
 
-        <div className="max-w-3xl mx-2 sm:mx-auto relative border rounded-xl bg-background shadow-sm focus-within:ring-1 focus-within:ring-ring transition-all">
+        <div className="max-w-3xl mx-2 sm:mx-auto border rounded-xl bg-background shadow-sm focus-within:ring-1 focus-within:ring-ring transition-all overflow-hidden">
           {images.length > 0 && (
             <div className="flex gap-2 p-3 pb-0 overflow-x-auto">
               {images.map((path, index) => (
@@ -144,31 +144,31 @@ export function Composer({ showControls = true, overrideSend, onAfterSend }: Com
               onKeyDown={handleKeyDown}
               onCompositionStart={() => { isComposing.current = true; }}
               onCompositionEnd={() => { isComposing.current = false; }}
-              placeholder="Do anything"
-              rows={1}
-              className="w-full resize-none bg-transparent text-base md:text-sm outline-none placeholder:text-muted-foreground"
+              placeholder="Do anything... / $ @"
+              className="w-full min-h-[44px] resize-none bg-transparent text-base md:text-sm outline-none placeholder:text-muted-foreground"
             />
           </div>
-        </div>
-        <div className="flex items-center justify-between rounded-b-xl bg-muted/20">
-          <div className="flex items-center">
-            <AttachmentSelector
-              onImagesSelected={(paths) => setImages((prev) => [...prev, ...paths])}
-              onFilesSelected={appendFileLinks}
-            />
-            <AccessModePopover />
-            <ModelReasonSelector />
-          </div>
-          <div>
-            {threadStatus?.type === 'active' ? (
-              <Button onClick={handleStop} variant="destructive" size="icon" className="h-10 w-10 md:h-8 md:w-8 rounded-full">
-                <Square className="w-4 h-4" />
-              </Button>
-            ) : (
-              <Button type="submit" disabled={!inputValue.trim() && images.length === 0} size="icon" className="h-10 w-10 md:h-8 md:w-8 rounded-full">
-                <ArrowUp className="w-4 h-4" />
-              </Button>
-            )}
+
+          <div className="flex items-center justify-between px-1 bg-muted/20 border-t">
+            <div className="flex items-center">
+              <AttachmentSelector
+                onImagesSelected={(paths) => setImages((prev) => [...prev, ...paths])}
+                onFilesSelected={appendFileLinks}
+              />
+              <AccessModePopover />
+            </div>
+            <div className='flex items-center gap-2'>
+              <ModelReasonSelector />
+              {threadStatus?.type === 'active' ? (
+                <Button onClick={handleStop} variant="destructive" size="icon" className="h-10 w-10 md:h-8 md:w-8 rounded-full">
+                  <Square className="w-4 h-4" />
+                </Button>
+              ) : (
+                <Button type="submit" disabled={!inputValue.trim() && images.length === 0} size="icon" className="h-10 w-10 md:h-8 md:w-8 rounded-full">
+                  <ArrowUp className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </form>
