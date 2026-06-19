@@ -2,6 +2,24 @@
   "object": "list",
   "data": [
     {
+      "model_provider": "atlascloud",
+      "base_url": "https://api.atlascloud.ai/v1",
+      "api_key_url": "https://www.atlascloud.ai/console/api-keys",
+      "signup_url": "https://www.atlascloud.ai?ref=FRZY3G",
+      "auto_discover": false,
+      "env_key": "ATLASCLOUD_API_KEY",
+      "models": [
+        {
+          "id": "openai/gpt-5.5",
+          "context_length": 1050000
+        },
+        {
+          "id": "openai/gpt-5.4",
+          "context_length": 1050000
+        }
+      ]
+    },
+    {
       "model_provider": "ollama",
       "base_url": "http://localhost:11434/v1",
       "signup_url": "https://ollama.com/signup",
@@ -22,23 +40,38 @@
         },
         {
           "id": "openai/gpt-5.4",
-          "context_length": 400000
+          "context_length": 1050000
         }
       ]
     },
     {
-      "model_provider": "atlascloud",
-      "base_url": "https://api.atlascloud.ai/v1",
-      "api_key_url": "https://www.atlascloud.ai/console/api-keys",
-      "signup_url": "https://www.atlascloud.ai?ref=FRZY3G",
+      "model_provider": "nvidia",
+      "base_url": "https://integrate.api.nvidia.com/v1",
+      "api_key_url": "https://build.nvidia.com/openai/gpt-oss-20b",
+      "signup_url": "https://build.nvidia.com",
+      "env_key": "NVIDIA_API_KEY",
       "auto_discover": false,
-      "env_key": "ATLASCLOUD_API_KEY",
       "models": [
         {
-          "id": "openai/gpt-5.5",
-          "context_length": 1050000
+          "id": "nvidia/nemotron-3-ultra-550b-a55b",
+          "context_length": 1000000
+        },
+        {
+          "id": "openai/gpt-oss-120b",
+          "context_length": 131072
+        },
+        {
+          "id": "openai/gpt-oss-20b",
+          "context_length": 131072
         }
       ]
+    },
+    {
+      "model_provider": "custom",
+      "base_url": "http://localhost:8000/v1",
+      "signup_url": "",
+      "env_key": "CUSTOM_API_KEY",
+      "auto_discover": true
     }
   ]
 }
