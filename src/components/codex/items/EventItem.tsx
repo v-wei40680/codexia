@@ -83,7 +83,9 @@ export const renderEvent = (event: ServerNotification, context?: RenderEventCont
   );
   switch (event.method) {
     case 'error':
-      return <Badge>{event.params.error.message}</Badge>;
+      return <p className="text-red-600 dark:text-red-400 font-medium">{event.params.error.message}</p>;
+    case 'warning':
+      return <p className="text-yellow-600 dark:text-yellow-400 font-medium">{event.params.message}</p>;
     case 'item/started':
       let { item: startedItem } = event.params;
       switch (startedItem.type) {
