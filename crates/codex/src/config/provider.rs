@@ -85,7 +85,7 @@ pub async fn write_model_providers(client: &CodexAppServer) -> Result<(), String
 
         match upsert_config_value(client, &key_path, provider_value).await {
             Ok(_) => {
-                log::info!("Config written for provider: {}", provider.model_provider);
+                log::debug!("Config written for provider: {}", provider.model_provider);
             }
             Err(e) => {
                 log::error!("{}", e);
