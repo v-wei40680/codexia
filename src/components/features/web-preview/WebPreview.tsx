@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { RefreshCw, ExternalLink, X, Globe } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { openUrl } from '@tauri-apps/plugin-opener';
+import { isTauri } from '@/hooks/runtime';
 
 interface WebPreviewProps {
   url?: string;
@@ -37,8 +39,10 @@ export const WebPreview: React.FC<WebPreviewProps> = ({ url = '', onClose, onUrl
     }
   };
 
-  const handleOpenExternal = () => {
-    if (typeof window !== 'undefined') {
+  const handleOpenExternal = async () => {
+    if (isTauri()) {
+      await openUrl(currentUrl);
+    } else {
       window.open(currentUrl, '_blank');
     }
   };
