@@ -143,6 +143,7 @@ async fn run_task_with_cc(
     task: AutomationTask,
     cc_state: CCState,
 ) -> Result<(), String> {
+    log::info!("Starting CC automation task {}: {}", task.id, task.name);
     let targets = if task.projects.is_empty() {
         vec![None]
     } else {
@@ -171,12 +172,13 @@ async fn run_task_with_cc(
                 } else {
                     Some(task.model.clone())
                 },
-                permission_mode: None,
+                permission_mode: Some("bypassPermissions".to_string()),
                 resume_id: None,
             },
             &cc_state,
         )
         .await?;
+        log::info!("[CC automation] Connected to Claude session {}", session_id);
 
         let started_at = Utc::now().to_rfc3339();
         let _ = automation_runs::insert_run_started(
@@ -194,6 +196,7 @@ async fn run_task_with_cc(
             err
         });
 
+        log::info!("[CC automation] Sending prompt to session {}...", session_id);
         if let Err(err) = message_service::send_message_and_wait(
             session_id.as_str(),
             task.prompt.as_str(),

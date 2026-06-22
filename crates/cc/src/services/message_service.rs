@@ -26,6 +26,7 @@ pub(crate) async fn send_message_and_wait(
     state: &CCState,
     mut message_callback: impl FnMut(Message) + Send,
 ) -> Result<(), String> {
+    log::info!("[CC automation] Sending message to session {}: {}", session_id, message);
     let client = state
         .get_client(session_id)
         .await
@@ -64,6 +65,7 @@ pub(crate) async fn send_message_and_wait(
 
         match result {
             Some(Ok(msg)) => {
+                log::info!("[CC automation] Received message from session {}: {:?}", session_id, msg);
                 message_callback(msg.clone());
                 if matches!(msg, Message::Result(_)) {
                     break;
@@ -74,6 +76,7 @@ pub(crate) async fn send_message_and_wait(
         }
     }
 
+    log::info!("[CC automation] Message exchange completed for session {}", session_id);
     Ok(())
 }
 
