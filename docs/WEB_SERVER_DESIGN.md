@@ -14,6 +14,8 @@ It is used by the web frontend and can also be used for remote control scenarios
 
 ## Key Modules
 
+### `src-tauri/src/web` move to `web/` now
+
 - `src-tauri/src/web/server.rs`
   - Starts the Axum server and binds the TCP listener.
 - `src-tauri/src/web/router.rs`

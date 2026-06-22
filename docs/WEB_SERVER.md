@@ -9,16 +9,14 @@ This guide covers local web-mode and packaging for Codexia web server without GU
 The prebuilt headless binary is compiled without GUI (no Tauri). Just run it directly:
 
 ```sh
-./codexia
+./codexia-web
 ```
 
 Optional flags:
 
 ```sh
-./codexia --port 7420 --host   # custom port + bind to 0.0.0.0 for external access
+./codexia-web --port 7420
 ```
-
-> `--web` flag is **not** needed for the headless binary and has no effect.
 
 ## Develop frontend and Rust backend together
 

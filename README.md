@@ -69,13 +69,13 @@ brew install --cask codexia
 - Claude agent rust sdk integration
 - Frontend: React + TypeScript + Zustand + shadcn/ui in `src/`
 - Desktop backend: Tauri v2 + Rust in `src-tauri/src/`
-- Headless backend: Axum web server for remote control in `src-tauri/src/web/`
+- Headless backend: Axum web server for remote control in `web/`
 - Agent runtime: Codex `app-server` JSON-RPC integration for session/turn lifecycle
 - Real-time updates: WebSocket broadcast stream at `/ws` for browser clients
 
 Core entry points:
 - `src-tauri/src/lib.rs` (desktop commands and state)
-- `src-tauri/src/web/server.rs` (headless server startup)
+- `web/src/server_web.rs` (headless server startup)
 - `src-tauri/src/web/router.rs` (HTTP API route surface)
 - `src/services/tauri/` (frontend invoke layer)
 
