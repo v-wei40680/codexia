@@ -12,10 +12,10 @@ export const ClaudeCode = ({ className, ...props }: LucideProps) => (
   >
     <title>ClaudeCode</title>
     <path
-      clip-rule="evenodd"
+      clipRule="evenodd"
       d="M20.998 10.949H24v3.102h-3v3.028h-1.487V20H18v-2.921h-1.487V20H15v-2.921H9V20H7.488v-2.921H6V20H4.487v-2.921H3V14.05H0V10.95h3V5h17.998v5.949zM6 10.949h1.488V8.102H6v2.847zm10.51 0H18V8.102h-1.49v2.847z"
       fill="#D97757"
-      fill-rule="evenodd"
+      fillRule="evenodd"
     ></path>
   </svg>
 );
@@ -48,9 +48,9 @@ export const Codex = ({ className, ...props }: LucideProps) => (
         y1="3"
         y2="21"
       >
-        <stop stop-color="#B1A7FF"></stop>
-        <stop offset=".5" stop-color="#7A9DFF"></stop>
-        <stop offset="1" stop-color="#3941FF"></stop>
+        <stop stopColor="#B1A7FF"></stop>
+        <stop offset=".5" stopColor="#7A9DFF"></stop>
+        <stop offset="1" stopColor="#3941FF"></stop>
       </linearGradient>
     </defs>
   </svg>
@@ -108,8 +108,8 @@ export const Gemini = ({ className, ...props }: LucideProps) => (
         y1="15.5"
         y2="12"
       >
-        <stop stop-color="#08B962"></stop>
-        <stop offset="1" stop-color="#08B962" stop-opacity="0"></stop>
+        <stop stopColor="#08B962"></stop>
+        <stop offset="1" stopColor="#08B962" stop-opacity="0"></stop>
       </linearGradient>
       <linearGradient
         gradientUnits="userSpaceOnUse"
@@ -119,8 +119,8 @@ export const Gemini = ({ className, ...props }: LucideProps) => (
         y1="5.5"
         y2="11"
       >
-        <stop stop-color="#F94543"></stop>
-        <stop offset="1" stop-color="#F94543" stop-opacity="0"></stop>
+        <stop stopColor="#F94543"></stop>
+        <stop offset="1" stopColor="#F94543" stop-opacity="0"></stop>
       </linearGradient>
       <linearGradient
         gradientUnits="userSpaceOnUse"
@@ -130,8 +130,8 @@ export const Gemini = ({ className, ...props }: LucideProps) => (
         y1="13.5"
         y2="12"
       >
-        <stop stop-color="#FABC12"></stop>
-        <stop offset=".46" stop-color="#FABC12" stop-opacity="0"></stop>
+        <stop stopColor="#FABC12"></stop>
+        <stop offset=".46" stopColor="#FABC12" stop-opacity="0"></stop>
       </linearGradient>
     </defs>
   </svg>
