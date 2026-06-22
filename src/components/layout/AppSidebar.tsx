@@ -39,12 +39,12 @@ const navBtnInactive = 'border-transparent hover:border-border/60';
 const navBtnCls = (active: boolean) => `${navBtnBase} ${active ? navBtnActive : navBtnInactive}`;
 
 export function AppSideBar() {
-  const { cwd, setCwd, setSelectedAgent } = useWorkspaceStore();
+  const { cwd, setCwd, setSelectedAgent, selectedAgent } = useWorkspaceStore();
   const { setView, view, activeSidebarTab, setActiveSidebarTab } = useLayoutStore();
   const { open: isSidebarOpen } = useSidebar();
   const { isMacos } = useTrafficLightConfig(isSidebarOpen);
   const { sortKey, setSortKey, handleNewThread } = useThreadList({
-    enabled: isSidebarOpen && activeSidebarTab === 'codex',
+    enabled: isSidebarOpen && selectedAgent === 'codex',
   });
   const { handleNewSession } = useCCSessionManager();
   const [sessionManagerOpen, setSessionManagerOpen] = useState(false);
@@ -159,12 +159,11 @@ export function AppSideBar() {
           </span>
         </SidebarHeader>
 
-        {/* Thread list */}
+        {/* Thread list — selectedAgent is single source of truth */}
         <SidebarContent className="min-w-0 max-w-full overflow-x-hidden gap-0 px-0">
-          {activeSidebarTab === 'codex' && (
+          {selectedAgent === 'codex' ? (
             <SideBarCodexTab onCreateNewThread={handleCreateNewThreadForProject} />
-          )}
-          {activeSidebarTab === 'cc' && (
+          ) : (
             <SideBarClaudeTab onStartNewSession={handleStartNewCcSessionForProject} />
           )}
         </SidebarContent>
