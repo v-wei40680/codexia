@@ -1,14 +1,3 @@
-[workspace]
-members = [
-  ".",
-  "../crates/git",
-]
-
-[workspace.dependencies]
-anyhow = "1.0"
-log = "0.4"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
 
 [package]
 name = "codexia"
@@ -40,8 +29,6 @@ core = [
   "dep:serde_json",
   "dep:serde_yaml",
   "dep:indexmap",
-  "dep:toml",
-  "dep:toml_edit",
   "dep:base64",
   "dep:chrono",
   # utilities
@@ -58,7 +45,6 @@ core = [
   # networking
   "dep:reqwest",
   # storage / files
-  "dep:rusqlite",
   "dep:zip",
   "dep:tempfile",
   # codex / claude backends
@@ -66,6 +52,11 @@ core = [
   "dep:codex-app-server-protocol",
   "dep:claude-agent-sdk-rs",
   "dep:codex-finder",
+  # shared crate (formerly src-tauri/src/shared/)
+  "dep:codexia-shared",
+  "dep:codexia-codex",
+  "dep:codexia-cc",
+  "dep:codexia-db",
   # scheduling (automation)
   "dep:tokio-cron-scheduler",
   # in-process axum router for P2P backend (no port opened, no web feature needed)
@@ -78,8 +69,8 @@ core = [
 # desktop: core + P2P server deps; omit with --no-default-features for iOS builds
 desktop = [
   "core",
+  "dep:codexia-web",
   "dep:fix-path-env",
-  "dep:nosleep",
   "dep:tauri-plugin-screenshots",
   "dep:tauri-plugin-single-instance",
   "dep:tauri-plugin-updater",
@@ -106,7 +97,7 @@ tauri = [
   "dep:tauri-plugin-opener",
   "dep:tauri-plugin-shell",
 ]
-web = ["core", "dep:env_logger", "dep:open"]
+web = ["dep:codexia-web"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
@@ -125,7 +116,6 @@ tauri-plugin-process = { version = "2", optional = true }
 tauri-plugin-fs = { version = "2", optional = true }
 
 # --- desktop feature ---
-rusqlite = { version = "0.38.0", features = ["bundled"], optional = true }
 reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls-native-roots"], optional = true }
 futures = { version = "0.3", optional = true }
 indexmap = { version = "2.0", features = ["serde"], optional = true }
@@ -135,8 +125,6 @@ tokio = { version = "1", features = ["full"], optional = true }
 log = { version = "0.4", optional = true }
 env_logger = { version = "0.11", optional = true }
 dirs = { version = "6.0", optional = true }
-toml = { version = "0.9.5", optional = true }
-toml_edit = { version = "0.20", optional = true }
 base64 = { version = "0.22.1", optional = true }
 regex = { version = "1.12.2", optional = true }
 chrono = { version = "0.4", features = ["serde"], optional = true }
@@ -159,6 +147,9 @@ codex-finder = { git = "https://github.com/milisp/codex-finder.git", optional = 
 serde = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }
 anyhow = { workspace = true, optional = true }
+codexia-codex = { path = "../crates/codex", optional = true }
+codexia-cc = { path = "../crates/cc", optional = true }
+codexia-db = { path = "../crates/db", optional = true }
 
 # --- p2p (tauri feature: desktop server + mobile client) ---
 quinn = { version = "0.11", optional = true }
@@ -166,13 +157,15 @@ rcgen = { version = "0.13", optional = true }
 rustls = { version = "0.23", features = ["ring"], default-features = false, optional = true }
 local-ip-address = { version = "0.6", optional = true }
 
-# --- web feature ---
+# --- web feature (web server is now a separate crate: /web) ---
 axum = { version = "0.8", features = ["ws", "json"], optional = true }
 tower = { version = "0.5", features = ["util"], optional = true }
 tower-http = { version = "0.5", features = ["cors", "fs"], optional = true }
 http-body-util = { version = "0.1", optional = true }
 httparse = { version = "1", optional = true }
 open = { version = "5", optional = true }
+codexia-shared = { path = "../crates/shared", optional = true }
+codexia-web = { path = "../web", optional = true }
 
 [target.'cfg(any(target_os = "linux", target_os = "windows"))'.dependencies]
 tauri-plugin-single-instance = { version = "2", features = ["deep-link"], optional = true }
@@ -182,7 +175,6 @@ rustls = { version = "0.23", features = ["ring"], default-features = false }
 
 [target.'cfg(not(any(target_os = "ios", target_os = "android")))'.dependencies]
 tauri-plugin-screenshots = { version = "2.2.0", optional = true }
-nosleep = { version = "0.2.1", optional = true }
 gix = { version = "0.80.0", features = ["blocking-network-client", "blocking-http-transport-curl"] }
 codexia-git = { path = "../crates/git" }
 walkdir = "2.3"

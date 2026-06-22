@@ -37,24 +37,29 @@ fn effective_servers() -> Vec<String> {
 /// keeping it short means we fall through to the next server quickly.
 const STUN_TIMEOUT_SECS: u64 = 2;
 
-/// Bind a temporary UDP socket to `0.0.0.0:<local_port>`, query a STUN server, return the
-/// public (IP, port) that the NAT assigned.  The socket is dropped when this returns.
-pub fn discover(local_port: u16) -> Result<SocketAddr, String> {
-    let socket =
-        UdpSocket::bind(format!("0.0.0.0:{local_port}")).map_err(|e| format!("STUN bind: {e}"))?;
+/// Discover the public IP for this machine using a temporary socket on a random port.
+/// Returns only the IP — the caller supplies the actual port (Quinn's listen port).
+/// This avoids binding the real port twice (STUN bind + Quinn bind race).
+pub fn discover_public_ip() -> Result<std::net::IpAddr, String> {
+    let socket = UdpSocket::bind("0.0.0.0:0").map_err(|e| format!("STUN bind: {e}"))?;
     socket
         .set_read_timeout(Some(Duration::from_secs(STUN_TIMEOUT_SECS)))
         .map_err(|e| e.to_string())?;
-
     for srv in effective_servers() {
         let Ok(mut addrs) = srv.to_socket_addrs() else { continue };
         let Some(addr) = addrs.next() else { continue };
         match binding_request(&socket, addr) {
-            Ok(public) => return Ok(public),
+            Ok(public) => return Ok(public.ip()),
             Err(e) => log::warn!("[stun] {srv}: {e}"),
         }
     }
     Err("STUN discovery failed on all servers".into())
+}
+
+/// Kept for mobile (discover_new_socket uses it); desktop should use discover_public_ip.
+pub fn discover(local_port: u16) -> Result<SocketAddr, String> {
+    let ip = discover_public_ip()?;
+    Ok(SocketAddr::new(ip, local_port))
 }
 
 /// Run STUN on an **existing** socket and return the public endpoint.

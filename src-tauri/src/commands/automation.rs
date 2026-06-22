@@ -1,6 +1,6 @@
-use crate::shared::automation::{self, AutomationRunRecord, AutomationSchedule, AutomationTask};
-use crate::cc::CCState;
-use crate::codex::AppState;
+use codexia_cc::automation::{self, AutomationRunRecord, AutomationSchedule, AutomationTask};
+use codexia_cc::CCState;
+use codexia_codex::AppState;
 use tauri::State;
 
 #[tauri::command]

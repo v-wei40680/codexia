@@ -1,4 +1,4 @@
-use crate::shared::terminal::{
+use codexia_shared::terminal::{
     TerminalDataPayload, TerminalExitPayload, TerminalResizeParams, TerminalSession,
     TerminalStartResponse, TerminalState, TerminalStopParams, TerminalWriteParams,
     build_shell_command, create_pty_pair, kill_terminal, read_pty_output, resize_terminal,

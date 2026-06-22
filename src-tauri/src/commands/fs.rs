@@ -1,10 +1,10 @@
-use crate::shared::fs::{
+use codexia_shared::fs::{
     directory_ops, file_io,
     file_parsers::{pdf, xlsx},
     file_types::FileEntry,
     watcher,
 };
-use crate::state::WatchState;
+use codexia_shared::state::WatchState;
 use std::sync::Arc;
 use tauri::{AppHandle, Emitter, State};
 

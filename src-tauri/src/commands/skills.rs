@@ -1,4 +1,4 @@
-use crate::shared::skills;
+use codexia_shared::skills;
 
 pub use skills::{CentralSkill, InstalledSkill, MarketplaceSkill, SkillGroupsConfig};
 

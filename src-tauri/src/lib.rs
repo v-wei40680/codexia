@@ -1,26 +1,10 @@
 // Core modules — requires the "core" feature (shared by "desktop" and "web")
-#[cfg(feature = "desktop")]
-mod env;
-#[cfg(feature = "core")]
-mod cc;
-#[cfg(feature = "core")]
-mod codex;
-#[cfg(feature = "core")]
-mod db;
-#[cfg(feature = "core")]
-mod shared;
-#[cfg(all(feature = "core", feature = "tauri"))]
-mod state;
 #[cfg(all(feature = "core", feature = "tauri"))]
 mod commands;
 #[cfg(feature = "tauri")]
+mod event_sink;
+#[cfg(feature = "tauri")]
 pub mod p2p;
-// web_server compiles for the standalone web binary AND the desktop Tauri app
-// (the latter uses it for in-process P2P routing without opening a port).
-#[cfg(feature = "web")]
-pub mod web;
-#[cfg(all(feature = "core", feature = "tauri", not(feature = "web")))]
-mod web;
 #[cfg(all(feature = "core", feature = "tauri", any(windows, target_os = "linux")))]
 mod window;
 #[cfg(all(feature = "core", feature = "tauri", target_os = "macos"))]
@@ -58,9 +42,11 @@ pub fn run() {
     #[cfg(feature = "desktop")]
     let builder = {
         use cc::CCState;
-        use crate::shared::terminal::TerminalState;
-        use crate::shared::sleep::SleepState;
-        use crate::state::WatchState;
+        use codexia_shared::terminal::TerminalState;
+        use codexia_shared::sleep::SleepState;
+        use codexia_shared::state::WatchState;
+        use codexia_codex as codex;
+        use codexia_cc as cc;
         use std::sync::Arc;
         use std::time::Instant;
         use tauri::Manager;
@@ -100,28 +86,28 @@ pub fn run() {
             .manage(TerminalState::default())
             .manage(SleepState::default())
             .invoke_handler(tauri::generate_handler![
-                codex::list_other_models,
-                codex::load_env_keys,
-                codex::start_thread,
-                codex::resume_thread,
-                codex::fork_thread,
-                codex::rollback_thread,
-                codex::list_threads,
-                codex::list_archived_threads,
-                codex::archive_thread,
-                codex::turn_start,
-                codex::turn_interrupt,
-                codex::model_list,
-                codex::account_rate_limits,
-                codex::get_account,
-                codex::login_account,
-                codex::skills_list,
-                codex::skills_config_write,
-                codex::start_review,
-                codex::respond_to_command_execution_approval,
-                codex::respond_to_file_change_approval,
-                codex::respond_to_request_user_input,
-                codex::initialize_codex_async,
+                commands::codex::list_other_models,
+                commands::codex::load_env_keys,
+                commands::codex::start_thread,
+                commands::codex::resume_thread,
+                commands::codex::fork_thread,
+                commands::codex::rollback_thread,
+                commands::codex::list_threads,
+                commands::codex::list_archived_threads,
+                commands::codex::archive_thread,
+                commands::codex::turn_start,
+                commands::codex::turn_interrupt,
+                commands::codex::model_list,
+                commands::codex::account_rate_limits,
+                commands::codex::get_account,
+                commands::codex::login_account,
+                commands::codex::skills_list,
+                commands::codex::skills_config_write,
+                commands::codex::start_review,
+                commands::codex::respond_to_command_execution_approval,
+                commands::codex::respond_to_file_change_approval,
+                commands::codex::respond_to_request_user_input,
+                commands::codex::initialize_codex_async,
                 commands::fs::read_directory,
                 commands::fs::get_home_directory,
                 commands::fs::search_files,
@@ -137,28 +123,28 @@ pub fn run() {
                 commands::fs::unwatch_directory,
                 commands::sleep::prevent_sleep,
                 commands::sleep::allow_sleep,
-                cc::cc_connect,
-                cc::cc_new_session,
-                cc::cc_send_message,
-                cc::cc_disconnect,
-                cc::cc_interrupt,
-                cc::cc_resume_session,
-                cc::cc_list_sessions,
-                cc::cc_delete_session,
-                cc::cc_get_session_messages,
-                cc::cc_get_installed_skills,
-                cc::cc_get_slash_commands,
-                cc::cc_get_settings,
-                cc::cc_update_settings,
-                cc::cc_resolve_permission,
-                cc::cc_set_permission_mode,
-                cc::cc_mcp_list,
-                cc::cc_mcp_get,
-                cc::cc_mcp_add,
-                cc::cc_mcp_remove,
-                cc::cc_list_projects,
-                cc::cc_mcp_disable,
-                cc::cc_mcp_enable,
+                commands::cc::cc_connect,
+                commands::cc::cc_new_session,
+                commands::cc::cc_send_message,
+                commands::cc::cc_disconnect,
+                commands::cc::cc_interrupt,
+                commands::cc::cc_resume_session,
+                commands::cc::cc_list_sessions,
+                commands::cc::cc_delete_session,
+                commands::cc::cc_get_session_messages,
+                commands::cc::cc_get_installed_skills,
+                commands::cc::cc_get_slash_commands,
+                commands::cc::cc_get_settings,
+                commands::cc::cc_update_settings,
+                commands::cc::cc_resolve_permission,
+                commands::cc::cc_set_permission_mode,
+                commands::cc::cc_mcp_list,
+                commands::cc::cc_mcp_get,
+                commands::cc::cc_mcp_add,
+                commands::cc::cc_mcp_remove,
+                commands::cc::cc_list_projects,
+                commands::cc::cc_mcp_disable,
+                commands::cc::cc_mcp_enable,
                 commands::mcp::unified_add_mcp_server,
                 commands::mcp::unified_remove_mcp_server,
                 commands::mcp::unified_enable_mcp_server,
@@ -213,7 +199,6 @@ pub fn run() {
                 commands::terminal::terminal_write,
                 commands::terminal::terminal_resize,
                 commands::terminal::terminal_stop,
-                codex::codex_home,
                 commands::insights::get_agent_heatmaps,
                 commands::insights::get_insight_filter_options,
                 commands::insights::get_insight_rankings,
@@ -231,13 +216,14 @@ pub fn run() {
                 p2p::p2p_disconnect,
                 p2p::p2p_set_stun_servers,
                 quit_app,
-                env::get_env,
-                env::set_env,
+                commands::codex::codex_home,
+                commands::env::get_env,
+                commands::env::set_env,
             ])
             .setup(|app| {
                 let app_handle = app.handle().clone();
-                let event_sink: Arc<dyn crate::shared::event_sink::EventSink> =
-                    Arc::new(crate::shared::event_sink::TauriEventSink::new(app_handle));
+                let event_sink: Arc<dyn codexia_shared::event_sink::EventSink> =
+                    Arc::new(event_sink::TauriEventSink::new(app_handle));
 
                 app.manage(CCState::new(Arc::clone(&event_sink)));
 

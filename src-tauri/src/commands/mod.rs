@@ -1,5 +1,8 @@
 pub mod automation;
+pub mod cc;
+pub mod codex;
 pub mod dxt;
+pub mod env;
 pub mod fs;
 pub mod git;
 pub mod mcp;

@@ -1,4 +1,4 @@
-use crate::shared::mcp;
+use codexia_cc::mcp_unified as mcp;
 use serde_json::Value as JsonValue;
 
 #[tauri::command]

@@ -1,4 +1,4 @@
-use crate::shared::sleep::SleepState;
+use codexia_shared::sleep::SleepState;
 
 #[tauri::command]
 pub async fn prevent_sleep(

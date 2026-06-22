@@ -15,7 +15,7 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.32.0</string>
+	<string>0.35.2</string>
 	<key>CFBundleVersion</key>
 	<string>20260516.01</string>
 	<key>LSRequiresIPhoneOS</key>
@@ -50,5 +50,20 @@
 	<string>Codexia needs to send Apple Events to other applications.</string>
 	<key>NSAppleScriptEnabled</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Codexia needs camera access for capturing images for AI processing.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Codexia needs microphone access for voice input features.</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>codexia</string>
+			</array>
+			<key>CFBundleURLName</key>
+			<string>codexia</string>
+		</dict>
+	</array>
 </dict>
 </plist>

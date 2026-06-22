@@ -1,5 +1,5 @@
-use crate::db;
-use crate::db::notes::Note;
+use codexia_db as db;
+use codexia_db::notes::Note;
 
 #[tauri::command]
 pub async fn create_note(

@@ -37,6 +37,20 @@ codexia/
 │   │   ├── lib.rs          # Main Tauri application
 │   ├── capabilities/       # Tauri capabilities
 │   └── Cargo.toml          # Rust dependencies
+├── Cargo.toml              # Workspace root Cargo.toml
+├── crates/
+│   ├── codex/              # Codex crate
+│   │   ├── Cargo.toml      # Codex crate dependencies
+│   │   └── src/            # Codex crate source
+│   ├── cc/                 # Claude Code crate
+│   │   ├── Cargo.toml      # Claude Code crate dependencies
+│   │   └── src/            # Claude Code crate source
+│   ├── db/                 # Database crate
+│   │   ├── Cargo.toml      # Database crate dependencies
+│   │   └── src/            # Database crate source
+│   └── shared/             # Shared crate
+│       ├── Cargo.toml      # Shared crate dependencies
+│       └── src/            # Shared crate source
 - use `@/hooks` `@/types` etc.
 
 ## docs
@@ -44,7 +58,7 @@ codexia/
 
 ## web server
 
-- new tauri command add a api to `src-tauri/src/web/handlers/` 
+- new tauri command add a api to `web/src/handlers/` 
 - invoke add to `src/services/tauri/`
 
 ## p2p stun for remote control

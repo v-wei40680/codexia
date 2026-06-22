@@ -267,7 +267,7 @@ async fn dispatch_in_process(raw: &[u8]) -> Result<Vec<u8>, String> {
 /// SSE (Server-Sent Events): subscribe to the p2p_bridge broadcast channel and stream
 /// JSON events directly over the QUIC stream — no TCP hop to a web server needed.
 async fn proxy_sse(mut send: quinn::SendStream) {
-    let Some(tx) = crate::shared::p2p_bridge::get_sender() else {
+    let Some(tx) = codexia_shared::p2p_bridge::get_sender() else {
         log::warn!("[p2p-server] SSE: event bridge not ready");
         let _ = send.write_all(b"HTTP/1.1 503 Service Unavailable\r\nContent-Length: 0\r\n\r\n").await;
         return;

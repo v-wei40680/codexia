@@ -42,8 +42,10 @@ pub async fn p2p_start(
 ) -> Result<P2PStatus, String> {
     #[cfg(feature = "desktop")]
     {
+        log::info!("[p2p] p2p_start called");
         let mut guard = server_state().lock().await;
         if let Some(ref s) = *guard {
+            log::info!("[p2p] already running at {}", s.public_endpoint);
             return Ok(P2PStatus {
                 connected: true,
                 public_endpoint: Some(s.public_endpoint.to_string()),
@@ -51,47 +53,56 @@ pub async fn p2p_start(
         }
 
         // Build and store the in-process axum router before starting the QUIC server.
-        // The router dispatches mobile HTTP requests without opening any TCP port.
         #[cfg(feature = "tauri")]
         if super::router_handle::get().is_none() {
+            log::info!("[p2p] initializing in-process router");
             use std::sync::Arc;
             use tauri::Manager;
             use tokio::sync::broadcast;
-            use crate::web::{WebServerState, create_router};
-            use crate::shared::sleep::SleepState;
-            use crate::web::terminal::WebTerminalState;
-            use crate::web::watcher::WebWatchState;
+            use codexia_shared::sleep::SleepState;
+            use codexia_web::types::WebServerState;
+            use codexia_web::terminal::WebTerminalState;
+            use codexia_web::watcher::WebWatchState;
+            use codexia_web::create_router;
 
-            let codex_state = Arc::new(
-                app.try_state::<crate::codex::AppState>()
-                    .ok_or("codex not initialized")?
-                    .inner()
-                    .clone(),
-            );
-            let cc_state = Arc::new(app.state::<crate::cc::CCState>().inner().clone());
-            let (event_tx, _) = broadcast::channel::<(String, serde_json::Value)>(256);
-            // Register the event bridge so TauriEventSink forwards desktop events to mobile.
-            crate::shared::p2p_bridge::register(event_tx.clone());
-
-            let state = WebServerState {
-                codex_state: Some(codex_state),
-                cc_state,
-                sleep_state: Arc::new(SleepState::default()),
-                terminal_state: Arc::new(WebTerminalState::default()),
-                fs_watch_state: Arc::new(WebWatchState::default()),
-                event_tx,
+            let codex_state = match app.try_state::<codexia_codex::AppState>() {
+                Some(s) => Arc::new(s.inner().clone()),
+                None => {
+                    log::error!("[p2p] codex AppState not found — was codex initialized?");
+                    return Err("codex not initialized".into());
+                }
             };
+            let cc_state = Arc::new(app.state::<codexia_cc::CCState>().inner().clone());
+            let (event_tx, _) = broadcast::channel::<(String, serde_json::Value)>(256);
+            codexia_shared::p2p_bridge::register(event_tx.clone());
+
+            let state = WebServerState::new(
+                Some(codex_state),
+                cc_state,
+                Arc::new(SleepState::default()),
+                Arc::new(WebTerminalState::default()),
+                Arc::new(WebWatchState::default()),
+                event_tx,
+            );
             let router = create_router(state);
             super::router_handle::init(router.clone());
-            // WebSocket upgrades require a real TCP connection; start a loopback-only
-            // listener on an OS-assigned port exclusively for WS traffic.
-            super::router_handle::start_ws_listener(router).await;
+            let ws_port = super::router_handle::start_ws_listener(router).await;
+            log::info!("[p2p] WS loopback listener on port {ws_port}");
         }
 
-        let server = super::server::start(jwt, supabase_url, anon_key).await?;
-        let ep = server.public_endpoint.to_string();
-        *guard = Some(server);
-        return Ok(P2PStatus { connected: true, public_endpoint: Some(ep) });
+        log::info!("[p2p] starting QUIC server");
+        match super::server::start(jwt, supabase_url, anon_key).await {
+            Ok(server) => {
+                let ep = server.public_endpoint.to_string();
+                log::info!("[p2p] server started, public endpoint: {ep}");
+                *guard = Some(server);
+                return Ok(P2PStatus { connected: true, public_endpoint: Some(ep) });
+            }
+            Err(e) => {
+                log::error!("[p2p] server start failed: {e}");
+                return Err(e);
+            }
+        }
     }
     #[cfg(not(feature = "tauri"))]
     let _ = app;
