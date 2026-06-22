@@ -1,5 +1,8 @@
 use axum::{Json, extract::State as AxumState, http::StatusCode, response::IntoResponse};
-use serde_json::json;
+use serde::{Deserialize};
+use serde_json::{json, Value};
+use codexia_codex::env::set_env;
+use codexia_codex::providers::{load_env_keys, load_and_fetch_models};
 
 use super::types::{ErrorResponse, WebServerState};
 
@@ -65,4 +68,34 @@ fn to_error_response(err: impl ToString) -> ErrorResponse {
     ErrorResponse {
         error: err.to_string(),
     }
+}
+
+#[derive(Deserialize)]
+pub struct SetEnvPayload {
+    key: String,
+    value: String,
+}
+
+pub(super) async fn api_model_list_other() -> Result<Json<Value>, ErrorResponse> {
+    match load_and_fetch_models().await {
+        Ok(models) => Ok(Json(json!(models))),
+        Err(e) => Err(ErrorResponse { error: e }),
+    }
+}
+
+pub(super) async fn api_load_env_keys() -> Result<Json<Value>, ErrorResponse> {
+    match load_env_keys().await {
+        Ok(items) => Ok(Json(json!(items))),
+        Err(e) => Err(ErrorResponse { error: e }),
+    }
+}
+
+pub(super) async fn api_set_env(
+    AxumState(_state): AxumState<WebServerState>,
+    Json(payload): Json<SetEnvPayload>,
+) -> Result<StatusCode, ErrorResponse> {
+    // Delegate to the same implementation used by the Tauri command
+    set_env(payload.key, payload.value)
+        .map_err(|e| ErrorResponse { error: e })?;
+    Ok(StatusCode::OK)
 }

@@ -11,6 +11,9 @@ const MAGIC_COOKIE: u32 = 0x2112_A442;
 const DEFAULT_STUN_SERVERS: &[&str] = &[
     "stun.cloudflare.com:3478",
     "stun.l.google.com:19302",
+    "stun.chat.bilibili.com:3478",
+    "stun.hitv.com:3478",
+    "stun.miwifi.com:3478",
 ];
 
 // User-configured custom servers, prepended before the defaults at runtime.

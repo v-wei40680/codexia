@@ -51,7 +51,7 @@ use super::{
         api_unified_add_mcp_server, api_unified_disable_mcp_server,
         api_unified_enable_mcp_server, api_unified_read_mcp_config,
         api_unified_remove_mcp_server, api_update_note, api_write_file,
-        api_get_settings_file, api_save_settings_file, health_check,
+        api_get_settings_file, api_save_settings_file, health_check, api_model_list_other, api_load_env_keys, api_set_env,
     },
     types::WebServerState,
     websocket::{sse_handler, ws_handler},
@@ -118,6 +118,9 @@ pub fn create_router(state: WebServerState) -> Router {
             "/api/codex/model/list",
             get(api_model_list).post(api_model_list_post),
         )
+        .route("/api/codex/model/list-other", get(api_model_list_other))
+        .route("/api/codex/load_env_keys", get(api_load_env_keys))
+        .route("/api/codex/set_env", post(api_set_env))
         .route(
             "/api/codex/account/rate-limits",
             get(api_account_rate_limits),
