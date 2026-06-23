@@ -1,19 +1,17 @@
 import { Button } from "@/components/ui/button";
-import { isTauri } from "@/hooks/runtime";
-import { CodeXml, Download } from "lucide-react";
+import { isDesktopTauri } from "@/hooks/runtime";
+import { Download } from "lucide-react";
 import { useUpdater } from "@/hooks/useUpdater";
 
 export function UpdateButton() {
-  const { hasUpdate, startUpdate } = useUpdater({ enabled: true });
+  const { hasUpdate, startUpdate } = useUpdater({ enabled: !import.meta.env.DEV });
 
-  if (!isTauri()) {
+  if (!isDesktopTauri()) {
     return null;
   }
 
   if (import.meta.env.DEV) {
-    return <Button size='icon-sm'>
-      <CodeXml className="h-4 w-4" />
-    </Button>;
+    return null
   }
 
   if (!hasUpdate) {

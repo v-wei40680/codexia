@@ -48,6 +48,11 @@ export function useUpdater({ enabled = true, onDebug }: UseUpdaterOptions) {
   }, [log]);
 
   const checkForUpdates = useCallback(async () => {
+    if (import.meta.env.DEV) {
+      log("skip check: dev mode");
+      setState({ stage: "idle" });
+      return;
+    }
     if (!isTauri()) {
       log("skip check: not running in tauri");
       setState({ stage: "idle" });
