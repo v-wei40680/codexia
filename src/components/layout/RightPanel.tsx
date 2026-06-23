@@ -21,7 +21,7 @@ const TasksPanel = lazy(() =>
 );
 
 export function RightPanel() {
-  const { activeRightPanelTab, setRightPanelOpen } = useLayoutStore();
+  const { activeRightPanelTab } = useLayoutStore();
   const { cwd } = useWorkspaceStore();
   const isMobile = useIsMobile();
   const [webPreviewUrl, setWebPreviewUrl] = useState('');
@@ -91,7 +91,6 @@ export function RightPanel() {
                 <WebPreview
                   url={webPreviewUrl}
                   onUrlChange={setWebPreviewUrl}
-                  onClose={() => setRightPanelOpen(false)}
                 />
               </Suspense>
             </div>

@@ -1,25 +1,40 @@
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, ExternalLink, X, Globe } from 'lucide-react';
+import { RefreshCw, ExternalLink, Globe, ArrowLeft, ArrowRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { openUrl } from '@tauri-apps/plugin-opener';
 import { isTauri } from '@/hooks/runtime';
+import { useWebviewStore } from '@/stores/useWebViewStore';
 
 interface WebPreviewProps {
   url?: string;
-  onClose?: () => void;
   onUrlChange?: (url: string) => void;
 }
 
-export const WebPreview: React.FC<WebPreviewProps> = ({ url = '', onClose, onUrlChange }) => {
-  const [currentUrl, setCurrentUrl] = useState(url);
-  const [inputUrl, setInputUrl] = useState(url);
+export const WebPreview: React.FC<WebPreviewProps> = ({ url = '', onUrlChange }) => {
+  const { history, index, addUrl, goBack, goForward } = useWebviewStore();
+  const currentUrl = history[index] ?? '';
+  const [inputUrl, setInputUrl] = useState(currentUrl);
   const [isLoading, setIsLoading] = useState(false);
 
+  // Sync inputUrl with store's currentUrl when it changes
   useEffect(() => {
-    setCurrentUrl(url);
-    setInputUrl(url);
-  }, [url]);
+    setInputUrl(currentUrl);
+  }, [currentUrl]);
+
+  // Add prop url to store when it changes
+  useEffect(() => {
+    if (url) {
+      addUrl(url);
+    }
+  }, [url, addUrl]);
+
+  // Notify parent of URL changes via onUrlChange
+  useEffect(() => {
+    if (currentUrl) {
+      onUrlChange?.(currentUrl);
+    }
+  }, [currentUrl, onUrlChange]);
 
   const handleRefresh = () => {
     setIsLoading(true);
@@ -33,10 +48,10 @@ export const WebPreview: React.FC<WebPreviewProps> = ({ url = '', onClose, onUrl
 
   const handleUrlSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (inputUrl !== currentUrl) {
-      setCurrentUrl(inputUrl);
-      onUrlChange?.(inputUrl);
-    }
+    // Add the input URL to history (store will handle duplicates and history management)
+    url && addUrl(inputUrl);
+    // Clear the input after submitting? Or keep it? We'll keep it as the current URL.
+    // The effect above will sync the input with the store's currentUrl after addUrl.
   };
 
   const handleOpenExternal = async () => {
@@ -51,7 +66,34 @@ export const WebPreview: React.FC<WebPreviewProps> = ({ url = '', onClose, onUrl
     <div className="h-full flex flex-col bg-background border-l">
       {/* Header */}
       <div className="flex items-center gap-2 p-2 border-b bg-muted/30">
-        <Globe className="w-4 h-4 text-muted-foreground" />
+        <Button
+          onClick={goBack}
+          disabled={index <= 0}
+          size="icon"
+          variant="ghost"
+          className='h-7 w-7 p-0'
+        >
+          <ArrowLeft className="w-3 h-3" />
+        </Button>
+        <Button
+          onClick={goForward}
+          disabled={index >= history.length - 1}
+          size="icon"
+          variant="ghost"
+          className='h-7 w-7 p-0'
+        >
+          <ArrowRight className="w-3 h-3" />
+        </Button>
+        <Button
+          onClick={handleRefresh}
+          size="icon"
+          variant="ghost"
+          disabled={isLoading}
+          className='h-7 w-7 p-0'
+        >
+          <RefreshCw className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} />
+        </Button>
+
         <form onSubmit={handleUrlSubmit} className="flex-1 flex gap-1">
           <Input
             value={inputUrl}
@@ -59,29 +101,10 @@ export const WebPreview: React.FC<WebPreviewProps> = ({ url = '', onClose, onUrl
             placeholder="Enter URL..."
             className="text-xs h-7"
           />
-          {inputUrl !== currentUrl && (
-            <Button type="submit" size="sm" variant="ghost" className="h-7 px-2">
-              Go
-            </Button>
-          )}
         </form>
-        <Button
-          onClick={handleRefresh}
-          size="sm"
-          variant="ghost"
-          disabled={isLoading}
-          className="h-7 w-7 p-0"
-        >
-          <RefreshCw className={`w-3 h-3 ${isLoading ? 'animate-spin' : ''}`} />
-        </Button>
         <Button onClick={handleOpenExternal} size="sm" variant="ghost" className="h-7 w-7 p-0">
           <ExternalLink className="w-3 h-3" />
         </Button>
-        {onClose && (
-          <Button onClick={onClose} size="sm" variant="ghost" className="h-7 w-7 p-0">
-            <X className="w-3 h-3" />
-          </Button>
-        )}
       </div>
 
       {/* Preview Content */}
@@ -96,11 +119,27 @@ export const WebPreview: React.FC<WebPreviewProps> = ({ url = '', onClose, onUrl
           />
         ) : (
           <div className="flex items-center justify-center h-full text-muted-foreground">
-            <div className="text-center">
-              <Globe className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p className="text-sm">Enter a URL to preview</p>
-              <p className="text-xs mt-1">Perfect for Next.js, React apps, and more</p>
-            </div>
+            {history.length > 0 ? (
+              <ul className='flex flex-col gap-2'>
+                {history.map((historyUrl: string, idx: number) => (
+                  <li key={idx}>
+                    <Button
+                      onClick={() => addUrl(historyUrl)}
+                      variant="outline"
+                      className="text-xs truncate max-w-md"
+                    >
+                      {historyUrl}
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="text-center">
+                <Globe className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                <p className="text-sm">Enter a URL to preview</p>
+                <p className="text-xs mt-1">Perfect for Next.js, React apps, and more</p>
+              </div>
+            )}
           </div>
         )}
 
