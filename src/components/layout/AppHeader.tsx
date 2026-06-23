@@ -1,24 +1,16 @@
-import {
-  Circle,
-  History,
-} from 'lucide-react';
+import { History } from 'lucide-react';
 import { useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { codexService } from '@/services/codexService';
-import { ProjectSelector } from '@/components/project-selector';
 import { useLayoutStore, useAgentCenterStore } from '@/stores';
 import { useCodexStore, useCurrentThread } from '@/stores/codex';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { RightPanelHeader } from './RightPanelHeader';
 import { useCCStore } from '@/stores/cc';
-import { isTauri } from '@/hooks/runtime';
 import { useTrafficLightConfig } from '@/hooks';
 import { NewAgentButton } from '@/components/common/NewAgentButton';
 import { SidebarTrigger, useSidebar } from '@/components/ui/sidebar';
 import { UpdateButton } from '../features/UpdateButton';
-
-// isTauri() is a runtime constant — evaluate once at module load
-const IS_TAURI = isTauri();
 
 export function AppHeader() {
   const { setView, view } = useLayoutStore();
@@ -29,7 +21,7 @@ export function AppHeader() {
   // Show trigger when sidebar is closed; on mobile the Sheet is transient so always show
   const showTrigger = isMobile ? !openMobile : !isSidebarOpen;
 
-  const { isConnected, activeSessionId } = useCCStore();
+  const { activeSessionId } = useCCStore();
   const { currentThreadId, activeThreadIds } = useCodexStore();
   const currentThread = useCurrentThread();
   const isHistoryView = view === 'history';
@@ -72,19 +64,6 @@ export function AppHeader() {
             New {selectedAgent === 'codex' ? 'thread' : 'session'}
           </span>
         )}
-        {view === 'agent' && selectedAgent === 'cc' && (
-          <span
-            title={isConnected ? 'Connected' : 'Ready'}
-            aria-label={isConnected ? 'Connected' : 'Ready'}
-          >
-            <Circle
-              className={`size-3 ${isConnected
-                ? 'fill-emerald-500 text-emerald-500'
-                : 'fill-transparent text-emerald-500/80'
-                }`}
-            />
-          </span>
-        )}
         {selectedAgent === 'codex' &&
           currentThreadId &&
           (view === 'agent' || view === 'history') && (
@@ -97,9 +76,6 @@ export function AppHeader() {
               <History />
             </Button>
           )}
-        {!IS_TAURI && (
-          <ProjectSelector forcedMode="browse" triggerMode="project-name" />
-        )}
       </div>
       <RightPanelHeader />
     </div>
