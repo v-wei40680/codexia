@@ -250,10 +250,10 @@ pub fn run() {
                             Arc::clone(&event_sink),
                         ));
                         tauri::async_runtime::spawn(async move {
-    if let Err(e) = codex::config::provider::write_model_providers(&*client_clone).await {
-                        log::error!("Failed to write model provider configs: {}", e);
-                    }
-                });
+                        if let Err(e) = codex::config::provider::write_model_providers(&*client_clone).await {
+                                log::error!("Failed to write model provider configs: {}", e);
+                            }
+                        });
                     }
                     Err(err) => {
                         log::warn!(
