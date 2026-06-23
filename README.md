@@ -1,10 +1,25 @@
-# Codexia
+<div align="center">
+  <img src="src-tauri/icons/icon.png" alt="Codexia Logo" width="120" height="120">
+
+  <h1>Codexia</h1>
+
+  <p>
+    <strong>Agent command center for Codex + Claude Code </strong>
+  </p>
+
+</div>
 
 [![Downloads](https://img.shields.io/github/downloads/milisp/codexia/total.svg)](https://github.com/milisp/codexia/releases)
 [![Discord](https://img.shields.io/badge/Discord-Join-5865F2?style=flat&logo=discord&logoColor=white)](https://discord.gg/zAjtD4kf5K)
 [![Follow on 𝕏](https://img.shields.io/badge/𝕏-@lisp__mi-1c9bf0)](http://x.com/intent/follow?screen_name=lisp_mi)
 
-Codexia is a **Tauri v2 app** for Codex CLI + Claude Code — combining agent workflows, an IDE-like editor, a headless web server, and a prompt notepad in one workspace.
+Codexia is a **Agent command center** for Codex CLI + Claude Code — code or work, combining agent workflows, and a prompt notepad in one workspace.
+
+- [milisp/seeker](https://github.com/milisp/seeker) - Deepseek Agent command center
+
+## Sponsors
+
+> [Want to appear here?](mailto:milisp@proton.me)
 
 ![Codexia Home](docs/images/codexia-agent-command-center.png)
 
