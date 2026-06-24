@@ -32,7 +32,6 @@ import { CodexAuth } from '../codex/CodexAuth';
 import { QuoteSettings } from './QuoteSettings';
 import { ProjectsSettings } from './ProjectsSettings';
 import { RateLimitSettings, TaskSettings } from './codex';
-import { RemoteSettings } from './RemoteSettings';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { isTauri } from '@/hooks/runtime';
 
@@ -48,10 +47,9 @@ type SettingsSection =
   | 'task'
   | 'agents'
   | 'claude'
-  | 'remote';
 
 const codexSections = ['codexauth', 'task', 'agents', 'config', 'personalization', 'archived'] as const;
-const topLevelSections = ['general', 'projects', 'claude', 'explorer', 'quote', 'remote'] as const;
+const topLevelSections = ['general', 'projects', 'claude', 'explorer', 'quote'] as const;
 
 const sectionLabel: Record<SettingsSection, string> = {
   general: 'General',
@@ -65,7 +63,6 @@ const sectionLabel: Record<SettingsSection, string> = {
   task: 'Task',
   agents: 'Multi-agent',
   claude: 'Claude',
-  remote: 'Remote',
 };
 
 export function SettingsView() {
@@ -87,7 +84,6 @@ export function SettingsView() {
       {activeSection === 'task' && <TaskSettings />}
       {activeSection === 'agents' && <SettingsAgentsSection />}
       {activeSection === 'claude' && <ClaudeSettings />}
-      {activeSection === 'remote' && <RemoteSettings />}
     </>
   );
 
@@ -166,8 +162,8 @@ export function SettingsView() {
                     type="button"
                     onClick={() => setActiveSection(section)}
                     className={`w-full rounded-lg px-3 py-2 text-left transition-colors ${activeSection === section
-                        ? 'bg-accent text-foreground'
-                        : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                      ? 'bg-accent text-foreground'
+                      : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
                       }`}
                   >
                     {sectionLabel[section]}
@@ -194,8 +190,8 @@ export function SettingsView() {
                         type="button"
                         onClick={() => setActiveSection(section)}
                         className={`w-full rounded-lg px-6 py-2 text-left transition-colors ${activeSection === section
-                            ? 'bg-accent text-foreground'
-                            : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
+                          ? 'bg-accent text-foreground'
+                          : 'text-muted-foreground hover:bg-accent/50 hover:text-foreground'
                           }`}
                       >
                         {sectionLabel[section]}

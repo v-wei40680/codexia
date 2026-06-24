@@ -1,45 +1,14 @@
-// Core modules — requires the "core" feature (shared by "desktop" and "web")
-#[cfg(all(feature = "core", feature = "tauri"))]
+// Core modules
 mod commands;
-#[cfg(feature = "tauri")]
 mod event_sink;
-#[cfg(feature = "tauri")]
-pub mod p2p;
-#[cfg(all(feature = "core", feature = "tauri", any(windows, target_os = "linux")))]
+#[cfg(all(any(windows, target_os = "linux")))]
 mod window;
-#[cfg(all(feature = "core", feature = "tauri", target_os = "macos"))]
+#[cfg(all(target_os = "macos"))]
 mod menu;
 
-#[cfg(feature = "tauri")]
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    // Mobile: thin WebView client that connects to the desktop via Quinn P2P tunnel.
-    #[cfg(not(feature = "desktop"))]
-    {
-        // rustls 0.23+ has no built-in default crypto provider; install ring explicitly.
-        // Without this, Tauri's internal tauri:// URL scheme handler (which uses reqwest+rustls)
-        // panics on the first asset request, causing an immediate app crash on iOS.
-        let _ = rustls::crypto::ring::default_provider().install_default();
-
-        std::panic::set_hook(Box::new(|info| {
-            eprintln!("[iOS PANIC] {info}");
-        }));
-    }
-
-    #[cfg(not(feature = "desktop"))]
-    let builder = tauri::Builder::default()
-        .plugin(tauri_plugin_os::init())
-        .plugin(tauri_plugin_deep_link::init())
-        .plugin(tauri_plugin_opener::init())
-        .invoke_handler(tauri::generate_handler![
-            p2p::p2p_stun,
-            p2p::p2p_connect,
-            p2p::p2p_disconnect,
-            p2p::p2p_set_stun_servers,
-        ]);
-
     // Desktop: full app with all plugins, commands, and setup.
-    #[cfg(feature = "desktop")]
     let builder = {
         use cc::CCState;
         use codexia_shared::terminal::TerminalState;
@@ -208,13 +177,6 @@ pub fn run() {
                 commands::dxt::save_dxt_setting,
                 commands::dxt::download_and_extract_manifests,
                 commands::dxt::check_manifests_exist,
-                p2p::p2p_start,
-                p2p::p2p_stop,
-                p2p::p2p_status_cmd,
-                p2p::p2p_stun,
-                p2p::p2p_connect,
-                p2p::p2p_disconnect,
-                p2p::p2p_set_stun_servers,
                 quit_app,
                 commands::codex::codex_home,
                 commands::env::get_env,
@@ -315,7 +277,6 @@ pub fn run() {
         });
 }
 
-#[cfg(all(feature = "tauri", feature = "core"))]
 #[tauri::command]
 fn quit_app(app: tauri::AppHandle) {
     app.exit(0);

@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, lazy, Suspense } from 'react';
+import { useEffect, useState } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import './App.css';
 import { useCodexEvents } from '@/hooks/codex';
@@ -6,17 +6,13 @@ import { useDeepLink } from '@/hooks/useDeepLink';
 import { useUrlParamThread } from '@/hooks/useUrlParamThread';
 import { AppLayout } from '@/components/layout';
 import { isTauri, getIsPhone } from '@/hooks/runtime';
-const LoginView = lazy(() => import('@/views/LoginView'));
 import { HistoryProjectsDialog } from '@/components/project-selector';
 import { AnalyticsConsentDialog } from '@/components/settings/AnalyticsConsentDialog';
 import { initializeCodexAsync } from '@/services/tauri';
 import type { InitializeResponse } from './bindings';
-import { loadSettings, initSettingsSync, loadRemoteSettings } from '@/lib/settings';
+import { loadSettings, initSettingsSync } from '@/lib/settings';
 import { StoreErrorBoundary } from '@/components/StoreErrorBoundary';
-import { useP2PConnection } from '@/hooks/useP2PConnection';
-import { useTunnel } from '@/hooks/useTunnel'
-import { useSettingsStore } from '@/stores/settings/useSettingsStore';
-import { P2PStatusDialog, QuitDialog } from '@/components/dialogs';
+import { QuitDialog } from '@/components/dialogs';
 
 function AppShell() {
   const [quitDialogOpen, setQuitDialogOpen] = useState(false);
@@ -31,24 +27,6 @@ function AppShell() {
     void loadSettings().finally(() => setSettingsReady(true));
     return initSettingsSync();
   }, []);
-  // Mobile: auto-connect to desktop via Quinn P2P
-  const { state: p2pState, error: p2pError, retry: p2pRetry, dismiss: p2pDismiss } = useP2PConnection();
-
-  const prevP2PState = useRef(p2pState);
-  useEffect(() => {
-    if (!isPhone || prevP2PState.current === p2pState) return;
-    prevP2PState.current = p2pState;
-    if (p2pState === 'connected') void loadRemoteSettings();
-  }, [p2pState, isPhone]);
-
-  // Desktop: auto-start P2P server on login only if user has opted in
-  const { start: p2pStart, status: p2pStatus } = useTunnel();
-  const p2pAutoStart = useSettingsStore((s) => s.p2pAutoStart);
-  useEffect(() => {
-    if (!isTauri() || isPhone !== false || p2pStatus.connected || !p2pAutoStart) return;
-    void p2pStart();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isPhone, p2pAutoStart]);
 
   useEffect(() => {
     if (!isTauri() || isPhone !== false) {
@@ -86,21 +64,11 @@ function AppShell() {
   // Wait for platform detection and settings load before rendering
   if (isPhone === null || !settingsReady) return null;
 
-  // Mobile: no session → show login so the user can authenticate first
-  if (isPhone === true && p2pState === 'idle') {
-    return <Suspense fallback={null}><LoginView /></Suspense>;
-  }
-
   return (
     <>
       <AppLayout />
-      {/* On mobile, suppress other dialogs while P2P dialog is active to avoid Radix DismissableLayer conflicts */}
-      {!(isPhone && (p2pState === 'connecting' || p2pState === 'offline' || p2pState === 'error')) && <HistoryProjectsDialog />}
-      {isPhone ? (
-        <P2PStatusDialog state={p2pState} error={p2pError} onRetry={p2pRetry} onClose={p2pDismiss} />
-      ) :
-        <AnalyticsConsentDialog />
-      }
+      <HistoryProjectsDialog />
+      <AnalyticsConsentDialog />
       <QuitDialog open={quitDialogOpen} onOpenChange={setQuitDialogOpen} />
     </>
   );

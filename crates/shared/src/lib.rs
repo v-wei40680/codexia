@@ -7,5 +7,4 @@ pub mod sleep;
 pub mod terminal;
 pub mod state;
 
-pub mod p2p_bridge;
 pub mod event_sink;

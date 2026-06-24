@@ -15,166 +15,67 @@ edition = "2024"
 name = "codexia_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
-[features]
-default = ["gui"]
-gui = ["tauri"]
-# core: shared runtime used by both "desktop" and "web" — no P2P, no Tauri
-core = [
-  # runtime
-  "dep:tokio",
-  "dep:futures",
-  "dep:async-trait",
-  # serialization
-  "dep:serde",
-  "dep:serde_json",
-  "dep:serde_yaml",
-  "dep:indexmap",
-  "dep:base64",
-  "dep:chrono",
-  # utilities
-  "dep:anyhow",
-  "dep:log",
-  "dep:thiserror",
-  "dep:regex",
-  "dep:uuid",
-  "dep:dirs",
-  "dep:which",
-  "dep:glob",
-  "dep:dashmap",
-  "dep:moka",
-  # networking
-  "dep:reqwest",
-  # storage / files
-  "dep:zip",
-  "dep:tempfile",
-  # codex / claude backends
-  "dep:codex-protocol",
-  "dep:codex-app-server-protocol",
-  "dep:claude-agent-sdk-rs",
-  "dep:codex-finder",
-  # shared crate (formerly src-tauri/src/shared/)
-  "dep:codexia-shared",
-  "dep:codexia-codex",
-  "dep:codexia-cc",
-  "dep:codexia-db",
-  # scheduling (automation)
-  "dep:tokio-cron-scheduler",
-  # in-process axum router for P2P backend (no port opened, no web feature needed)
-  "dep:axum",
-  "dep:tower",
-  "dep:tower-http",
-  "dep:http-body-util",
-  "dep:httparse",
-]
-# desktop: core + P2P server deps; omit with --no-default-features for iOS builds
-desktop = [
-  "core",
-  "dep:codexia-web",
-  "dep:fix-path-env",
-  "dep:tauri-plugin-screenshots",
-  "dep:tauri-plugin-single-instance",
-  "dep:tauri-plugin-updater",
-  "dep:tauri-plugin-fs",
-  "dep:tauri-plugin-process",
-  "dep:tauri-plugin-dialog",
-  # p2p (desktop server)
-  "dep:quinn",
-  "dep:rcgen",
-  "dep:rustls",
-  "dep:local-ip-address",
-]
-tauri = [
-  "dep:tokio",
-  "dep:log",
-  # p2p client (mobile) — quinn QUIC is used on both desktop and iOS
-  "dep:quinn",
-  "dep:rustls",
-  "dep:tauri",
-  "dep:serde",        # needed by tauri macros
-  "dep:serde_json",   # needed by tauri::generate_context!
-  "dep:tauri-plugin-deep-link",
-  "dep:tauri-plugin-log",
-  "dep:tauri-plugin-opener",
-  "dep:tauri-plugin-shell",
-]
-web = ["dep:codexia-web"]
+[lints.rust]
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(mobile)'] }
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
 
 [dependencies]
-# --- tauri feature (iOS + desktop) ---
-tauri = { version = "2", features = ["macos-private-api", "protocol-asset", "devtools"], optional = true }
-fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs", optional = true }
+tauri = { version = "2", features = ["macos-private-api", "protocol-asset", "devtools"] }
+fix-path-env = { git = "https://github.com/tauri-apps/fix-path-env-rs" }
 tauri-plugin-os = "2"
-tauri-plugin-opener = { version = "2", optional = true }
-tauri-plugin-shell = { version = "2", optional = true }
-tauri-plugin-dialog = { version = "2", optional = true }
-tauri-plugin-log = { version = "2", optional = true }
-tauri-plugin-deep-link = { version = "2", optional = true }
-tauri-plugin-process = { version = "2", optional = true }
-tauri-plugin-fs = { version = "2", optional = true }
+tauri-plugin-opener = { version = "2" }
+tauri-plugin-shell = { version = "2" }
+tauri-plugin-dialog = { version = "2" }
+tauri-plugin-log = { version = "2" }
+tauri-plugin-deep-link = { version = "2" }
+tauri-plugin-process = { version = "2" }
+tauri-plugin-fs = { version = "2" }
 
 # --- desktop feature ---
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls-native-roots"], optional = true }
-futures = { version = "0.3", optional = true }
-indexmap = { version = "2.0", features = ["serde"], optional = true }
-thiserror = { version = "2.0", optional = true }
-moka = { version = "0.12", features = ["future"], optional = true }
-tokio = { version = "1", features = ["full"], optional = true }
-log = { version = "0.4", optional = true }
-env_logger = { version = "0.11", optional = true }
-dirs = { version = "6.0", optional = true }
-base64 = { version = "0.22.1", optional = true }
-regex = { version = "1.12.2", optional = true }
-chrono = { version = "0.4", features = ["serde"], optional = true }
-uuid = { version = "1.0", features = ["v4"], optional = true }
-which = { version = "6.0", optional = true }
-dashmap = { version = "6.2.1", optional = true }
-async-trait = { version = "0.1", optional = true }
-zip = { version = "2.1", optional = true }
-tempfile = { version = "3.10", optional = true }
-serde_yaml = { version = "0.9", optional = true }
-glob = { version = "0.3.3", optional = true }
-tokio-cron-scheduler = { version = "0.13", optional = true }
-tauri-plugin-updater = { version = "2", optional = true }
-codex-protocol = { git = "https://github.com/openai/codex.git", package = "codex-protocol", tag = "rust-v0.140.0", optional = true }
-codex-app-server-protocol = { git = "https://github.com/openai/codex.git", package = "codex-app-server-protocol", tag = "rust-v0.140.0", optional = true }
-claude-agent-sdk-rs = { git = "https://github.com/milisp/claude-agent-sdk-rs", tag = "v0.6.6", optional = true }
-codex-finder = { git = "https://github.com/milisp/codex-finder.git", optional = true }
+reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls-native-roots"] }
+futures = { version = "0.3" }
+indexmap = { version = "2.0", features = ["serde"] }
+thiserror = { version = "2.0" }
+moka = { version = "0.12", features = ["future"] }
+tokio = { version = "1", features = ["full"] }
+log = { version = "0.4" }
+env_logger = { version = "0.11" }
+dirs = { version = "6.0" }
+base64 = { version = "0.22.1" }
+regex = { version = "1.12.2" }
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.0", features = ["v4"] }
+which = { version = "6.0" }
+dashmap = { version = "6.2.1" }
+async-trait = { version = "0.1" }
+zip = { version = "2.1" }
+tempfile = { version = "3.10" }
+serde_yaml = { version = "0.9" }
+glob = { version = "0.3.3" }
+tokio-cron-scheduler = { version = "0.13" }
+tauri-plugin-updater = { version = "2" }
+codex-protocol = { git = "https://github.com/openai/codex.git", package = "codex-protocol", tag = "rust-v0.140.0" }
+codex-app-server-protocol = { git = "https://github.com/openai/codex.git", package = "codex-app-server-protocol", tag = "rust-v0.140.0" }
+claude-agent-sdk-rs = { git = "https://github.com/milisp/claude-agent-sdk-rs", tag = "v0.6.6" }
+codex-finder = { git = "https://github.com/milisp/codex-finder.git" }
 
 # workspace
-serde = { workspace = true, optional = true }
-serde_json = { workspace = true, optional = true }
-anyhow = { workspace = true, optional = true }
-codexia-codex = { path = "../crates/codex", optional = true }
-codexia-cc = { path = "../crates/cc", optional = true }
-codexia-db = { path = "../crates/db", optional = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+anyhow = { workspace = true }
+codexia-codex = { path = "../crates/codex" }
+codexia-cc = { path = "../crates/cc" }
+codexia-db = { path = "../crates/db" }
 
-# --- p2p (tauri feature: desktop server + mobile client) ---
-quinn = { version = "0.11", optional = true }
-rcgen = { version = "0.13", optional = true }
-rustls = { version = "0.23", features = ["ring"], default-features = false, optional = true }
-local-ip-address = { version = "0.6", optional = true }
-
-# --- web feature (web server is now a separate crate: /web) ---
-axum = { version = "0.8", features = ["ws", "json"], optional = true }
-tower = { version = "0.5", features = ["util"], optional = true }
-tower-http = { version = "0.5", features = ["cors", "fs"], optional = true }
-http-body-util = { version = "0.1", optional = true }
-httparse = { version = "1", optional = true }
-open = { version = "5", optional = true }
-codexia-shared = { path = "../crates/shared", optional = true }
-codexia-web = { path = "../web", optional = true }
+codexia-shared = { path = "../crates/shared" }
 
 [target.'cfg(any(target_os = "linux", target_os = "windows"))'.dependencies]
-tauri-plugin-single-instance = { version = "2", features = ["deep-link"], optional = true }
-
-[target.'cfg(any(target_os = "ios", target_os = "android"))'.dependencies]
-rustls = { version = "0.23", features = ["ring"], default-features = false }
+tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
 
 [target.'cfg(not(any(target_os = "ios", target_os = "android")))'.dependencies]
-tauri-plugin-screenshots = { version = "2.2.0", optional = true }
+tauri-plugin-screenshots = { version = "2.2.0" }
 gix = { version = "0.80.0", features = ["blocking-network-client", "blocking-http-transport-curl"] }
 codexia-git = { path = "../crates/git" }
 walkdir = "2.3"
