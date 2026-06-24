@@ -45,31 +45,6 @@ brew install --cask codexia
 
 ### Prebuilt releases (macOS / Linux / Windows)
 - [GitHub Releases](https://github.com/milisp/codexia/releases)
-- [Modern GitHub Release Mirror](https://milisp.github.io/modern-github-release/#/repo/milisp/codexia)
-
-## Ecosystem
-
-- **Agent Tools**: Tools for Codex or Claude code
-- **Agent Skills Marketplace**: Prompt workflows and task automations.
-- **MCP Server Marketplace**: Extend agent capabilities with local or remote MCP tools.
-
-### Weekly Marketplace Spotlights
-👉 **Have a great Server or Skill?** We feature outstanding community submissions in our [Weekly Spotlights](https://github.com/milisp/awesome-codex-cli) and sync them into the built-in App Marketplace. See [CONTRIBUTING.md](CONTRIBUTING.md) to submit yours!
-
-### Featured Agent Tools
-- [Relay Baton](https://github.com/guorunjie/codex-relay-baton-guardian) - Local Codex Desktop/CLI recovery monitor for long-running tasks. Detects compact failures and context-window overflow, then queues audited handoff bundles.
-- **[Agentbox](https://github.com/madarco/agentbox)** - AgentBox runs multiple Codex (and Claude Code / OpenCode) sessions in parallel
-* *Your Tool Here? [Submit an Issue/PR](https://github.com/milisp/codexia/issues)*
-
-### Featured Agent Skills
-- **[trace-to-skill](https://github.com/grnbtqdbyx-create/trace-to-skill)** - CLI for turning failed Codex, Claude Code, Cursor, and MCP-enabled agent runs into reusable AGENTS.md rules, SKILL.md files, eval evidence, PR comments, and SARIF code-scanning reports.
-- **[Codex Small Business Skills](https://github.com/simongonzalezdc/codex-small-business-skills)** by [Simon Gonzalez De Cruz](https://github.com/simongonzalezdc) - Apache-2.0 Codex port of Anthropic's Small Business skills, with 31 workflows for cash flow, invoices, CRM, support, marketing, hiring, and weekly business rhythm.
-* *Your Skill Here? [Submit an Issue/PR](https://github.com/milisp/codexia/issues)*
-
-### 🛠️ Featured MCP Servers
-- [VideoOverlayKit](https://github.com/alichherawalla/video-overlay-kit) - MCP server that renders 4-6s animated b-roll overlay videos (mp4) for short-form social (LinkedIn, IG Reels, YouTube Shorts, TikTok). Paste your script into Codex CLI / Claude Code / Cursor, the model writes the scene spec and renders the mp4. Built on Remotion + Tabler + Lottie. Free, MIT, local.
-- [**claude-codex-bridge**](https://github.com/jackcongmac/claude-codex-bridge) - Bidirectional MCP bridge for Codex CLI and Claude Code collaboration, with persistent Claude sessions and shared collaboration files.
-* *Your Server Here? [Submit an Issue/PR](https://github.com/milisp/codexia/issues)*
 
 ## Quick Start
 
@@ -104,8 +79,8 @@ Codexia exposes a browser-accessible API when running in web/headless mode:
 - Notes and productivity: `/api/notes/*`, `/api/codex/usage/token`
 
 Contributor note:
-- Add new API handlers under `src-tauri/src/web/handlers/`
-- Register routes in `src-tauri/src/web/router.rs`
+- Add new API handlers under `./web/src/handlers/`
+- Register routes in `./web/src/router.rs`
 - Add corresponding frontend client calls in `src/services/tauri/`
 
 ## Documentation
@@ -133,7 +108,6 @@ Community forks:
 
 Related:
 - [awesome-codex-cli](https://github.com/milisp/awesome-codex-cli) — curated list of Codex CLI resources
-- [claw-army/claude-node](https://github.com/claw-army/claude-node) — Python subprocess bridge for Claude Code CLI
 
 ## Community
 
@@ -144,3 +118,9 @@ Related:
 
 Dual-licensed under **AGPL-3.0** (open source) and a **Commercial License** (closed-source / SaaS use).
 See [COMMERCIAL.md](COMMERCIAL.md) for details.
+
+---
+
+## Other Projects
+If you like this tool, check out my other open-source works:
+* [seeker](https://github.com/milisp/seeker) - Deepseek Agent command center.
