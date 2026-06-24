@@ -4,7 +4,7 @@
   <h1>Codexia</h1>
 
   <p>
-    <strong>Agent command center for Codex + Claude Code </strong>
+    <strong>Lightweight Agent command center for Codex + Claude Code </strong>
   </p>
 
 </div>
@@ -13,13 +13,12 @@
 [![Discord](https://img.shields.io/badge/Discord-Join-5865F2?style=flat&logo=discord&logoColor=white)](https://discord.gg/zAjtD4kf5K)
 [![Follow on 𝕏](https://img.shields.io/badge/𝕏-@lisp__mi-1c9bf0)](http://x.com/intent/follow?screen_name=lisp_mi)
 
-Codexia is a **Agent command center** for Codex CLI + Claude Code — code or work, combining agent workflows, and a prompt notepad in one workspace.
+Lightweight Agent Workstation for Codex CLI + Claude Code — with task scheduler, git worktree & remote control, skills management, and a prompt notepad in one workspace
 
-- [milisp/seeker](https://github.com/milisp/seeker) - Deepseek Agent command center
+### Support & Sponsors
 
-## Sponsors
-
-> [Want to appear here?](mailto:milisp@proton.me)
+If you find this project helpful, consider supporting its development.
+> [Want to become a sponsor?](mailto:milisp@proton.me)
 
 ![Codexia Home](docs/images/codexia-agent-command-center.png)
 
