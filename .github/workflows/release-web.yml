@@ -146,7 +146,7 @@ jobs:
       - name: Setup Rust cache
         uses: Swatinem/rust-cache@v2
         with:
-          workspaces: "src-tauri"
+          workspaces: "."
 
       - name: install frontend dependencies
         run: bun install

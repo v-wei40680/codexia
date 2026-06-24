@@ -16,7 +16,7 @@
 - `bun tauri dev` - read the backend output
 - `bunx tsc --noEmit` - test frontend if frontend change
 - `bunx --bun shadcn@latest add <dep>` - add shadcn dep
-- `cargo check --features desktop -p codexia` if rust code change
+- `cargo check -p codexia` if rust code change
 - only `cargo build` when I ask
 - Don't run `cargo fmt`
 

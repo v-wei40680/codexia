@@ -26,9 +26,9 @@ jobs:
       matrix:
         include:
           - platform: "windows-latest"
-            args: "--features desktop"
+            args: ""
           - platform: "windows-latest"
-            args: "--target aarch64-pc-windows-msvc --features desktop"
+            args: "--target aarch64-pc-windows-msvc"
 
     runs-on: ${{ matrix.platform }}
     steps:
