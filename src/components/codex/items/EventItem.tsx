@@ -1,9 +1,8 @@
 import { Badge } from '@/components/ui/badge';
 import { CommandAction, FileUpdateChange } from '@/bindings/v2';
 import type { ServerNotification } from '@/bindings';
-import { Markdown } from '@/components/Markdown';
+
 import { TurnPlan } from './TurnPlan';
-import { ReasoningItem } from './ReasoningItem';
 import { EditableUserMessageItem } from './UserMessageItem';
 import { AgentMessageItem } from './AgentMessageItem';
 import { CommandActionItem } from './CommandActionItem';
@@ -110,7 +109,6 @@ export const renderEvent = (event: ServerNotification, context?: RenderEventCont
               ))}
             </div>
           );
-        case 'reasoning':
         case 'agentMessage':
         case 'enteredReviewMode':
         case 'fileChange':
@@ -123,8 +121,6 @@ export const renderEvent = (event: ServerNotification, context?: RenderEventCont
       switch (item.type) {
         case 'agentMessage':
           return <AgentMessageItem text={item.text} />;
-        case 'reasoning':
-          return <ReasoningItem item={item} />;
         case 'userMessage':
         case 'commandExecution':
           return null;
@@ -171,12 +167,6 @@ export const renderEvent = (event: ServerNotification, context?: RenderEventCont
       return <TurnPlan plan={event.params.plan} explanation={event.params.explanation} />;
     case 'item/agentMessage/delta':
       return <AgentMessageItem text={event.params.delta} />;
-    case 'item/reasoning/textDelta':
-      return (
-        <div className="rounded-md border border-muted bg-muted/20 px-2 py-1 text-sm text-muted-foreground">
-          <Markdown value={event.params.delta} />
-        </div>
-      );
     case 'item/fileChange/outputDelta':
       return null;
     case 'item/commandExecution/terminalInteraction':
@@ -188,13 +178,12 @@ export const renderEvent = (event: ServerNotification, context?: RenderEventCont
       );
     case 'thread/tokenUsage/updated':
     case 'thread/status/changed':
-    case 'item/reasoning/summaryPartAdded':
-    case 'item/reasoning/summaryTextDelta':
     case 'turn/diff/updated':
     case 'rawResponseItem/completed':
     case 'item/commandExecution/outputDelta':
     case 'turn/started':
     case 'thread/started':
+    case 'mcpServer/startupStatus/updated':
       return null;
 
     default:

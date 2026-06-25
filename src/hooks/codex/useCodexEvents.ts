@@ -47,7 +47,7 @@ export function useCodexEvents(enabled = true) {
   const { addEvent, setHasAccount } = useCodexStore();
   const { addApproval } = useApprovalStore();
   const { addRequest } = useRequestUserInputStore();
-  const { preventSleepDuringTasks, showReasoning } = useSettingsStore();
+  const { preventSleepDuringTasks } = useSettingsStore();
   const taskCompleteBeepMode = useSettingsStore((state) => state.enableTaskCompleteBeep);
   const isCodexThreadActive = useLayoutStore((state) => state.view === 'agent');
 
@@ -60,8 +60,6 @@ export function useCodexEvents(enabled = true) {
   taskCompleteBeepModeRef.current = taskCompleteBeepMode;
   const preventSleepDuringTasksRef = useRef(preventSleepDuringTasks);
   preventSleepDuringTasksRef.current = preventSleepDuringTasks;
-  const showReasoningRef = useRef(showReasoning);
-  showReasoningRef.current = showReasoning;
 
   useEffect(() => {
     if (!enabled) {
@@ -97,15 +95,12 @@ export function useCodexEvents(enabled = true) {
         ![
           'rawResponseItem/completed',
           'account/rateLimits/updated',
-          'item/reasoning/textDelta',
           'item/agentMessage/delta',
           'item/plan/delta',
           'item/fileChange/outputDelta',
           'item/commandExecution/outputDelta',
           'item/commandExecution/terminalInteraction',
           'thread/tokenUsage/updated',
-          'item/reasoning/summaryTextDelta',
-          'item/reasoning/summaryPartAdded',
         ].includes(method)
       ) {
         console.log(`[useCodexEvents] ${method}:`, payload.params);
@@ -114,15 +109,7 @@ export function useCodexEvents(enabled = true) {
       const threadId = extractThreadId(payload);
 
       if (threadId) {
-        const isReasoningEvent =
-          method === 'item/reasoning/textDelta' ||
-          method === 'item/reasoning/summaryTextDelta' ||
-          method === 'item/reasoning/summaryPartAdded' ||
-          (method === 'item/completed' && payload.params.item.type === 'reasoning');
-        if (!showReasoningRef.current && isReasoningEvent) {
-          return;
-        }
-        if (['thread/settings/updated', 'serverRequest/resolved'].includes(method)) {
+        if (['thread/settings/updated', 'serverRequest/resolved', 'mcpServer/startupStatus/updated'].includes(method)) {
           return
         }
 
