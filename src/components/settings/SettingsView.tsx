@@ -3,7 +3,6 @@ import { ChevronDown, ChevronLeft } from 'lucide-react';
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarInset,
   SidebarProvider,
@@ -31,7 +30,7 @@ import { ClaudeSettings } from './ClaudeSettings';
 import { CodexAuth } from '../codex/CodexAuth';
 import { QuoteSettings } from './QuoteSettings';
 import { ProjectsSettings } from './ProjectsSettings';
-import { RateLimitSettings, TaskSettings } from './codex';
+import { TaskSettings } from './codex';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { isTauri } from '@/hooks/runtime';
 
@@ -203,9 +202,6 @@ export function SettingsView() {
             </ul>
           </ScrollArea>
         </SidebarContent>
-        <SidebarFooter className="border-t border-border/60 p-2">
-          <RateLimitSettings className="my-0 max-w-none" />
-        </SidebarFooter>
       </Sidebar>
       <SidebarInset className="min-w-0">
         <header className="h-8" data-tauri-drag-region />
