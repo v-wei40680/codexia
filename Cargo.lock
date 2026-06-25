@@ -9378,6 +9378,8 @@ dependencies = [
  "dunce",
  "glob",
  "log",
+ "notify",
+ "notify-debouncer-full",
  "objc2-foundation",
  "percent-encoding",
  "schemars 0.8.22",
