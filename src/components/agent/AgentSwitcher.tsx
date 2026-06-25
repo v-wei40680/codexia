@@ -12,9 +12,8 @@ interface AgentSwitcherProps {
 }
 
 export function AgentSwitcher({ variant = 'icon', className }: AgentSwitcherProps) {
-  const selectedAgent = useWorkspaceStore((s) => s.selectedAgent);
-  const setSelectedAgent = useWorkspaceStore((s) => s.setSelectedAgent);
-  const setActiveSidebarTab = useLayoutStore((s) => s.setActiveSidebarTab);
+  const { selectedAgent, setSelectedAgent } = useWorkspaceStore();
+  const { setActiveSidebarTab } = useLayoutStore();
 
   if (variant === 'tab') {
     return (
@@ -22,7 +21,10 @@ export function AgentSwitcher({ variant = 'icon', className }: AgentSwitcherProp
         {AGENT_TYPES.map((agent) => (
           <button
             key={agent}
-            onClick={() => setSelectedAgent(agent)}
+            onClick={() => {
+              setSelectedAgent(agent)
+              setActiveSidebarTab(agent);
+            }}
             className={`flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium transition-colors ${selectedAgent === agent
               ? 'bg-muted text-foreground'
               : 'text-muted-foreground hover:text-foreground hover:bg-muted/50'
@@ -44,10 +46,7 @@ export function AgentSwitcher({ variant = 'icon', className }: AgentSwitcherProp
           variant="ghost"
           size="icon"
           className={`h-8 w-8 ${selectedAgent === agent ? 'bg-accent' : ''}`}
-          onClick={() => {
-            setSelectedAgent(agent);
-            setActiveSidebarTab(agent);
-          }}
+          onClick={() => setSelectedAgent(agent)}
         >
           <AgentIcon agent={agent} />
         </Button>

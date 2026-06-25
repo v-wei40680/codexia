@@ -3,27 +3,14 @@ import { Composer as CCComposer } from '@/components/cc/composer';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { AgentSwitcher } from './AgentSwitcher';
 import { useAgentCenterStore } from '@/stores';
-import { useCCStore } from '@/stores/cc';
 import { Composer as CodexComposer } from '@/components/codex/Composer';
 import { WorkspaceSwitcher } from '../common';
 
 const focusCCInput = () => window.dispatchEvent(new Event('cc-input-focus-request'));
 
 export function AgentComposer() {
-  const { selectedAgent, setSelectedAgent } = useWorkspaceStore();
-  const { currentAgentCardId, cards } = useAgentCenterStore();
-  const { switchToSession } = useCCStore();
-
-  // Sync tab and active session to the currently selected card
-  useEffect(() => {
-    if (!currentAgentCardId) return;
-    const card = cards.find((c) => c.id === currentAgentCardId);
-    if (!card) return;
-    setSelectedAgent(card.kind);
-    if (card.kind === 'cc') {
-      switchToSession(card.id);
-    }
-  }, [currentAgentCardId]);
+  const { selectedAgent } = useWorkspaceStore();
+  const { currentAgentCardId } = useAgentCenterStore();
 
   // Auto-focus the CC composer input when switching to the cc agent
   useEffect(() => {
