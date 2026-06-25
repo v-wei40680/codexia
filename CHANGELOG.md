@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.35.3] - 25/6/2026
+
+Split web and Desktop, This project focus Desktop in the future.
+
+### 🌟 Highlights
+- Streamlined Switching Experience: Upgraded the workspace and agent switching interfaces with cleaner dropdown menus for a smoother workflow.
+- External Web Previews: Web previews now correctly support opening links in your system's default external browser.
+- Web Previews Browser-like Navigation History: You can now move forward and backward through your app history just like a web browser, with persistent sessions.
+
+### 🚀 Features & Enhancements
+- Claude code Automation Permissions: Added a "bypass permission" mode for automated tasks and improved the execution logs.
+- Network Updates: Remove built-in STUN servers.
+
+### Bug Fixes
+- Fixed a critical desktop launch issue where certain plugins could not be found because of split web.
+
 ## [0.16.0] - 2025-12-03
 
 ### Features
