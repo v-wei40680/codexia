@@ -182,22 +182,24 @@ pub async fn connect_codex(event_sink: Arc<dyn EventSink>) -> Result<Arc<CodexAp
                         let method = notification.method.clone();
                         if let Ok(server_notification) = ServerNotification::try_from(notification)
                         {
-                            if !matches!(
+                            if matches!(
                                 method.as_str(),
-                                "rawResponseItem/completed"
-                                    | "item/reasoning/textDelta"
-                                    | "item/agentMessage/delta"
+                                "item/reasoning/textDelta"
                                     | "item/reasoning/summaryPartAdded"
                                     | "item/reasoning/summaryTextDelta"
+                            ) {
+                                // Do nothing, pass/continue without logging
+                            } else if !matches!(
+                                method.as_str(),
+                                "rawResponseItem/completed"
+                                    | "item/agentMessage/delta"
                                     | "thread/tokenUsage/updated"
                                     | "account/rateLimits/updated"
                                     | "item/plan/delta"
                             ) {
-                                log::info!(
-                                    "codex:notification: {}",
-                                    serde_json::to_string(&server_notification).unwrap_or_default()
-                                );
+                                println!("codex:notification: {}", method);
                             }
+                            
                             match serde_json::to_value(&server_notification) {
                                 Ok(payload) => {
                                     sync_automation_run_status(&payload);
