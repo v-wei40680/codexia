@@ -2,7 +2,6 @@ import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { CircleStop, Send, X } from 'lucide-react';
 import { useCCStore } from '@/stores/cc';
-import type { ThreadCwdMode } from '@/stores/codex/useConfigStore';
 import { useCCInputStore, useAgentCenterStore } from '@/stores';
 import { CCPermissionModeSelect } from '@/components/cc/composer';
 import { ModelSelector } from './ModelSelector';
@@ -11,7 +10,7 @@ import { CCSlashCommandPopover } from './CCSlashCommandPopover';
 import { CCSkillsPopover } from './CCSkillsPopover';
 import { useCCSessionManager } from '@/hooks/useCCSessionManager';
 import { ccInterrupt, ccSendMessage } from '@/services';
-import { WorkspaceSwitcher, FileMentionPopover, AgentWorkspaceSelect } from '@/components/common';
+import { FileMentionPopover } from '@/components/common';
 import { convertFileSrc } from '@tauri-apps/api/core';
 
 const CC_INPUT_FOCUS_EVENT = 'cc-input-focus-request';
@@ -30,8 +29,6 @@ export function Composer({ overrideSend, onAfterSend }: ComposerProps = {}) {
     addMessage,
     setLoading,
     setConnected,
-    options,
-    updateOptions,
   } = useCCStore();
   const { inputValue: input, setInputValue: setInput } = useCCInputStore();
   const { setCurrentAgentCardId } = useAgentCenterStore();
@@ -197,13 +194,6 @@ export function Composer({ overrideSend, onAfterSend }: ComposerProps = {}) {
               )}
             </Button>
           </div>
-        </div>
-        <div className="flex items-center justify-between">
-          <WorkspaceSwitcher />
-          <AgentWorkspaceSelect
-            value={options.worktreeMode ?? 'local'}
-            onValueChange={(v: ThreadCwdMode) => updateOptions({ worktreeMode: v })}
-          />
         </div>
       </div>
 

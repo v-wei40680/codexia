@@ -4,7 +4,8 @@ import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { AgentSwitcher } from './AgentSwitcher';
 import { useAgentCenterStore } from '@/stores';
 import { useCCStore } from '@/stores/cc';
-import { Composer as CodexComposer, ComposerControls } from '@/components/codex/Composer';
+import { Composer as CodexComposer } from '@/components/codex/Composer';
+import { WorkspaceSwitcher } from '../common';
 
 const focusCCInput = () => window.dispatchEvent(new Event('cc-input-focus-request'));
 
@@ -39,12 +40,10 @@ export function AgentComposer() {
       </div>
 
       {/* Input area */}
-      <div className="shrink-0">
-        {selectedAgent === 'cc' ? <CCComposer /> : <CodexComposer showControls={false} />}
+      <div className={`shrink-0 ${currentAgentCardId && "pb-2"}`}>
+        {selectedAgent === 'cc' ? <CCComposer /> : <CodexComposer />}
       </div>
-
-      {/* Bottom bar */}
-      <div className="shrink-0">{selectedAgent === 'codex' && <ComposerControls />}</div>
+      {!currentAgentCardId && <WorkspaceSwitcher />}
     </div>
   );
 }

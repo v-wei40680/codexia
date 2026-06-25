@@ -3,40 +3,20 @@ import { Button } from '@/components/ui/button';
 import { ArrowUp, Square, X } from 'lucide-react';
 import { convertFileSrc } from '@tauri-apps/api/core';
 import { SlashCommandPopover, SkillsInputPopover, ModelReasonSelector, AttachmentSelector, AccessModePopover } from './selector';
-import { FileMentionPopover, WorkspaceSwitcher, AgentWorkspaceSelect } from '@/components/common';
+import { FileMentionPopover } from '@/components/common';
 import { useInputStore } from '@/stores/useInputStore';
-import { useConfigStore, useCodexStore, type ThreadCwdMode } from '@/stores/codex';
+import { useCodexStore } from '@/stores/codex';
 import { useAgentCenterStore } from '@/stores';
 import { useWorkspaceStore } from '@/stores/useWorkspaceStore';
 import { useThreadStatus } from '@/hooks/codex';
 import { codexService } from '@/services/codexService';
 
-export function ComposerControls() {
-  const { threadCwdMode, setThreadCwdMode } = useConfigStore();
-  const { currentThreadId } = useCodexStore();
-
-  if (currentThreadId) return <div className="flex justify-between items-center gap-2"><WorkspaceSwitcher /></div>;
-
-  return (
-    <div className="flex justify-between items-center gap-2">
-      <WorkspaceSwitcher />
-      <AgentWorkspaceSelect
-        value={threadCwdMode}
-        onValueChange={(v: ThreadCwdMode) => setThreadCwdMode(v)}
-        triggerClassName="h-9"
-        iconSize={16}
-      />
-    </div>
-  );
-}
-
 interface ComposerProps {
-  showControls?: boolean;
   overrideSend?: (text: string) => void;
   onAfterSend?: (threadId: string, text: string) => void;
 }
 
-export function Composer({ showControls = true, overrideSend, onAfterSend }: ComposerProps) {
+export function Composer({ overrideSend, onAfterSend }: ComposerProps) {
   const [images, setImages] = useState<string[]>([]);
   const { inputValue, setInputValue, appendFileLinks } = useInputStore();
   const { currentThreadId, currentTurnId, inputFocusTrigger } = useCodexStore();
@@ -172,7 +152,6 @@ export function Composer({ showControls = true, overrideSend, onAfterSend }: Com
           </div>
         </div>
       </form>
-      {showControls && <ComposerControls />}
     </div>
   );
 }

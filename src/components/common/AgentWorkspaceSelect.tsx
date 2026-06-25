@@ -1,18 +1,14 @@
 import { useState } from 'react';
-import { Monitor, Split, ChevronDown } from 'lucide-react';
+import { Monitor, Split, ChevronDown, Check } from 'lucide-react';
 import type { ThreadCwdMode } from '@/stores/codex';
-import { cn } from '@/lib/utils';
 import { RateLimitTrigger, RateLimitContent, useRateLimits } from '../codex/widget/RateLimitWidget';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { useWorkspaceStore } from '@/stores';
 
-export interface AgentWorkspaceSelectProps {
+interface AgentWorkspaceSelectProps {
   value: ThreadCwdMode;
   onValueChange: (value: ThreadCwdMode) => void;
-  className?: string;
-  triggerClassName?: string;
-  iconSize?: number;
 }
 
 const MODE_ICONS: Record<ThreadCwdMode, React.ReactNode> = {
@@ -25,12 +21,7 @@ const MODE_LABELS: Record<ThreadCwdMode, string> = {
   worktree: 'Worktree',
 };
 
-export function AgentWorkspaceSelect({
-  value,
-  onValueChange,
-  triggerClassName,
-  iconSize = 14,
-}: AgentWorkspaceSelectProps) {
+export function AgentWorkspaceSelect({ value, onValueChange }: AgentWorkspaceSelectProps) {
   const { selectedAgent } = useWorkspaceStore()
   const [rateLimitOpen, setRateLimitOpen] = useState(false);
   // Fetch eagerly so data is ready when user expands
@@ -41,9 +32,9 @@ export function AgentWorkspaceSelect({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
-          variant="outline"
+          variant="ghost"
           size="sm"
-          className={cn('h-7 text-xs px-2 gap-1', triggerClassName)}
+          className="h-7 text-xs px-2 gap-1"
         >
           {MODE_ICONS[value]}
           <span>{MODE_LABELS[value]}</span>
@@ -52,18 +43,24 @@ export function AgentWorkspaceSelect({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start">
         <DropdownMenuItem
-          onClick={() => onValueChange('local' as ThreadCwdMode)}
-          className={cn(value === 'local' && 'bg-accent')}
+          onClick={() => onValueChange('local')}
+          className='flex justify-between'
         >
-          <Monitor size={iconSize} />
-          <span>Local</span>
+          <span className='flex gap-2'>
+            <Monitor className='h-4 w-4' />
+            <span>Local</span>
+          </span>
+          {value === 'local' && <Check />}
         </DropdownMenuItem>
         <DropdownMenuItem
-          onClick={() => onValueChange('worktree' as ThreadCwdMode)}
-          className={cn(value === 'worktree' && 'bg-accent')}
+          onClick={() => onValueChange('worktree')}
+          className='flex justify-between item-center'
         >
-          <Split size={iconSize} />
-          <span>Worktree</span>
+          <span className='flex gap-2'>
+            <Split className='h-4 w-4' />
+            <span>Worktree</span>
+          </span>
+          {value === 'worktree' && <Check />}
         </DropdownMenuItem>
         {selectedAgent === 'codex' && <>
           <DropdownMenuSeparator />

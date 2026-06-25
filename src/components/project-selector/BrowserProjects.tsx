@@ -1,5 +1,6 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import {
+  ArrowLeft,
   ChevronLeft,
   Download,
   FileText,
@@ -14,7 +15,8 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { type TauriFileEntry } from '@/services/tauri';
+import { Input } from '@/components/ui/input';
+import { type TauriFileEntry, canonicalizePath, getHomeDirectory, readDirectory } from '@/services/tauri';
 
 function getParentPath(path: string): string | null {
   const normalized = path.replace(/[\\/]+$/, '');
@@ -46,27 +48,43 @@ export type QuickAccessDir = {
   icon: LucideIcon;
 };
 
-type BrowserProjectsProps = {
-  currentPath: string;
-  homeDir: string;
-  entries: TauriFileEntry[];
-  isLoading: boolean;
-  search: string;
-  error: string | null;
-  onLoadDirectory: (path: string) => void | Promise<void>;
-  onAddProject: (path: string) => void | Promise<void>;
-};
+interface BrowserProjectsProps {
+  onAddProject: (path: string) => void;
+  cwd: string | null;
+  onGoBack?: () => void;
+}
 
-export function BrowserProjects({
-  currentPath,
-  homeDir,
-  entries,
-  isLoading,
-  search,
-  error,
-  onLoadDirectory,
-  onAddProject,
-}: BrowserProjectsProps) {
+export function BrowserProjects({ onAddProject, cwd, onGoBack }: BrowserProjectsProps) {
+  const [currentPath, setCurrentPath] = useState('');
+  const [homeDir, setHomeDir] = useState('');
+  const [entries, setEntries] = useState<TauriFileEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [search, setSearch] = useState('');
+
+  if (!cwd) return
+  const loadDirectory = useCallback(async (path: string) => {
+    setIsLoading(true);
+    try {
+      const canonicalPath = await canonicalizePath(path);
+      const data = await readDirectory(canonicalPath);
+      setCurrentPath(canonicalPath);
+      setEntries(data);
+    } catch {
+      // ignore read errors
+    } finally {
+      setIsLoading(false);
+    }
+  }, [cwd]);
+
+  // Initialize: load homeDir and start from cwd or home
+  useEffect(() => {
+    void (async () => {
+      const home = await getHomeDirectory();
+      setHomeDir(home);
+      await loadDirectory(cwd || home);
+    })();
+  }, []);  // eslint-disable-line react-hooks/exhaustive-deps
+
   const parentPath = useMemo(() => getParentPath(currentPath), [currentPath]);
   const currentFolderName = useMemo(() => getCurrentFolderName(currentPath), [currentPath]);
   const defaultDirs = useMemo(() => buildQuickAccessDirs(homeDir), [homeDir]);
@@ -84,14 +102,14 @@ export function BrowserProjects({
         const parent = getParentPath(currentPath);
         if (parent) {
           e.preventDefault();
-          void onLoadDirectory(parent);
+          void loadDirectory(parent);
         }
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [currentPath, onLoadDirectory]);
+  }, [currentPath, loadDirectory]);
 
   return (
     <>
@@ -102,7 +120,7 @@ export function BrowserProjects({
               key={path}
               variant="ghost"
               size="sm"
-              onClick={() => void onLoadDirectory(path)}
+              onClick={() => void loadDirectory(path)}
               title={path}
             >
               <Icon className="h-5 w-5 text-muted-foreground" />
@@ -110,37 +128,49 @@ export function BrowserProjects({
           ))}
         </div>
       )}
-      <div className="flex items-center gap-2 border-b">
-        <Button
-          variant="ghost"
-          size="icon"
-          disabled={!parentPath}
-          onClick={() => {
-            if (parentPath) {
-              void onLoadDirectory(parentPath);
-            }
-          }}
-        >
-          <ChevronLeft className="h-4 w-4" />
-        </Button>
-        <span className="truncate text-sm font-medium" title={currentPath || 'Root'}>
-          {currentFolderName}
-        </span>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="ml-auto h-7 px-2"
-          disabled={!currentPath}
-          onClick={() => {
-            if (currentPath) {
-              void onAddProject(currentPath);
-            }
-          }}
-        >
-          <FolderPlus className="h-4 w-4" />
-          Set
-        </Button>
-      </div>
+      {onGoBack ? (
+        <div className="flex items-center gap-2 border-b px-2 py-2">
+          <Button variant="ghost" size="icon" onClick={onGoBack}>
+            <ArrowLeft className="h-4 w-4" />
+          </Button>
+          <Input
+            placeholder="Filter folders..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-8 text-base"
+          />
+        </div>
+      ) : (
+        <div className="flex items-center gap-2 border-b">
+          <Button
+            variant="ghost"
+            size="icon"
+            disabled={!parentPath}
+            onClick={() => {
+              if (parentPath) void loadDirectory(parentPath);
+            }}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <span className="truncate text-sm font-medium" title={currentPath || 'Root'}>
+            {currentFolderName}
+          </span>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-auto h-7 px-2"
+            disabled={!currentPath}
+            onClick={() => {
+              if (currentPath) {
+                void onAddProject(currentPath);
+              }
+            }}
+          >
+            <FolderPlus className="h-4 w-4" />
+            Set
+          </Button>
+        </div>
+      )}
       <div className="max-h-[360px] overflow-y-auto">
         {isLoading ? (
           <div className="flex items-center gap-2 p-3 text-sm text-muted-foreground">
@@ -153,11 +183,11 @@ export function BrowserProjects({
               {directoryEntries.map((entry) => (
                 <div
                   key={entry.path}
-                  onClick={() => void onLoadDirectory(entry.path)}
+                  onClick={() => void loadDirectory(entry.path)}
                   onKeyDown={(e) => {
                     if (e.key === 'Enter' || e.key === ' ') {
                       e.preventDefault();
-                      void onLoadDirectory(entry.path);
+                      void loadDirectory(entry.path);
                     }
                   }}
                   role="button"
@@ -180,7 +210,7 @@ export function BrowserProjects({
                   </Button>
                 </div>
               ))}
-              {!error && directoryEntries.length === 0 && (
+              {directoryEntries.length === 0 && (
                 <div className="px-2 py-2 text-sm text-muted-foreground">No folders found</div>
               )}
             </div>

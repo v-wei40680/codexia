@@ -94,6 +94,7 @@ interface CodexStore {
   threadListNextCursor: string | null;
 
   // Basic Setters
+  setCurrentThreadId: (id: string | null) => void;
   setThreads: (threads: ThreadListItem[]) => void;
   appendThreads: (threads: ThreadListItem[]) => void;
   setThreadListNextCursor: (cursor: string | null) => void;
@@ -112,6 +113,10 @@ export const useCodexStore = create<CodexStore>((set) => ({
   activeThreadIds: [],
   inputFocusTrigger: 0,
   threadListNextCursor: null,
+
+  setCurrentThreadId: (id) => {
+    set({ currentThreadId: id });
+  },
 
   setThreads: (threads: ThreadListItem[]) => {
     set({ threads });
