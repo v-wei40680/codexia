@@ -1,14 +1,37 @@
 import { useState } from 'react';
 import { Copy, Check, ChevronDown, ChevronRight } from 'lucide-react';
+import { CheckCircle2, XCircle, AlertCircle, Loader2, HelpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useCodexStore } from '@/stores/codex';
+import { Badge } from '@/components/ui/badge';
+import { useTranslation } from 'react-i18next';
 
 interface ShellCommandProps {
   command: string;
+  commandItemId: string | null | undefined;
 }
 
-export const ShellCommand = ({ command }: ShellCommandProps) => {
+type StatusConfig = {
+  variant: 'default' | 'destructive' | 'outline' | 'secondary';
+  icon: React.ComponentType<{ className?: string }>;
+};
+
+const STATUS_STYLE_MAP: Record<string, StatusConfig> = {
+  completed: { variant: 'default', icon: CheckCircle2 },
+  failed: { variant: 'destructive', icon: XCircle },
+  declined: { variant: 'destructive', icon: AlertCircle },
+  inProgress: { variant: 'secondary', icon: Loader2 },
+};
+
+const DEFAULT_STYLE: StatusConfig = {
+  variant: 'secondary',
+  icon: HelpCircle
+};
+
+export const ShellCommand = ({ command, commandItemId }: ShellCommandProps) => {
   const [copied, setCopied] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+  const { t } = useTranslation();
 
   const handleCopy = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -20,6 +43,11 @@ export const ShellCommand = ({ command }: ShellCommandProps) => {
       console.error('Failed to copy:', err);
     }
   };
+
+  // Get status from store if we have a commandItemId
+  const { commandStatusMap } = useCodexStore();
+  const status = commandItemId ? commandStatusMap[commandItemId] : undefined;
+  const { variant, icon: Icon } = STATUS_STYLE_MAP[status || ''] || DEFAULT_STYLE;
 
   return (
     <div className="flex flex-col gap-2 w-full">
@@ -56,12 +84,16 @@ export const ShellCommand = ({ command }: ShellCommandProps) => {
               >
                 {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
               </Button>
-              {copied && (
-                <span className="text-[10px] font-sans text-emerald-500 animate-in fade-in duration-200">
-                  Success
-                </span>
-              )}
             </div>
+          </div>
+          <div className="flex justify-end p-2">
+            <Badge
+              variant={variant}
+              className="flex items-center gap-1.5 px-2.5 py-1 w-fit"
+            >
+              <Icon className={`h-3.5 w-3.5 ${status === 'inProgress' ? 'animate-spin' : ''}`} />
+              <span>{t(status || '')}</span>
+            </Badge>
           </div>
         </div>
       )}

@@ -16,19 +16,21 @@ import type { ServerNotification } from '@/bindings';
 // Intermediate render item: either a raw event or an aggregated command group.
 type RenderItem =
   | { kind: 'event'; event: ServerNotification; index: number }
-  | { kind: 'cmdGroup'; actions: CommandAction[]; key: string };
+  | { kind: 'cmdGroup'; actions: CommandAction[]; key: string; commandItemId?: string | null };
 
 /** Pre-process events into render items, grouping commandExecution runs between agentMessages. */
 function deriveRenderItems(events: ServerNotification[]): RenderItem[] {
   const items: RenderItem[] = [];
   let cmdBuffer: CommandAction[] = [];
   let cmdBufferKey = '';
+  let cmdItemId: string | null = null;
 
   const flushCmdBuffer = () => {
     if (cmdBuffer.length === 0) return;
-    items.push({ kind: 'cmdGroup', actions: cmdBuffer, key: cmdBufferKey });
+    items.push({ kind: 'cmdGroup', actions: cmdBuffer, key: cmdBufferKey, commandItemId: cmdItemId });
     cmdBuffer = [];
     cmdBufferKey = '';
+    cmdItemId = null;
   };
 
   for (let i = 0; i < events.length; i++) {
@@ -39,7 +41,10 @@ function deriveRenderItems(events: ServerNotification[]): RenderItem[] {
       event.method === 'item/started' &&
       event.params.item.type === 'commandExecution'
     ) {
-      if (cmdBuffer.length === 0) cmdBufferKey = `cmd-${i}`;
+      if (cmdBuffer.length === 0) {
+        cmdBufferKey = `cmd-${i}`;
+        cmdItemId = event.params.item.id;
+      }
       cmdBuffer.push(...(event.params.item.commandActions as CommandAction[]));
       continue;
     }
@@ -105,7 +110,7 @@ export function CodexThread({ hideComposer = false }: { hideComposer?: boolean }
     if (item.kind === 'cmdGroup') {
       renderedEvents.push({
         key: item.key,
-        content: <CommandActionSummaryItem actions={item.actions} />,
+        content: <CommandActionSummaryItem actions={item.actions} commandItemId={item.commandItemId} />,
       });
       continue;
     }

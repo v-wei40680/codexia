@@ -122,6 +122,7 @@ export const renderEvent = (event: ServerNotification, context?: RenderEventCont
           return renderFileChanges(item.changes);
         case 'enteredReviewMode':
         case 'exitedReviewMode':
+        case 'reasoning':
           return null;
         case 'collabAgentToolCall':
           // Render the multi-agent sub-agent operation card.

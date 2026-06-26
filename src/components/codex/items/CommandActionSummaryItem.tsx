@@ -1,13 +1,14 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, SquareTerminal } from 'lucide-react';
 import type { CommandAction } from '@/bindings/v2';
 import { CommandActionItem } from './CommandActionItem';
 
 type Props = {
   actions: CommandAction[];
+  commandItemId?: string | null;
 };
 
-export const CommandActionSummaryItem = ({ actions }: Props) => {
+export const CommandActionSummaryItem = ({ actions, commandItemId }: Props) => {
   const [expanded, setExpanded] = useState(false);
 
   const reads = actions.filter((a) => a.type === 'read').length;
@@ -29,18 +30,25 @@ export const CommandActionSummaryItem = ({ actions }: Props) => {
         onClick={() => setExpanded((v) => !v)}
         className="flex items-center gap-1 hover:text-foreground transition-colors cursor-pointer py-0.5"
       >
+        <SquareTerminal className='h-3 w-3' />
+        {parts.join(', ')}
         {expanded ? (
           <ChevronDown className="w-3 h-3 shrink-0" />
         ) : (
           <ChevronRight className="w-3 h-3 shrink-0" />
         )}
-        {parts.join(', ')}
+        {/* Status badge */}
+        {commandItemId && (
+          <span className="ml-2">
+            {/* We'll rely on CommandActionItem to show status per action if needed */}
+          </span>
+        )}
       </button>
 
       {expanded && (
-        <div className="mt-1 ml-4 space-y-1 border-l pl-3 border-border/50">
+        <div className="mt-1 ml-2 space-y-1 border-l pl-1 border-border/50">
           {actions.map((action, i) => (
-            <CommandActionItem key={i} action={action} />
+            <CommandActionItem key={i} action={action} commandItemId={commandItemId} />
           ))}
         </div>
       )}
