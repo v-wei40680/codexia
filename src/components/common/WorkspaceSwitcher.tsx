@@ -68,7 +68,6 @@ export function WorkspaceSwitcher() {
             <BrowserProjects
               cwd={cwd}
               onAddProject={handleSelectBrowseProject}
-              onGoBack={() => setBrowseMode(false)}
             />
           ) : (
             <>

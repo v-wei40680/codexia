@@ -1,10 +1,5 @@
 import { Check, Folder } from 'lucide-react';
-import {
-  CommandEmpty,
-  CommandGroup,
-  CommandItem,
-  CommandList,
-} from '@/components/ui/command';
+import { CommandEmpty, CommandGroup, CommandItem, CommandList } from '@/components/ui/command';
 import { cn } from '@/lib/utils';
 import { getFilename } from '@/utils/getFilename';
 
