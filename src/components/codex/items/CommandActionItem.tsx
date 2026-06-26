@@ -3,7 +3,13 @@ import { CommandAction } from '@/bindings/v2';
 import { getFilename } from '@/utils/getFilename';
 import { ShellCommand } from './ShellCommand';
 
-export const CommandActionItem = ({ action }: { action: CommandAction }) => {
+export const CommandActionItem = ({
+  action,
+  commandItemId
+}: {
+  action: CommandAction;
+  commandItemId?: string | null;
+}) => {
   const actionTypeLabel =
     action.type === 'listFiles'
       ? 'Listed files'
@@ -12,6 +18,7 @@ export const CommandActionItem = ({ action }: { action: CommandAction }) => {
         : action.type === 'search'
           ? 'Search'
           : null;
+
 
   return (
     <div className="space-y-2">
@@ -26,8 +33,8 @@ export const CommandActionItem = ({ action }: { action: CommandAction }) => {
         {(action.type === 'read' || action.type === 'listFiles') && action.path && (
           <Badge variant="secondary">{getFilename(action.path)}</Badge>
         )}
-        {action.type === 'unknown' && <ShellCommand command={action.command} />}
+        {action.type === 'unknown' && <ShellCommand command={action.command} commandItemId={commandItemId} />}
       </div>
     </div>
   );
-};
+}

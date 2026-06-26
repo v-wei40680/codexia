@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import type { ServerNotification } from '@/bindings';
 import type { ThreadStatus } from '@/bindings/v2/ThreadStatus';
+import type { CommandExecutionStatus } from '@/bindings/v2/CommandExecutionStatus';
 import type { ThreadListItem } from '@/types/codex/ThreadListItem';
 
 type DeltaMethod =
@@ -89,6 +90,8 @@ interface CodexStore {
   events: Record<string, ServerNotification[]>; // Events per thread
   /** Per-thread status derived from thread/status/changed (authoritative) and turn events (fallback) */
   threadStatusMap: Record<string, ThreadStatus>;
+  /** Command status map: itemId -> CommandExecutionStatus */
+  commandStatusMap: Record<string, CommandExecutionStatus>;
   activeThreadIds: string[]; // Track resumed/active threads
   inputFocusTrigger: number; // Increment to trigger focus in InputArea
   threadListNextCursor: string | null;
@@ -110,6 +113,7 @@ export const useCodexStore = create<CodexStore>((set) => ({
   hasAccount: null,
   events: {},
   threadStatusMap: {},
+  commandStatusMap: {},
   activeThreadIds: [],
   inputFocusTrigger: 0,
   threadListNextCursor: null,
@@ -118,11 +122,11 @@ export const useCodexStore = create<CodexStore>((set) => ({
     set({ currentThreadId: id });
   },
 
-  setThreads: (threads: ThreadListItem[]) => {
-    set({ threads });
+  setThreads: (threads) => {
+    set({ threads: threads });
   },
 
-  appendThreads: (threads: ThreadListItem[]) => {
+  appendThreads: (threads) => {
     set((state) => {
       if (threads.length === 0) {
         return {};
@@ -139,15 +143,15 @@ export const useCodexStore = create<CodexStore>((set) => ({
     });
   },
 
-  setThreadListNextCursor: (cursor: string | null) => {
+  setThreadListNextCursor: (cursor) => {
     set({ threadListNextCursor: cursor });
   },
 
-  setHasAccount: (hasAccount: boolean | null) => {
+  setHasAccount: (hasAccount) => {
     set({ hasAccount });
   },
 
-  addEvent: (threadId: string, event: ServerNotification) => {
+  addEvent: (threadId, event) => {
     set((state) => {
       const existingEvents = state.events[threadId] || [];
 
@@ -184,7 +188,21 @@ export const useCodexStore = create<CodexStore>((set) => ({
         threadStatusMap = { ...threadStatusMap, [threadId]: { type: 'idle' } };
       }
 
-      return { events: newEvents, threadStatusMap };
+      // Update command status map
+      let commandStatusMap = state.commandStatusMap;
+      if (event.method === 'item/started' && event.params.item?.type === 'commandExecution') {
+        commandStatusMap = {
+          ...commandStatusMap,
+          [event.params.item.id]: event.params.item.status,
+        };
+      } else if (event.method === 'item/completed' && event.params.item?.type === 'commandExecution') {
+        commandStatusMap = {
+          ...commandStatusMap,
+          [event.params.item.id]: event.params.item.status,
+        };
+      }
+
+      return { events: newEvents, threadStatusMap, commandStatusMap };
     });
   },
 

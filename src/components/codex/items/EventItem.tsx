@@ -1,11 +1,9 @@
 import { Badge } from '@/components/ui/badge';
-import { CommandAction, FileUpdateChange } from '@/bindings/v2';
+import { FileUpdateChange } from '@/bindings/v2';
 import type { ServerNotification } from '@/bindings';
-
 import { TurnPlan } from './TurnPlan';
 import { EditableUserMessageItem } from './UserMessageItem';
 import { AgentMessageItem } from './AgentMessageItem';
-import { CommandActionItem } from './CommandActionItem';
 import { IndividualFileChanges } from './IndividualFileChanges';
 import { SummaryFileChanges } from './SummaryFileChanges';
 import { CollabAgentToolCallItem, type CollabAgentToolCallItemData } from './CollabAgentToolCallItem';
@@ -102,13 +100,8 @@ export const renderEvent = (event: ServerNotification, context?: RenderEventCont
           );
         }
         case 'commandExecution':
-          return (
-            <div>
-              {startedItem.commandActions.map((a: CommandAction, i) => (
-                <CommandActionItem key={i} action={a} />
-              ))}
-            </div>
-          );
+          return null;
+        case 'reasoning':
         case 'agentMessage':
         case 'enteredReviewMode':
         case 'fileChange':
@@ -128,6 +121,7 @@ export const renderEvent = (event: ServerNotification, context?: RenderEventCont
           return renderFileChanges(item.changes);
         case 'enteredReviewMode':
         case 'exitedReviewMode':
+        case 'reasoning':
           return null;
         case 'collabAgentToolCall':
           // Render the multi-agent sub-agent operation card.
