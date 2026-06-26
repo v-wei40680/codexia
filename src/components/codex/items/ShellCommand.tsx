@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 interface ShellCommandProps {
   command: string;
   commandItemId: string | null | undefined;
+  aggregatedOutput?: string | null;
 }
 
 type StatusConfig = {
@@ -23,31 +24,32 @@ const STATUS_STYLE_MAP: Record<string, StatusConfig> = {
   inProgress: { variant: 'secondary', icon: Loader2 },
 };
 
-const DEFAULT_STYLE: StatusConfig = {
-  variant: 'secondary',
-  icon: HelpCircle
-};
+const DEFAULT_STYLE: StatusConfig = { variant: 'secondary', icon: HelpCircle };
 
-export const ShellCommand = ({ command, commandItemId }: ShellCommandProps) => {
+export const ShellCommand = ({ command, commandItemId, aggregatedOutput }: ShellCommandProps) => {
   const [copied, setCopied] = useState(false);
+  const [outputCopied, setOutputCopied] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const { t } = useTranslation();
 
-  const handleCopy = async (e: React.MouseEvent) => {
+  const handleCopy = async (
+    e: React.MouseEvent,
+    text: string,
+    setCopyState: (v: boolean) => void
+  ) => {
     e.stopPropagation();
     try {
-      await navigator.clipboard.writeText(command);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
+      await navigator.clipboard.writeText(text);
+      setCopyState(true);
+      setTimeout(() => setCopyState(false), 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
     }
   };
 
-  // Get status from store if we have a commandItemId
   const { commandStatusMap } = useCodexStore();
   const status = commandItemId ? commandStatusMap[commandItemId] : undefined;
-  const { variant, icon: Icon } = STATUS_STYLE_MAP[status || ''] || DEFAULT_STYLE;
+  const { variant, icon: Icon } = STATUS_STYLE_MAP[status ?? ''] ?? DEFAULT_STYLE;
 
   return (
     <div className="flex flex-col gap-2 w-full">
@@ -70,29 +72,49 @@ export const ShellCommand = ({ command, commandItemId }: ShellCommandProps) => {
             Shell
           </div>
 
-          <div className="relative flex items-start justify-between gap-4 p-3 min-h-[3rem]">
+          <div className="relative flex items-start justify-between gap-4 p-2 min-h-[3rem]">
             <code className="text-foreground flex-1 break-all whitespace-pre-wrap pt-1">
               $ {command}
             </code>
-            <div className="flex flex-col items-end gap-1 shrink-0">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-7 w-7 shrink-0"
+              onClick={(e) => handleCopy(e, command, setCopied)}
+              aria-label="Copy command"
+            >
+              {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+            </Button>
+          </div>
+
+          {aggregatedOutput && (
+            <div className="relative flex items-start justify-between gap-4 bg-muted/10 group/output">
+              <div className="text-xs text-muted-foreground flex-1 break-all whitespace-pre-wrap pt-1 -ml-7 max-h-48 overflow-y-auto">
+                {aggregatedOutput}
+              </div>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="icon"
-                className="h-7 w-7"
-                onClick={handleCopy}
-                aria-label="Copy command"
+                className="h-7 w-7 shrink-0 opacity-0 group-hover/output:opacity-100 transition-opacity duration-150"
+                onClick={(e) => handleCopy(e, aggregatedOutput, setOutputCopied)}
+                aria-label="Copy output"
               >
-                {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+                {outputCopied ? (
+                  <Check className="w-3.5 h-3.5 text-emerald-500" />
+                ) : (
+                  <Copy className="w-3.5 h-3.5" />
+                )}
               </Button>
             </div>
-          </div>
+          )}
+
           <div className="flex justify-end p-2">
             <Badge
               variant={variant}
               className="flex items-center gap-1.5 px-2.5 py-1 w-fit"
             >
               <Icon className={`h-3.5 w-3.5 ${status === 'inProgress' ? 'animate-spin' : ''}`} />
-              <span>{t(status || '')}</span>
+              <span>{t(status ?? '')}</span>
             </Badge>
           </div>
         </div>

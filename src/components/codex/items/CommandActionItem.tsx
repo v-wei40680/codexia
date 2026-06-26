@@ -1,40 +1,39 @@
 import { Badge } from '@/components/ui/badge';
-import { CommandAction } from '@/bindings/v2';
+import type { CommandAction } from '@/bindings/v2';
 import { getFilename } from '@/utils/getFilename';
 import { ShellCommand } from './ShellCommand';
 
+const ACTION_LABEL: Partial<Record<CommandAction['type'], string>> = {
+  listFiles: 'Listed files',
+  read: 'Read',
+  search: 'Search',
+};
+
 export const CommandActionItem = ({
   action,
-  commandItemId
+  commandItemId,
+  aggregatedOutput,
 }: {
   action: CommandAction;
   commandItemId?: string | null;
+  aggregatedOutput?: string | null;
 }) => {
-  const actionTypeLabel =
-    action.type === 'listFiles'
-      ? 'Listed files'
-      : action.type === 'read'
-        ? 'Read'
-        : action.type === 'search'
-          ? 'Search'
-          : null;
-
+  if (action.type === 'unknown') {
+    return <ShellCommand command={action.command} commandItemId={commandItemId} aggregatedOutput={aggregatedOutput} />;
+  }
 
   return (
-    <div className="space-y-2">
-      <div className="flex gap-2 items-center">
-        {actionTypeLabel}
-        {action.type === 'search' && (
-          <>
-            <Badge variant="secondary">{action.query}</Badge> in{' '}
-            {action.path && <Badge variant="secondary">{getFilename(action.path)}</Badge>}
-          </>
-        )}
-        {(action.type === 'read' || action.type === 'listFiles') && action.path && (
-          <Badge variant="secondary">{getFilename(action.path)}</Badge>
-        )}
-        {action.type === 'unknown' && <ShellCommand command={action.command} commandItemId={commandItemId} />}
-      </div>
+    <div className="flex gap-2 items-center">
+      {ACTION_LABEL[action.type]}
+      {action.type === 'search' && (
+        <>
+          <Badge variant="secondary">{action.query}</Badge>
+          {action.path && <> in <Badge variant="secondary">{getFilename(action.path)}</Badge></>}
+        </>
+      )}
+      {(action.type === 'read' || action.type === 'listFiles') && action.path && (
+        <Badge variant="secondary">{getFilename(action.path)}</Badge>
+      )}
     </div>
   );
-}
+};

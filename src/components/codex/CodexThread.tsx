@@ -16,7 +16,7 @@ import type { ServerNotification } from '@/bindings';
 // Intermediate render item: either a raw event or an aggregated command group.
 type RenderItem =
   | { kind: 'event'; event: ServerNotification; index: number }
-  | { kind: 'cmdGroup'; actions: CommandAction[]; key: string; commandItemId?: string | null };
+  | { kind: 'cmdGroup'; actions: CommandAction[]; key: string; commandItemId?: string | null; aggregatedOutput?: string | null };
 
 /** Pre-process events into render items, grouping commandExecution runs between agentMessages. */
 function deriveRenderItems(events: ServerNotification[]): RenderItem[] {
@@ -24,13 +24,15 @@ function deriveRenderItems(events: ServerNotification[]): RenderItem[] {
   let cmdBuffer: CommandAction[] = [];
   let cmdBufferKey = '';
   let cmdItemId: string | null = null;
+  let cmdAggregatedOutput: string | null = null;
 
   const flushCmdBuffer = () => {
     if (cmdBuffer.length === 0) return;
-    items.push({ kind: 'cmdGroup', actions: cmdBuffer, key: cmdBufferKey, commandItemId: cmdItemId });
+    items.push({ kind: 'cmdGroup', actions: cmdBuffer, key: cmdBufferKey, commandItemId: cmdItemId, aggregatedOutput: cmdAggregatedOutput });
     cmdBuffer = [];
     cmdBufferKey = '';
     cmdItemId = null;
+    cmdAggregatedOutput = null;
   };
 
   for (let i = 0; i < events.length; i++) {
@@ -46,6 +48,15 @@ function deriveRenderItems(events: ServerNotification[]): RenderItem[] {
         cmdItemId = event.params.item.id;
       }
       cmdBuffer.push(...(event.params.item.commandActions as CommandAction[]));
+      continue;
+    }
+
+    // Capture aggregatedOutput from completed commandExecution.
+    if (
+      event.method === 'item/completed' &&
+      event.params.item.type === 'commandExecution'
+    ) {
+      cmdAggregatedOutput = event.params.item.aggregatedOutput ?? null;
       continue;
     }
 
@@ -110,7 +121,7 @@ export function CodexThread({ hideComposer = false }: { hideComposer?: boolean }
     if (item.kind === 'cmdGroup') {
       renderedEvents.push({
         key: item.key,
-        content: <CommandActionSummaryItem actions={item.actions} commandItemId={item.commandItemId} />,
+        content: <CommandActionSummaryItem actions={item.actions} commandItemId={item.commandItemId} aggregatedOutput={item.aggregatedOutput} />,
       });
       continue;
     }
