@@ -25,3 +25,6 @@ codex-app-server-protocol = { workspace = true }
 
 codexia-shared = { path = "../shared" }
 codexia-db = { path = "../db" }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+winreg = "0.52"
