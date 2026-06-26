@@ -1,14 +1,83 @@
-import { useRef, useEffect, useState, type ReactNode } from 'react';
+import { useRef, useEffect, useState, useMemo, type ReactNode } from 'react';
 import { useCodexStore } from '@/stores/codex';
 import { useIsProcessing } from '@/hooks/codex';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { renderEvent } from './items';
 import { ApprovalItem } from './items/ApprovalItem';
 import { RequestUserInputItem } from './items/RequestUserInputItem';
+import { CommandActionSummaryItem } from './items/CommandActionSummaryItem';
 import { Composer } from './Composer';
 import { CodexAuth } from './CodexAuth';
 import { codexService } from '@/services/codexService';
 import { Button } from '@/components/ui/button';
+import type { CommandAction } from '@/bindings/v2';
+import type { ServerNotification } from '@/bindings';
+
+// Intermediate render item: either a raw event or an aggregated command group.
+type RenderItem =
+  | { kind: 'event'; event: ServerNotification; index: number }
+  | { kind: 'cmdGroup'; actions: CommandAction[]; key: string };
+
+/** Pre-process events into render items, grouping commandExecution runs between agentMessages. */
+function deriveRenderItems(events: ServerNotification[]): RenderItem[] {
+  const items: RenderItem[] = [];
+  let cmdBuffer: CommandAction[] = [];
+  let cmdBufferKey = '';
+
+  const flushCmdBuffer = () => {
+    if (cmdBuffer.length === 0) return;
+    items.push({ kind: 'cmdGroup', actions: cmdBuffer, key: cmdBufferKey });
+    cmdBuffer = [];
+    cmdBufferKey = '';
+  };
+
+  for (let i = 0; i < events.length; i++) {
+    const event = events[i];
+
+    // Accumulate commandExecution into buffer — never flush here.
+    if (
+      event.method === 'item/started' &&
+      event.params.item.type === 'commandExecution'
+    ) {
+      if (cmdBuffer.length === 0) cmdBufferKey = `cmd-${i}`;
+      cmdBuffer.push(...(event.params.item.commandActions as CommandAction[]));
+      continue;
+    }
+
+    // agentMessage started = flush commands that came before it.
+    if (
+      event.method === 'item/started' &&
+      event.params.item.type === 'agentMessage'
+    ) {
+      flushCmdBuffer();
+      items.push({ kind: 'event', event, index: i });
+      continue;
+    }
+
+    // agentMessage completed = just push (content rendered here).
+    if (
+      event.method === 'item/completed' &&
+      event.params.item.type === 'agentMessage'
+    ) {
+      items.push({ kind: 'event', event, index: i });
+      continue;
+    }
+
+    // turn/completed = boundary, flush then push.
+    if (event.method === 'turn/completed') {
+      flushCmdBuffer();
+      items.push({ kind: 'event', event, index: i });
+      continue;
+    }
+
+    // Everything else: just push, never flush.
+    items.push({ kind: 'event', event, index: i });
+  }
+
+  // Flush trailing buffer (agent still running).
+  flushCmdBuffer();
+  return items;
+}
 
 export function CodexThread({ hideComposer = false }: { hideComposer?: boolean } = {}) {
   const { currentThreadId, events, hasAccount, activeThreadIds } = useCodexStore();
@@ -24,42 +93,43 @@ export function CodexThread({ hideComposer = false }: { hideComposer?: boolean }
     bottomAnchorRef.current?.scrollIntoView({ block: 'end' });
   }, [currentThreadEvents]);
 
-  const renderedEvents: Array<{
-    key: string;
-    type: 'event';
-    content?: ReactNode;
-  }> = [];
-  const seenAgentMessageDeltaItemIds = new Set<string>();
+  const renderItems = useMemo(
+    () => deriveRenderItems(currentThreadEvents),
+    [currentThreadEvents]
+  );
 
-  currentThreadEvents.forEach((event, index) => {
+  const seenAgentMessageDeltaItemIds = new Set<string>();
+  const renderedEvents: Array<{ key: string; content: ReactNode }> = [];
+
+  for (const item of renderItems) {
+    if (item.kind === 'cmdGroup') {
+      renderedEvents.push({
+        key: item.key,
+        content: <CommandActionSummaryItem actions={item.actions} />,
+      });
+      continue;
+    }
+
+    const { event, index } = item;
+
     if (event.method === 'item/agentMessage/delta') {
       seenAgentMessageDeltaItemIds.add(event.params.itemId);
     }
 
     if (event.method === 'item/completed') {
       const completedItem = event.params.item;
-
       if (
         completedItem.type === 'agentMessage' &&
         seenAgentMessageDeltaItemIds.has(completedItem.id)
       ) {
-        return;
+        continue;
       }
     }
 
-    const rendered = renderEvent(event, {
-      events: currentThreadEvents,
-      eventIndex: index,
-    });
-    if (rendered === null) {
-      return;
-    }
-    renderedEvents.push({
-      key: `event-${index}`,
-      type: 'event',
-      content: rendered,
-    });
-  });
+    const rendered = renderEvent(event, { events: currentThreadEvents, eventIndex: index });
+    if (rendered === null) continue;
+    renderedEvents.push({ key: `event-${index}`, content: rendered });
+  }
 
   return (
     <div className="flex-1 flex flex-col min-h-0 h-full relative">

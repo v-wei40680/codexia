@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, ChevronDown, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface ShellCommandProps {
   command: string;
@@ -7,8 +8,10 @@ interface ShellCommandProps {
 
 export const ShellCommand = ({ command }: ShellCommandProps) => {
   const [copied, setCopied] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
-  const handleCopy = async () => {
+  const handleCopy = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     try {
       await navigator.clipboard.writeText(command);
       setCopied(true);
@@ -19,16 +22,49 @@ export const ShellCommand = ({ command }: ShellCommandProps) => {
   };
 
   return (
-    <div className="group flex items-center justify-between gap-3 rounded-md border bg-muted/30 px-3 py-2 hover:bg-muted/50 transition-colors">
-      <code className="text-sm font-mono text-foreground flex-1 break-all">{command}</code>
-
+    <div className="flex flex-col gap-2 w-full">
       <button
-        onClick={handleCopy}
-        className="flex-shrink-0 p-1.5 rounded-md hover:bg-background/80 transition-colors text-muted-foreground hover:text-foreground"
-        aria-label="Copy command"
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="group flex gap-2 items-center text-sm font-mono text-muted-foreground hover:text-foreground transition-colors text-left w-full cursor-pointer"
       >
-        {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+        <span>Ran</span>
+        <code className="bg-muted/40 px-1.5 py-0.5 rounded border border-transparent group-hover:border-border">
+          {command}
+        </code>
+        <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+          {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+        </div>
       </button>
+
+      {isExpanded && (
+        <div className="rounded-md border bg-muted/30 font-mono text-sm overflow-hidden flex flex-col">
+          <div className="border-b bg-muted/50 px-3 py-2 text-xs text-muted-foreground select-none">
+            Shell
+          </div>
+
+          <div className="relative flex items-start justify-between gap-4 p-3 min-h-[3rem]">
+            <code className="text-foreground flex-1 break-all whitespace-pre-wrap pt-1">
+              $ {command}
+            </code>
+            <div className="flex flex-col items-end gap-1 shrink-0">
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-7 w-7"
+                onClick={handleCopy}
+                aria-label="Copy command"
+              >
+                {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+              </Button>
+              {copied && (
+                <span className="text-[10px] font-sans text-emerald-500 animate-in fade-in duration-200">
+                  Success
+                </span>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

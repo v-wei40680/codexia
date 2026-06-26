@@ -1,11 +1,10 @@
 import { Badge } from '@/components/ui/badge';
-import { CommandAction, FileUpdateChange } from '@/bindings/v2';
+import { FileUpdateChange } from '@/bindings/v2';
 import type { ServerNotification } from '@/bindings';
 
 import { TurnPlan } from './TurnPlan';
 import { EditableUserMessageItem } from './UserMessageItem';
 import { AgentMessageItem } from './AgentMessageItem';
-import { CommandActionItem } from './CommandActionItem';
 import { IndividualFileChanges } from './IndividualFileChanges';
 import { SummaryFileChanges } from './SummaryFileChanges';
 import { CollabAgentToolCallItem, type CollabAgentToolCallItemData } from './CollabAgentToolCallItem';
@@ -102,13 +101,8 @@ export const renderEvent = (event: ServerNotification, context?: RenderEventCont
           );
         }
         case 'commandExecution':
-          return (
-            <div>
-              {startedItem.commandActions.map((a: CommandAction, i) => (
-                <CommandActionItem key={i} action={a} />
-              ))}
-            </div>
-          );
+          // Aggregated by CodexThread into CommandActionSummaryItem between agentMessages.
+          return null;
         case 'agentMessage':
         case 'enteredReviewMode':
         case 'fileChange':
