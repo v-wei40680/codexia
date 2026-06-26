@@ -255,6 +255,7 @@ pub async fn initialize_codex(
         capabilities: Some(InitializeCapabilities {
             experimental_api: true,
             request_attestation: false,
+            mcp_server_openai_form_elicitation: false,
             opt_out_notification_methods: None,
         }),
     };

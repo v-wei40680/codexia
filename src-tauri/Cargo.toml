@@ -1,11 +1,11 @@
 
 [package]
 name = "codexia"
-version = "0.36.0"
+version.workspace = true
 description = "A powerful IDE/GUI and Toolkit for Codex CLI + Claude code"
 authors = ["milisp"]
 license = "AGPL-3.0"
-edition = "2024"
+edition.workspace = true
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
@@ -33,60 +33,59 @@ tauri-plugin-process = { version = "2" }
 tauri-plugin-deep-link = "2"
 tauri-plugin-fs = { version = "2", features = ["watch"] }
 
-# --- desktop feature ---
-reqwest = { version = "0.12", default-features = false, features = ["json", "rustls-tls-native-roots"] }
-futures = { version = "0.3" }
-indexmap = { version = "2.0", features = ["serde"] }
-thiserror = { version = "2.0" }
-moka = { version = "0.12", features = ["future"] }
-tokio = { version = "1", features = ["full"] }
-log = { version = "0.4" }
-env_logger = { version = "0.11" }
-dirs = { version = "6.0" }
-base64 = { version = "0.22.1" }
-regex = { version = "1.12.2" }
-chrono = { version = "0.4", features = ["serde"] }
-uuid = { version = "1.0", features = ["v4"] }
-which = { version = "6.0" }
-dashmap = { version = "6.2.1" }
-async-trait = { version = "0.1" }
-zip = { version = "2.1" }
-tempfile = { version = "3.10" }
-serde_yaml = { version = "0.9" }
-glob = { version = "0.3.3" }
-tokio-cron-scheduler = { version = "0.13" }
-tauri-plugin-updater = { version = "2" }
-codex-protocol = { git = "https://github.com/openai/codex.git", package = "codex-protocol", tag = "rust-v0.140.0" }
-codex-app-server-protocol = { git = "https://github.com/openai/codex.git", package = "codex-app-server-protocol", tag = "rust-v0.140.0" }
-claude-agent-sdk-rs = { git = "https://github.com/milisp/claude-agent-sdk-rs", tag = "v0.6.6" }
-codex-finder = { git = "https://github.com/milisp/codex-finder.git" }
-
-# workspace
+# --- workspace deps ---
+reqwest = { workspace = true }
+futures = { workspace = true }
+indexmap = { workspace = true }
+thiserror = { workspace = true }
+moka = { workspace = true }
+tokio = { workspace = true }
+log = { workspace = true }
+env_logger = { workspace = true }
+dirs = { workspace = true }
+base64 = { workspace = true }
+regex = { workspace = true }
+chrono = { workspace = true }
+uuid = { workspace = true }
+dashmap = { workspace = true }
+async-trait = { workspace = true }
+zip = { workspace = true }
+tempfile = { workspace = true }
+serde_yaml = { workspace = true }
+glob = { workspace = true }
+tokio-cron-scheduler = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
 anyhow = { workspace = true }
-codexia-codex = { path = "../crates/codex" }
-codexia-cc = { path = "../crates/cc" }
-codexia-db = { path = "../crates/db" }
+codex-protocol = { workspace = true }
+codex-app-server-protocol = { workspace = true }
+claude-agent-sdk-rs = { workspace = true }
+codex-finder = { workspace = true }
+codexia-codex = { workspace = true }
+codexia-cc = { workspace = true }
+codexia-db = { workspace = true }
+codexia-shared = { workspace = true }
 
-codexia-shared = { path = "../crates/shared" }
+# --- non-workspace deps ---
+tauri-plugin-updater = { version = "2" }
+which = { version = "6.0" }
 
 [target.'cfg(any(target_os = "linux", target_os = "windows"))'.dependencies]
 tauri-plugin-single-instance = { version = "2", features = ["deep-link"] }
 
 [target.'cfg(not(any(target_os = "ios", target_os = "android")))'.dependencies]
 tauri-plugin-screenshots = { version = "2.2.0" }
-gix = { version = "0.80.0", features = ["blocking-network-client", "blocking-http-transport-curl"] }
-codexia-git = { path = "../crates/git" }
-walkdir = "2.3"
-agent-insights = { git = "https://github.com/milisp/agent-insights", default-features = false }
-pdf-extract = "0.7.12"
-calamine = "0.25"
-notify = { version = "8", features = ["serde", "serialization-compat-6"] }
-notify-debouncer-full = "0.6"
-portable-pty = "0.9"
-ignore = "0.4.25"
-nucleo = "0.5.0"
+gix = { workspace = true }
+codexia-git = { workspace = true }
+walkdir = { workspace = true }
+agent-insights = { workspace = true }
+pdf-extract = { workspace = true }
+calamine = { workspace = true }
+notify = { workspace = true }
+notify-debouncer-full = { workspace = true }
+portable-pty = { workspace = true }
+ignore = { workspace = true }
+nucleo = { workspace = true }
 
 # Platform-specific dependencies
 [target.'cfg(windows)'.dependencies]

@@ -1166,8 +1166,8 @@ dependencies = [
 
 [[package]]
 name = "codex-app-server-protocol"
-version = "0.140.0"
-source = "git+https://github.com/openai/codex.git?tag=rust-v0.140.0#6506579001c322927a3e4bd440563267a7ac6c1f"
+version = "0.142.2"
+source = "git+https://github.com/openai/codex.git?tag=rust-v0.142.2#390b0d254d658148751d0cca50ca41832c7894a1"
 dependencies = [
  "anyhow",
  "clap",
@@ -1175,6 +1175,7 @@ dependencies = [
  "codex-protocol",
  "codex-shell-command",
  "codex-utils-absolute-path",
+ "codex-utils-path-uri",
  "inventory",
  "rmcp",
  "schemars 0.8.22",
@@ -1190,8 +1191,8 @@ dependencies = [
 
 [[package]]
 name = "codex-async-utils"
-version = "0.140.0"
-source = "git+https://github.com/openai/codex.git?tag=rust-v0.140.0#6506579001c322927a3e4bd440563267a7ac6c1f"
+version = "0.142.2"
+source = "git+https://github.com/openai/codex.git?tag=rust-v0.142.2#390b0d254d658148751d0cca50ca41832c7894a1"
 dependencies = [
  "tokio",
  "tokio-util",
@@ -1199,8 +1200,8 @@ dependencies = [
 
 [[package]]
 name = "codex-execpolicy"
-version = "0.140.0"
-source = "git+https://github.com/openai/codex.git?tag=rust-v0.140.0#6506579001c322927a3e4bd440563267a7ac6c1f"
+version = "0.142.2"
+source = "git+https://github.com/openai/codex.git?tag=rust-v0.142.2#390b0d254d658148751d0cca50ca41832c7894a1"
 dependencies = [
  "anyhow",
  "clap",
@@ -1215,8 +1216,8 @@ dependencies = [
 
 [[package]]
 name = "codex-experimental-api-macros"
-version = "0.140.0"
-source = "git+https://github.com/openai/codex.git?tag=rust-v0.140.0#6506579001c322927a3e4bd440563267a7ac6c1f"
+version = "0.142.2"
+source = "git+https://github.com/openai/codex.git?tag=rust-v0.142.2#390b0d254d658148751d0cca50ca41832c7894a1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1237,8 +1238,8 @@ dependencies = [
 
 [[package]]
 name = "codex-network-proxy"
-version = "0.140.0"
-source = "git+https://github.com/openai/codex.git?tag=rust-v0.140.0#6506579001c322927a3e4bd440563267a7ac6c1f"
+version = "0.142.2"
+source = "git+https://github.com/openai/codex.git?tag=rust-v0.142.2#390b0d254d658148751d0cca50ca41832c7894a1"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -1257,6 +1258,8 @@ dependencies = [
  "rama-tls-rustls",
  "rama-unix",
  "rustls-native-certs",
+ "schannel",
+ "security-framework",
  "serde",
  "serde_json",
  "sha2",
@@ -1269,8 +1272,8 @@ dependencies = [
 
 [[package]]
 name = "codex-protocol"
-version = "0.140.0"
-source = "git+https://github.com/openai/codex.git?tag=rust-v0.140.0#6506579001c322927a3e4bd440563267a7ac6c1f"
+version = "0.142.2"
+source = "git+https://github.com/openai/codex.git?tag=rust-v0.142.2#390b0d254d658148751d0cca50ca41832c7894a1"
 dependencies = [
  "chardetng",
  "chrono",
@@ -1279,6 +1282,7 @@ dependencies = [
  "codex-network-proxy",
  "codex-utils-absolute-path",
  "codex-utils-image",
+ "codex-utils-path-uri",
  "codex-utils-string",
  "encoding_rs",
  "globset",
@@ -1306,8 +1310,8 @@ dependencies = [
 
 [[package]]
 name = "codex-shell-command"
-version = "0.140.0"
-source = "git+https://github.com/openai/codex.git?tag=rust-v0.140.0#6506579001c322927a3e4bd440563267a7ac6c1f"
+version = "0.142.2"
+source = "git+https://github.com/openai/codex.git?tag=rust-v0.142.2#390b0d254d658148751d0cca50ca41832c7894a1"
 dependencies = [
  "base64 0.22.1",
  "codex-protocol",
@@ -1326,8 +1330,8 @@ dependencies = [
 
 [[package]]
 name = "codex-utils-absolute-path"
-version = "0.140.0"
-source = "git+https://github.com/openai/codex.git?tag=rust-v0.140.0#6506579001c322927a3e4bd440563267a7ac6c1f"
+version = "0.142.2"
+source = "git+https://github.com/openai/codex.git?tag=rust-v0.142.2#390b0d254d658148751d0cca50ca41832c7894a1"
 dependencies = [
  "dirs",
  "dunce",
@@ -1338,8 +1342,8 @@ dependencies = [
 
 [[package]]
 name = "codex-utils-cache"
-version = "0.140.0"
-source = "git+https://github.com/openai/codex.git?tag=rust-v0.140.0#6506579001c322927a3e4bd440563267a7ac6c1f"
+version = "0.142.2"
+source = "git+https://github.com/openai/codex.git?tag=rust-v0.142.2#390b0d254d658148751d0cca50ca41832c7894a1"
 dependencies = [
  "lru",
  "sha1",
@@ -1348,8 +1352,8 @@ dependencies = [
 
 [[package]]
 name = "codex-utils-home-dir"
-version = "0.140.0"
-source = "git+https://github.com/openai/codex.git?tag=rust-v0.140.0#6506579001c322927a3e4bd440563267a7ac6c1f"
+version = "0.142.2"
+source = "git+https://github.com/openai/codex.git?tag=rust-v0.142.2#390b0d254d658148751d0cca50ca41832c7894a1"
 dependencies = [
  "codex-utils-absolute-path",
  "dirs",
@@ -1357,8 +1361,8 @@ dependencies = [
 
 [[package]]
 name = "codex-utils-image"
-version = "0.140.0"
-source = "git+https://github.com/openai/codex.git?tag=rust-v0.140.0#6506579001c322927a3e4bd440563267a7ac6c1f"
+version = "0.142.2"
+source = "git+https://github.com/openai/codex.git?tag=rust-v0.142.2#390b0d254d658148751d0cca50ca41832c7894a1"
 dependencies = [
  "base64 0.22.1",
  "codex-utils-cache",
@@ -1369,17 +1373,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "codex-utils-path-uri"
+version = "0.142.2"
+source = "git+https://github.com/openai/codex.git?tag=rust-v0.142.2#390b0d254d658148751d0cca50ca41832c7894a1"
+dependencies = [
+ "base64 0.22.1",
+ "codex-utils-absolute-path",
+ "schemars 0.8.22",
+ "serde",
+ "thiserror 2.0.18",
+ "ts-rs",
+ "url",
+ "urlencoding",
+]
+
+[[package]]
 name = "codex-utils-rustls-provider"
-version = "0.140.0"
-source = "git+https://github.com/openai/codex.git?tag=rust-v0.140.0#6506579001c322927a3e4bd440563267a7ac6c1f"
+version = "0.142.2"
+source = "git+https://github.com/openai/codex.git?tag=rust-v0.142.2#390b0d254d658148751d0cca50ca41832c7894a1"
 dependencies = [
  "rustls",
 ]
 
 [[package]]
 name = "codex-utils-string"
-version = "0.140.0"
-source = "git+https://github.com/openai/codex.git?tag=rust-v0.140.0#6506579001c322927a3e4bd440563267a7ac6c1f"
+version = "0.142.2"
+source = "git+https://github.com/openai/codex.git?tag=rust-v0.142.2#390b0d254d658148751d0cca50ca41832c7894a1"
 dependencies = [
  "regex-lite",
  "serde",
@@ -1454,7 +1473,7 @@ dependencies = [
 
 [[package]]
 name = "codexia-cc"
-version = "0.35.2"
+version = "0.36.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -1480,7 +1499,7 @@ dependencies = [
 
 [[package]]
 name = "codexia-codex"
-version = "0.35.2"
+version = "0.36.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1505,7 +1524,7 @@ dependencies = [
 
 [[package]]
 name = "codexia-db"
-version = "0.35.2"
+version = "0.36.0"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1519,7 +1538,7 @@ dependencies = [
 
 [[package]]
 name = "codexia-git"
-version = "0.35.2"
+version = "0.36.0"
 dependencies = [
  "anyhow",
  "gix",
@@ -1530,7 +1549,7 @@ dependencies = [
 
 [[package]]
 name = "codexia-shared"
-version = "0.35.2"
+version = "0.36.0"
 dependencies = [
  "agent-insights",
  "anyhow",
@@ -1572,7 +1591,7 @@ dependencies = [
 
 [[package]]
 name = "codexia-web"
-version = "0.35.2"
+version = "0.36.0"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -10509,6 +10528,12 @@ dependencies = [
  "serde",
  "serde_derive",
 ]
+
+[[package]]
+name = "urlencoding"
+version = "2.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "daf8dba3b7eb870caf1ddeed7bc9d2a049f3cfdfae7cb521b087cc33ae4c49da"
 
 [[package]]
 name = "urlpattern"
