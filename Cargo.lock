@@ -1388,7 +1388,7 @@ dependencies = [
 
 [[package]]
 name = "codexia"
-version = "0.35.3"
+version = "0.36.0"
 dependencies = [
  "agent-insights",
  "anyhow",
