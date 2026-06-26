@@ -4,6 +4,7 @@ use codexia_db::automation_runs::sync_automation_run_status;
 use codex_app_server_protocol::{
     ClientInfo, InitializeCapabilities, InitializeParams, InitializeResponse,
     JSONRPCMessage, JSONRPCResponse, RequestId, ServerNotification, ServerRequest,
+    ItemStartedNotification, ItemCompletedNotification, ThreadItem
 };
 use serde_json::Value;
 use std::collections::HashMap;
@@ -180,26 +181,31 @@ pub async fn connect_codex(event_sink: Arc<dyn EventSink>) -> Result<Arc<CodexAp
                     }
                     JSONRPCMessage::Notification(notification) => {
                         let method = notification.method.clone();
-                        if let Ok(server_notification) = ServerNotification::try_from(notification)
-                        {
-                            if matches!(
-                                method.as_str(),
-                                "item/reasoning/textDelta"
-                                    | "item/reasoning/summaryPartAdded"
-                                    | "item/reasoning/summaryTextDelta"
-                            ) {
-                                // Do nothing, pass/continue without logging
-                            } else if !matches!(
-                                method.as_str(),
-                                "rawResponseItem/completed"
-                                    | "item/agentMessage/delta"
-                                    | "thread/tokenUsage/updated"
-                                    | "account/rateLimits/updated"
-                                    | "item/plan/delta"
-                            ) {
-                                println!("codex:notification: {}", method);
-                            }
+                        if let Ok(server_notification) = ServerNotification::try_from(notification) {
                             
+                            match &server_notification {
+                                ServerNotification::ReasoningTextDelta(_) | 
+                                ServerNotification::ReasoningSummaryPartAdded(_) | 
+                                ServerNotification::ReasoningSummaryTextDelta(_) => continue,
+                                
+                                ServerNotification::ItemStarted(ItemStartedNotification { item: ThreadItem::Reasoning { .. }, .. }) |
+                                ServerNotification::ItemCompleted(ItemCompletedNotification { item: ThreadItem::Reasoning { .. }, .. }) => continue,
+                                
+                                _ => {}
+                            }
+
+                            match &server_notification {
+                                ServerNotification::RawResponseItemCompleted(_) |
+                                ServerNotification::AgentMessageDelta(_) |
+                                ServerNotification::ThreadTokenUsageUpdated(_) |
+                                ServerNotification::AccountRateLimitsUpdated(_) |
+                                ServerNotification::PlanDelta(_) => {}
+                                
+                                _ => {
+                                    log::info!("codex:notification: {:?}", method);
+                                }
+                            }
+
                             match serde_json::to_value(&server_notification) {
                                 Ok(payload) => {
                                     sync_automation_run_status(&payload);
