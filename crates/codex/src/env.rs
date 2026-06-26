@@ -76,6 +76,7 @@ pub fn set_env(key: String, value: String) -> Result<(), String> {
 
     #[cfg(not(any(target_os = "windows", target_os = "macos")))]
     {
+        std::env::set_var(key, value);
         Err("Unsupported operating system".to_string())
     }
 }
