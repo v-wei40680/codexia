@@ -166,10 +166,7 @@ export function useCodexEvents(enabled = true) {
         addEvent(threadId, payload);
       } else {
         if (
-          method !== 'account/rateLimits/updated' &&
-          method !== 'account/updated' &&
-          method !== 'error' &&
-          method !== 'account/login/completed'
+          !['account/rateLimits/updated', 'account/updated', 'error', 'account/login/completed'].includes(method)
         ) {
           console.warn('[useCodexEvents] No threadId found in payload:', payload);
         }
